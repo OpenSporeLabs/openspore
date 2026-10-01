@@ -1,7 +1,7 @@
 # Reconstruction context 0x00582d70
 
 - Status: `partial`
-- Content SHA-256: `b47ae04ba129f0f18078ab2e701a78564cd41022faf4ea33dc424848f93922f7`
+- Content SHA-256: `700e067d805fdda3202ba32f359a81f73e1e791ab087b7ec371f2cde325a5f3a`
 
 ## 01_assignment
 
@@ -19,7 +19,7 @@
 
 ## 02_function_identity
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
@@ -34,16 +34,16 @@
 
 ## 03_current_status
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "blocked": null,
-  "reconstructed": null,
-  "runtime_gated": null,
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
-  "status": null
+  "status": "unresolved"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "f48bef9e9818cd48fac8e106128e0a31e93ca3446cfc26bb3daafd42397b2f3b",
-  "live_attempts": [],
+  "content_sha256": "c80e2c0326a5e625b8a626ee065852c25de312a311a990335db2a9dac5f2c5a1",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00582d70 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,129 +71,361 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Enum "Names": Some values do not have unique names */
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-
-void __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)
-
-{
-  int *piVar1;
-  int iVar2;
-  int *piVar3;
-  int unaff_EBP;
-  int unaff_EDI;
-  int iVar4;
-  undefined4 uVar5;
-  undefined1 *puVar6;
-  undefined4 uVar7;
-  undefined1 local_c [12];
-  
-  iVar4 = 0;
-  if (*(int *)(param_1 + 0x360) != 0) {
-    if (param_2 == 1) {
-      if (param_3 == '\0') {
-        piVar1 = (int *)(param_1 + 0x36c);
-        if (param_4 == 0) {
-          iVar4 = (*(int *)(param_1 + 0x370) - *piVar1) / 0x30;
-          if (0 < iVar4) {
-            iVar2 = 0;
-            do {
-              FUN_0059d110(*(undefined4 *)(iVar2 + *piVar1),local_c);
-              puVar6 = local_c;
-              uVar7 = 0;
-              uVar5 = 0x3f1bf57;
-              FUN_00401050(0x3f1bf57,0,puVar6);
-              FUN_0045af60(uVar5,uVar7,puVar6);
-              Editors__cEditorAnimWorld__DestroyCreature
-                        (*(cEditorAnimWorld **)(iVar2 + *piVar1),unaff_EBP);
-              iVar2 = iVar2 + 0x30;
-              iVar4 = iVar4 + -1;
-            } while (iVar4 != 0);
-          }
-          FUN_009c69f0(*piVar1,*(undefined4 *)(param_1 + 0x370));
-          return;
-        }
-        iVar2 = (*(int *)(param_1 + 0x370) - *piVar1) / 0x30;
-        if (0 < iVar2) {
-          piVar3 = (int *)*piVar1;
-          do {
-            if (*piVar3 == param_4) {
-              iVar4 = iVar4 * 0x30;
-              FUN_0059d110(*(undefined4 *)(iVar4 + *piVar1),local_c);
-        
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 12473,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\",\n      \"entry_ESP+0x8\",\n      \"entry_ESP+0xc\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"confidence\": \"UNKNOWN\",\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          1,\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0xc\",\n        \"observed\": true,\n        \"ordinal\": 3,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0xc\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordi
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is copied to ESI at 0x00582d74 and read only as [ESI + disp]; the function passes it on to 0x0057ef50 and 0x009c69f0 as ECX after loading LEA EBP,[ESI + 0x36c] at 0x00582e5b and 0x00582ef6, so the vector helpers take the address of the begin field as their receiver",
+  "ordinary_stack_argument_slots": 3,
+  "receiver": true,
+  "ret_form": "RET 0xc",
+  "return_observation": "EAX is used only as scratch: the divide-by-0x30 sign correction at 0x00582db7 and the element-address computation at 0x00582df0 overwrite it before every call, and the last write before the epilogue is 0x00582ea1 LEA EDI,... / 0x00582ea8 SHL EDI,0x4",
+  "return_register": "none",
+  "return_semantics": "no value; the body never writes EAX on any exit path and all six exits share the same four-instruction epilogue",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI"
+  ],
+  "stack_arguments": [
+    {
+      "frame_offset": "[ESP + 0x18] at 0x00582d87",
+      "index": 1,
+      "meaning": "mode selector; compared against 1 at 0x00582d8b, against 0 at 0x00582f72 and against 2 at 0x00582fb3",
+      "width": 4
+    },
+    {
+      "frame_offset": "[ESP + 0x1c] at 0x00582d94",
+      "index": 2,
+      "meaning": "remove_last, read as a BYTE; any non-zero byte selects the remove-last path, so only bit 0 of the pushed dword matters",
+      "width": 1
+    },
+    {
+      "frame_offset": "[ESP + 0x28] at 0x00582e61 after PUSH EBX; PUSH EBP",
+      "index": 3,
+     
 [TRUNCATED]
 ```
 
 ## 07_callers_callees
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "callees": [],
-  "callers": [],
-  "edge_rows": [],
-  "external_callees": []
-}
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0059d110"
+    }
+  ],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062ba10"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062c340"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062c990"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x0062ba5e",
+      "direction": "in",
+      "other": "0x0062ba10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062ba7f",
+      "direction": "in",
+      "other": "0x0062ba10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062c3de",
+      "direction": "in",
+      "other": "0x0062c340",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062ca18",
+      "direction": "in",
+      "other": "0x0062c990",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582e05",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582ec1",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582f33",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582e0c",
+      "direction": "out",
+      "other": "0x0045af60",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582ec8",
+      "direction": "out",
+      "other": "0x0045af60"
+[TRUNCATED]
 ```
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "void"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
-  "runtime": {},
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "A runtime trace is required to confirm modes 0 and 2 are never taken, since no static reference to them exists.",
+      "A runtime trace is required to confirm no entry destructor is needed, i.e. that the removed 0x30-byte entries leak or are owned elsewhere by design.",
+      "A runtime trace is required to observe the 0x03f1bf57 notification reaching a listener, which is the only way to learn what the detach protocol announces.",
+      "No original-process trace has ever been captured for 0x00582d70; every claim here is static. The original Cell stage has never been entered in any recorded run."
+    ],
+    "validated": 0
+  },
   "semantic": {}
 }
 ```
 
 ## 10_dependencies
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0059d110"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062ba10"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062c340"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0062c990"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x0062ba5e",
+      "direction": "in",
+      "other": "0x0062ba10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062ba7f",
+      "direction": "in",
+      "other": "0x0062ba10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062c3de",
+      "direction": "in",
+      "other": "0x0062c340",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0062ca18",
+      "direction": "in",
+      "other": "0x0062c990",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582e05",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582ec1",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582f33",
+      "direction": "out",
+      "other": "0x00401050",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00582e0c",
+      "direction": "out",
+      "other": "0x0045af60",
+      "reference_type": "direct-call"
+    },
+    {
+
+[TRUNCATED]
+```
 
 ## 11_related_functions
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_pair_004279d0",
+    "va": "0x004279d0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_scalar_00428060",
+    "va": "0x00428060"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_paint_commit_0043ac40",
+    "va": "0x0043ac40"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "model_parts_apply_properties_00447150",
+    "va": "0x00447150"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "pair_vector_insert_004786e0",
+    "va": "0x004786e0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_entry_expand_004ad6f0",
+    "va": "0x004ad6f0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 2,
+    "symbol": "Editors_EditorModel_SetColor_raw_004ae250",
+    "va": "0x004ae250"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "pair_vector_construct_004b62a0",
+    "va": "0x004b62a0"
+  }
+]
+```
 
 ## 12_existing_reconstruction
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b02/00582d70.json"
+  ]
+}
+```
 
 ## 13_semantic_hypotheses
 
@@ -200,28 +440,28 @@ void __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "A runtime trace is required to confirm modes 0 and 2 are never taken, since no static reference to them exists.",
+    "A runtime trace is required to confirm no entry destructor is needed, i.e. that the removed 0x30-byte entries leak or are owned elsewhere by design.",
+    "A runtime trace is required to observe the 0x03f1bf57 notification reaching a listener, which is the only way to learn what the detach protocol announces.",
+    "Are modes 0 and 2 reachable at runtime through a patch or a function pointer? No static reference exists, and no differential trace has been captured.",
+    "Is the owning class really Editors::cEditor? The evidence is the SDK address table's neighbourhood plus the receiver being the pointer stored at caller+0x3614; no vtable was located and the binary has no RTTI.",
+    "No original-process trace has ever been captured for 0x00582d70; every claim here is static. The original Cell stage has never been entered in any recorded run.",
+    "What are the eleven unread dwords of the 0x30-byte entry? AddCreature writes them, but no SDK structure describes the element.",
+    "What are the two EDX-side divisions at 0x00582e6b..0x00582e7d and 0x00582ef6..0x00582f06 for? They recompute the same count; the pseudocode's variable naming makes them look like distinct quantities.",
+    "What is the SDK method name of the target? The cEditor address table jumps from sub_581F70 at 0x00582250 to AddCreature at 0x00582fe0, leaving the target unnamed.",
+    "What is the attach flag at +0x385? Its setter 0x0057e34
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-dispatch-b02/00582d70.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.hpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -239,11 +479,6 @@ void __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -255,6 +490,21 @@ void __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)
     {
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-dispatch-b02/00582d70.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.hpp",
       "source_class": "committed_artifact"
     }
   ],
@@ -268,9 +518,6 @@ void __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)
     "FIELDS/OFFSETS",
     "CONSTANTS",
     "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    "
+[TRUNCATED]
 ```

@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `e0296540c0c5b04f30690ce7e2caf1982c8ad4121f60d023a9cadec892858326`
+- Content SHA-256: `4c669a4a5458e4d0d1b10af269112b78c3bfb2d5813718513a490ef691e9e241`
 
 ## abi
 
@@ -67,6 +67,279 @@
   "stack_cleanup_bytes": 28,
   "termination": "RET 0x1c"
 }
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4",
+      "entry_ESP+0x8",
+      "entry_ESP+0xc",
+      "entry_ESP+0x10",
+      "entry_ESP+0x14",
+      "entry_ESP+0x18",
+      "entry_ESP+0x1c"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0xc",
+        "observed": true,
+        "ordinal": 3,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x10",
+        "observed": true,
+        "ordinal": 4,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x14",
+        "observed": true,
+        "ordinal": 5,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x18",
+        "observed": true,
+        "ordinal": 6,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x1c",
+        "observed": true,
+        "ordinal": 7,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0x1c",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "saved_registers": [
+      "EBP",
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0xc",
+        "observed": true,
+        "ordinal": 3,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x10",
+        "observed": true,
+        "ordinal": 4,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x14",
+        "observed": true,
+        "ordinal": 5,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x18",
+        "observed": true,
+        "ordinal": 6,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x1c",
+        "observed": true,
+        "ordinal": 7,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 28,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x1c"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at +8, so the listing is not one path",
+    "untrusted_frame_stack_reads: push ebp with no mov ebp,esp: EBP is a general register, so every frame-relative offset is uncalibrated",
+    "frame_pointer_untrusted: push ebp without mov ebp,esp, and EBP is loaded from a register or used as a memory base, so it is a general register",
+    "sret_vs_out_param: entry slot 0 is written through a pointer"
+  ],
+  "cleanup": {
+    "bytes": 28,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x1c",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "b4d36d505c528781aea3761c7e6c3ef7b51092c595ae843faad09dcd366b475b",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
+  },
+  "cross_validation": {
+    "agreement": true,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 5,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0043"
+      ],
+      "claim": "the callee pops 28 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 28,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0015",
+        "obs-0017",
+        "obs-0018",
+        "obs-0020",
+        "obs-0022",
+        "obs-0027",
+        "obs-0028",
+        "obs-0029",
+        "obs-0035"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 7,
+        "total_bytes": 28
+      }
+    },
+    {
+      "based_on": [
+      
+[TRUNCATED]
 ```
 
 ## callees_dependencies
@@ -293,13 +566,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint * __thiscall\nFUN_00aeb160(int param_1,int *param_2,int param_3,int param_4,int param_5,int *param_6,int param_7,\n            int param_8)\n\n{\n  undefined4 *puVar1;\n  int *piVar2;\n  int iVar3;\n  int *piVar4;\n  int *piVar5;\n  \n  iVar3 = FUN_00f473a0(0xa0,\"Simulator\",0,0,0,0);\n  if (iVar3 == 0) {\n    piVar4 = (int *)0x0;\n  }\n  else {\n    piVar4 = (int *)FUN_00aea250();\n  }\n  piVar2 = param_6;\n  piVar4[6] = (int)param_2;\n  piVar4[3] = 0;\n  piVar4[0xd] = param_3;\n  piVar4[0xe] = param_4;\n  piVar4[0xf] = param_5;\n  piVar5 = (int *)piVar4[0x10];\n  if (param_6 != piVar5) {\n    if (param_6 != (int *)0x0) {\n      (**(code **)*param_6)();\n    }\n    piVar4[0x10] = (int)piVar2;\n    if (piVar5 != (int *)0x0) {\n      (**(code **)(*piVar5 + 4))();\n    }\n  }\n  piVar4[0x11] = param_7;\n  piVar4[0x12] = param_8;\n  param_2 = piVar4;\n  (**(code **)*piVar4)();\n  puVar1 = *(undefined4 **)(param_1 + 0x28);\n  if (puVar1 < *(undefined4 **)(param_1 + 0x2c)) {\n    *(undefined4 **)(param_1 + 0x28) = puVar1 + 1;\n    piVar5 = piVar4;\n    if (puVar1 != (undefined4 *)0x0) {\n      *puVar1 = piVar4;\n      (**(code **)*piVar4)();\n    }\n  }\n  else {\n    FUN_00aea5d0(puVar1,&param_2);\n    piVar5 = param_2;\n  }\n  if (piVar5 != (int *)0x0) {\n    (**(code **)(*piVar5 + 4))();\n  }\n  return piVar4;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -631,15 +900,15 @@
   "body_start": "00aeb160",
   "callees": [
     "FUN_00aea5d0",
-    "FUN_00aea250",
-    "FUN_00f473a0"
+    "FUN_00f473a0",
+    "FUN_00aea250"
   ],
   "callers": [
-    "FUN_00aed2c0",
+    "FUN_00aeb3e0",
     "FUN_00aebc10",
-    "j_Sim_cCommManager_CreateSpaceCommEvent",
     "FUN_00aeb7b0",
-    "FUN_00aeb3e0"
+    "FUN_00aed2c0",
+    "j_Sim_cCommManager_CreateSpaceCommEvent"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -650,74 +919,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "piVar5",
-      "storage": "register:0000001c:4",
-      "type": "int *"
-    },
-    {
-      "name": "piVar4",
-      "storage": "register:00000018:4",
-      "type": "int *"
-    },
-    {
-      "name": "iVar3",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "piVar2",
-      "storage": "unique:100000b1:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_5",
-      "storage": "Stack[0x10]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_4",
-      "storage": "Stack[0xc]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0x8]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "int *"
-    },
-    {
-      "name": "puVar1",
-      "storage": "unique:00017200:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "param_8",
-      "storage": "Stack[0x1c]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_7",
-      "storage": "Stack[0x18]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_6",
-      "storage": "Stack[0x14]:4",
-      "type": "int *"
-    }
-  ],
-  "locals_count": 13,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00aeb160",
   "namespace": null,

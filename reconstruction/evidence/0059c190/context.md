@@ -1,7 +1,7 @@
 # Reconstruction context 0x0059c190
 
 - Status: `partial`
-- Content SHA-256: `f2a1d3293219442717cd6771e9f2fe0381c469cd0a0970084ef10f3aeca353fa`
+- Content SHA-256: `fb86024cd4b3a6512a4049b98ef63fadb5ee029b381b8135b5f399343785350c`
 
 ## 01_assignment
 
@@ -41,7 +41,7 @@
 {
   "blocked": false,
   "reconstructed": false,
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "candidate"
 }
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "76f6b4bc5e4a877aca807673530e50f571276cf9db592f0c75f6e9554800a7ff",
-  "live_attempts": [],
+  "content_sha256": "5aef5a1d4232368733d3259b2c9306b7f343a22213fb876fd879e32fe79f882e",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x0059c190 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,58 +71,50 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
-
-{
-  float fVar1;
-  float fVar2;
-  float fVar3;
-  float fVar4;
-  float local_24;
-  float local_20;
-  float local_1c;
-  float local_18;
-  float local_14;
-  float local_10;
-  float local_c;
-  float local_8;
-  float local_4;
-  
-  fVar1 = *param_2;
-  fVar2 = param_2[1];
-  fVar3 = param_2[2];
-  fVar4 = param_2[3];
-  local_24 = 1.0 - (fVar3 * fVar3 + fVar2 * fVar2) * 2.0;
-  local_20 = (fVar4 * fVar3 + fVar2 * fVar1) * 2.0;
-  local_1c = (fVar3 * fVar1 - fVar4 * fVar2) * 2.0;
-  local_18 = (fVar2 * fVar1 - fVar4 * fVar3) * 2.0;
-  local_14 = 1.0 - (fVar3 * fVar3 + fVar1 * fVar1) * 2.0;
-  local_10 = (fVar4 * fVar1 + fVar3 * fVar2) * 2.0;
-  local_c = (fVar4 * fVar2 + fVar3 * fVar1) * 2.0;
-  local_8 = (fVar3 * fVar2 - fVar4 * fVar1) * 2.0;
-  local_4 = 1.0 - (fVar2 * fVar2 + fVar1 * fVar1) * 2.0;
-  FUN_0041cb40(&local_24);
-  return param_1;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 19464,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__cdecl\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\",\n      \"entry_ESP+0x8\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_register\": \"XMM0\",\n    \"return_semantics\": \"float_or_x87_in_XMM0\",\n    \"saved_registers\": [\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"calle
-[TRUNCATED]
+  "architecture": "x86-32",
+  "calling_convention": "__cdecl (no callee stack cleanup)",
+  "hidden_receiver": "none",
+  "hidden_this_register": "ECX is not read on entry; it is written at 0x0059c2c1 for the single callee",
+  "ordinary_stack_argument_slots": 2,
+  "receiver": false,
+  "ret_form": "RET (bare, no immediate)",
+  "return_note": "(the destination pointer, unchanged)",
+  "return_observation": "0x0059c295 MOV ESI,dword ptr [ESP+0x38] loads stack argument 0 into ESI; 0x0059c2e0 MOV EAX,ESI returns it. XMM0 is not live on exit: its last write is the 2.0f constant load at 0x0059c217.",
+  "return_register": "EAX",
+  "return_semantics": "returns stack argument 0 unchanged, i.e. the buffer the 36-byte result was written into; nothing is returned by value in registers",
+  "return_type": "Opaque59c190Float3x3*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "ESI (pushed 0x0059c193, popped 0x0059c2e2)"
+  ],
+  "stack_arguments": [
+    {
+      "address_at_entry": "[ESP_entry + 0x4]",
+      "loaded_by": "0x0059c295 MOV ESI,dword ptr [ESP + 0x38]",
+      "role": "destination of the 36-byte result; also passed as ECX to 0x0041cb40",
+      "slot": 0
+    },
+    {
+      "address_at_entry": "[ESP_entry + 0x8]",
+      "loaded_by": "0x0059c194 MOV EAX,dword ptr [ESP + 0x3c]",
+      "role": "const float[4] quaternion (x, y, z, w) read at +0x00, +0x04, +0x08, +0x0c",
+      "slot": 1
+    }
+  ],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "0x0059c2e6 RET, unconditional, single exit"
+}
 ```
 
 ## 07_callers_callees
@@ -220,27 +220,33 @@ undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "Opaque59c190Float3x3* (the destination pointer, unchanged)"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
   "runtime": {
     "blocking_reason": null,
-    "gates": [],
+    "gates": [
+      "A differential test must also confirm that at least one caller supplies a unit quaternion, since the body has no normalisation and produces a non-orthonormal matrix otherwise.",
+      "A differential test must confirm that the destination really receives the same 36 bytes at run time, i.e. that no runtime patch retargets 0x0041cb40 or the two float constants.",
+      "No original-process trace exists for 0x0059c190. Every statement here is static."
+    ],
     "validated": 0
   },
   "semantic": {}
@@ -383,9 +389,15 @@ undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.cpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.hpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3_model_test.cpp"
+  ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c190.json"
+  ]
 }
 ```
 
@@ -402,28 +414,27 @@ undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "A differential test must also confirm that at least one caller supplies a unit quaternion, since the body has no normalisation and produces a non-orthonormal matrix otherwise.",
+    "A differential test must confirm that the destination really receives the same 36 bytes at run time, i.e. that no runtime patch retargets 0x0041cb40 or the two float constants.",
+    "Do all 113+ call sites pass a unit quaternion, or does the engine rely on this being a raw formula? Static analysis cannot answer that; it needs a runtime trace or a caller-by-caller normalisation audit.",
+    "Is the quaternion actually stored as (x,y,z,w) in the caller's struct, or does some caller pass a (w,x,y,z) quaternion that the engine happens to treat correctly? The formula constrains the order, but not the caller's intent.",
+    "Is this Quaternion::ToMatrix() itself, a free helper that Quaternion::ToMatrix() calls, or a static member? The argument shape rules out a thiscall member but not the first two.",
+    "No original-process trace exists for 0x0059c190. Every statement here is static.",
+    "What are the other two addresses labelled QuaternionToMatrix (0x0059bef0, 0x004a9a40) in this build, and are their bodies identical? 0x0059bef0 is not a function start in 3.1.0.22 and 0x004a9a40 was not inspected in this batch.",
+    "What is the destination type? Only size 36 and a three-float3 layout are observed. 'Math::Matrix3' is a candidate from Spore ModAPI/Spore/MathUtils.h, not a proven identity.",
+    "Why does the body spill q.x*q.z into its own i
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c190.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -441,11 +452,6 @@ undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -458,21 +464,25 @@ undefined4 QuaternionToMatrix(undefined4 param_1,float *param_2)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c190.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c190_quaternion_to_float3x3_model_test.cpp",
+      "source_class": "committed_artifact
+[TRUNCATED]
 ```

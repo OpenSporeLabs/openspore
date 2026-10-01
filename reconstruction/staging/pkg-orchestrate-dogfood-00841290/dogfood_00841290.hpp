@@ -24,8 +24,20 @@ using OpaqueWord = std::uint32_t;
 
 struct OpaqueFormatParserVtable;
 
+// The receiver, as the body actually reaches it. `dispatch_00` is a
+// displacement label, not a field name: the machine-derived receiver record for
+// 0x00841290 enumerates the two displacements the body was seen using (0x00 and
+// 0x3c) with `bounds_only` set, and a set of displacements says where the body
+// reached, never which member occupies an offset. The reconstruction body in the
+// .cpp therefore addresses the receiver by displacement alone; this struct
+// exists so the model test can build a receiver and read it back.
+//
+// The word at +0x00 is nonetheless known to be a table pointer, and that is a
+// machine fact rather than a name: 0x008412a9 loads it, 0x008412ae indexes it at
+// +0x3c, and 0x008412bf calls what comes back, so a one-level reading of the
+// receiver is refuted by the listing itself and the test below refutes it again.
 struct alignas(4) OpaqueFormatParser {
-  OpaqueFormatParserVtable* vtable;
+  OpaqueFormatParserVtable* dispatch_00;
 };
 
 using FormatParserReleaseSlot3c =
@@ -46,8 +58,8 @@ static constexpr OpaqueWord vtable_0141c97c = 0x0141c97cu;
 
 static_assert(sizeof(void*) == 4, "target pointers are 32-bit");
 static_assert(sizeof(OpaqueWord) == 4, "target words are 32-bit");
-static_assert(offsetof(OpaqueFormatParser, vtable) == 0x00,
-              "receiver vtable word offset");
+static_assert(offsetof(OpaqueFormatParser, dispatch_00) == 0x00,
+              "receiver dispatch word offset, read at 0x008412a9");
 static_assert(sizeof(OpaqueFormatParser) == 4,
               "only the vtable word at +0x00 is read by the body");
 static_assert(offsetof(OpaqueFormatParserVtable, release_3c) == 0x3c,

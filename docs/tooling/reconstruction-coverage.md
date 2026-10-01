@@ -661,14 +661,19 @@ VALIDATION_VERDICTS = ("PASS", "WARN", "FAIL", "UNKNOWN", "NOT_AVAILABLE")
 
 `UNKNOWN` and `NOT_AVAILABLE` are **siblings of `FAIL` in the same enumeration**, which
 is the whole point: they occupy the same verdict axis and are all emitted when the
-check could not be completed. `validate.py` uses `NOT_AVAILABLE` with explicit reason
-strings such as `"no canonical source artifact"`, `"no named canonical call oracle"`
-(`validate.py:295`), `"no virtual dispatch evidence available"` (`validate.py:335`), and
-for runtime specifically `"no original-process trace was supplied"`
-(`validate.py:388`). The runtime section of the human output says it outright
-(`validate.py:410`): *Runtime remains `NOT_AVAILABLE` unless an exact original-process
-trace is supplied.* The report records
+check could not be completed. The report records
 `not_available_is_a_sibling_of_fail_not_a_failure: true`.
+
+> Correction, 2026-09-26. The paragraph this note replaces quoted `validate.py` by line
+> number and described the runtime dimension as `NOT_AVAILABLE` with the reason
+> *"no original-process trace was supplied"*. Both were stale: the runtime axis has its
+> own two-value alphabet, `GATED` / `PASS`, and `GATED` is an open capability gate rather
+> than a verdict that could not be reached — nothing was attempted and nothing failed.
+> `NOT_AVAILABLE` remains a *static* per-check status, and it is no longer neutral in the
+> aggregate: a static `PASS` requires all eight structural checks to have been
+> adjudicated. The quoted line numbers also no longer resolve. The current
+> specification, including the per-check status truth table, is
+> [validation-dimensions.md](validation-dimensions.md).
 
 ### The negative-observation proof
 

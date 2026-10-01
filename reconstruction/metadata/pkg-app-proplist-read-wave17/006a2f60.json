@@ -1,0 +1,182 @@
+{
+  "schema": "pkg-app-proplist-read-wave17-function-handoff.v1",
+  "package": "pkg-app-proplist-read-wave17",
+  "function_address": "0x006a2f60",
+  "ghidra_name": "App::PropertyList::Read",
+  "normalized_symbol": "read_006a2f60",
+  "entry_symbol": "read_006a2f60",
+  "subsystem": "App",
+  "cluster": "app-lifecycle",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "source_files": [
+    "reconstruction/staging/pkg-app-proplist-read-wave17/property_list_read_006a2f60.hpp",
+    "reconstruction/staging/pkg-app-proplist-read-wave17/property_list_read_006a2f60.cpp",
+    "reconstruction/staging/pkg-app-proplist-read-wave17/property_list_read_006a2f60_model_test.cpp"
+  ],
+  "dependencies": [
+    "reconstruction/staging/wave6-resources/property_list_access.hpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "bool __thiscall read_006a2f60(DirectPropertyList* list, IStream* pInputStream);",
+  "observed_original_abi": {
+    "return_type": "bool",
+    "return_type_rationale": "Only AL is defined on the way out: 0x006a3064 MOV AL,BL copies the accumulated flag byte, and the persisted SDK signature at .spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c declares `bool App::PropertyList::Read(DirectPropertyList * this, IStream * pInputStream)`. The upper three bytes of EAX are residual, so a wider reading of EAX is not claimed.",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "DirectPropertyList*",
+    "receiver_copy_register": "EDI (0x006a2f76 MOV EDI,ECX)",
+    "stream_argument_register": "EBP",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "load_site": "0x006a2f65 MOV EBP,dword ptr [ESP + 0x1c]",
+        "name": "pInputStream",
+        "type": "IStream*",
+        "width_bytes": 4
+      }
+    ],
+    "prologue": [
+      "0x006a2f60 SUB ESP,0x10",
+      "0x006a2f63 PUSH EBX",
+      "0x006a2f64 PUSH EBP",
+      "0x006a2f69 PUSH ESI",
+      "0x006a2f6a PUSH EDI"
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4 at 0x006a306a",
+    "body_range": "0x006a2f60-0x006a306c",
+    "size_bytes": 269
+  },
+  "layout_evidence": {
+    "gtype": "DirectPropertyList",
+    "size_bytes": 56,
+    "fields": [
+      {"offset": "0x00", "size_bytes": 4, "meaning": "vftable pointer, class vtable rooted at 0x01408820"},
+      {"offset": "0x04", "size_bytes": 4, "meaning": "ref_count"},
+      {"offset": "0x08", "size_bytes": 12, "meaning": "ResourceKey name key (typeID/groupID/instanceID)"},
+      {"offset": "0x18", "size_bytes": 24, "meaning": "PropertyMap record store"},
+      {"offset": "0x30", "size_bytes": 4, "meaning": "parent PropertyList pointer, overwritten by the service port"},
+      {"offset": "0x34", "size_bytes": 4, "meaning": "operations field"}
+    ],
+    "map": {
+      "entries_begin": "0x18",
+      "entries_end": "0x1c",
+      "lookup_mode": "0x2c",
+      "entry_stride": "0x18"
+    },
+    "entry_layout": {
+      "stride": "0x18",
+      "offset_0x00": "4-byte key/tag, transferred as one big-endian 32-bit word",
+      "offset_0x04": "Property value, 0x14 bytes",
+      "property_flags_offset": "0x14 (entry+0x10), low 16 bits masked 0x30 / 0x40 / 0xfff2 by the value reader",
+      "property_type_offset": "0x16 (entry+0x12), 16-bit ObjectTYPE discriminant"
+    },
+    "size_corroboration": "0x006866f0 lays a PropertyList on the stack as {vftable, mnRefCount, mNameKey.typeID, mNameKey.groupID, mNameKey.instanceID, ...} and heap-allocates it with FUN_00f473a0(0x38, ...), so the receiver is 0x38 = 56 bytes.",
+    "reuse": "Receiver layout is inherited verbatim from reconstruction/staging/wave6-resources/property_list_access.hpp and reconstruction/metadata/wave6-resources/006a2470.json, which reconstructed the same class from the same vtable 0x01408820; the 0x18 entry stride and the 0x04 value offset are re-confirmed independently here."
+  },
+  "mechanics": {
+    "record_format": "Per record: one 32-bit big-endian word into entry+0x00 (0x006a302e -> 0x0093a780), then the per-property value reader 0x00694440 on entry+0x04 with a third argument of 0 (0x006a3045). App::PropertyList::Write @ 0x006a1540 emits the identical pair (0x006a15b8 writes entry+0x00, 0x006a15d0 calls 0x00693390 on entry+0x04) and the identical 0x18 stride (0x006a15e2 ADD EDI,0x18), so the two are a matched pair.",
+    "word_order": "0x0093a780 reads dword_count*4 bytes through IStream vtable slot +0x30 and byte-swaps every dword unless its fourth argument equals 1, so the serialized order is big-endian and the element count argument is in DWORDS. This corrects the persisted SDK export, which renders the same calls as 1-byte and 3-byte transfers.",
+    "header_word": "The first thing Read does is one 32-bit big-endian word (0x006a2f78, count 1, swap flag 0). The extended layout is taken only when that read succeeded (0x006a2f86 TEST BL,BL) AND the sign bit of the decoded word is set (0x006a2f8a TEST EAX,EAX / 0x006a2f8c JNS).",
+    "extended_block": "On the extended path three dwords are cleared (0x006a2f97/0x006a2f9b/0x006a2f9f) and then read as three big-endian words (0x006a2f8f PUSH 3 / 0x006a2fa3 CALL 0x0093a780).",
+    "parent_swap": "Before touching the block's payload the previous parent is dropped: if receiver+0x30 is non-null the field is nulled first (0x006a2fc0) and then vtable slot +0x04 (index 1) is called on the old pointer (0x006a2fc8/0x006a2fcb), a release.",
+    "service_port": "0x0067de30 returns the runtime-filled global DAT_015fd8a8 (zero in the static image). 0x006a2fd1-0x006a2fe3 loads the receiver of the port as that pointer, takes vtable slot +0x2c (index 11) and calls it with (block[0], block[2], &receiver->parent): 0x006a2fda pushes &receiver+0x30, 0x006a2fe0 pushes block[0], and 0x006a2fd1/0x006a2fdc supply block[2] and block[0] as the two dword arguments.",
+    "resize": "block[1] is masked with 0x7fffffff (0x006a2fe9 AND EAX,0x7fffffff) and handed to 0x006a2b80 with ECX = receiver+0x18. 0x006a2b80 sets the entry count exactly: it appends default-constructed entries when the map is short and erases the tail when it is long.",
+    "loop_bound": "The record count is taken from the receiver, not from the stream: (properties.entries_end - properties.entries_begin) divided by 0x18 (0x006a2ff9-0x006a300d, IMUL 0x2AAAAAAB / SAR EDX,2 / SHR EAX,0x1f / ADD EAX,EDX). The division is signed, so a span below zero yields a negative count and 0x006a3011 JLE skips the loop. This is the one structural asymmetry against Write, which writes the count first and never emits a header word.",
+    "failure_propagation": "0x006a2fab overwrites the flag with the three-word read's result, so the loop starts from the block read, not from the header word. Once the flag is clear the loop keeps iterating to the map bound but touches nothing (0x006a3020 TEST BL,BL / 0x006a3055 XOR BL,BL), and with an empty map the header result is returned unchanged.",
+    "short_read_hazard": "0x0093a780 returns false on a short transfer and byte-swaps only after the full dword_count*4 has arrived. On the extended path the caller uses the block anyway, so a truncated block reaches the service port with the raw, still big-endian bytes in the destination.",
+    "return": "0x006a3064 MOV AL,BL returns the accumulated flag; 0x006a306a RET 0x4."
+  },
+  "callees": [
+    {"address": "0x0093a780", "role": "big-endian 32-bit word stream reader, count in dwords, returns bool in AL", "call_sites": ["0x006a2f78", "0x006a2fa3", "0x006a302e"]},
+    {"address": "0x0067de30", "role": "trivial getter returning the global service pointer DAT_015fd8a8", "call_sites": ["0x006a2fad"]},
+    {"address": "0x00694440", "role": "per-property value reader, (stream, entry+0x04, 0)", "call_sites": ["0x006a3045"]},
+    {"address": "0x006a2b80", "role": "exact-count resize of the receiver's PropertyMap", "call_sites": ["0x006a2ff4"]}
+  ],
+  "callers": [
+    {
+      "va": "0x006a3170",
+      "ghidra_name": "App::DirectPropertyList::Read",
+      "kind": "direct-call",
+      "note": "One-instruction forwarding thunk onto 0x006a2f60; the derived-class override in the vtable."
+    },
+    {
+      "va": "0x006866f0",
+      "ghidra_name": null,
+      "kind": "direct-call",
+      "callsite": "0x00686ab5",
+      "note": "Content-loading routine ('Bless'); calls Read and then consumes the result through App::Property::GetKey / GetBool / GetString16 / GetArrayUInt32, which is why the target list is treated as data."
+    }
+  ],
+  "globals": [
+    {"address": "0x015fd8a8", "name": "DAT_015fd8a8", "role": "runtime-initialized service pointer returned by 0x0067de30", "static_value": "0x00000000", "note": "Zero in the static image; filled at runtime, so the service type is not statically recoverable."}
+  ],
+  "vtables": [
+    {
+      "address": "0x01408820",
+      "role": "class vtable for this method group",
+      "observed_slots": [
+        {"offset": "+0x04", "index": 1, "meaning": "release, invoked on the outgoing parent at 0x006a2fcb", "evidence": "0x006a2fc8 MOV EAX,dword ptr [EDX + 0x4] / 0x006a2fcb CALL EAX"},
+        {"offset": "+0x2c", "index": 11, "meaning": "resolve/block-word port on the DAT_015fd8a8 service", "evidence": "0x006a2fd7 MOV EDX,dword ptr [EDX + 0x2c] / 0x006a2fe3 CALL EDX", "note": "Observed on the SERVICE vtable, not on the receiver vtable; the two are unrelated and are not conflated here."}
+      ],
+      "note": "The vtable slot that reaches 0x006a2f60 (or its thunk 0x006a3170) was not located statically and is therefore not claimed."
+    }
+  ],
+  "semantic_findings": [
+    "Read and Write are a matched pair over a 0x18-byte record: a 32-bit big-endian key word followed by a 0x14-byte property value.",
+    "The 0x0093a780 third argument is a DWORD count, not a byte count, and its fourth argument of 0 enables a big-endian byte swap. The persisted SDK export's 1-byte and 3-byte rendering of these calls is wrong on both counts.",
+    "Read supports an extended container header that Write does not emit: a leading word whose sign bit selects a three-word block, and that block's second word becomes the new entry count after a 0x7fffffff mask.",
+    "The extended path replaces receiver+0x30 (parent) through a service port, releasing the previous pointer first, so ownership of the parent is transferred rather than shared.",
+    "The record loop is driven by the receiver's current map size, so Read only overwrites as many records as the list already holds unless the extended header resizes it first."
+  ],
+  "confidence": {
+    "mechanics": "high",
+    "abi": "high",
+    "layout": "high",
+    "return_semantics": "high",
+    "header_semantics": "medium",
+    "service_identity": "low"
+  },
+  "unresolved_questions": [
+    "One-dword stack-slot discrepancy at the header read: 0x006a2f70 LEA EAX,[ESP+0x2c] (ESP = entry-0x28) targets entry ESP+0x04, which is the pInputStream argument slot, while 0x006a2f7f MOV EAX,[ESP+0x34] (ESP = entry-0x2c) reads entry ESP+0x08, one dword higher. The persisted decompilation aliases both onto the argument slot. Write @ 0x006a1540 shows the same idiom gap-free (0x006a1560 LEA ECX,[ESP+0x14] and 0x006a156b MOV [ESP+0x1c],EAX both resolve to the same address), so the gap is specific to Read. The reconstruction models the intended single 32-bit header word, which is the decompiler's reading, but the exact slot the machine consumes is not settled.",
+    "The identity of the DAT_015fd8a8 service and the meaning of block[0] and block[2] as its port arguments. The pointer is zero in the static image, so neither its vtable identity nor the parameter meaning can be recovered without runtime evidence.",
+    "What the header word's sign bit and the 0x7fffffff mask on block[1] actually encode. The mask proves one flag bit is carried alongside the count, but no second writer of this format was located in the binary.",
+    "Whether the 16-bit ObjectTYPE switch and array-dimension handling inside 0x00694440 belong to this record's value layout, and whether the conflicting 'App::Property 4-byte versus 0x14-byte layout' ledger entry (knowledgegraph/research/conflicts/track-b-vtable-fields.json, TB-FL-006) is settled by this evidence. The 0x04 value offset and 0x18 stride are observed here, but the ledger is left at preserved_alternatives and is not claimed as resolved."
+  ],
+  "blockers": [
+    "The DAT_015fd8a8 service port is an opaque runtime boundary in the staging model.",
+    "No original runtime trace validates the extended header path or the parent-swap side effect."
+  ],
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic property_list_read_006a2f60.cpp property_list_read_006a2f60_model_test.cpp -o /tmp/opencode/proplist-read-006a2f60-model && /tmp/opencode/proplist-read-006a2f60-model",
+    "result": "passed",
+    "cases": [
+      "clear-sign header: no header consumed, map bound drives two record reads, stream fully drained",
+      "set-sign header: previous parent released exactly once and replaced by the port result, port receives (block[0], block[2]), stream fully drained",
+      "block[1] == 0x80000002 masks to two entries and both records are read",
+      "truncated record stream returns false, the first key is still decoded, the second record is untouched",
+      "truncated three-word block: the parent is still released and the port still runs, with the raw un-swapped bytes, and the loop short-circuits",
+      "empty map returns the header result and reads only the header word",
+      "corrupt span (end below begin) yields a negative count, skips the loop, returns the header result",
+      "IStream slot +0x14 gate failure returns false without moving any bytes"
+    ]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x006a2f60", "observation": "Named App::PropertyList::Read, signature bool (DirectPropertyList * this, IStream * pInputStream), body 0x006a2f60-0x006a306c."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006a2f60", "observation": "106 instructions; proves the __thiscall frame, the MOV AL,BL return, RET 0x4, map offsets +0x18/+0x1c, the 0x18 stride divisor, the 0x7fffffff mask, the parent release through vtable +0x04, the service port through vtable +0x2c, and all four direct call sites."},
+    {"tool": "ghidra_read_memory", "address": "0x006a2f60", "observation": "Raw bytes confirm 8b 6c 24 1c (arg1 at ESP+0x04), 8d 44 24 2c (header destination) and 8b 44 24 34 (header test) as decoded, and that the three clearing stores at 0x006a2f97/9b/9f target three consecutive dwords."},
+    {"tool": "ghidra_decompile_function", "address": "0x0093a780", "observation": "The word reader transfers dword_count*4 bytes through IStream slot +0x30, requires the full count, and byte-swaps each dword unless the fourth argument is 1."},
+    {"tool": "ghidra_decompile_function", "address": "0x006a2b80", "observation": "Reads entries_begin at +0 and entries_end at +4 of the receiver, divides by 0x18, then grows or erases the tail to reach the requested count exactly."},
+    {"tool": "ghidra_decompile_function", "address": "0x00694440", "observation": "The per-record value reader is passed entry+0x04 and touches ushort flags at param2+0x10 (masks 0x30/0x40/0xfff2) and the 16-bit ObjectTYPE at param2+0x12, fixing the 0x14-byte Property extent and the 0x04 value offset."},
+    {"tool": "ghidra_decompile_function", "address": "0x0067de30", "observation": "A trivial getter returning DAT_015fd8a8."},
+    {"tool": "ghidra_read_memory", "address": "0x015fd8a8", "observation": "All four bytes are zero, so the service pointer is runtime-initialized and not statically recoverable."},
+    {"tool": "ghidra_decompile_function", "address": "0x006a1540", "observation": "App::PropertyList::Write, the mirror of this function: same helper pair, same 0x18 stride, count written first and no header word emitted. Also the gap-free LEA/store idiom used as the control for the header-slot question."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006a1540", "observation": "74 instructions confirming ADD EDI,0x18 stride, the (end-begin)/0x18 count, and RET 0x4."},
+    {"tool": "ghidra_decompile_function", "address": "0x006a3170", "observation": "App::DirectPropertyList::Read is a pure forwarding thunk onto 0x006a2f60."},
+    {"tool": "ghidra_decompile_function", "address": "0x006866f0", "observation": "The non-thunk caller; allocates a PropertyList with FUN_00f473a0(0x38, ...), calls Read, then reads the result back through App::Property::GetKey/GetBool/GetString16/GetArrayUInt32."},
+    {"tool": "analogue", "address": "0x006a2470", "package": "wave6-resources", "observation": "property_list_has_property_006a2470, reconstructed from the same vtable 0x01408820; source of the reused receiver layout, the 0x18 entry stride and the 0x04 value offset."},
+    {"tool": "analogue", "address": "0x006a24d0", "package": "wave6-resources", "observation": "property_list_get_property_object_006a24d0, same vtable; confirms the map/parent field semantics reused here."},
+    {"tool": "persisted_export", "path": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c", "observation": "SDK-named decompilation of this exact VA; used for the bool return type and the parent release shape, but its 1-byte/3-byte transfer sizes and its aliasing of the header slot onto the argument are superseded by the helper and raw-byte evidence."}
+  ]
+}

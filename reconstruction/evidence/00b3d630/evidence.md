@@ -2,9 +2,39 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `5445760440307354ff993d44cab8662e1611e6807a4b474e2b9446b10134a1f3`
+- Content SHA-256: `5d6f70e1a5c4a1d063fab1536e11f071c228efe436d583fce8d7c3e6d8a0f6e8`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX, moved to ESI at 0x00b3d637 and never rewritten",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x00b3d64f FLD float ptr [ESP + 0x8] and 0x00b3d678 FLD float ptr [ESP + 0x4] are the only two value producers; 0x00b3d67c and 0x00b3d68e FMUL float ptr [ESI + 0x10] are the only arithmetic. Callers confirm: 0x00b3e40c and 0x00b3e417 FSTP the result into stack locals, and 0x00b42687 FLD ST0 / 0x00b42689 FLD ST1 duplicate it, which only makes sense for a value already on the x87 stack.",
+  "return_register": "ST(0) (x87)",
+  "return_semantics": "IEEE-754 single delivered on the x87 stack in ST(0). The body uses FLD and FMUL and never executes FSTP, so the value is left on the x87 register stack for the caller.",
+  "return_type": "float",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "ESI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -70,7 +100,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "7e07a49e305eeaa1650996609a196a2bde8abc9ba2b9565ee1f7d2dc92a56079",
+  "content_sha256": "d5ce2b09ddc1a5625668b06fe8c40f0d3987fb781e4c32e2a7d9141291ff1440",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -78,16 +108,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -275,7 +305,7 @@
     {
       "at": "0x00b3d63e",
       "count": 2,
-      "
+    
 [TRUNCATED]
 ```
 
@@ -287,9 +317,54 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b3e3e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b40a20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b425b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b42760"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b43790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b43d50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b47730"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b4b320"
+  }
+]
+```
 
 ## contradictions
 
@@ -299,13 +374,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nfloat10 __fastcall FUN_00b3d630(int param_1)\n\n{\n  int iVar1;\n  float10 fVar2;\n  undefined4 local_8;\n  \n  local_8 = 0.0;\n  if (0.0 < *(float *)(param_1 + 0x18)) {\n    return (float10)*(float *)(param_1 + 0x18);\n  }\n  iVar1 = *(int *)(param_1 + 4);\n  if ((iVar1 != 0) && (iVar1 != 1)) {\n    if (iVar1 == 2) {\n      local_8 = *(float *)(*(int *)(param_1 + 0x40) + 0x44);\n    }\n    return (float10)local_8 * (float10)*(float *)(param_1 + 0x10);\n  }\n  fVar2 = (float10)(**(code **)(**(int **)(param_1 + 0x40) + 0x70))();\n  return fVar2 * (float10)*(float *)(param_1 + 0x10);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -473,9 +544,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 9743,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX, moved to ESI at 0x00b3d637 and never rewritten\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00b3d64f FLD float ptr [ESP + 0x8] and 0x00b3d678 FLD float ptr [ESP + 0x4] are the only two value producers; 0x00b3d67c and 0x00b3d68e FMUL float ptr [ESI + 0x10] are the only arithmetic. Callers confirm: 0x00b3e40c and 0x00b3e417 FSTP the result into stack locals, and 0x00b42687 FLD ST0 / 0x00b42689 FLD ST1 duplicate it, which only makes sense for a value already on the x87 stack.\",\n    \"return_register\": \"ST(0) (x87)\",\n    \"return_semantics\": \"IEEE-754 single delivered on the x87 stack in ST(0). The body uses FLD and FMUL and never executes FSTP, so the value is left on the x87 register stack for the caller.\",\n    \"return_type\": \"float\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"ESI\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b3e3e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b40a20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b425b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b42760\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b43790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b43d50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b47730\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b4b320\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00b3e407\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b3e3e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b3e412\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b3e3e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b40a50\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b40a20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b40a5b\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b40a20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b42682\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b425b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b4322f\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b42760\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b437bc\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b43790\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b43d95\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b43d50\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b47812\",\n        \"direct
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -492,14 +570,14 @@
   "body_start": "00b3d630",
   "callees": [],
   "callers": [
-    "FUN_00b47730",
-    "FUN_00b42760",
-    "FUN_00b43790",
     "FUN_00b425b0",
-    "FUN_00b43d50",
-    "FUN_00b4b320",
     "FUN_00b3e3e0",
-    "FUN_00b40a20"
+    "FUN_00b42760",
+    "FUN_00b40a20",
+    "FUN_00b43790",
+    "FUN_00b47730",
+    "FUN_00b4b320",
+    "FUN_00b43d50"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -512,27 +590,17 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
+      "name": "local_4",
+      "storage": "Stack[-0x4]:4",
       "type": "undefined4"
     },
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar1",
-      "storage": "unique:00017200:4",
-      "type": "int"
-    },
-    {
-      "name": "fVar2",
-      "storage": "register:00001100:10",
-      "type": "float10"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 4,
+  "locals_count": 2,
   "mode": "live",
   "name": "FUN_00b3d630",
   "namespace": null,
@@ -601,9 +669,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_scale_00b3d630.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_scale_00b3d630.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_scale_00b3d630_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b09/00b3d630.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -613,9 +696,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential fixture would need a constructed owner with a concrete sub-object instance, which static evidence alone cannot supply.",
+    "No original-process trace exists for this address, so the value returned by the +0x70 slot, the runtime contents of the sub-object and the real distribution of selector values are all unverified.",
+    "The Cell stage has never been entered in any recorded run, so nothing here is runtime observed."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -625,15 +720,31 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "dword enum",
+  "float",
+  "pointer to polymorphic sub-object"
+]
+```
 
 ## vtables
 

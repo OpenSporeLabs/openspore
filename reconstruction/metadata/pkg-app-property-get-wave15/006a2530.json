@@ -1,0 +1,407 @@
+{
+  "schema": "wave15-app-property-get.function-handoff.v1",
+  "package": "PKG-APP-PROPERTY-GET-WAVE15",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x006a2530",
+  "address": "0x006a2530",
+  "symbol": "App::PropertyList::GetProperty",
+  "normalized_symbol": "property_list_get_property_006a2530",
+  "queue_id": "fun:006a2530:App::PropertyList::GetProperty",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented in staging",
+  "attempt": 2,
+  "captured_on": "2026-09-26",
+  "source_files": [
+    "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.hpp",
+    "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.cpp",
+    "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530_model_test.cpp"
+  ],
+  "attempt_delta": {
+    "why": "attempt 1 was graded STATIC WARN on ABI, CONSTANTS, FIELDS/OFFSETS and VIRTUAL DISPATCH. This attempt re-opens all four and fixes the one real semantic error attempt 1 carried.",
+    "kept_from_attempt_1": [
+      "the control-flow reading: the two-part hit test, the always-taken tautological LEA/CMP/JNZ at 0x006a255a, the three RET 0x8 sites, and the parent escalation as a result-returning call rather than a tail call",
+      "the helper arity correction: 0x006a2530 pushes four dwords and 0x00612db0 provably reads only three of them",
+      "the lower_bound transcription of 0x00612db0 (count = distance / 0x18, halving probe, element step 0x18)",
+      "the pure-read observation, including that +0x34 is never touched where sibling 0x006a2f10 increments it",
+      "the 0x38-byte receiver extent, which attempt 2 has independently confirmed from the SDK struct"
+    ],
+    "corrected_in_attempt_2": [
+      "HIT ACTION. Attempt 1 wrote `*result = found->property` and typed the entry's +0x04 word as a pointer. The listing stores the ADDRESS of that word: 0x006a256b ADD EAX,0x4 then 0x006a256f MOV [ECX],EAX. The SDK confirms the word is App::Property (4 bytes, not a pointer) and the SDK prototype confirms the out parameter is Property**. Attempt 2 publishes &entry.second. Attempt 1's expression would have loaded the four value bytes and stored them AS a pointer.",
+      "FIELD NAMES. entries_begin/entries_end/key/lookup_mode/parent were reconstruction-asserted. They are replaced by the SDK's own names, read out of the live type database: mProperties.mpBegin, mProperties.mpEnd, mProperties.mValueCompare, mpParent, and pair<uint,App::Property>::first/second.",
+      "PROVENANCE. The header now names the exact SDK type paths it was built from, and the vtable record covers all 19 slots instead of 12."
+    ],
+    "not_changed": "no machine confidence label was raised. The ABI record's conventions.confidence is UNKNOWN before and after this attempt."
+  },
+  "briefing_gaps_filled": [
+    "briefing.decompilation was null and .spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__GetProperty.c was listed as the only prior artefact; a live bounded decompilation and a 47-instruction listing were taken from the Ghidra bridge at 127.0.0.1:8089",
+    "briefing.disassembly was null; the listing below is the live one",
+    "briefing.abi was an empty object; the ABI projection below is derived from the listing and says so",
+    "briefing.fields_offsets was empty; attempt 1 filled it from the listing's memory operands. Attempt 2 additionally found a machine-derived struct layout for App::PropertyList in the live Ghidra type database and re-derived every name and offset from it"
+  ],
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "property_list_get_property_006a2530",
+    "declaration": "extern \"C\" bool __thiscall property_list_get_property_006a2530(PropertyList *list, uint32_t propertyID, Property **result);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "source": "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.cpp",
+    "header": "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.hpp",
+    "model_test": "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530_model_test.cpp",
+    "compile_gate": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror at -O0, -O1 and -O2 over the .cpp and the model test; all three compile clean and the model test reports 'all checks passed' at each. g++ -m32 -O1 (without -Werror) also builds and passes.",
+    "compiler_note": "g++ -m32 -Werror rejects the body because GCC's -Wattributes forbids __attribute__((thiscall)) on a non-class method; the gate is clang++, matching the sibling wave packages",
+    "codegen_cross_check": "clang -O1 emits the original's shapes from this source: MOV ESI,ECX; MOVZX of the byte at [ECX+0x2c]; the two range loads at [ECX+0x18] and [ECX+0x1c]; CMP against [EAX]; CALL *[EAX+0x24]; ADD EAX,4 with MOV [ECX],EAX; and RET 0x8. This is a derived corroboration of the projection below, not a machine record, and is not treated as one."
+  },
+  "function_extent": {
+    "entry": "0x006a2530",
+    "body_end_inclusive": "0x006a2594",
+    "body_end_exclusive": "0x006a2596",
+    "body_span_bytes": 102,
+    "instruction_count": 47,
+    "return_sites": [
+      {"address": "0x006a2574", "form": "RET 0x8", "meaning": "local hit"},
+      {"address": "0x006a258d", "form": "RET 0x8", "meaning": "parent port returned"},
+      {"address": "0x006a2594", "form": "RET 0x8", "meaning": "no hit and no parent"}
+    ],
+    "flow_note": "every branch in the body targets an address inside 0x006a2530..0x006a2596, so no branch in this body is a tail call and no intra-body jump can be mistaken for a callee"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "provenance": "derived from the live listing; briefing.abi was empty and the index record's abi field is still {}",
+    "calling_convention": "__thiscall (receiver in ECX; the SDK prototype's first parameter is named `this`)",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_alias": "ESI (MOV ESI,ECX at 0x006a2531); every subsequent receiver access is [ESI+off], and the first two instructions PUSH ESI / PUSH EDI are a register save pair restored by the POP EDI / POP ESI before each RET 0x8",
+    "ordinary_stack_argument_slots": 2,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x04",
+        "observed": true,
+        "read": true,
+        "written": false,
+        "sizes": [4],
+        "read_at": "0x006a254b MOV EDX,dword ptr [ESP + 0x1c] (ESP is entry_ESP-0x18 there), re-used as the comparison operand at 0x006a2556 and as the second push at 0x006a2585",
+        "role": "propertyID, the 32-bit key searched for; also the &key pointer target handed to the lower-bound helper at 0x006a253f LEA ECX,[ESP + 0x10] which is entry_ESP+0x04"
+      },
+      {
+        "ordinal": 2,
+        "entry_offset": "entry_ESP+0x08",
+        "observed": true,
+        "read": true,
+        "written": true,
+        "sizes": [4],
+        "read_at": "0x006a2567 MOV ECX,dword ptr [ESP + 0x10] (ESP is entry_ESP-0x08 there) and 0x006a257e MOV ESI,dword ptr [ESP + 0x10] on the parent path",
+        "written_at": "0x006a256f MOV dword ptr [ECX],EAX, and only there",
+        "role": "Property** out parameter; receives the ADDRESS of the matched pair's value half (entry+0x04)"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x8 at all three return sites",
+    "return_register": "EAX",
+    "return_type": "bool",
+    "return_semantics_machine_record": "AL is the only defined lane. 0x006a2571 writes AL=0x1 without clearing the upper three bytes of EAX, which still hold the entry+4 address; 0x006a2591 uses XOR AL,AL so the false path leaves a fully zeroed EAX. The 0x006a2589 parent path returns whatever the parent left in EAX.",
+    "sdk_prototype_corroboration": "the live type database holds /Spore/App/PropertyList/GetProperty as `bool (PropertyList *this, uint32_t propertyID, Property **result)`, and Ghidra already applies exactly that prototype to 0x006a2530 (`bool App::PropertyList::GetProperty(PropertyList *this, uint32_t propertyID, Property **result)`, calling-convention field still `unknown`). Two stack dwords after an ECX receiver is the __thiscall shape, and the SDK parameter names match the listing's roles one for one.",
+    "decompiler_abi_caveat": "the Ghidra decompilation names the ECX receiver 'in_ECX' and mislabels entry_ESP+0x04 as 'this' and entry_ESP+0x08 as 'propertyID'. Its writes therefore appear as '*(uint **)propertyID = puVar3 + 1'. The listing above is authoritative and the reconstruction follows the listing.",
+    "parent_port_abi": {
+      "vtable_offset": "0x24",
+      "evidence": "0x006a2582 MOV EAX,dword ptr [ECX] ; 0x006a2586 MOV EDX,dword ptr [EAX + 0x24] ; 0x006a2589 CALL EDX",
+      "slot_identity": "read directly out of the table at 0x01408820: the dword at +0x24 is 0x006A2530, this function. The SDK vtable type /Spore/App/PropertyList/PropertyList__vftable names the same slot GetProperty, and all 19 slots of that type agree with the 19 dwords read from 0x01408820.",
+      "calling_convention": "__thiscall",
+      "hidden_receiver": "ECX = the parent pointer loaded from receiver+0x30 at 0x006a2577",
+      "stack_arguments": ["propertyID (pushed first, 0x006a2585)", "out pointer (pushed second, 0x006a2584)"],
+      "stack_cleanup_bytes": 8,
+      "result_propagation": "the parent's bool is returned unchanged; POP EDI / POP ESI / RET 0x8 at 0x006a258b..0x006a258d makes this a result-returning call, not a true tail call"
+    },
+    "machine_record_state_and_why_it_is_not_raised": {
+      "question_asked": "attempt 1's ABI verdict was WARN: derived calling-convention confidence UNKNOWN, oracle not proven. Is that confidence OBSERVED or INFERRED, and can this attempt raise it?",
+      "answer": "No. It is UNKNOWN and it stays UNKNOWN. The field is UNKNOWN, not OBSERVED and not merely INFERRED: reconstruction/evidence/006a2530/evidence.json -> categories.abi_derived.value.conventions is {calling_convention: null, confidence: UNKNOWN, candidate_conventions: [__cdecl, __stdcall, __thiscall, __fastcall], ambiguities: [], corroboration: not_available}, the envelope's verdict is ABI_UNKNOWN, its evidence_level is INFERRED, and its conflicts[] still carries an unresolved inferred_vs_persisted entry (persisted __thiscall, inferred null, resolution_status unresolved).",
+      "where_the_record_lives": "that record is generated by tools/reconstruction_tooling/abi_infer.py from the listing, and tools/** is off limits to this worker, so the worker cannot and does not relabel it. The index record reconstruction/knowledge/index.json carries abi: {} for this VA, so there is no second machine ABI source to promote either.",
+      "what_the_record_abstains_on": [
+        "flow_not_modelled: the linear ESP walk ends at -8, so the listing is not one path",
+        "unparsed_lines_present: 1 line(s) matched no grammar rule",
+        "ret_imm_below_highest_slot: ret 0x8 pops less than the highest read slot 0x10; everything above it belongs to the caller's frame",
+        "slot_gaps_present: argument ordinal(s) below the highest read slot are never touched",
+        "no_discriminator: the callee pop of 0x8 is not a whole number of dword stack arguments, so no convention follows from it"
+      ],
+      "direct_observations_the_body_does_offer": [
+        "a direct CALL of a known convention: 0x006a2546 CALL 0x00612db0, whose own 33-instruction body ends in a bare RET at 0x00612dfc. The callee therefore pops nothing, the caller cleans the four pushed dwords with ADD ESP,0x10 at 0x006a254f, and that call site is cdecl by observation rather than by inference.",
+        "stack-argument reads whose slots the record itself names: the record's ordinal 1 (entry_ESP+0x04) and ordinal 2 (entry_ESP+0x08) are both marked observed/read, and the listing resolves them exactly: MOV EDX,[ESP+0x1c] with ESP at entry_ESP-0x18 is entry_ESP+0x04, and MOV ECX,[ESP+0x10] with ESP at entry_ESP-0x08 is entry_ESP+0x08.",
+        "the cleanup is corroborated from the other side: RET 0x8 pops exactly the two dwords pushed at 0x006a2584/0x006a2585, and no instruction in the body touches a third stack slot.",
+        "__fastcall is excluded by the same read: the second parameter is taken from a stack slot, never from EDX, so ECX is the only register-carried argument."
+      ],
+      "why_it_still_cannot_be_raised_here": "the abstention is over-determined and only partly rests on the one line this attempt could explain. Even with the JC grammar gap closed, four reasons remain (flow_not_modelled, ret_imm_below_highest_slot, slot_gaps_present, no_discriminator), and the last three all follow from the record's own count of a third argument slot at entry_ESP+0x10. The listing shows no such read: every [ESP+n] read in the body resolves to entry_ESP+0x04 or entry_ESP+0x08, so that third slot is an artifact of the record's unmodelled linear ESP walk rather than a fact about the body. Correcting it is a change to the generator, which is integrator work, not a worker claim. The honest position is therefore: the projection is __thiscall, three independent observations and the SDK prototype support it, and the machine record still says UNKNOWN.",
+      "reported_as": "ABI remains an expected WARN. It is not restated as a pass anywhere in this package."
+    }
+  },
+  "unparsed_instruction_finding": {
+    "question_asked": "attempt 1's CONSTANTS verdict was WARN: 47 of 47 instructions consumed, degraded=true, unparsed=1. Which instruction does not parse?",
+    "instruction": "JC 0x006a2561 at 0x006a2558",
+    "machine_record": "reconstruction/evidence/006a2530/evidence.json -> categories.abi_derived.value.observations[obs-0014] = {kind: UNPARSED, raw: \"JC 0x006a2561\", at: 0x006a2558, reason: \"unknown_mnemonic\"}, and categories.abi_derived.value.parse = {declared_count: 47, degraded: true, unparsed: 1, flow_complete: false, esp_unresolved: false}",
+    "what_it_actually_is": "a perfectly well-formed two-byte x86-32 instruction. The bytes at 0x006a2558 are 72 07 (read directly from the image): opcode 0x72 with rel8 0x07, i.e. Jc/Jb -- branch if carry clear, which for an unsigned CMP means 'branch if below'. 0x72 + 7 lands on 0x006a2561, the MOV EAX,EDI clamp. It is the second half of the hit predicate and the reconstruction depends on it: it is the reject when propertyID sorts below the entry's key.",
+    "why_the_parser_rejects_it": "a grammar gap in the machine tool, not a decoding failure. tools/reconstruction_tooling/abi_infer.py defines BRANCH_MNEM as a literal set that contains the Jcc spellings JA, JAE, JB, JBE, JE, JG, JGE, JL, JLE, JNE, JNO, JNP, JNS, JNZ, JO, JP, JPE, JPO, JS and JZ -- but not the carry aliases JC and JNC. parse_insn() therefore marks the line kind=unparsed with reason=unknown_mnemonic even though JB (the other name for the same opcode) would have matched. tools/** is out of bounds for this worker, so the set was not edited.",
+    "effect_on_this_package": "the instruction is fully accounted for in the reconstruction (the `propertyID >= found->first` test is exactly its predicate), in this record, and in the source comment at the hit test, which names the opcode 0x72 and the alias. The machine parse record still reports unparsed=1, so CONSTANTS is an expected WARN and is reported as one.",
+    "note_on_scope": "the same gap would hit any body that uses JC or JNC, including 0x00612db0, whose 0x00612de4 JNC the same grammar would reject. That body is not this target and is not claimed here."
+  },
+  "layout_evidence": {
+    "provenance": "attempt 2: every name and offset comes from the Spore ModAPI SDK structures held in the live Ghidra type database for SporeApp.exe, read through the bridge at 127.0.0.1:8089 on 2026-09-26 by walking DataTypeManager.getAllDataTypes(). Every one of those offsets is independently re-derived from the 47-instruction listing of 0x006a2530 and the 33-instruction listing of 0x00612db0, and the two agree exactly. No offset is inherited from a sibling body.",
+    "sdk_types_read": [
+      {"path": "/Spore/App/PropertyList", "length": 56, "role": "the receiver"},
+      {"path": "/Spore/App/PropertyList/PropertyMap", "length": 24, "class": "TypedefDB", "role": "the receiver's map member", "resolves_to": "/Spore/eastl/vector_map<unsigned int, App::Property>"},
+      {"path": "/Spore/eastl/vector_map<unsigned int, App::Property>", "length": 24, "role": "the typedef target above"},
+      {"path": "/Spore/eastl/pair<uint, App::Property>", "length": 24, "role": "one element of the map"},
+      {"path": "/Spore/App/Property", "length": 4, "role": "the value half of the element"},
+      {"path": "/Spore/ResourceKey", "length": 12, "role": "the receiver's mNameKey member"},
+      {"path": "/Spore/eastl/intrusive_ptr<App::PropertyList>", "length": 4, "role": "the receiver's mpParent member; a single PropertyList* at its own +0x00"},
+      {"path": "/Spore/App/PropertyList/PropertyList__vftable", "length": 76, "role": "the 19-slot vtable type"},
+      {"path": "/Spore/App/PropertyList/GetProperty", "class": "FunctionDefinitionDB", "role": "the prototype", "value": "bool (PropertyList *this, uint32_t propertyID, Property **result)"},
+      {"path": "/Spore/App/PropertyList/HasProperty", "class": "FunctionDefinitionDB", "role": "sibling port signature", "value": "bool (PropertyList *this, uint32_t propertyID)"},
+      {"path": "/Spore/App/PropertyList/GetPropertyObject", "class": "FunctionDefinitionDB", "role": "sibling port signature", "value": "Property * (PropertyList *this, uint32_t propertyID)"},
+      {"path": "/Spore/App/DirectPropertyList", "length": 84, "role": "the derived list, read for context only; not this target's receiver"}
+    ],
+    "receiver_layout": [
+      {"offset": "0x00", "sdk_name": "_vftable0", "sdk_type": "PropertyList__vftable *", "meaning": "vtable pointer", "read_at": "not read by this body; the escalation reads the PARENT's vtable at 0x006a2582"},
+      {"offset": "0x04", "sdk_name": "mnRefCount", "sdk_type": "int", "meaning": "reference count", "read_at": "never read by this body"},
+      {"offset": "0x08", "sdk_name": "mNameKey", "sdk_type": "ResourceKey", "length": 12, "meaning": "name key", "read_at": "never read by this body"},
+      {"offset": "0x14", "sdk_name": "mpFinalReleaseCallback", "sdk_type": "cIReleaseCallback *", "meaning": "release callback", "read_at": "never read by this body"},
+      {"offset": "0x18", "sdk_name": "mProperties.mpBegin", "sdk_type": "pair<uint, App::Property> *", "meaning": "first element of the receiver's own property table", "read_at": "0x006a2537 MOV EDX,dword ptr [ESI + 0x18]"},
+      {"offset": "0x1c", "sdk_name": "mProperties.mpEnd", "sdk_type": "pair<uint, App::Property> *", "meaning": "one past the last element; also the end sentinel the hit test rejects", "read_at": "0x006a253b MOV EDI,dword ptr [ESI + 0x1c]"},
+      {"offset": "0x20", "sdk_name": "mProperties.mpCapacity", "sdk_type": "pair<uint, App::Property> *", "meaning": "capacity", "read_at": "never read by this body"},
+      {"offset": "0x24", "sdk_name": "mProperties.mAllocator", "sdk_type": "allocator", "meaning": "allocator", "read_at": "never read by this body"},
+      {"offset": "0x28", "sdk_name": "mProperties._garbage", "sdk_type": "int", "meaning": "unnamed in meaning; the SDK field name is _garbage", "read_at": "never read by this body"},
+      {"offset": "0x2c", "sdk_name": "mProperties.mValueCompare", "sdk_type": "int", "meaning": "the body reads the LOW BYTE of this word with MOVZX and pushes it as the helper's fourth, unread, argument", "read_at": "0x006a2533 MOVZX EAX,byte ptr [ESI + 0x2c]"},
+      {"offset": "0x30", "sdk_name": "mpParent", "sdk_type": "intrusive_ptr<App::PropertyList>", "meaning": "parent list, null-checked before escalation", "read_at": "0x006a2577 MOV ECX,dword ptr [ESI + 0x30]"},
+      {"offset": "0x34", "sdk_name": "mnOperationsDone", "sdk_type": "int", "meaning": "operation counter; sibling body 0x006a2f10 increments it, this body never touches it", "read_at": "never read nor written by this body"}
+    ],
+    "entry_layout": [
+      {"offset": "0x00", "sdk_name": "first", "sdk_type": "uint", "meaning": "the property id key", "evidence": "0x00612dde CMP dword ptr [ESI + EDX*0x8],EDI compares the pair's first dword against *propertyID"},
+      {"offset": "0x04", "sdk_name": "second", "sdk_type": "Property", "length": 4, "meaning": "the 4-byte property value; the body publishes its ADDRESS, never dereferences it", "evidence": "0x006a256b ADD EAX,0x4 then 0x006a256f stores EAX through the caller's out pointer"},
+      {"offset": "0x08", "sdk_name": "(unnamed)", "sdk_type": "undefined[16]", "length": 16, "meaning": "not named by the SDK and never touched by this body or by the helper"}
+    ],
+    "stride_evidence": "0x00612dde CMP dword ptr [ESI + EDX*0x8],EDI with 0x00612ddb LEA EDX,[EAX + EAX*0x2] gives an element displacement of 24*half, and 0x00612de6 LEA ESI,[EDX + 0x18] steps one whole element by 0x18. 0x18 is also the SDK length of pair<uint, App::Property>.",
+    "modelled_extent": {
+      "receiver_bytes": "0x38",
+      "basis": "the SDK length of /Spore/App/PropertyList, which attempt 1 had taken as a modelling choice consistent with a sibling sidecar; it is now a machine-derived fact",
+      "entry_bytes": "0x18",
+      "basis": "the SDK length of pair<uint, App::Property>, independently equal to the stride the two listings use",
+      "vtable_bytes": "0x4c",
+      "basis": "the SDK length of PropertyList__vftable, equal to the 19 dwords read from 0x01408820"
+    },
+    "validator_caveat": "the FIELDS/OFFSETS check corroborates a source field name only against the machine-derived receiver record in the evidence pack, and that record is {register: ECX, offsets: [24, 28, 44, 48], max_offset: 48, bounds_only: true, confidence: INFERRED, shape: R-ALIAS} -- a set of displacements that says nothing about which member is which. The names here are corroborated by a different machine source (the SDK structures in the live type database), not by that record, so the check is expected to keep warning that the field identity is uncorroborated. That warning is correct about the record and wrong about the names; both facts are stated here rather than one being suppressed."
+  },
+  "mechanics": {
+    "shape": "pure read; no receiver word is written and no counter is bumped, in contrast to sibling App::PropertyList::AddPropertiesFrom at 0x006a2f10 which INC dword ptr [EBP+0x34] -- the SDK names that word mnOperationsDone",
+    "lookup": "Read the element range at receiver+0x18 and receiver+0x1c, forward the low byte of the word at receiver+0x2c as a fourth argument, and call the shared lower_bound helper 0x00612db0 with mpBegin, mpEnd and &propertyID.",
+    "helper": "0x00612db0 is cdecl and ends in a bare RET (0x00612dfc). Its element count is the byte distance between the two range pointers divided by the 0x18 stride, computed with IMUL 0x2AAAAAAB / SAR 2 / SHR 0x1F. It then halves: probe at 24*(count>>1), and if that key is strictly below propertyID it advances one element and sets count = count-1-(count>>1), otherwise count = count>>1, looping while count > 0. It returns the first element whose key is >= propertyID, or mpEnd when every key sorts below the request. Verified instruction by instruction against the live 33-instruction listing in this attempt.",
+    "helper_arity_correction": "0x006a2530 pushes four dwords but 0x00612db0 reads only [ESP+0x08] (mpEnd), [ESP+0x04] (mpBegin, reached through the PUSH ESI at 0x00612db4) and [ESP+0x10] (&propertyID), and never [ESP+0x14]. The fourth push, the low byte of mProperties.mValueCompare, is therefore forwarded and ignored on this path.",
+    "hit_predicate": "found != mpEnd AND propertyID >= found->first, both tests unsigned. 0x006a2552 CMP EAX,EDI / JZ rejects the end sentinel; 0x006a2556 CMP EDX,dword ptr [EAX] followed by the 0x00612db0-style carry branch 0x006a2558 rejects a lower-bound result whose key sorts above the request. The third comparison emitted at 0x006a255a (LEA ECX,[EAX + 0x18] ; CMP EAX,ECX ; JNZ 0x006a2563) is a tautology: an element can never equal itself plus its own size, so the JNZ is always taken and its apparent 'same element' guard is semantically void. The Ghidra rendering of it, 'puVar3 == puVar3 + 6', is a decompiler artefact and carries no meaning.",
+    "hit_action": "*out = &found->second, i.e. the address entry+0x04; return true (AL=1). The four value bytes are NOT copied and the pointer is never dereferenced by this body.",
+    "miss_with_parent": "If mpParent is non-null, load the PARENT's vtable, call slot +0x24 with ECX = parent and (propertyID, out) on the stack, and return the parent's bool unchanged.",
+    "miss_without_parent": "Return false (EAX zeroed). The out pointer is never written on this path, so the caller must not read it unless the call returned true.",
+    "chain_semantics": "The vtable at 0x01408820 stores 0x006A2530 in its own +0x24 slot, which the SDK vtable type also names GetProperty. The escalation port and this function's own vtable slot are therefore the same offset, so a base PropertyList parent re-enters this exact body and the miss path is a walk up the parent chain: the first list in the chain that holds the key answers, and the chain root (mpParent == null) answers false.",
+    "no_cycle_guard": "No depth limit, visited set, or duplicate-receiver test appears in the 47 instructions, so a cyclic parent chain would recurse without bound. Whether any runtime configuration can build one is outside this body.",
+    "borrowed_pointer_lifetime": "Because the published pointer is &found->second, it aliases the receiver's own table storage. Any mutation of that list (SetProperty at +0x14, RemoveProperty at +0x18, Clear at +0x48) can invalidate it. This follows from the address arithmetic, not from any observed caller behaviour."
+  },
+  "direct_transfers": {
+    "calls": [
+      {
+        "callsite": "0x006a2546",
+        "target": "0x00612db0",
+        "kind": "direct-call",
+        "note": "the only named direct callee; cdecl, pops nothing"
+      },
+      {
+        "callsite": "0x006a2589",
+        "target": "vtable slot +0x24 of the object at receiver+0x30",
+        "kind": "indirect-call (CALL EDX)",
+        "note": "the only virtual dispatch in the body; result is propagated to the caller"
+      }
+    ],
+    "jumps": [],
+    "conditional_branches": [
+      {"address": "0x006a2554", "mnemonic": "JZ", "target": "0x006a2561", "inside_body": true, "meaning": "lower bound returned the end sentinel"},
+      {"address": "0x006a2558", "mnemonic": "JC", "opcode": "0x72", "target": "0x006a2561", "inside_body": true, "meaning": "unsigned propertyID < entry key", "note": "the one instruction the machine ABI parser records as UNPARSED; see unparsed_instruction_finding"},
+      {"address": "0x006a255f", "mnemonic": "JNZ", "target": "0x006a2563", "inside_body": true, "meaning": "always taken; the LEA/CMP pair is a tautology"},
+      {"address": "0x006a2565", "mnemonic": "JZ", "target": "0x006a2577", "inside_body": true, "meaning": "local miss, escalate"},
+      {"address": "0x006a257c", "mnemonic": "JZ", "target": "0x006a2590", "inside_body": true, "meaning": "no parent, answer false"}
+    ]
+  },
+  "call_graph": {
+    "direct_callers": [
+      {
+        "va": "0x006a28c0",
+        "name": "App::DirectPropertyList::GetProperty",
+        "callsite": "0x006a28e0",
+        "note": "already reconstructed at reconstruction/metadata/pkg-direct-property-wave6/006a28c0.json; that wrapper first tries its own fast path and otherwise calls this body"
+      }
+    ],
+    "direct_callees": ["0x00612db0"],
+    "shared_helper_observation": "sibling bodies 0x006a2470 (HasProperty) and 0x006a24d0 (GetPropertyObject) call the same 0x00612db0 with the same receiver+0x18/+0x1c/+0x2c operands; the SDK prototypes for those two ports (bool(this, uint32_t) and Property*(this, uint32_t)) agree with that reading, and the receiver offsets used here are a family-wide invariant rather than a per-body guess",
+    "self_reference": "0x01408820+0x24 holds 0x006A2530, so a same-type parent re-enters this body"
+  },
+  "vtable_evidence": {
+    "vtable": "0x01408820",
+    "read_method": "ghidra_read_memory, 76 bytes at 0x01408820 on SporeApp.exe, decoded little-endian; performed again in this attempt",
+    "slot_count_read": 19,
+    "sdk_type": "/Spore/App/PropertyList/PropertyList__vftable, 76 bytes, 19 named slots",
+    "agreement": "all 19 dwords read from 0x01408820 match the 19 SDK slot names of PropertyList__vftable in order, and the 13 of them that ghidra_list_class_members resolves by this_type `PropertyList *` land on exactly the slots the SDK gives them. Three independent machine sources therefore agree on this table.",
+    "slots": [
+      {"offset": "0x00", "value": "0x00432be0", "sdk_name": "AddRef"},
+      {"offset": "0x04", "value": "0x00432b50", "sdk_name": "Release"},
+      {"offset": "0x08", "value": "0x006a1c80", "sdk_name": "_virtual_dtor"},
+      {"offset": "0x0c", "value": "0x006abe20", "sdk_name": "Cast"},
+      {"offset": "0x10", "value": "0x00432940", "sdk_name": "GetReferenceCount"},
+      {"offset": "0x14", "value": "0x006a2e20", "sdk_name": "SetProperty", "note": "matches the this_type member App::PropertyList::SetProperty at 0x006a2e20"},
+      {"offset": "0x18", "value": "0x006a2ef0", "sdk_name": "RemoveProperty", "note": "matches App::PropertyList::RemoveProperty at 0x006a2ef0"},
+      {"offset": "0x1c", "value": "0x006a2470", "sdk_name": "HasProperty", "note": "matches App::PropertyList::HasProperty at 0x006a2470"},
+      {"offset": "0x20", "value": "0x006a1de0", "sdk_name": "GetPropertyAlt", "note": "matches App::PropertyList::GetPropertyAlt at 0x006a1de0"},
+      {"offset": "0x24", "value": "0x006a2530", "sdk_name": "GetProperty", "note": "THIS TARGET, and the offset the miss path dispatches through. Read directly: bytes at 0x01408844 are 30 25 6a 00 = 0x006A2530. The SDK vtable type names this slot GetProperty and types it bool(PropertyList*, uint32_t, Property**), which is the port shape the escalation uses."},
+      {"offset": "0x28", "value": "0x006a24d0", "sdk_name": "GetPropertyObject", "note": "matches App::PropertyList::GetPropertyObject at 0x006a24d0"},
+      {"offset": "0x2c", "value": "0x006a2a40", "sdk_name": "CopyFrom", "note": "matches App::PropertyList::CopyFrom at 0x006a2a40"},
+      {"offset": "0x30", "value": "0x006a2f10", "sdk_name": "AddPropertiesFrom", "note": "matches App::PropertyList::AddPropertiesFrom at 0x006a2f10"},
+      {"offset": "0x34", "value": "0x006a14d0", "sdk_name": "CopyAllPropertiesFrom", "note": "matches App::PropertyList::CopyAllPropertiesFrom at 0x006a14d0"},
+      {"offset": "0x38", "value": "0x006a1510", "sdk_name": "AddAllPropertiesFrom", "note": "matches App::PropertyList::AddAllPropertiesFrom at 0x006a1510"},
+      {"offset": "0x3c", "value": "0x006a2f60", "sdk_name": "Read", "note": "named by the SDK slot only; no SDK symbol was resolved for this address in this attempt"},
+      {"offset": "0x40", "value": "0x006a1540", "sdk_name": "Write", "note": "named by the SDK slot only; no SDK symbol was resolved for this address in this attempt"},
+      {"offset": "0x44", "value": "0x006a3070", "sdk_name": "GetPropertyIDs", "note": "matches App::PropertyList::GetPropertyIDs at 0x006a3070"},
+      {"offset": "0x48", "value": "0x006a2a80", "sdk_name": "Clear", "note": "matches App::PropertyList::Clear at 0x006a2a80"}
+    ],
+    "claim_limit": "only slot +0x24 is read by 0x006a2530. The other eighteen are recorded because the table read corroborates the SDK vtable type as a whole; no behaviour is claimed for any of them from this body.",
+    "dispatch_check_caveat": "the validator's VIRTUAL DISPATCH check can only PASS when the body has no indirect transfer at all, so a body that genuinely dispatches through +0x24 is reported WARN whatever the source says. The slot offset was reviewed as that check asks and is recorded above as a direct read of 0x01408844, not as a source-side assertion."
+  },
+  "observed_mechanics": [
+    "47-instruction body, 0x006a2530..0x006a2594, three RET 0x8 return sites, every branch target inside the span",
+    "receiver in ECX aliased to ESI at 0x006a2531; receiver read only at +0x18, +0x1c, +0x2c (low byte) and +0x30",
+    "the out pointer at entry_ESP+0x08 is written exactly once, at 0x006a256f, and only on the local-hit path",
+    "*out receives entry+0x04, the address of the pair's value half; the four value bytes are never copied out",
+    "the only named direct call is 0x006a2546 -> 0x00612db0; the only indirect transfer is 0x006a2589 CALL EDX through [parent_vtable+0x24]",
+    "0x00612db0 ends in a bare RET at 0x00612dfc, so it pops nothing and its four-argument call site is caller-cleaned",
+    "0x00612db0 never reads the fourth pushed dword, so the byte at receiver+0x2c has no effect on this path",
+    "element stride 0x18, equal to the SDK size of pair<uint, App::Property>; key compared at element+0x00",
+    "0x006a2558 is JC 0x006a2561, opcode 0x72 rel8 0x07: a well-formed carry branch that the machine ABI parser records as UNPARSED because its BRANCH_MNEM grammar omits the JC spelling",
+    "0x01408820+0x24 reads 0x006A2530, so a base-typed parent re-enters this body and the miss path is a parent-chain walk",
+    "Ghidra's own prototype for 0x006a2530 is bool (PropertyList *this, uint32_t propertyID, Property **result), with the calling-convention field still unknown",
+    "the machine ABI record's conventions.confidence is UNKNOWN with verdict ABI_UNKNOWN and an unresolved inferred_vs_persisted conflict; it is reported, not relabelled"
+  ],
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "persisted_prior": {
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__GetProperty.c",
+      "note": "SDK symbol-name export for this body, listed by the briefing as existing_reconstruction; it supplies the symbol name only, and the body was re-derived from the live bridge"
+    },
+    "listing_instruction_count": 47,
+    "bridge_calls_used": [
+      {"tool": "ghidra_decompile_function", "address": "0x006a2530", "observation": "returns bool; lower_bound through 0x00612db0 over receiver+0x18/+0x1c with the receiver+0x2c byte; on miss dispatches vtable slot +0x24 of receiver+0x30 and otherwise returns false"},
+      {"tool": "ghidra_disassemble_function", "address": "0x006a2530", "observation": "47 instructions; pins the two stack argument slots, the four field offsets, RET 0x8 at three sites, the tautological LEA/CMP/JNZ, the carry branch at 0x006a2558, the entry+0x04 address store, and the two-word parent port at +0x24"},
+      {"tool": "ghidra_disassemble_function", "address": "0x00612db0", "observation": "33 instructions; bare RET at 0x00612dfc so cdecl; reads [ESP+0x08], [ESP+0x04] and [ESP+0x10] only, proving the fourth pushed dword is ignored; proves the 0x18 stride and the halving lower_bound shape"},
+      {"tool": "ghidra_read_memory", "address": "0x006a2552", "length": 16, "observation": "3b c7 74 0b 3b 10 72 07 8d 48 18 3b c1 75 02 8b: the carry branch at 0x006a2558 is the two-byte 72 07 (rel8 0x07 -> 0x006a2561), so it is decodable and only the parser's grammar is missing the spelling"},
+      {"tool": "ghidra_read_memory", "address": "0x01408820", "length": 76, "observation": "19 dwords decoding to the slots recorded in vtable_evidence, with 0x006A2530 in slot +0x24"},
+      {"tool": "ghidra_list_class_members", "class_name": "PropertyList", "observation": "13 functions resolve by this_type `PropertyList *`, including this target; their addresses land on the SDK-named slots of the table read at 0x01408820. class_namespace_exists is false, so the tool reports a this_type match and no PropertyList class namespace."},
+      {"tool": "ghidra_run_script_inline", "observation": "walked DataTypeManager.getAllDataTypes() and dumped the components of /Spore/App/PropertyList, PropertyMap (resolved to /Spore/eastl/vector_map<unsigned int, App::Property>), pair<uint, App::Property>, Property, intrusive_ptr<App::PropertyList>, ResourceKey, DirectPropertyList and PropertyList__vftable, and read the argument lists of the GetProperty, GetPropertyObject, GetPropertyAlt, HasProperty and SetProperty function definitions. This is the provenance for every field name in layout_evidence."},
+      {"tool": "ghidra_decompile_function", "functions": "0x006a24d0,0x006a2470,0x006a28c0", "observation": "siblings share the identical lookup shape and the same parent-escalation idiom, differing only in which vtable slot they call (+0x28, +0x1c) and in the no-parent answer; 0x006a28c0 confirms this body is reached from the DirectPropertyList wrapper at 0x006a28e0"},
+      {"tool": "file read", "path": "reconstruction/evidence/006a2530/evidence.json", "observation": "categories.abi_derived.value: verdict ABI_UNKNOWN, conventions {calling_convention null, confidence UNKNOWN}, abstained_because (5 reasons), conflicts[] with the unresolved inferred_vs_persisted entry, observations[obs-0014] UNPARSED JC 0x006a2561 reason unknown_mnemonic, parse {declared_count 47, degraded true, unparsed 1}, receiver {register ECX, offsets [24,28,44,48], bounds_only true, confidence INFERRED, shape R-ALIAS}, dispatch {indirect_calls 1, call_offsets []}. Read to answer the four WARNs; nothing in it was edited."},
+      {"tool": "file read", "path": "reconstruction/knowledge/index.json", "observation": "records['0x006a2530'].abi is {} -- the index carries no ABI record for this VA, so the evidence pack's derived envelope is the only machine ABI source and it abstains"},
+      {"tool": "file read", "path": "tools/reconstruction_tooling/abi_infer.py", "observation": "read only, to explain the UNPARSED record: BRANCH_MNEM (line 253) lists JA JAE JB JBE JECXZ JE JG JGE JL JLE JNE JNO JNP JNS JNZ JO JP JPE JPO JRCXZ JS JZ LOOP LOOPE LOOPNE JMP and omits JC and JNC, and parse_insn() sets kind=unparsed with reason=unknown_mnemonic when the mnemonic is outside it. No file under tools/ was modified."}
+    ],
+    "decompilation_caveat": "the Ghidra output is evidence, not truth. It inverts the receiver and the stack arguments, renders the always-taken tautology as a real 'same element' guard, and hides that only AL is defined in the return value. The reconstruction follows the listing on all three points.",
+    "contradictions_touched": {
+      "conflict_id": "TD-DATA-003",
+      "relation": "this body is listed among that track's anchors but the track's open question is about three-word parent identity and write-side serialisation. This body reads a single parent pointer at +0x30 and writes nothing, so it neither confirms nor refutes the track. The SDK now names that word mpParent and types it intrusive_ptr<App::PropertyList>, a one-word handle, which is evidence against the track's three-word guess for THIS access path, but the track's own scope (the manager-side record) is not settled here and is left open."
+    }
+  },
+  "validation": {
+    "orchestrator_validate_run": false,
+    "orchestrator_validate_note": "not run by this worker, by instruction",
+    "compile_gate": {
+      "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -O1 property_list_get_property_006a2530.cpp property_list_get_property_006a2530_model_test.cpp -o /tmp/opencode/pkg15-getproperty",
+      "result": "clean"
+    },
+    "model_test": {
+      "command": "/tmp/opencode/pkg15-getproperty",
+      "result": "all checks passed",
+      "also_run_at": ["-O0 clang++", "-O2 clang++", "-O1 g++ without -Werror"],
+      "cases": [
+        "exact local hit publishes &table[1].second, the published pointer reads back as the stored Property value, and true is returned after exactly one helper call carrying the +0x18/+0x1c range, the requested id and the low byte of the +0x2c word",
+        "the published pointer is exactly entry+0x04 and aliases the receiver's own table storage rather than a copy",
+        "lower bound landing on a strictly greater key is rejected and escalates once, with the parent receiving the receiver from +0x30, the original id and the caller's own out pointer",
+        "id above every key returns mpEnd from the helper, which is rejected and escalates",
+        "null parent answers false, calls nothing, and leaves the out pointer untouched",
+        "empty table (begin == end, zero count) escalates without publishing anything of its own",
+        "lowest and highest keys both hit locally and never consult the parent",
+        "a decoy installed in the +0x28 slot is never dispatched to, so the escalation really is the +0x24 port",
+        "the receiver's 0x38 bytes are byte-identical before and after a hit, a key-above reject and an end-sentinel reject, so the body is a pure read"
+      ]
+    },
+    "self_checks": [
+      "every branch target lies inside the body span, so the CALLS adjudication cannot be confused by an intra-body jump",
+      "the modelled stride 0x18, value offset 0x04, receiver offsets 0x18/0x1c/0x2c/0x30, receiver extent 0x38 and vtable port 0x24 are all static_asserted against the SDK-derived header, so a layout slip fails the build",
+      "the source span states no hexadecimal constant outside the machine listing's own set, and no data-segment address, so CONSTANTS and GLOBALS are judged on the listing alone"
+    ],
+    "expected_verdict": "STATIC WARN is still the expected outcome and is not restated as a pass. ABI stays WARN because the machine record's conventions.confidence is UNKNOWN and lives in a generated record this worker may not edit. CONSTANTS stays WARN because parse.unparsed is 1 and the one unparsed line is a grammar gap in the parser, not a gap in the reconstruction. FIELDS/OFFSETS stays WARN because that check corroborates names only against the receiver's displacement bounds, while the names here come from the SDK structures; the offsets it does check are all inside those bounds. VIRTUAL DISPATCH stays WARN because its only PASS arm requires the body to contain no indirect transfer at all, and this body genuinely dispatches through vtable+0x24. Four PASSes (CALLS, GLOBALS, CONTROL FLOW, RETURN SEMANTICS) are unaffected by this attempt."
+  },
+  "provenance": {
+    "analogue_packages_read": [
+      {
+        "package": "wave6-resources",
+        "vas": ["0x006a2470", "0x006a24d0"],
+        "sidecars": ["reconstruction/metadata/wave6-resources/006a2470.json", "reconstruction/metadata/wave6-resources/006a24d0.json"],
+        "what_was_leaned_on": "the sidecar shape and the top-level source_files convention, plus the confirmation that +0x1c and +0x28 are the sibling parent ports. The layout, the helper shape and the arity correction were re-derived from the listings and the SDK types rather than copied.",
+        "not_touched": "no file under reconstruction/staging/wave6-resources or reconstruction/metadata/wave6-resources was modified"
+      },
+      {
+        "package": "PKG-DIRECT-PROPERTY-WAVE6",
+        "vas": ["0x006a28c0"],
+        "sidecars": ["reconstruction/metadata/pkg-direct-property-wave6/006a28c0.json"],
+        "what_was_leaned_on": "the caller relationship at 0x006a28e0 and the opaque-receiver style convention"
+      },
+      {
+        "package": "PKG-APP-PROLIST-WAVE13",
+        "vas": ["0x006a2f10"],
+        "sidecars": ["reconstruction/metadata/pkg-app-proplist-wave13/006a2f10.json"],
+        "what_was_leaned_on": "the sidecar field layout and the recording-stub model-test pattern; also the evidence that sibling list bodies do bump +0x34, which is what makes this body's silence there notable (the SDK names that word mnOperationsDone)"
+      }
+    ],
+    "files_written": [
+      "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.hpp",
+      "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530.cpp",
+      "reconstruction/staging/pkg-app-property-get-wave15/property_list_get_property_006a2530_model_test.cpp",
+      "reconstruction/metadata/pkg-app-property-get-wave15/006a2530.json"
+    ],
+    "not_touched": ["src/**", "tools/**", "reconstruction/evidence/**", "reconstruction/knowledge/**", "reconstruction/staging/wave6-resources/**", "reconstruction/metadata/wave6-resources/**", "reconstruction/metadata/pkg-direct-property-wave6/**", "reconstruction/metadata/pkg-app-proplist-wave13/**", "any manifest", "any other worker's package"]
+  },
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high for the projection, but the machine record's own confidence field is UNKNOWN and is left UNKNOWN",
+    "field_offsets_and_names": "high, machine-derived from the live SDK type database and independently re-derived from the two listings",
+    "hit_predicate": "high, including the carry branch at 0x006a2558 whose opcode was read directly",
+    "hit_action": "high; attempt 1's reading of this store was wrong and is corrected here",
+    "helper_arity_correction": "high",
+    "chain_semantics": "high",
+    "vtable_slot_identities": "high, 19 of 19 slots read and matched against the SDK vtable type",
+    "parent_subtype_identity": "low",
+    "runtime_behaviour": "low"
+  },
+  "unresolved_questions": [
+    "The machine ABI record cannot be promoted from worker level. Its conventions.confidence is UNKNOWN, its verdict is ABI_UNKNOWN, its conflicts[] still holds an unresolved inferred_vs_persisted entry, and it is generated by tools/reconstruction_tooling/abi_infer.py, which is out of bounds here. The three direct observations and the SDK prototype that support __thiscall are recorded, and the ABI check is expected to stay WARN.",
+    "Whether the receiver's third argument slot at entry_ESP+0x10, which the derived record reports as observed, is really absent. The listing resolves every [ESP+n] read to entry_ESP+0x04 or entry_ESP+0x08, so the record's slot appears to come from its unmodelled linear ESP walk; confirming that requires a change to the generator.",
+    "What the low byte of mProperties.mValueCompare is for. The SDK names the word mValueCompare, the body pushes its low byte as the helper's fourth argument, and 0x00612db0 never reads it, so this lookup mode has no effect on the binary search performed by this path. Whether another overload of the shared helper consumes it was not examined.",
+    "Which concrete types are installed as parents. The base PropertyList vtable points slot +0x24 back at this function, so a base parent recurses, but App::DirectPropertyList's vtable was not read and whether any subtype overrides +0x24 is unexamined.",
+    "Whether the receiver's elements are kept sorted. The binary search requires ascending first values, but nothing in this body maintains or verifies that, and no insert or sort body was analysed.",
+    "Whether any caller reads the upper 24 bits of EAX. Only AL is architecturally defined on the true path, the false path leaves a fully zeroed EAX, and the parent path forwards whatever the parent left, so a caller depending on more would be relying on an accident of this codegen.",
+    "Parent chain depth and cycle safety in real configurations. This body has no guard and no trace was captured.",
+    "The three-word parent identity raised by conflict TD-DATA-003: this body reads exactly one dword at +0x30, which the SDK types as a one-word intrusive_ptr, so this access path is not the three-word record the conflict describes, but the manager-side question is untouched here."
+  ],
+  "runtime_gate": {
+    "validated": 0,
+    "gates": [
+      "parent vtable+0x24 implementations across every concrete PropertyList subtype, including DirectPropertyList",
+      "property value lifetime after the pointer is published, given that it aliases the receiver's own table storage",
+      "the low byte of mProperties.mValueCompare, and whether any path consumes it",
+      "real parent chain depth and the ordering invariant on mProperties"
+    ],
+    "note": "no differential trace was run by this worker; the reconstruction is static-only and no semantic claim above is promoted to runtime-validated"
+  }
+}

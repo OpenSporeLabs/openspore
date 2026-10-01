@@ -2,9 +2,48 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `22ee9977ff270daee6138265af8582d01af558ae77bae0af48856e14188b7084`
+- Content SHA-256: `6b00b6875cc6e32505f1d8183a5147118484e9b4f951599079bb76f9da503f5d`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is copied to EDI at 0x005766e9 and is never read again; the two virtual calls take their receivers from EBX and ESI instead",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_observation": "0x0057670d: MOV EAX,EDI, where EDI was loaded from ECX at 0x005766e9. The single write is on the common tail, so all three exits (equal, completed, and either null path) return the same value.",
+  "return_register": "EAX",
+  "return_semantics": "the receiver, unchanged; this is a mutator that returns its own this, so the result is chainable",
+  "return_type": "RefHolder*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBX",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "frame_offset": "[ESP + 0x4] at entry",
+      "index": 1,
+      "meaning": "a pointer to a pointer. 0x005766e0 loads it and 0x005766e6 dereferences it, so the incoming refcounted pointer is read through two levels of indirection. Every inspected callsite passes the address of a separate dword rather than the value itself.",
+      "width": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "three paths, all merging at 0x0057670d: the early return at 0x005766ef, the fall-through after the Release, and the two JZ skips at 0x005766f3 and 0x00576702 which both target 0x0057670d"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -70,23 +109,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "0e16b47d3906cbefe29e10cf513e428607f5aa8f32ce5dbe88c546f259e60e66",
+  "content_sha256": "b233cb0986caa0ee323bcf015515f909fe6037290e67a807604a167402df8988",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -281,7 +320,7 @@
     },
     {
       "at": "0x005766e9",
-      "definit
+      "defi
 [TRUNCATED]
 ```
 
@@ -293,9 +332,59 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057c0e0"
+  },
+  {
+    "name": "editor_input_00588570",
+    "reconstructed": true,
+    "va": "0x00588570"
+  },
+  {
+    "name": "palette_safe_wave11_fill_node_array_005c7ff0",
+    "reconstructed": true,
+    "va": "0x005c7ff0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0064acd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00661d10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0069e090"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0069e260"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x007bf720"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c3a930"
+  }
+]
+```
 
 ## contradictions
 
@@ -305,13 +394,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint * __thiscall FUN_005766e0(int *param_1,int *param_2)\n\n{\n  int *piVar1;\n  \n  param_2 = (int *)*param_2;\n  piVar1 = (int *)*param_1;\n  if (param_2 != piVar1) {\n    if (param_2 != (int *)0x0) {\n      (**(code **)(*param_2 + 4))();\n    }\n    *param_1 = (int)param_2;\n    if (piVar1 != (int *)0x0) {\n      (**(code **)(*piVar1 + 8))();\n    }\n  }\n  return param_1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -443,9 +528,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 9841,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is copied to EDI at 0x005766e9 and is never read again; the two virtual calls take their receivers from EBX and ESI instead\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"0x0057670d: MOV EAX,EDI, where EDI was loaded from ECX at 0x005766e9. The single write is on the common tail, so all three exits (equal, completed, and either null path) return the same value.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the receiver, unchanged; this is a mutator that returns its own this, so the result is chainable\",\n    \"return_type\": \"RefHolder*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBX\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"frame_offset\": \"[ESP + 0x4] at entry\",\n        \"index\": 1,\n        \"meaning\": \"a pointer to a pointer. 0x005766e0 loads it and 0x005766e6 dereferences it, so the incoming refcounted pointer is read through two levels of indirection. Every inspected callsite passes the address of a separate dword rather than the value itself.\",\n        \"width\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"three paths, all merging at 0x0057670d: the early return at 0x005766ef, the fall-through after the Release, and the two JZ skips at 0x005766f3 and 0x00576702 which both target 0x0057670d\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\",\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-PALETTE-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"palette_safe_wave11_fill_node_array_005c7ff0\",\n      \"va\": \"0x005c7ff0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"editor_input_00588570\",\n      \"va\": \"0x00588570\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057c0e0\"\n      },\n      {\n        \"name\": \"editor_input_00588570\",\n        \"reconstructed\": true,\n        \"va\": \"0x00588570\"\n      },\n      {\n        \"name\": \"palette_safe_wave11_fill_node_array_005c7ff0\",\n        \"reconstructed\": true,\n        \"va\": \"0x005c7ff0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0064acd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00661d10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0069e090\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0069e260\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007bf720\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c3a930\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0057c160\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057c0e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00588ea8\",\n        \"direction\": \"in\",\n        \"other\": \"0x00588570\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005c8342\",\n        \"direction\": \"in\",\n        \"other\": \"0x005c7ff0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0064af7a\",\n        \"direction\": \"in\",\n        \"other\": \"0x0064acd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0064b39a\",\n        \"direction\": \"in\",\n        \"other\": \"0x0064acd0\",\n      
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -462,15 +554,15 @@
   "body_start": "005766e0",
   "callees": [],
   "callers": [
+    "FUN_00661d10",
+    "FUN_007bf720",
+    "FUN_0069e260",
+    "FUN_0057c0e0",
     "FUN_0069e090",
     "Editors::cEditor::OnMouseDown",
-    "FUN_007bf720",
-    "FUN_005c7ff0",
-    "FUN_00661d10",
     "FUN_00c3a930",
-    "FUN_0057c0e0",
     "FUN_0064acd0",
-    "FUN_0069e260"
+    "FUN_005c7ff0"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -481,24 +573,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "int *"
-    },
-    {
-      "name": "piVar1",
-      "storage": "unique:00017200:4",
-      "type": "int *"
-    }
-  ],
-  "locals_count": 3,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_005766e0",
   "namespace": null,
@@ -576,9 +652,22 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b02/005766e0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -588,9 +677,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime trace is required to confirm that the concrete AddRef and Release at slots +0x04 and +0x08 of the actual pointee classes are the 0x00432a50 / 0x00404f90 pair, since the vtable was not located statically.",
+    "A runtime trace is required to observe whether a self-assignment ever occurs in practice, which is the only way to confirm the guard is exercised rather than dead.",
+    "No original-process trace has ever been captured for 0x005766e0; every claim here is static. The original Cell stage has never been entered in any recorded run."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -600,15 +701,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "RefHolder*"
+]
+```
 
 ## vtables
 

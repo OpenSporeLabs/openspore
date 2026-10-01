@@ -1,7 +1,7 @@
 # Reconstruction context 0x004adb00
 
 - Status: `partial`
-- Content SHA-256: `97c836a0ece42b90349d03052fdd55a27efa14457093b2144fba092503ac113f`
+- Content SHA-256: `67658c5669aa8d85fc28e6a6697f1d1cd68d1f742c472ea316720c2a7c7cb8fc`
 
 ## 01_assignment
 
@@ -19,7 +19,7 @@
 
 ## 02_function_identity
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
@@ -34,16 +34,16 @@
 
 ## 03_current_status
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "blocked": null,
-  "reconstructed": null,
-  "runtime_gated": null,
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
-  "status": null
+  "status": "unresolved"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "2d3e699d8ed8beda745d1e2d9ab5fcba15f1de2e538b3e29c7f5128e049a6418",
-  "live_attempts": [],
+  "content_sha256": "a6d1c5055a608a9b2991cf2f5576ec2e0c28ec0e05557dca406d88c8a756a11b",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x004adb00 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,85 +71,355 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-float10 __fastcall FUN_004adb00(int param_1)
-
-{
-  return (float10)*(float *)(param_1 + 0x40);
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 7579,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"ST0\",\n    \"return_semantics\": \"float_or_x87_in_ST0\",\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"CORE_RESOLVED\",\n  \"conflicts\": [],\n  \"content_sha256\": \"3f24a92364b8a379eb8131a2a8ad50c893bd4ebdacc73a3168d327df37bc08e0\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": \"__thiscall\",\n    \"candidate_conventions\": [\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 0,\n    \"persisted\": \"no_information\",\n    \"persisted_calling_convention\": null\n  },\n  \"dispatch\": {\n    \"call_offsets\": [],\n    \"indirect_calls\": 0,\n    \"vtable_shaped_loads\": 0\n  },\n  \"inferences\": [\n    {
-[TRUNCATED]
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this_register": "ECX, spilled to [EBP-0x4] at 0x004adb04 and reloaded at 0x004adb07",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x004adb0a is FLD dword ptr [EAX+0x40], an 80-bit x87 load whose 32-bit single-precision source is promoted to extended precision; nothing is written to EAX, XMM0 or any general register after the load. Every inspected caller consumes the result with FSTP, either to memory (0x0043fda3, 0x005d37c7) or to [ESP+0xc] (0x005d37bc), which is only correct for an ST0 return. On x86-32 a float return therefore does NOT travel in XMM0 as it would under a different ABI, and Ghidra's float10 rendering is the accurate one.",
+  "return_register": "ST(0) of the x87 stack",
+  "return_semantics": "the 32-bit float stored at receiver+0x40, returned unchanged",
+  "return_type": "float",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single exit at 0x004adb10"
+}
 ```
 
 ## 07_callers_callees
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "callees": [],
-  "callers": [],
-  "edge_rows": [],
-  "external_callees": []
-}
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0043fc20"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00485b90"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00486910"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0048dcd0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0049a2a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005b9840"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005be500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005d36e0"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x0043fda9",
+      "direction": "in",
+      "other": "0x0043fc20",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00485bb0",
+      "direction": "in",
+      "other": "0x00485b90",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00485c8d",
+      "direction": "in",
+      "other": "0x00485b90",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x004869df",
+      "direction": "in",
+      "other": "0x00486910",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0048ddfe",
+      "direction": "in",
+      "other": "0x0048dcd0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0049ad2d",
+      "direction": "in",
+      "other": "0x0049a2a0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsi
+[TRUNCATED]
 ```
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "float"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
-  "runtime": {},
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "A differential test must confirm that the value is returned in ST0 and not in XMM0 in the shipping build. The static evidence for ST0 is strong - FLD with no FXCH and FSTP at every consumer - but it is static.",
+      "A trace with a concrete receiver is required before the owning class can be named, because no vtable could be located.",
+      "No original-process trace exists for this function. Static analysis cannot show the live value of the +0x40 float, so the SDK's documented -2.0 default is unverified for the shipping build."
+    ],
+    "validated": 0
+  },
   "semantic": {}
 }
 ```
 
 ## 10_dependencies
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0043fc20"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00485b90"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00486910"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0048dcd0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0049a2a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005b9840"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005be500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005d36e0"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x0043fda9",
+      "direction": "in",
+      "other": "0x0043fc20",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00485bb0",
+      "direction": "in",
+      "other": "0x00485b90",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00485c8d",
+      "direction": "in",
+      "other": "0x00485b90",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x004869df",
+      "direction": "in",
+      "other": "0x00486910",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0048ddfe",
+      "direction": "in",
+      "other": "0x0048dcd0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0049ad2d",
+      "direction": "in",
+      "o
+[TRUNCATED]
+```
 
 ## 11_related_functions
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_pair_004279d0",
+    "va": "0x004279d0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_scalar_00428060",
+    "va": "0x00428060"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_paint_commit_0043ac40",
+    "va": "0x0043ac40"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "model_parts_apply_properties_00447150",
+    "va": "0x00447150"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "pair_vector_insert_004786e0",
+    "va": "0x004786e0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_entry_expand_004ad6f0",
+    "va": "0x004ad6f0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 2,
+    "symbol": "Editors_EditorModel_SetColor_raw_004ae250",
+    "va": "0x004ae250"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "pair_vector_construct_004b62a0",
+    "va": "0x004b62a0"
+  }
+]
+```
 
 ## 12_existing_reconstruction
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b03/004adb00.json"
+  ]
+}
+```
 
 ## 13_semantic_hypotheses
 
@@ -156,28 +434,26 @@ float10 __fastcall FUN_004adb00(int param_1)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "A differential test must confirm that the value is returned in ST0 and not in XMM0 in the shipping build. The static evidence for ST0 is strong - FLD with no FXCH and FSTP at every consumer - but it is static.",
+    "A trace with a concrete receiver is required before the owning class can be named, because no vtable could be located.",
+    "Is +0x48 really a fourth float, i.e. mMinimumLeglessCreatureHeight? It is inferred from the type boundary at +0x4c and from the SDK ordering; no accessor for it was found in the disassembled range and no read or write of +0x48 was observed.",
+    "No original-process trace exists for this function. Static analysis cannot show the live value of the +0x40 float, so the SDK's documented -2.0 default is unverified for the shipping build.",
+    "What are the nine uninspected call sites doing with the value, and does the one at 0x005b49be belong to a function Ghidra could not attribute?",
+    "What the field at +0x40 is called. mMinHeight is the SDK candidate; the independent binary evidence is only that it is the middle of a three-float run read together.",
+    "Where is the getter for +0x3c (mFeetBounds) and the getter for +0x4e? Only setters were found in 0x004ada80..0x004adbe0, so the accessor family is incomplete and the field survey is bounded by the range that was disassembled.",
+    "Which class owns the receiver. Seven offsets match Spore/Editors/EditorModel.h exactly and no other examined SDK struct does, but no vtable was located and this binary has no RTTI, so the class is recor
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-dispatch-b03/004adb00.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -195,11 +471,6 @@ float10 __fastcall FUN_004adb00(int param_1)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -212,21 +483,28 @@ float10 __fastcall FUN_004adb00(int param_1)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-dispatch-b03/004adb00.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp",
+      "source_class": "committed_artifact"
     }
   ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+  "read_fi
+[TRUNCATED]
 ```

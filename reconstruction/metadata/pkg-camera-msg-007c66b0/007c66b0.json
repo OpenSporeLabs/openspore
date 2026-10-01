@@ -1,0 +1,191 @@
+{
+  "schema": "pkg-camera-msg-007c66b0.function-handoff.v1",
+  "package": "PKG-CAMERA-MSG-007C66B0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x007c66b0",
+  "address": "0x007c66b0",
+  "symbol": "App::cCameraManager::HandleMessage",
+  "normalized_symbol": "handle_message_007c66b0",
+  "subsystem": "App",
+  "cluster": "app-lifecycle",
+  "queue_id": "fun:007c66b0:App::cCameraManager::HandleMessage",
+  "target_state": "staging candidate; integrator review pending",
+  "phase": "live Ghidra body reconstruction and focused model verification",
+  "captured_on": "2026-09-26",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0.hpp",
+      "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0.cpp",
+      "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0_model_test.cpp"
+    ],
+    "metadata": "reconstruction/metadata/pkg-camera-msg-007c66b0/007c66b0.json"
+  },
+  "function_extent": {
+    "ghidra_entry": "0x007c66b0",
+    "ghidra_body_start": "0x007c66b0",
+    "ghidra_body_end_inclusive": "0x007c66f8",
+    "machine_body_end_inclusive": "0x007c66f8",
+    "return_sites": [
+      "0x007c66ee: MOV AL,0x1 / POP EDI / POP ESI / ADD ESP,0x8 / RET 0x4",
+      "0x007c66f8: XOR AL,AL / POP EDI / POP ESI / ADD ESP,0x8 / RET 0x4"
+    ],
+    "symbol_extent_note": "The SDK import places the entry at 0x007c66b0. The whole body is one 0x4a-byte block; both exits share the ADD ESP,0x8 / RET 0x4 epilogue, so the two stack slots pushed for the helper call are always released by the callee path."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": 2,
+    "ordinary_stack_arguments": [
+      "dword message id at [ESP+4] after entry; address taken at 0x007c66b7 LEA EAX,[ESP+0x14] and passed as the hash key",
+      "dword message payload at [ESP+8] after entry; never read by any instruction in 0x007c66b0..0x007c66f8"
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_form": "RET 0x4",
+    "return_type": "bool",
+    "return_type_rationale": "AL only: 0x007c66e8 MOV AL,0x1 on the dispatch path and 0x007c66f2 XOR AL,AL on the miss path. The upper three bytes of EAX are residual from the helper call and the indirect call, so the machine value is a byte-wide boolean, which matches the SDK label bool. RET 0x4 pops only the first dword, so a second declared argument is a caller-cleaned tail.",
+    "return_semantics": "true when the message id resolved in the receiver's registry at +0x60 and the payload was forwarded to virtual slot 0x54; false when the lookup returned the miss sentinel and nothing was dispatched",
+    "stack_frame": "SUB ESP,0x8 plus PUSH ESI plus PUSH EDI; the 8 bytes hold the { node, bucket } out pair at ESP+0x08 and the saved ESI/EDI; the helper at 0x00645ed0 pops its own two dwords",
+    "register_usage": "EDI = receiver copy; ESI = receiver + 0x60; EAX = lookup result node then the node payload; EDX/ECX = bucket count and bucket array then the vtable target"
+  },
+  "observed_calls": {
+    "direct": [
+      {
+        "callsite": "0x007c66c6",
+        "target": "0x00645ed0",
+        "form": "CALL rel32, direct",
+        "receiver": "ECX = this + 0x60",
+        "stack_arguments": [
+          "&{node, bucket} out pair at ESP+0x08",
+          "&message id at ESP+0x04"
+        ],
+        "callee_behaviour": "bucket = key % *(this+8); chain walk comparing node field +0x00 with the key; on a miss it stores buckets[bucket_count] into the out pair, which is the sentinel HandleMessage later tests against"
+      }
+    ],
+    "indirect": [
+      {
+        "callsite": "0x007c66e5",
+        "form": "CALL EDX after MOV EDX,[EDI] / MOV EDX,[EDX+0x54]",
+        "receiver": "ECX = this",
+        "stack_argument": "dword node field +0x04",
+        "resolved_target": "0x007c6420",
+        "resolution_note": "The receiver's first vptr, read at 0x007c66da, holds 0x014106a8 in instances built by the constructor 0x007c75e0 (which stores 0x014106a8 at this+0x00 and 0x014106a4 at this+0x04), and 0x014106a8 + 0x54 holds 0x007c6420. If the receiver were instead the sub-object whose vptr is 0x014106a4, the same byte offset would resolve to 0x007c6480, which searches the same registry for a node whose field +0x04 equals the argument and returns field +0x00 - a pure query whose result HandleMessage discards. The 0x007c6420 reading is the one consistent with the ctor-stored vptr and with the observable effect."
+      }
+    ],
+    "callee_0x007c6420_shape": "Index-bounded camera selection: rejects a negative index, rejects index >= (end_080 - begin_080) >> 2, calls the current entry's vtable slot at +0x1c, stores the new index into this+0xA8, calls 0x007c6200, then calls the new entry's vtable slot at +0x18. EAX on return is not defined, so the slot is modelled as returning void."
+  },
+  "observed_state_contract": {
+    "receiver_offsets": {
+      "dispatch_vptr": "+0x00 (value 0x014106a8 per constructor 0x007c75e0)",
+      "second_vptr": "+0x04 (value 0x014106a4 per constructor 0x007c75e0, unused by this body)",
+      "message_registry": "+0x60",
+      "message_buckets": "+0x64",
+      "message_bucket_count": "+0x68",
+      "camera_vector_begin": "+0x80",
+      "camera_vector_end": "+0x84",
+      "active_camera_index": "+0xA8 (constructor initialises it to 0xFFFFFFFF)"
+    },
+    "node_offsets": {
+      "id_000": "+0x00, the field the 0x00645ed0 lookup compares against the requested id and the field 0x007c6480 returns",
+      "payload_004": "+0x04, the field HandleMessage forwards to virtual slot 0x54",
+      "next_008": "+0x08, the chain link walked by the helper"
+    },
+    "miss_test": "returned node == buckets_[bucket_count_008], the element one past the last bucket; not a null test",
+    "state_mutation": "This body mutates nothing directly. On a hit the only state change is the side effect of virtual slot 0x54, which for 0x007c6420 writes this+0xA8 and drives the camera vector at +0x80.",
+    "constructor_context": "0x007c75e0 initialises the registry at +0x64/+0x68 to the static bucket array at 0x0154df28 with bucket count 1, the camera vector at +0x80/+0x84/+0x88 to zero, and +0xA8 to 0xFFFFFFFF. The destructor 0x007c74a0 releases the four container pairs (0x24,0x40), (0x44,0x48), (0x64,0x68) and (0x94,0x98) and restores the base vptrs 0x013eb394 / 0x013ef094."
+  },
+  "vtables": [
+    {
+      "address": "0x014106a4",
+      "entries_observed": 25,
+      "bound_entries": {
+        "+0x38": "0x007c66b0 App::cCameraManager::HandleMessage (this target)",
+        "+0x3c": "0x007c61a0 App::cCameraManager::SetViewer",
+        "+0x58": "0x007c6420 (index-bounded camera selection; the callee of this body under the ctor-stored vptr 0x014106a8 + 0x54)"
+      },
+      "note": "The table is 25 dwords and is followed by unrelated string data at 0x01410708. Its only referrers are the constructor 0x007c75e0 and the destructor 0x007c74a0, which store 0x014106a8 at this+0x00 and 0x014106a4 at this+0x04, so both values are live vptrs of this class and the byte-offset-0x54 slot depends on which sub-object the receiver is."
+    }
+  ],
+  "globals": [],
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "queries": [
+      {
+        "tool": "ghidra_decompile_function",
+        "address": "0x007c66b0",
+        "observation": "bool App__cCameraManager__HandleMessage(cCameraManager *this, uint32_t messageID, void *pMessage); compares the lookup result against the bucket-count sentinel, dispatches vtable byte 0x54 with node field +4, returns true/false."
+      },
+      {
+        "tool": "ghidra_disassemble_function",
+        "address": "0x007c66b0",
+        "observation": "32 instructions, 0x007c66b0..0x007c66f8; the only direct call is CALL 0x00645ed0 at 0x007c66c6; both exits are RET 0x4."
+      },
+      {
+        "tool": "ghidra_decompile_function",
+        "address": "0x00645ed0",
+        "observation": "void __thiscall FUN_00645ed0(int param_1, undefined4 *param_2, uint *param_3): bucket = *param_3 % *(this+8); chain walk comparing *param_3 with *node and advancing by node[2]; miss path stores buckets[bucket_count] into the out pair."
+      },
+      {
+        "tool": "ghidra_decompile_function",
+        "address": "0x007c75e0",
+        "observation": "Constructor: vptrs 0x014106a8 at +0x00 and 0x014106a4 at +0x04, registry buckets 0x0154df28 with count 1 at +0x64/+0x68, camera vector +0x80..+0x88 zeroed, +0xA8 = 0xFFFFFFFF."
+      },
+      {
+        "tool": "ghidra_decompile_function",
+        "address": "0x007c74a0",
+        "observation": "Destructor: restores the same vptr pair, then frees the container pairs and the camera range, finally writing the base vptrs 0x013eb394 and 0x013ef094."
+      },
+      {
+        "tool": "ghidra_run_script_inline",
+        "address": "0x014106a4",
+        "observation": "Reference scan plus a 64-dword dump of 0x01410640..0x01410740: 0x014106a4 is referenced only from 0x007c74c4 and 0x007c760a, holds 25 code pointers, and is followed by string data at 0x01410708."
+      },
+      {
+        "tool": "ghidra_disassemble_bytes",
+        "address": "0x007c6420",
+        "observation": "Index-bounded selection against the camera vector at +0x80/+0x84 with the active index at +0xA8; RET 0x4; preceded by INT3 padding at 0x007c647d..0x007c647f, so it is a real function entry."
+      },
+      {
+        "tool": "ghidra_disassemble_bytes",
+        "address": "0x007c6480",
+        "observation": "Full-bucket scan of the registry at +0x64/+0x68 that compares node field +0x04 with the argument and returns node field +0x00; same sentinel test; RET 0x4. This is the body the pkg-camera-wave7 sidecar already records for the SDK entry 0x007c64c0."
+      },
+      {
+        "tool": "ghidra_list_class_members",
+        "address": "cCameraManager",
+        "observation": "Five members carry this_type cCameraManager *: 0x007c61a0 SetViewer, 0x007c64c0 SetActiveCamera, 0x007c66b0 HandleMessage, 0x007c6750 SetActiveCameraByID, 0x007c6e50 Dispose."
+      }
+    ]
+  },
+  "implementation": {
+    "entry_function": "handle_message_007c66b0",
+    "source": "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0.cpp",
+    "header": "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0.hpp",
+    "model_test": "reconstruction/staging/pkg-camera-msg-007c66b0/camera_msg_007c66b0_model_test.cpp",
+    "native_ports": "one port, registry_lookup_00645ed0, standing in for the out-of-line chained hash lookup; the virtual dispatch stays a vtable slot so no absolute address is baked into the model",
+    "validation": {
+      "focused_model_test": "passed (g++ -m32 -std=c++17 -Wall -Wextra, exit 0, 6 scenarios)",
+      "x86_32_syntax": "passed",
+      "format": "not run",
+      "json": "parsed"
+    },
+    "runtime_gate": "No Wine/original trace was run for this target; no runtime promotion is claimed.",
+    "status": "staged"
+  },
+  "analogue_alignment": {
+    "pkg-camera-wave7/007c64c0.json": "Same receiver, same registry subobject and same sentinel rule. That sidecar names node field +0x00 as value and +0x04 as key because the function it reconstructs searches on +0x04; the 0x00645ed0 helper this body calls instead hashes and compares +0x00, so this package calls +0x00 id_000 and +0x04 payload_004. The machine offsets agree; only the labels differ.",
+    "pkg-camera-wave7/007c6e50.json": "Dispose releases the same registry pair, confirming the +0x64 bucket array and +0x68 bucket count ownership."
+  },
+  "unresolved_questions": [
+    "Is the receiver's dispatch vptr 0x014106a8 (ctor field +0x00) or 0x014106a4 (ctor field +0x04)? The byte offset 0x54 resolves to 0x007c6420 under the first and to 0x007c6480 under the second. No call site of HandleMessage was found to disambiguate, and the SDK label for 0x007c6420 is unknown.",
+    "Is virtual slot 0x54 named SetActiveCameraByIndex, SetActiveView or something else in the SDK? 0x007c6420 is only an unnamed vtable entry; the name is not guessed here.",
+    "What populates the registry at +0x60, i.e. which message ids map to which camera slots? No inserter for this map was located from this target.",
+    "Does any caller pass a second message argument? The body never reads [ESP+8] and RET 0x4 pops one dword, so a second declared argument is possible but unconfirmed.",
+    "Ghidra's function boundaries in this neighbourhood are unreliable: the SDK entry 0x007c64c0 sits inside the flow that starts at 0x007c6480, so slot identities that depend on Ghidra function extents (0x007c64c0 SetActiveCamera, 0x007c6e50 Dispose) are taken from the live listing rather than from Ghidra's function records."
+  ]
+}

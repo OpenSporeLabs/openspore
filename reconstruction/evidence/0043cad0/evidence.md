@@ -2,9 +2,39 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `b6b5fe0f92651c8fe49044a7afb48c6566fbaceef7670faacc285c27d750293d`
+- Content SHA-256: `c92c1faf73be2d596755115b2ead908cacf4f7a1d945776b080db6689418dab9`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is spilled once at 0x0043cad6 and every later access goes through [EBP-0x68]",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "no FLD, no MOV to EAX as a result and no value is propagated out; the decompiler also gives the function a void return",
+  "return_register": null,
+  "return_semantics": "no value; EAX is never written on any path except as scratch inside the callee-setup sequences",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single RET at 0x0043cdf5, reached from the fallthrough of the marker block"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -29,9 +59,7 @@
     "stack_cleanup_owner": "caller",
     "termination": "RET"
   },
-  "abstained_because": [
-    "unparsed_lines_present: 3 line(s) matched no grammar rule"
-  ],
+  "abstained_because": [],
   "cleanup": {
     "bytes": 0,
     "confidence": "INFERRED",
@@ -41,7 +69,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "1750455a423b17046210a3dc9325cde67e1aa99a16be32ef0143ecf43dd501f6",
+  "content_sha256": "c8fc3d2def3e038cf7ecc826b3bfa6843ddd8f92011393cacfa1ce43177ede7f",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -58,7 +86,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall (receiver in ECX), no stack arguments"
   },
   "dispatch": {
     "call_offsets": [],
@@ -68,7 +96,7 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0130"
+        "obs-0127"
       ],
       "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
       "confidence": "INFERRED",
@@ -86,35 +114,35 @@
         "obs-0014",
         "obs-0019",
         "obs-0024",
-        "obs-0028",
-        "obs-0032",
-        "obs-0038",
-        "obs-0042",
+        "obs-0027",
+        "obs-0031",
+        "obs-0037",
+        "obs-0041",
+        "obs-0047",
         "obs-0048",
-        "obs-0049",
-        "obs-0052",
-        "obs-0054",
-        "obs-0058",
-        "obs-0062",
+        "obs-0051",
+        "obs-0053",
+        "obs-0057",
+        "obs-0061",
+        "obs-0063",
         "obs-0064",
-        "obs-0065",
+        "obs-0067",
         "obs-0068",
-        "obs-0069",
-        "obs-0074",
-        "obs-0078",
-        "obs-0082",
+        "obs-0072",
+        "obs-0076",
+        "obs-0080",
+        "obs-0087",
         "obs-0090",
-        "obs-0093",
+        "obs-0097",
         "obs-0100",
-        "obs-0103",
-        "obs-0104",
-        "obs-0109",
+        "obs-0101",
+        "obs-0106",
+        "obs-0108",
         "obs-0111",
-        "obs-0114",
-        "obs-0116",
-        "obs-0118",
-        "obs-0122",
-        "obs-0124"
+        "obs-0113",
+        "obs-0115",
+        "obs-0119",
+        "obs-0121"
       ],
       "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
       "confidence": "INFERRED",
@@ -137,36 +165,36 @@
         "obs-0014",
         "obs-0019",
         "obs-0024",
-        "obs-0028",
-        "obs-0032",
-        "obs-0038",
-        "obs-0042",
+        "obs-0027",
+        "obs-0031",
+        "obs-0037",
+        "obs-0041",
+        "obs-0047",
         "obs-0048",
-        "obs-0049",
-        "obs-0052",
-        "obs-0054",
-        "obs-0058",
-        "obs-0062",
+        "obs-0051",
+        "obs-0053",
+        "obs-0057",
+        "obs-0061",
+        "obs-0063",
         "obs-0064",
-        "obs-0065",
+        "obs-0067",
         "obs-0068",
-        "obs-0069",
-        "obs-0074",
-        "obs-0078",
-        "obs-0082",
+        "obs-0072",
+        "obs-0076",
+        "obs-0080",
+        "obs-0087",
         "obs-0090",
-        "obs-0093",
+        "obs-0097",
         "obs-0100",
-        "obs-0103",
-        "obs-0104",
-        "obs-0109",
+        "obs-0101",
+        "obs-0106",
+        "obs-0108",
         "obs-0111",
-        "obs-0114",
-        "obs-0116",
-        "obs-0118",
-        "obs-0122",
-        "obs-0124",
-        "obs-0130"
+        "obs-0113",
+        "obs-0115",
+        "obs-0119",
+        "obs-0121",
+        "obs-0127"
       ],
       "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
       "confidence": "INFERRED",
@@ -175,7 +203,7 @@
     },
     {
       "based_on": [
-        "obs-0130"
+        "obs-0127"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -186,7 +214,7 @@
     },
     {
       "based_on": [
-        "obs-0130"
+        "obs-0127"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -195,7 +223,7 @@
     },
     {
       "based_on": [
-        "obs-0130"
+        "obs-0127"
       ],
       "claim": "the last value written to EAX classifies as aggregate_unknown",
       "confidence": "INFERRED",
@@ -333,21 +361,62 @@
       "id": "obs-0042"
     },
     {
-    
+      "id": "obs-0043"
+  
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a88d0"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0043a9e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00573780"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005757b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057e790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b4fa0"
+  }
+]
+```
 
 ## contradictions
 
@@ -357,13 +426,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Removing unreachable block (ram,0x0043cc91) */\n/* WARNING: Removing unreachable block (ram,0x0043cb5e) */\n/* WARNING: Removing unreachable block (ram,0x0043cd02) */\n\nvoid __fastcall FUN_0043cad0(int param_1)\n\n{\n  int iVar1;\n  int iVar2;\n  bool bVar3;\n  int local_78;\n  int local_1c;\n  int local_c;\n  char local_6;\n  char local_5;\n  \n  local_6 = '\\0';\n  local_5 = '\\0';\n  if (*(int *)(param_1 + 0x28) != 0) {\n    local_6 = FUN_004adb80();\n    local_5 = FUN_004adbc0();\n  }\n  bVar3 = false;\n  if (local_6 == '\\0') {\n    FUN_0043ce40();\n  }\n  if ((*(uint *)(param_1 + 0xdc8) & 0x2000000) == 0) {\n    for (local_c = 0; local_c < 3; local_c = local_c + 1) {\n      if ((*(int *)(param_1 + 0x154 + local_c * 4) != 0) &&\n         ((*(char *)(*(int *)(param_1 + 0x154 + local_c * 4) + 0x92) == '\\0' || (local_6 != '\\0'))))\n      {\n        (**(code **)(**(int **)(param_1 + 0x154 + local_c * 4) + 0x30))(3,1);\n        bVar3 = true;\n      }\n    }\n    if ((*(int *)(param_1 + 0x160) != 0) &&\n       ((*(char *)(*(int *)(param_1 + 0x160) + 0x5d) == '\\0' || (local_6 != '\\0')))) {\n      (**(code **)(**(int **)(param_1 + 0x160) + 0x30))(3,1);\n      bVar3 = true;\n    }\n  }\n  if ((*(uint *)(param_1 + 0xdc8) & 0x1000000) == 0) {\n    if (((*(uint *)(param_1 + 0xdc8) & 0x800) == 0) || (local_5 != '\\0')) {\n      local_78 = -1;\n    }\n    else {\n      local_78 = *(int *)(param_1 + 0x1b0);\n    }\n    local_1c = 0;\n    iVar1 = *(int *)(param_1 + 0x6d0);\n    iVar2 = *(int *)(param_1 + 0x6cc);\n    for (; local_1c < iVar1 - iVar2 >> 2; local_1c = local_1c + 1) {\n      if ((local_1c != local_78) &&\n         ((*(char *)(*(int *)(*(int *)(param_1 + 0x6cc) + local_1c * 4) + 0x1d4) == '\\0' ||\n          (local_6 != '\\0')))) {\n        (**(code **)(**(int **)(*(int *)(param_1 + 0x6cc) + local_1c * 4) + 0x30))(3,1);\n        bVar3 = true;\n      }\n    }\n  }\n  if (bVar3) {\n    FUN_004a88d0(0xd0a55625);\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -373,8 +438,279 @@
 
 ```json
 {
-  "original_bytes": 22151,
-  "preview": "{\n  \"count\": 251,\n  \"instructions\": [\n    {\n      \"address\": \"0043cad0\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"0043cad1\",\n      \"instruction\": \"MOV EBP,ESP\"\n    },\n    {\n      \"address\": \"0043cad3\",\n      \"instruction\": \"SUB ESP,0x78\"\n    },\n    {\n      \"address\": \"0043cad6\",\n      \"instruction\": \"MOV dword ptr [EBP + -0x68],ECX\"\n    },\n    {\n      \"address\": \"0043cad9\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x2],0x0\"\n    },\n    {\n      \"address\": \"0043cadd\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x1],0x0\"\n    },\n    {\n      \"address\": \"0043cae1\",\n      \"instruction\": \"MOV EAX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043cae4\",\n      \"instruction\": \"CMP dword ptr [EAX + 0x28],0x0\"\n    },\n    {\n      \"address\": \"0043cae8\",\n      \"instruction\": \"JZ 0x0043cb06\"\n    },\n    {\n      \"address\": \"0043caea\",\n      \"instruction\": \"MOV ECX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043caed\",\n      \"instruction\": \"MOV ECX,dword ptr [ECX + 0x28]\"\n    },\n    {\n      \"address\": \"0043caf0\",\n      \"instruction\": \"CALL 0x004adb80\"\n    },\n    {\n      \"address\": \"0043caf5\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x2],AL\"\n    },\n    {\n      \"address\": \"0043caf8\",\n      \"instruction\": \"MOV EDX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043cafb\",\n      \"instruction\": \"MOV ECX,dword ptr [EDX + 0x28]\"\n    },\n    {\n      \"address\": \"0043cafe\",\n      \"instruction\": \"CALL 0x004adbc0\"\n    },\n    {\n      \"address\": \"0043cb03\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x1],AL\"\n    },\n    {\n      \"address\": \"0043cb06\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x3],0x0\"\n    },\n    {\n      \"address\": \"0043cb0a\",\n      \"instruction\": \"MOVZX EAX,byte ptr [EBP + -0x2]\"\n    },\n    {\n      \"address\": \"0043cb0e\",\n      \"instruction\": \"TEST EAX,EAX\"\n    },\n    {\n      \"address\": \"0043cb10\",\n      \"instruction\": \"JNZ 0x0043cb1a\"\n    },\n    {\n      \"address\": \"0043cb12\",\n      \"instruction\": \"MOV ECX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043cb15\",\n      \"instruction\": \"CALL 0x0043ce40\"\n    },\n    {\n      \"address\": \"0043cb1a\",\n      \"instruction\": \"MOV ECX,0x19\"\n    },\n    {\n      \"address\": \"0043cb1f\",\n      \"instruction\": \"CMP ECX,0x3c\"\n    },\n    {\n      \"address\": \"0043cb22\",\n      \"instruction\": \"JNC 0x0043cb5e\"\n    },\n    {\n      \"address\": \"0043cb24\",\n      \"instruction\": \"MOV EDX,0x19\"\n    },\n    {\n      \"address\": \"0043cb29\",\n      \"instruction\": \"SHR EDX,0x5\"\n    },\n    {\n      \"address\": \"0043cb2c\",\n      \"instruction\": \"MOV EAX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043cb2f\",\n      \"instruction\": \"MOV ECX,dword ptr [EAX + EDX*0x4 + 0xdc8]\"\n    },\n    {\n      \"address\": \"0043cb36\",\n      \"instruction\": \"MOV dword ptr [EBP + -0x1c],ECX\"\n    },\n    {\n      \"address\": \"0043cb39\",\n      \"instruction\": \"MOV EAX,0x19\"\n    },\n    {\n      \"address\": \"0043cb3e\",\n      \"instruction\": \"XOR EDX,EDX\"\n    },\n    {\n      \"address\": \"0043cb40\",\n      \"instruction\": \"MOV ECX,0x20\"\n    },\n    {\n      \"address\": \"0043cb45\",\n      \"instruction\": \"DIV ECX\"\n    },\n    {\n      \"address\": \"0043cb47\",\n      \"instruction\": \"MOV EAX,0x1\"\n    },\n    {\n      \"address\": \"0043cb4c\",\n      \"instruction\": \"MOV ECX,EDX\"\n    },\n    {\n      \"address\": \"0043cb4e\",\n      \"instruction\": \"SHL EAX,CL\"\n    },\n    {\n      \"address\": \"0043cb50\",\n      \"instruction\": \"AND EAX,dword ptr [EBP + -0x1c]\"\n    },\n    {\n      \"address\": \"0043cb53\",\n      \"instruction\": \"NEG EAX\"\n    },\n    {\n      \"address\": \"0043cb55\",\n      \"instruction\": \"SBB EAX,EAX\"\n    },\n    {\n      \"address\": \"0043cb57\",\n      \"instruction\": \"NEG EAX\"\n    },\n    {\n      \"address\": \"0043cb59\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x1d],AL\"\n    },\n    {\n      \"address\": \"0043cb5c\",\n      \"instruction\": \"JMP 0x0043cb62\"\n    },\n    {\n      \"address\": \"0043cb5e\",\n      \"instruction\": \"MOV byte ptr [EBP + -0x1d],0x0\"\n    },\n    {\n      \"address\": \"0043cb62\",\n      \"instruction\": \"MOVZX ECX,byte ptr [EBP + -0x1d]\"\n    },\n    {\n      \"address\": \"0043cb66\",\n      \"instruction\": \"TEST ECX,ECX\"\n    },\n    {\n      \"address\": \"0043cb68\",\n      \"instruction\": \"JNZ 0x0043cc4d\"\n    },\n    {\n      \"address\": \"0043cb6e\",\n      \"instruction\": \"MOV dword ptr [EBP + -0x8],0x0\"\n    },\n    {\n      \"address\": \"0043cb75\",\n      \"instruction\": \"JMP 0x0043cb80\"\n    },\n    {\n      \"address\": \"0043cb77\",\n      \"instruction\": \"MOV EDX,dword ptr [EBP + -0x8]\"\n    },\n    {\n      \"address\": \"0043cb7a\",\n      \"instruction\": \"ADD EDX,0x1\"\n    },\n    {\n      \"address\": \"0043cb7d\",\n      \"instruction\": \"MOV dword ptr [EBP + -0x8],EDX\"\n    },\n    {\n      \"address\": \"0043cb80\",\n      \"instruction\": \"CMP dword ptr [EBP + -0x8],0x3\"\n    },\n    {\n      \"address\": \"0043cb84\",\n      \"instruction\": \"JGE 0x0043cbf5\"\n    },\n    {\n      \"address\": \"0043cb86\",\n      \"instruction\": \"MOV EAX,dword ptr [EBP + -0x8]\"\n    },\n    {\n      \"address\": \"0043cb89\",\n      \"instruction\": \"MOV ECX,dword ptr [EBP + -0x68]\"\n    },\n    {\n      \"address\": \"0043cb8c\",\n      \"instruction\": \"MOV EDX,dword ptr [ECX + EAX*0x4 + 0x154]\"\n    },\n    {\n      \"address\": \"0043cb93\",\n      \"instruction\": \"MOV dword ptr [EBP + -0x24],EDX\"\n    },\n    {\n      \"address\": \"0043cb96\",\n      \"instructio
+  "count": 251,
+  "instructions": [
+    {
+      "address": "0043cad0",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "0043cad1",
+      "instruction": "MOV EBP,ESP"
+    },
+    {
+      "address": "0043cad3",
+      "instruction": "SUB ESP,0x78"
+    },
+    {
+      "address": "0043cad6",
+      "instruction": "MOV dword ptr [EBP + -0x68],ECX"
+    },
+    {
+      "address": "0043cad9",
+      "instruction": "MOV byte ptr [EBP + -0x2],0x0"
+    },
+    {
+      "address": "0043cadd",
+      "instruction": "MOV byte ptr [EBP + -0x1],0x0"
+    },
+    {
+      "address": "0043cae1",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cae4",
+      "instruction": "CMP dword ptr [EAX + 0x28],0x0"
+    },
+    {
+      "address": "0043cae8",
+      "instruction": "JZ 0x0043cb06"
+    },
+    {
+      "address": "0043caea",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043caed",
+      "instruction": "MOV ECX,dword ptr [ECX + 0x28]"
+    },
+    {
+      "address": "0043caf0",
+      "instruction": "CALL 0x004adb80"
+    },
+    {
+      "address": "0043caf5",
+      "instruction": "MOV byte ptr [EBP + -0x2],AL"
+    },
+    {
+      "address": "0043caf8",
+      "instruction": "MOV EDX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cafb",
+      "instruction": "MOV ECX,dword ptr [EDX + 0x28]"
+    },
+    {
+      "address": "0043cafe",
+      "instruction": "CALL 0x004adbc0"
+    },
+    {
+      "address": "0043cb03",
+      "instruction": "MOV byte ptr [EBP + -0x1],AL"
+    },
+    {
+      "address": "0043cb06",
+      "instruction": "MOV byte ptr [EBP + -0x3],0x0"
+    },
+    {
+      "address": "0043cb0a",
+      "instruction": "MOVZX EAX,byte ptr [EBP + -0x2]"
+    },
+    {
+      "address": "0043cb0e",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "0043cb10",
+      "instruction": "JNZ 0x0043cb1a"
+    },
+    {
+      "address": "0043cb12",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cb15",
+      "instruction": "CALL 0x0043ce40"
+    },
+    {
+      "address": "0043cb1a",
+      "instruction": "MOV ECX,0x19"
+    },
+    {
+      "address": "0043cb1f",
+      "instruction": "CMP ECX,0x3c"
+    },
+    {
+      "address": "0043cb22",
+      "instruction": "JNC 0x0043cb5e"
+    },
+    {
+      "address": "0043cb24",
+      "instruction": "MOV EDX,0x19"
+    },
+    {
+      "address": "0043cb29",
+      "instruction": "SHR EDX,0x5"
+    },
+    {
+      "address": "0043cb2c",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cb2f",
+      "instruction": "MOV ECX,dword ptr [EAX + EDX*0x4 + 0xdc8]"
+    },
+    {
+      "address": "0043cb36",
+      "instruction": "MOV dword ptr [EBP + -0x1c],ECX"
+    },
+    {
+      "address": "0043cb39",
+      "instruction": "MOV EAX,0x19"
+    },
+    {
+      "address": "0043cb3e",
+      "instruction": "XOR EDX,EDX"
+    },
+    {
+      "address": "0043cb40",
+      "instruction": "MOV ECX,0x20"
+    },
+    {
+      "address": "0043cb45",
+      "instruction": "DIV ECX"
+    },
+    {
+      "address": "0043cb47",
+      "instruction": "MOV EAX,0x1"
+    },
+    {
+      "address": "0043cb4c",
+      "instruction": "MOV ECX,EDX"
+    },
+    {
+      "address": "0043cb4e",
+      "instruction": "SHL EAX,CL"
+    },
+    {
+      "address": "0043cb50",
+      "instruction": "AND EAX,dword ptr [EBP + -0x1c]"
+    },
+    {
+      "address": "0043cb53",
+      "instruction": "NEG EAX"
+    },
+    {
+      "address": "0043cb55",
+      "instruction": "SBB EAX,EAX"
+    },
+    {
+      "address": "0043cb57",
+      "instruction": "NEG EAX"
+    },
+    {
+      "address": "0043cb59",
+      "instruction": "MOV byte ptr [EBP + -0x1d],AL"
+    },
+    {
+      "address": "0043cb5c",
+      "instruction": "JMP 0x0043cb62"
+    },
+    {
+      "address": "0043cb5e",
+      "instruction": "MOV byte ptr [EBP + -0x1d],0x0"
+    },
+    {
+      "address": "0043cb62",
+      "instruction": "MOVZX ECX,byte ptr [EBP + -0x1d]"
+    },
+    {
+      "address": "0043cb66",
+      "instruction": "TEST ECX,ECX"
+    },
+    {
+      "address": "0043cb68",
+      "instruction": "JNZ 0x0043cc4d"
+    },
+    {
+      "address": "0043cb6e",
+      "instruction": "MOV dword ptr [EBP + -0x8],0x0"
+    },
+    {
+      "address": "0043cb75",
+      "instruction": "JMP 0x0043cb80"
+    },
+    {
+      "address": "0043cb77",
+      "instruction": "MOV EDX,dword ptr [EBP + -0x8]"
+    },
+    {
+      "address": "0043cb7a",
+      "instruction": "ADD EDX,0x1"
+    },
+    {
+      "address": "0043cb7d",
+      "instruction": "MOV dword ptr [EBP + -0x8],EDX"
+    },
+    {
+      "address": "0043cb80",
+      "instruction": "CMP dword ptr [EBP + -0x8],0x3"
+    },
+    {
+      "address": "0043cb84",
+      "instruction": "JGE 0x0043cbf5"
+    },
+    {
+      "address": "0043cb86",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x8]"
+    },
+    {
+      "address": "0043cb89",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cb8c",
+      "instruction": "MOV EDX,dword ptr [ECX + EAX*0x4 + 0x154]"
+    },
+    {
+      "address": "0043cb93",
+      "instruction": "MOV dword ptr [EBP + -0x24],EDX"
+    },
+    {
+      "address": "0043cb96",
+      "instruction": "CMP dword ptr [EBP + -0x24],0x0"
+    },
+    {
+      "address": "0043cb9a",
+      "instruction": "JZ 0x0043cbf3"
+    },
+    {
+      "address": "0043cb9c",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x8]"
+    },
+    {
+      "address": "0043cb9f",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x68]"
+    },
+    {
+      "address": "0043cba2",
+      "instruction": "MOV EDX,dword ptr [ECX + EAX*0x4 + 0x154]"
+    },
+    {
+      "address": "0043cba9",
+      "instruction": "MOV dword ptr [EBP + -0x28],EDX"
+    },
+    {
+      "address": "0043cbac",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x28]"
+    },
+    {
+      "address": "0043cbaf",
+      "instruction": "MOV CL,byte ptr [EAX + 0x92]"
+    },
+    {
+      "address": "0043cbb5",
+      "instruction
 [TRUNCATED]
 ```
 
@@ -386,9 +722,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 7214,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall (receiver in ECX), no stack arguments\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is spilled once at 0x0043cad6 and every later access goes through [EBP-0x68]\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"no FLD, no MOV to EAX as a result and no value is propagated out; the decompiler also gives the function a void return\",\n    \"return_register\": null,\n    \"return_semantics\": \"no value; EAX is never written on any path except as scratch inside the callee-setup sequences\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single RET at 0x0043cdf5, reached from the fallthrough of the marker block\"\n  },\n  \"analogues\": [],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a88d0\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0043a9e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00573780\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005757b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057e790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b4fa0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0043ab76\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043a9e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005737c7\",\n        \"direction\": \"in\",\n        \"other\": \"0x00573780\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005757bd\",\n        \"direction\": \"in\",\n        \"other\": \"0x005757b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057e88d\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057e790\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005b5009\",\n        \"direction\": \"in\",\n        \"other\": \"0x005b4fa0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043cb15\",\n        \"direction\": \"out\",\n        \"other\": \"0x0043ce40\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043cdea\",\n        \"direction\": \"out\",\n        \"other\": \"0x004a88d0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043caf0\",\n        \"direction\": \"out\",\n        \"other\": \"0x004adb80\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043cafe\",\n        \"direction\": \"out\",\n        \"other\": \"0x004adbc0\",\n        \"reference_type\": \"direct-call\"\n      }\n    ],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 5,\n    \"fan_out\": 1,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0011\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": null,\n  \"globals\": [],\n  \"integration_status\": null,\n  \"name\": null,\n  \"normalized_symbol\": null,\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"runtime_gated_requires_explicit_gate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": null\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"No original-process trace has been captured. A differential run must show which handle classes are actually reached through slot +0x30 and what state 3 does to them.\",\n      \"The relationship between this sweep and the globally gated 0x0043ce40 can only be settled by observing both in one run.\",\n      \"The three attribute bits and the per-handle flag bytes are only ever read in this build; whether any runtime path sets them, and in which order, needs a trace.\"\n    ],\n    \"validated\": 0\n  },\n  \"runtime_gated\": true,\n  \"runtime_validated\": 0,\n  \"semantic\": null,\n  \"semantic_status\": null,\n  \"services\": [],\n  \"source\": {\n    \"decomp\": null,\n    \"file\": null,\n    \"files\": [\n      \"reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.cpp\",\n      \"reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.hpp\",\n      \"reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp\"\n    ],\n    \"handoffs\": [],\n    \"metadata\": [\n      \"reconstruction/metadata/wave13-w1-dispatch-b04/0043cad0.json\"\n    ],\n    \"provenance\": [\n      \"Spore-App-SDK: Spore ModAPI/Spore/Editors/EditorBaseHandle.h (func30h at /* 30h */, EditorHandleState enum)\",\n      \"Spore-App-SDK: Spore ModAPI/Spore/Editors/EditorRigblock.h (mAxisHandles +0x154, mpRota
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -404,17 +747,17 @@
   "body_span_bytes": 806,
   "body_start": "0043cad0",
   "callees": [
+    "FUN_004a88d0",
     "FUN_004adb80",
     "FUN_004adbc0",
-    "FUN_004a88d0",
     "FUN_0043ce40"
   ],
   "callers": [
-    "FUN_0057e790",
     "FUN_00573780",
+    "FUN_0057e790",
+    "FUN_005757b0",
     "FUN_005b4fa0",
-    "FUN_0043a9e0",
-    "FUN_005757b0"
+    "FUN_0043a9e0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -427,52 +770,167 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_c",
-      "storage": "Stack[-0xc]:4",
-      "type": "int"
-    },
-    {
       "name": "local_5",
       "storage": "Stack[-0x5]:1",
-      "type": "char"
+      "type": "undefined1"
     },
     {
       "name": "local_6",
       "storage": "Stack[-0x6]:1",
-      "type": "char"
+      "type": "undefined1"
     },
     {
-      "name": "iVar1",
-      "storage": "unique:00017200:4",
-      "type": "int"
+      "name": "local_7",
+      "storage": "Stack[-0x7]:1",
+      "type": "undefined1"
     },
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
     },
     {
-      "name": "local_78",
-      "storage": "Stack[-0x78]:4",
-      "type": "int"
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_1c",
       "storage": "Stack[-0x1c]:4",
-      "type": "int"
+      "type": "undefined4"
     },
     {
-      "name": "bVar3",
-      "storage": "unique:100000ca:1",
-      "type": "bool"
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "undefined4"
     },
     {
-      "name": "iVar2",
-      "storage": "unique:00017200:4",
-      "type": "int"
+      "name": "local_21",
+      "storage": "Stack[-0x21]:1",
+      "type": "undefined1"
+    },
+    {
+      "name": "local_28",
+      "storage": "Stack[-0x28]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_2c",
+      "storage": "Stack[-0x2c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_2d",
+      "storage": "Stack[-0x2d]:1",
+      "type": "undefined1"
+    },
+    {
+      "name": "local_34",
+      "storage": "Stack[-0x34]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_38",
+      "storage": "Stack[-0x38]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_3c",
+      "storage": "Stack[-0x3c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_40",
+      "storage": "Stack[-0x40]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_44",
+      "storage": "Stack[-0x44]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_45",
+      "storage": "Stack[-0x45]:1",
+      "type": "undefined1"
+    },
+    {
+      "name": "local_4c",
+      "storage": "Stack[-0x4c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_50",
+      "storage": "Stack[-0x50]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_51",
+      "storage": "Stack[-0x51]:1",
+      "type": "undefined1"
+    },
+    {
+      "name": "local_58",
+      "storage": "Stack[-0x58]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_5c",
+      "storage": "Stack[-0x5c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_60",
+      "storage": "Stack[-0x60]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_64",
+      "storage": "Stack[-0x64]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_68",
+      "storage": "Stack[-0x68]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_6c",
+      "storage": "Stack[-0x6c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_70",
+      "storage": "Stack[-0x70]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_74",
+      "storage": "Stack[-0x74]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_78",
+      "storage": "Stack[-0x78]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_7c",
+      "storage": "Stack[-0x7c]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 9,
+  "locals_count": 32,
   "mode": "live",
   "name": "FUN_0043cad0",
   "namespace": null,
@@ -529,9 +987,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b04/0043cad0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -541,9 +1013,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace has been captured. A differential run must show which handle classes are actually reached through slot +0x30 and what state 3 does to them.",
+    "The relationship between this sweep and the globally gated 0x0043ce40 can only be settled by observing both in one run.",
+    "The three attribute bits and the per-handle flag bytes are only ever read in this build; whether any runtime path sets them, and in which order, needs a trace."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -553,15 +1037,30 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "Editors::EditorRigblock (SDK candidate, field-offset match)",
+  "void"
+]
+```
 
 ## vtables
 

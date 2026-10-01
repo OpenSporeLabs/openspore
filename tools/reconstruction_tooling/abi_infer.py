@@ -189,11 +189,79 @@ ABSTENTION_CODES = frozenset((
     "cleanup_undeterminable",
 ))
 
+# Closed rule-id vocabulary. `infer_rule` refuses an id that is not registered,
+# for the same reason `abstain` refuses an unregistered code: a claim filed under
+# a name no document defines is unreadable, and a typo is indistinguishable from
+# a new rule. As with `abstain`, `analyze` catches the resulting
+# `AssertionError` and returns the empty record, so the check is loud in tests
+# (call `_infer_rules` directly) and safe in production (no record is lost
+# mid-flight); the ids below are the complete set the engine can emit.
+#
+# The `-` qualified ids are **engine-local**: the specification defines the
+# family (`C6`, `C8`, `A1`, `T1`, `V1`) and the engine needed a second, distinct
+# claim inside the same family.
+#   A1-IMM  argument slots derived from a terminal `ret N` alone (spec 3.4 gap).
+#   C6B     a `__thiscall` that also pops its own stack arguments (spec gap).
+#   C8-E    an incoming EDX read, the observation C8-E reasons from.
+#   V1-VFT  **vftable slot membership, register-receiver form** -- the rule the
+#           2026-09-28 extension adds. The proposal names it `V1`, but `V1` is
+#           the specification's VARIADIC-SUSPICION rule, which this engine
+#           implements as `record["variadic"]` and which is still live, so the
+#           membership claim is filed under the same family with the qualifier
+#           the other engine-local rules use.
+#   R1-VFT  **vftable slot membership, callee-pop receiver form** -- the rule the
+#           2026-09-29 extension adds. It is the *same fact* `V1-VFT` claims for
+#           the caller-cleanup shape (where the receiver has to be in a register),
+#           established for the callee-pop shape from the membership plus a read
+#           of the *incoming* ECX. It never runs in the caller-cleanup shape: one
+#           receiver fact gets one rule, and that one is `V1-VFT`.
+#   R2-VFT  **vftable slot membership, callee-pop receiver form, address-taken
+#           ECX** -- the rule the 2026-09-30 extension adds. Same fact, same
+#           cleanup shape, same sound membership; the difference is the *class of
+#           read*. `R1-VFT` fires when the body reads the incoming ECX and
+#           dereferences or copies it; `R2-VFT` fires when the body takes its
+#           **address** (`LEA r,[ECX+k]`) and never dereferences it at all, which
+#           is why the engine's own reason for such a body is the different
+#           unknown `ecx_address_taken_without_memory_access`. The two rules are
+#           disjoint by construction (see `_vftable_address_receiver`).
+#   T1-FWD  **tail-call forwarding** -- likewise named `T1` by the proposal, but
+#           `T1` is the specification's TAIL-CALL rule and the engine already
+#           emits it (for every listing whose only exit is an out-of-listing
+#           `JMP`); two different claims may not share one id, and renaming the
+#           existing one would rewrite committed goldens. So the forwarding claim
+#           is `T1-FWD` and the existing tail-transfer claim keeps `T1`.
+RULE_IDS = frozenset((
+    "A1", "A1-IMM", "A2",
+    "C1", "C2", "C3", "C4", "C5", "C6", "C6B", "C7", "C8", "C8-E", "C9",
+    "C10", "C11", "C12",
+    "D1",
+    "R0", "R1", "R1-VFT", "R2", "R2-VFT",
+    "RT1", "RT2", "RT3", "RT4",
+    "S1", "S2", "S3",
+    "T1", "T1-FWD", "T2",
+    "V2",
+    "V1-VFT",
+))
+
+#: The basis a vftable membership must declare to be usable by ``V1-VFT``. It is
+#: the *only* accepted basis, and a caller that cannot state it has no
+#: membership: the triage heuristics behind ``vtables.json`` measure under 45%
+#: precision and are refuted by ``0x01053e00``, whose five index-claimed tables
+#: are all unsound. See ``tools/reconstruction_tooling/vftables.py``.
+VFTABLE_BASIS = "vftable_predicate"
+
 CALLEE_SAVED = ("EBX", "EBP", "EDI", "ESI")
 
 # `ret imm16` is the only return-with-pop form x86-32 encodes, so a terminal
 # immediate outside this range is not a possible stack pop at all.
 MAX_RET_IMMEDIATE = 0xFFFF
+
+# The largest `LEA` displacement `R2-VFT` will read as a member offset: an
+# object-sized address, and dword-aligned because every scalar in a 32-bit
+# object is. It is a *narrowing* -- see `_incoming_member_leas` -- not the step
+# that decides the receiver, and it is bounded so that a mask or a table constant
+# cannot pass as a member address.
+MAX_MEMBER_DISPLACEMENT = 0x7FC
 
 GPR32 = ("EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI")
 GPR16 = ("AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI")
@@ -220,7 +288,8 @@ X87_OPS = frozenset((
     "FLD", "FST", "FSTP", "FADD", "FADDP", "FSUB", "FSUBP", "FSUBR", "FSUBRP",
     "FMUL", "FMULP", "FDIV", "FDIVP", "FDIVR", "FDIVRP", "FABS", "FCHS", "FSQRT",
     "FIADD", "FISUB", "FISUBR", "FIMUL", "FIDIV", "FCOMP", "FCOMPP", "FCOMI",
-    "FUCOMI", "FUCOMIP", "FLDCW", "FNSTCW", "FSTCW", "FNCLEX", "FNINIT", "FWAIT",
+    "FCOMIP", "FUCOMI", "FUCOMIP", "FLDCW", "FNSTCW", "FSTCW", "FNCLEX", "FNINIT",
+    "FWAIT",
     "FXAM", "FNEG", "FNOP", "FNSTSW", "FRNDINT", "FTST", "FCOM", "FUCOM", "FUCOMP",
     "FUCOMPP", "FXCH", "FDECSTP", "FINCSTP", "FCHS", "FCMOVB", "FCMOVBE", "FCMOVE",
     "FCMOVNB", "FCMOVNBE", "FCMOVNE", "FCMOVNU", "FCMOVU", "FLDZ", "FLDPI", "FLD1",
@@ -250,9 +319,25 @@ ARITH_MNEM = frozenset((
     "NEG", "NOT", "BSWAP", "ADC", "SBB",
 ))
 MUL_MNEM = frozenset(("IMUL", "MUL", "DIV", "IDIV"))
+# Every x86 conditional-branch mnemonic Ghidra/objdump may emit, including the
+# carry-flag synonyms. Ghidra renders carry branches as ``JC`` where objdump and
+# the Intel manual write ``JB``; they are the same opcode (0x72 rel8) and the same
+# condition (CF=1). Omitting the synonym made a well-formed carry branch parse as
+# ``kind="unparsed"`` / ``reason="unknown_mnemonic"``, which marks the whole
+# listing ``degraded`` and holds CONSTANTS at WARN on a body that is in fact fully
+# parsed. The synonyms are listed explicitly rather than derived, because
+# BRANCH_MNEM also feeds ``_BRANCH_TARGET_MNEM`` and the canonical mnemonics must
+# stay stable; adding a spelling here does not add a new semantics, and the
+# branch-condition readers already key off the opcode/condition, not the
+# spelling.
 BRANCH_MNEM = frozenset((
     "JA", "JAE", "JB", "JBE", "JECXZ", "JE", "JG", "JGE", "JL", "JLE", "JNE",
     "JNO", "JNP", "JNS", "JNZ", "JO", "JP", "JPE", "JPO", "JRCXZ", "JS", "JZ",
+    # carry-flag and inverted synonyms of the entries above (same opcodes).
+    # JNC is the carry-CLEAR spelling of JAE/JNB; JC is the carry-SET spelling
+    # of JB. Both are real 0x70-0x7F short-jump opcodes and both are emitted by
+    # one disassembler or the other for the same bytes.
+    "JC", "JNA", "JNB", "JNBE", "JNC", "JNG", "JNGE", "JNL", "JNLE",
     "LOOP", "LOOPE", "LOOPNE", "JMP",
 ))
 
@@ -860,6 +945,20 @@ def _operand_reg(operand):
     return None
 
 
+def _operand_names_register(operand, name):
+    """How many times `name` appears as a register in one rendered operand.
+
+    Counted on the operand's own text, not on its decomposed fields, because the
+    two are not equivalent: `[ECX + ECX + 0x4]` and `[ECX + 0x4]` both decompose
+    to base ``ECX``, no index register and displacement ``4``. Only the text
+    tells a member address from a sum over the same register.
+    """
+    text = operand.get("text")
+    if not isinstance(text, str):
+        return -1
+    return len(re.findall(r"\b%s\b" % re.escape(name), text, re.IGNORECASE))
+
+
 def _frame_prepass(insns):
     frame = {
         "push_ebp": False, "push_ebp_at": None, "mov_ebp_esp": False,
@@ -959,6 +1058,7 @@ class _State(object):
         self.calls_direct = []
         self.calls_indirect = []
         self.jmps_indirect = []
+        self.jmps_direct = []
         self.vtable_loads = []
         self.string_ops = []
         self.seh = False
@@ -1390,12 +1490,24 @@ def _record_transfers(state, emit, insn, operands):
             target = _target_value(operands)
             if target is not None:
                 in_listing = state.listing_vas and target in state.listing_vas
+                observation = None
                 if not in_listing:
                     observation = emit(insn, "UNCOND_TRANSFER_OUT", target=_fmt_hex(target))
                     state.transfer_out.append({"obs": observation, "target": target,
                                                "index": index})
                     state.exits.append({"form": "jmp_out", "index": index,
                                         "target": target, "obs": observation})
+                # Every *direct* JMP to a static target is recorded, whether or
+                # not it leaves the listing. `transfer_out` only keeps the ones
+                # that leave, so a jump into the middle of the body -- which
+                # `tail_call.target` then never sees -- is invisible there, and
+                # `T1-FWD` has to be able to reject it by name rather than by
+                # omission. A JMP through a register or a memory operand is not
+                # recorded at all: its target is not a static address, so no
+                # target record could be resolved for it.
+                state.jmps_direct.append({"obs": observation, "target": target,
+                                         "index": index, "va": va,
+                                         "in_listing": bool(in_listing)})
         return
     if base == "CALL":
         state.has_call = True
@@ -1814,6 +1926,738 @@ def _slot_table(state, frame):
     return grouped, keys, max_key, gaps, slots
 
 
+def _as_address(value):
+    """An int or a ``0x``-prefixed hex string as an int, else ``None``."""
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, int):
+        return value if 0 <= value <= 0xFFFFFFFF else None
+    text = str(value).strip().lower()
+    if text.startswith("0x"):
+        text = text[2:]
+    if not text or len(text) > 8:
+        return None
+    try:
+        number = int(text, 16)
+    except ValueError:
+        return None
+    return number if 0 <= number <= 0xFFFFFFFF else None
+
+
+def _as_index(value):
+    """A non-negative int, else ``None``. ``bool`` is not an index."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def vftable_memberships(value):
+    """The `vftable_slots` input, normalised to a sorted tuple of memberships.
+
+    An entry is a ``{"table": <va>, "slot_index": <int>, "basis": ...}`` mapping
+    (a two-element ``(table, slot_index)`` sequence is accepted too) and it is
+    **kept only when its basis is :data:`VFTABLE_BASIS`** -- the sound predicate
+    of ``tools/reconstruction_tooling/vftables.py``. A membership asserted from
+    the triage heuristics (``vtables.json``, the index) is dropped here, which is
+    the whole point of demanding the basis: those sources measure under 45%
+    precision and ``0x01053e00`` is a live counterexample, so an entry that
+    cannot state how it was established is an absence of evidence, never a
+    membership.
+
+    Nothing raises. A caller's malformed entry removes evidence; it never adds
+    a claim and never turns an abstention into a positive one.
+    """
+    if value is None:
+        return ()
+    entries = [value] if isinstance(value, dict) else value
+    if not isinstance(entries, (list, tuple)):
+        return ()
+    out = []
+    for entry in entries:
+        table = slot = None
+        if isinstance(entry, dict):
+            if entry.get("basis") != VFTABLE_BASIS:
+                continue
+            table = _as_address(entry.get("table"))
+            slot = _as_index(entry.get("slot_index"))
+        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+            table = _as_address(entry[0])
+            slot = _as_index(entry[1])
+        if table is None or slot is None:
+            continue
+        out.append((table, slot))
+    return tuple(sorted(set(out)))
+
+
+def tail_target(value, hop_va):
+    """The `tail_target_record` input, validated against the hop it claims to be.
+
+    Returns ``None`` unless every one of these holds, because each of them is a
+    precondition of ``T1-FWD`` and the caller cannot be asked twice:
+
+    * it is a mapping whose ``va`` -- when it states one -- is the address this
+      thunk actually jumps to, so a record resolved for a different target is
+      never applied to this one;
+    * ``entry`` is true: the target is a **function entry**, read off the
+      target's own listing (whose first instruction must be the target address).
+      This is what separates a thunk from a jump into the middle of a body, and
+      it is the check ``0x007e6100`` fails;
+    * ``in_text`` is true and ``import_pointer`` is not true: the target is a
+      code address of this image, not a pointer read out of an import table;
+    * ``record`` is a derived record for that target.
+
+    A target whose record names no convention is still returned: the *cleanup*
+    a tail hop inherits is settled by the target even when the target's own
+    convention is not, and ``0x00980480`` is exactly that case. What may be
+    forwarded is decided by the caller, not here.
+    """
+    if not isinstance(value, dict):
+        return None
+    stated = value.get("va")
+    if stated is not None and _as_address(stated) != hop_va:
+        return None
+    if value.get("entry") is not True:
+        return None
+    if value.get("in_text") is not True:
+        return None
+    if value.get("import_pointer") is True:
+        return None
+    record = value.get("record")
+    if not isinstance(record, dict) or not record:
+        return None
+    conventions = record.get("conventions")
+    if not isinstance(conventions, dict):
+        return None
+    span = value.get("listing_span")
+    return {"va": hop_va, "record": record,
+            "source": value.get("source") if isinstance(value.get("source"), str) else None,
+            "listing_span": span if isinstance(span, (list, tuple)) and len(span) == 2 else None}
+
+
+def _adjustor_delta(state, before):
+    """The signed `this` adjustment a thunk applies before it jumps, or ``None``.
+
+    MSVC emits a `this`-adjustor thunk as ``SUB ECX, imm`` (or ``ADD``) followed
+    by the jump; the value is what the *incoming* receiver is offset by, so it is
+    reported as the signed delta to add to `this` and the instruction that
+    produced it. Only an immediate on ECX counts. A ``LEA ECX, [ECX+d]`` form is
+    not recognised, and a thunk using it therefore reports **no** delta -- an
+    absence, which is the safe direction, and stated here so the limitation is
+    not mistaken for a measurement.
+    """
+    for item in state.insns:
+        if item["kind"] != "insn" or item["index"] >= before:
+            break
+        if item["base"] not in ("SUB", "ADD"):
+            continue
+        operands = item["operands"]
+        if len(operands) != 2 or _operand_reg(operands[0]) != "ECX":
+            continue
+        value = operands[1].get("value")
+        if not isinstance(value, int) or isinstance(value, bool):
+            continue
+        return (-value if item["base"] == "SUB" else value)
+    return None
+
+
+def _shared_target_hops(state):
+    """The direct ``JMP`` sites that all name one static target, or ``None``.
+
+    ``S1`` used to require exactly one direct ``JMP`` *site*. That is a proxy
+    for the property the rule actually rests on, which is that every path leaving
+    this body leaves it at the same address. Two sites naming the same address
+    have that property; ``0x00841440`` is the real shape of it -- a ``JZ`` whose
+    two arms each store to ``[ESP + 0x8]`` and each then jump to ``0x0083c780``.
+    What S1 means is the target set, not the site count, and nothing in the
+    forwarded claim is read off how many sites there were.
+
+    Returns the hops naming the shared target, or ``None``:
+
+    * a ``RET`` anywhere in the listing -- unchanged, and the same half as before;
+    * no direct jump at all, so there is no static target to resolve;
+    * **more than one distinct target**: a body with two genuine exits may reach
+      two conventions, so the abstention is exactly what it was, and this is the
+      case ``0x007e6100`` and the ``JMP a; JMP b`` pair keep pinning;
+    * on the multi-site half only, an indirect jump anywhere in the body (a path
+      may leave at an address no target record covers) or a last instruction that
+      is not one of the hops (a path may run off the end of the listing). Both
+      guard a path that leaves *without* reaching the shared target, and both are
+      confined to the multi-site half so the single-site answer is byte for byte
+      what it always was.
+    """
+    if state.ret_obs or not state.jmps_direct:
+        return None
+    targets = {hop["target"] for hop in state.jmps_direct}
+    if len(targets) != 1:
+        return None
+    hops = [hop for hop in state.jmps_direct if hop["target"] in targets]
+    if len(hops) > 1:
+        if state.jmps_indirect:
+            return None
+        real = [item for item in state.insns if item["kind"] == "insn"]
+        if not real or real[-1]["index"] != max(hop["index"] for hop in hops):
+            return None
+    return hops
+
+
+def _tail_forward(state, frame, tail, stack_arguments, target_value, hop_va,
+                  infer_rule, terminal):
+    """``T1-FWD`` -- forward a thunk's ABI to a resolved tail target.
+
+    Returns ``None`` when any precondition fails, or a dict describing what may
+    be forwarded. Preconditions, all required:
+
+    * **S1** every exit this body owns leaves it at *one* address, and no ``RET``
+      anywhere in the listing. An exit is a ``RET`` or a *direct* ``JMP`` to a
+      static target, whether or not it leaves the listing; a conditional branch
+      is not an exit, because control comes back. One address, not one site: see
+      :func:`_shared_target_hops`, which is where the two-exit-same-target case
+      and its two extra guards are decided. Note what the counting leaves: a
+      conditional branch *out of* the listing is not an exit, so a body whose
+      real shape is a conditional tail jump can still forward. The record says so
+      (``parse.flow_complete`` is false and ``completeness`` is PARTIAL), which
+      is where that gap is reported rather than hidden -- and it is the
+      specification's own reading, since ``0x007e6100`` has three conditional
+      branches and the specification attributes its rejection to S3, S4 and S6.
+    * **S2** that exit is a direct ``JMP`` to a static target. A jump through a
+      register or through memory is not in ``state.jmps_direct`` at all, so a
+      body whose only exit is ``JMP [0x013cc118]`` fails here.
+    * **S3** the target is not inside this body (no in-listing jump) **and** is
+      a function entry (see :func:`tail_target`).
+    * **S4** ``esp_delta == 0`` and no frame setup: the thunk must not have
+      adjusted the stack, or the target's argument area is not the caller's.
+    * **S5** the target's own record states a concrete convention. S5 gates the
+      *convention*; the *cleanup* is forwarded on the weaker condition that the
+      target's cleanup is concrete, which is what lets ``0x00980480`` gain
+      ``{callee, 4, OBSERVED}`` from a target whose convention still abstains.
+    * **S6** the argument areas are compatible: when the thunk itself resolved a
+      stack slot, that area must equal the target's. A thunk that read no stack
+      word establishes no area, so nothing is contradicted -- ``0x0096ff70``
+      (``SUB ECX,0xc; JMP``) forwards to a target that pops 4, while
+      ``0x007e6100`` (4 bytes of its own, 20 at the target) does not.
+    * **S7** the target is a code address of this image and not an import
+      pointer (see :func:`tail_target`).
+
+    Confidence is the target's own, capped: a forward is an inference about a
+    function whose own body never observed a convention, so it starts at
+    ``INFERRED`` and is then capped by whatever the target's record claims. The
+    forwarded cleanup is the target's own claim, unchanged.
+    """
+    hops = _shared_target_hops(state)
+    if hops is None:
+        return None                                   # S1 (RET) / S1,S2 (exits)
+    hop = hops[0]
+    if hop["in_listing"]:
+        return None                                   # S3, in-listing half
+    if state.esp_delta != 0 or tail["after_frame_setup"]:
+        return None                                   # S4
+    if not isinstance(target_value, dict):
+        return None                                   # S3/S5/S7
+    target_record = target_value["record"]
+    conventions = target_record["conventions"]
+    target_conventions = conventions["calling_convention"]
+    confidence = _weaker("INFERRED", conventions.get("confidence"))
+    target_stack = target_record.get("stack_arguments") or {}
+    target_bytes = target_stack.get("total_bytes")
+    thunk_bytes = stack_arguments.get("total_bytes")
+    if stack_arguments.get("observed_slots") and thunk_bytes != target_bytes:
+        return None                                   # S6
+    if thunk_bytes is None or not isinstance(target_bytes, int):
+        return None                                   # S6, unusable areas
+    target_cleanup = target_record.get("cleanup") or {}
+    forwarded_cleanup = None
+    if target_cleanup.get("side") in ("callee", "caller") \
+            and target_cleanup.get("confidence") not in (None, "UNKNOWN") \
+            and isinstance(target_cleanup.get("bytes"), int):
+        forwarded_cleanup = {
+            "side": target_cleanup["side"], "bytes": target_cleanup["bytes"],
+            "confidence": _weaker(target_cleanup["confidence"], "OBSERVED"),
+            "corroboration": "forwarded_from_tail_target",
+            "evidence": "forwarded from the tail target %s: %s" % (
+                _fmt_hex(hop_va), target_cleanup.get("evidence")),
+        }
+    if target_conventions not in CONVENTIONS and forwarded_cleanup is None:
+        return None                                   # S5, nothing to forward
+    citations = [item["obs"] for item in hops if item.get("obs")] or list(terminal)
+    # One address is what S1 requires; how many sites reached it is stated in the
+    # claim and counted in the citations, so a reader never sees one arm read and
+    # the other assumed. The phrasing is the pre-existing single-site text
+    # whenever there is one site, so every single-site record is unchanged.
+    sites = ("this listing is a single ESP-neutral direct jump" if len(hops) == 1 else
+             "all %d of this listing's direct jumps resolve to that one ESP-neutral "
+             "target" % len(hops))
+    value = {
+        "target": _fmt_hex(hop_va),
+        "target_calling_convention": target_conventions,
+        "target_cleanup_side": target_cleanup.get("side"),
+        "target_stack_bytes": target_bytes,
+    }
+    if target_value.get("source"):
+        value["target_source"] = target_value["source"]
+    source = target_value.get("source")
+    if target_conventions in CONVENTIONS:
+        infer_rule("T1-FWD",
+                   "calling convention is %s, forwarded from the tail target %s: "
+                   "%s, inherits its caller's frame and never runs its own RET, so "
+                   "the two calls are one call%s" % (
+                       target_conventions, _fmt_hex(hop_va), sites,
+                       " (resolved from %s)" % source if source else ""),
+                   confidence, citations, target_conventions)
+        value["confidence"] = confidence
+    else:
+        infer_rule("T1-FWD",
+                   "the stack cleanup is %s with %d byte(s), forwarded from the "
+                   "tail target %s; the target's own calling convention is not "
+                   "decided, so none is forwarded%s" % (
+                       forwarded_cleanup["side"], forwarded_cleanup["bytes"],
+                       _fmt_hex(hop_va),
+                       " (resolved from %s)" % source if source else ""),
+                   forwarded_cleanup["confidence"], citations, value)
+    delta = _adjustor_delta(state, hop["index"])
+    if delta is not None:
+        value["this_adjustor_delta"] = delta
+    return {"convention": target_conventions if target_conventions in CONVENTIONS else None,
+            "confidence": confidence, "cleanup": forwarded_cleanup,
+            "adjustor_delta": delta, "value": value}
+
+
+def _incoming_ecx_reads(state):
+    """The observations that read ECX *before* the body first writes it.
+
+    The distinction this makes is the whole of ``R1-VFT``, and the engine's
+    ``ecx_read_without_deref`` reason does not make it: that reason is raised
+    whenever ECX is read anywhere at all, including a read of a value the body
+    itself loaded a moment earlier. ``0x00e51010`` is the real shape --
+    ``MOV ECX,dword ptr [ESP + 0x4]`` then ``MOV ECX,dword ptr [0x016b3c0c]`` --
+    where ECX is an ordinary argument, the incoming ECX is never looked at, and
+    the receiver is the first callee-popped stack word. A rule keyed on the
+    reason alone would call that a register receiver.
+
+    So the gate is stated on the def/use relation instead, which is what
+    "incoming" means everywhere else in this module (``state.ecx_first_write``,
+    :func:`_record_ecx_access`): an ECX read at an index strictly below the
+    first write, or any ECX read at all when the body never writes it.
+    """
+    first = state.ecx_first_write
+    out = []
+    for item in state.observations:
+        if item.get("kind") != "REG_READ" or item.get("reg") != "ECX":
+            continue
+        if first is None or item.get("index", 0) < first:
+            out.append(item)
+    return out
+
+
+#: Mnemonics that write ECX **implicitly**, with no ECX operand. A single
+#: ``STOS``/``LODS`` adjusts ECX, so the incoming value is not preserved; the
+#: ``REP`` forms clobber it outright and are refused separately through
+#: ``state.ecx_rep``. ``CALL`` is here for the same reason and is the sharpest
+#: of the three: x86-32 makes ECX volatile, so *any* call leaves ECX undefined,
+#: and a read after one is a read of the callee's leftover, not of a parameter.
+IMPLICIT_ECX_DEFS = frozenset((
+    "STOSB", "STOSW", "STOSD", "STOSQ",
+    "LODSB", "LODSW", "LODSD", "LODSQ",
+    "CALL",
+))
+
+#: Mnemonics that define **both** operands rather than only the first, so a
+#: destination-only reading of them misses the second definition.
+TWO_OPERAND_DEFS = frozenset(("XCHG", "CMPXCHG", "CMPXCHG8B", "CMPXCHG16B"))
+
+
+def _ecx_def_indices(state):
+    """Every index at which the body **defines** ECX, from the parsed listing.
+
+    This is deliberately self-contained rather than read off
+    ``state.ecx_first_write``, and the reason is that three classes of definition
+    never reach that field:
+
+    * ``LEA ECX,[ECX+0x8]`` -- ``STORE_MNEM`` has no ``LEA``, so a ``this``
+      adjustor written as a ``LEA`` is recorded as no definition at all, and the
+      adjustor is then indistinguishable from a member address computed from the
+      incoming receiver;
+    * ``XCHG r,ECX`` -- ``_is_store`` is only true for operand 0, so the second
+      operand of an exchange defines nothing;
+    * ``CALL`` -- ECX is volatile in x86-32, so a read after a call reads the
+      callee's leftover, and no register operand exists to record.
+
+    Each of those three is a *false positive* for a rule keyed on "the incoming
+    ECX", and ``R2-VFT`` is keyed on exactly that. So the rule states its own
+    def/use relation, from the listing, in full. Nothing else in the engine
+    changes: :func:`_incoming_ecx_reads` still reads ``state.ecx_first_write``,
+    and every existing record is byte-identical.
+
+    Conservative by construction: a definition the listing does not spell out is
+    assumed away rather than assumed absent, and a body this rule refuses where
+    a reader might have accepted it is a lost promotion, never a wrong claim.
+    """
+    out = set()
+    for item in state.insns:
+        if item["kind"] != "insn":
+            continue
+        base = item["base"]
+        if base in IMPLICIT_ECX_DEFS:
+            out.add(item["index"])
+            continue
+        operands = item["operands"]
+        for position, operand in enumerate(operands):
+            if operand["kind"] != "reg" or _parent(operand["reg"]) != "ECX":
+                continue
+            if position == 0 and (base == "POP" or _is_store(item, 0)
+                                  or base == "LEA"):
+                out.add(item["index"])
+            elif position > 0 and base in TWO_OPERAND_DEFS:
+                out.add(item["index"])
+    return out
+
+
+def _ecx_rooted_accesses(state):
+    """Every memory operand based on ECX, in listing order, ``LEA`` excluded.
+
+    ``_record_ecx_access`` skips an operand that carries an index register, so
+    ``MOV EAX,[ECX + ECX*4 + 0x8]`` is invisible to it. That is a *sound*
+    omission for ``R1`` -- the incoming-dereference fact it supports does not
+    need the indexed form, and claiming an offset for it would be a guess -- but
+    it is not a sound basis for a rule that asserts "this body performs no memory
+    access through ECX at all". So the assertion ``R2-VFT`` makes is stated over
+    this list, which is complete.
+
+    ``LEA`` is excluded because it computes an address rather than performing an
+    access; that is exactly the difference between the two rules.
+    """
+    out = []
+    for item in state.insns:
+        if item["kind"] != "insn" or item["base"] == "LEA":
+            continue
+        for operand in item["operands"]:
+            if operand["kind"] == "mem" and operand["base"] == "ECX":
+                out.append({"index": item["index"],
+                            "at": _fmt_hex(item["va"]) if item.get("va") is not None
+                            else None,
+                            "index_reg": operand["index"],
+                            "disp": operand["disp"]})
+    return out
+
+
+def _incoming_member_leas(state, defs):
+    """The `LEA r32, [ECX + k]` sites that read the **incoming** ECX.
+
+    This is ``R2-VFT``'s positive dataflow condition. ``defs`` is
+    :func:`_ecx_def_indices`; a site is incoming when no definition precedes it.
+
+    Four conditions, all necessary:
+
+    * the base register is **ECX** and the **index register is absent**. A
+      scaled or indexed form is a table computation, not a member address;
+      ``[ECX + ECX*2 + 0x4]`` is the compiler's own idiom for one.
+    * the **destination is not ECX**. ``LEA ECX,[ECX + 0x8]`` is a ``this``
+      adjustor -- it *defines* the register -- and an adjustor is not a member
+      address read off the receiver. Such a site is in ``defs``, so the incoming
+      test already rejects it; the test is here as well because it is the
+      property, and a reader should not have to know that.
+    * the displacement is a **member displacement**: ``0 <= k``,
+      ``k % 4 == 0`` and ``k <= :data:`MAX_MEMBER_DISPLACEMENT```. A negative
+      displacement is a pre-adjustment (``this + k`` is a member address; the
+      base of a multiple-inheritance object is a *pre-adjusted* pointer and the
+      adjustment is its own statement), a non-multiple-of-four one cannot be the
+      offset of any scalar in a 32-bit object, and the cap bounds the claim to an
+      object-sized address rather than a mask. This is a **narrowing, not the
+      load-bearing step** -- the argument that decides the receiver is in
+      :func:`_vftable_address_receiver` -- and it is stated as one so a reader
+      can tell which guard is which.
+    * the site is **incoming**: no ECX definition at or before it. A body in the
+      COM / ``__stdcall`` interface form loads its receiver off the stack, and
+      ``MOV ECX,[ESP+0x4]; LEA EAX,[ECX+4]`` is an *integer* argument being
+      offset, not a receiver. A call before the site is a definition too: ECX is
+      volatile, so what follows a call is the callee's leftover.
+
+    Returns a list of ``{"index", "at", "dest", "disp"}`` in listing order, or
+    the empty list. Nothing here raises: a malformed operand is an absence.
+    """
+    out = []
+    for item in state.insns:
+        if item["kind"] != "insn" or item["base"] != "LEA":
+            continue
+        operands = item["operands"]
+        if len(operands) < 2 or operands[0]["kind"] != "reg" \
+                or operands[1]["kind"] != "mem":
+            continue
+        mem = operands[1]
+        if mem["base"] != "ECX" or mem["index"] is not None:
+            continue
+        # `[ECX + ECX + 0x4]` is a sum, and the parser reports it exactly as it
+        # reports `[ECX + 0x4]`: base ECX, no index register, displacement 4. The
+        # only place the two differ is the operand's own text, so the count is
+        # taken there. Without it the rule would read an integer doubling as a
+        # member address, which is the one form of the scaled idiom the operand
+        # dict cannot see.
+        if _operand_names_register(mem, "ECX") != 1:
+            continue
+        destination = _parent(_operand_reg(operands[0]))
+        if destination == "ECX":
+            continue
+        disp = mem["disp"]
+        if not isinstance(disp, int) or isinstance(disp, bool):
+            continue
+        if disp < 0 or disp % 4 or disp > MAX_MEMBER_DISPLACEMENT:
+            continue
+        if any(def_index <= item["index"] for def_index in defs):
+            continue
+        out.append({"index": item["index"],
+                    "at": _fmt_hex(item["va"]) if item.get("va") is not None else None,
+                    "dest": destination, "disp": disp})
+    return out
+
+
+def _incoming_ecx_null_test(state, defs):
+    """Whether the body null-tests the **incoming** ECX and branches on it.
+
+    **Corroboration only.** ``R2-VFT`` does not require it and does not refuse
+    without it: a compiler may omit a null guard where the caller guarantees a
+    non-null ``this`` (``__assume``), so "the body null-tests ``this``" is not a
+    property the ABI guarantees, and a rule that required it would be fitted to
+    the fixtures rather than to the machine. It is reported because it is
+    decisive evidence *when present*: ``TEST ECX,ECX`` followed by a conditional
+    branch guards against exactly the failure a null receiver produces, and no
+    integer-argument reading of the same body explains one.
+
+    Returns ``True``/``False``. Only a ``TEST``/``CMP`` of ECX against itself at
+    an incoming index, immediately followed by a conditional jump, counts: a
+    comparison whose result is discarded, or one that compares ECX against a
+    value, is not a null test.
+    """
+    real = [item for item in state.insns if item["kind"] == "insn"]
+    for position, item in enumerate(real):
+        if item["base"] not in ("TEST", "CMP"):
+            continue
+        if any(def_index <= item["index"] for def_index in defs):
+            continue
+        registers = [_operand_reg(op) for op in item["operands"]]
+        if [name for name in registers if name] != ["ECX", "ECX"]:
+            continue
+        follower = real[position + 1] if position + 1 < len(real) else None
+        if follower is None or not follower["base"].startswith("J") \
+                or follower["base"] in ("JMP", "JMPQ"):
+            continue
+        return True
+    return False
+
+
+def _incoming_ecx_reads_before(state, defs):
+    """The ``REG_READ`` observations of ECX that precede every ECX definition."""
+    out = []
+    for item in state.observations:
+        if item.get("kind") != "REG_READ" or item.get("reg") != "ECX":
+            continue
+        index = item.get("index")
+        if not isinstance(index, int) or isinstance(index, bool):
+            continue
+        if any(def_index <= index for def_index in defs):
+            continue
+        out.append(item)
+    return out
+
+
+def _vftable_dispatch_receiver(state, memberships, receiver_evidence, cleanup):
+    """``R1-VFT``'s guard, or ``None``. Returns ``(table, slot, citations)``.
+
+    Why the callee-cleanup vftable shape is not what ``V1-VFT`` refused
+    ---------------------------------------------------------------------
+    ``V1-VFT`` fires on a sound vftable slot that the **caller** cleans and
+    reads no entry-relative stack word, and it rests the register receiver on
+    that: a callee popping nothing has no argument in the popped area, so the
+    receiver is in a register, and of ``__thiscall``/``__fastcall`` only ECX
+    carries one. The **callee**-popping shape was left out because a
+    callee-popped first word *can* be the receiver -- the COM / ``__stdcall``
+    interface member -- and membership alone would have called all of them
+    ``__thiscall``. ``0x01053e00`` is that shape: ``MOV ESI,dword ptr
+    [ESP + 0x20]`` is ``entry_ESP+0x4``, the first popped word, and the body
+    dereferences it.
+
+    So membership is not enough, and neither is "the body reads ECX" on its own:
+    ECX is also where a ``__fastcall`` first argument arrives, and
+    ``0x00e51010`` shows the shape that must stay out (``MOV ECX,dword ptr
+    [ESP + 0x4]`` -- ECX loaded *from* the first popped word and forwarded as an
+    ordinary argument, incoming ECX never read).
+
+    What settles it is the pair, and each half is a positive machine fact:
+
+    * the address is a slot of a table the image proves is vptr-backed
+      (``vftables.py`` predicate P: a vptr is stored at a small non-negative
+      offset from a non-frame register, so the vptr sits at the head of the
+      object and any dispatch to this slot computed its target as
+      ``[object + 4 * slot]``). Every caller therefore hands this function the
+      object address in the register it used as that base -- ECX, the one
+      register the x86-32 member-call forms reserve for it;
+    * the body reads that incoming ECX **before writing it**
+      (:func:`_incoming_ecx_reads`). A body in the COM form obtains its
+      receiver from the stack word and has no register parameter at all, so it
+      never reads ECX -- which is exactly why ``0x01053e00`` and all six
+      ``__stdcall`` callee-pop slots in the corpus are ``present: False``.
+
+    The middle step -- that a body which reads the delivered register uses it as
+    the object -- is a compiler-model step, the same kind ``C8-E``/``C8`` already
+    make for EDX, and it is capped at ``INFERRED`` for the same reason: assembly
+    and intrinsic wrappers exist and external corroboration is the only thing
+    that can raise it.
+
+    Every precondition, and what each one refuses:
+
+    * a **sound** membership (``vftable_memberships`` has already dropped every
+      entry that cannot state :data:`VFTABLE_BASIS`). No membership, no claim:
+      the record is byte-identical to the unarmed one, which is the assertion
+      ``VftableRuleTest`` makes for every refused target;
+    * ``reason == "ecx_read_without_deref"`` -- the exact known-unknown this
+      rule resolves. The three sibling reasons (``ecx_reassigned_before_deref``,
+      ``ecx_address_taken_without_memory_access``, ``ecx_used_as_counter``) are
+      different unknowns and stay unknown;
+    * at least one **incoming** ECX read (:func:`_incoming_ecx_reads`), which is
+      what excludes ``0x00e51010``, ``0x00e5c0f0`` and ``0x00e7d660``;
+    * ``cleanup["side"] == "callee"``. The caller-cleanup shape is ``V1-VFT``'s,
+      and one receiver fact gets one rule.
+
+    It claims the **receiver** and nothing else. No convention (that is the
+    ordinary ``C6B`` arm reading this function's own ``ret imm``), no class, no
+    layout, no ``offsets``: the body never dereferenced the receiver, so the
+    record states where the receiver is and not what it points into.
+    """
+    if receiver_evidence.get("present") is not None:
+        return None
+    if receiver_evidence.get("reason") != "ecx_read_without_deref":
+        return None
+    if not memberships:
+        return None
+    if cleanup.get("side") != "callee":
+        return None
+    reads = _incoming_ecx_reads(state)
+    if not reads:
+        return None
+    return memberships[0][0], memberships[0][1], [item["id"] for item in reads]
+
+
+def _vftable_address_receiver(state, memberships, receiver_evidence, cleanup):
+    """``R2-VFT``'s guard, or ``None``. Returns the cited machine facts.
+
+    The same fact ``R1-VFT`` claims, from a different class of read
+    --------------------------------------------------------------------
+    ``R1-VFT`` fires when the body reads its incoming ECX. It does not care
+    what the body does with the value, and that is its strength: it cannot
+    distinguish ``MOV ESI,ECX`` from ``MOV EAX,[ECX+4]``. It has a matching
+    weakness. A body that never *touches memory* through the receiver at all --
+    that copies nothing, dereferences nothing, and only ever computes the
+    **address** of something inside it -- satisfies ``R1-VFT``'s
+    ``ecx_read_without_deref`` guard only by accident of instruction choice, and
+    in fact it does not: the engine's own ``receiver.reason`` for such a body is
+    ``ecx_address_taken_without_memory_access``, which ``R1-VFT`` refuses as a
+    different unknown. ``0x009817c0`` is the real shape: ``TEST ECX,ECX``,
+    ``LEA EAX,[ECX + 0xc]``, ``RET 0x4``, twice, with two LEAs and no
+    dereference anywhere.
+
+    So the two rules are separated by an instruction, not by a distinction
+    between two kinds of receiver, and that is the point of the evidence.
+
+    The proof obligation, and why the guard is enough
+    -------------------------------------------------
+    The load-bearing step is a fact about the x86-32 MSVC calling convention, not
+    a compiler heuristic. Enumerate the register parameters: ``__thiscall``
+    passes ``this`` in ECX; ``__fastcall`` passes its first argument in ECX;
+    ``__cdecl``, ``__stdcall`` and ``__clrcall`` pass none. Now intersect with
+    cleanup. **An ``__fastcall`` callee never pops, and neither does a
+    ``__cdecl`` or ``__clrcall`` callee.** So for a body whose terminal ``ret
+    imm`` pops its own arguments, the only convention under which ECX is
+    *defined on entry* is the one callee-popping convention that has a register
+    parameter at all -- a ``__thiscall`` that pops -- and in it ECX is ``this``.
+    A body that reads an undefined register is not a body a compiler emits.
+
+    The COM / ``__stdcall`` interface member, the shape that would otherwise
+    take its receiver off the stack, has no register parameter and therefore
+    never reads its incoming ECX. ``0x01053e00`` is the real shape of that and is
+    still refused, and the falsifier battery re-asserts it in miniature and in
+    full, with a membership forced on.
+
+    The residual risk is hand-written assembly and intrinsic wrappers, which is
+    why this is capped at ``INFERRED`` for the same reason ``R1-VFT`` and ``C8``
+    are: only external corroboration raises it.
+
+    The independent witness, inside this binary
+    ------------------------------------------
+    ``0x00950eb0`` -- the function three of the corpus targets **tail-call
+    into** -- is a member of 17 sound tables, pops 4, and its body is
+    ``MOV EAX,ECX; MOV ECX,[ESP+0x4]; ...; TEST EAX,EAX; JZ; ADD EAX,0x4; RET
+    0x4``. ``R1-VFT`` already resolves *it* to ``__thiscall`` with
+    ``receiver.register == "ECX"``, on nothing but a copy. The machine fact this
+    rule claims for the three bodies that tail-call into it is therefore already
+    asserted by the shipped engine, for their own delegate.
+
+    Every precondition, and what each one refuses:
+
+    * a **sound** membership (:func:`vftable_memberships` has already dropped
+      every entry that cannot state :data:`VFTABLE_BASIS`). No membership, no
+      claim, and the record is byte-identical to the unarmed one;
+    * ``cleanup["side"] == "callee"``. The caller-cleanup shape is ``V1-VFT``'s
+      and a body with no terminal ``RET`` has no cleanup to read; a *conflicting*
+      cleanup is not ``"callee"`` either, so the ambiguous case is refused;
+    * **the receiver is still undetermined** (``receiver_evidence["present"]`` is
+      not ``True``). This is the disjointness guard, and it is three guards in
+      one. An *incoming dereference* through ECX is ``R1``'s evidence and ``R1``'s
+      alone; an ``R-ALIAS`` dereference through a register copied from the
+      incoming ECX (``MOV ESI,ECX; MOV EAX,[ESI]``, the shape nine of the ten
+      ``R1-VFT`` corpus targets have) is the same class, and ``R1`` already owns
+      it -- so the record must not carry a second rule for one receiver; and a
+      dereference *after* ECX was written is the record's own
+      ``ecx_reassigned_before_deref`` unknown, which this rule does not resolve
+      and must not launder;
+    * **no memory access rooted at ECX at all**, including the indexed forms
+      :func:`_record_ecx_access` skips (``MOV EAX,[ECX + ECX*4 + 0x8]``). This
+      states the positive fact the claim rests on -- the body *computes* an
+      address from the receiver and never performs an access through it -- over a
+      list that is complete;
+    * **ECX is never a ``REP`` counter** (``state.ecx_rep``). A repeat count is an
+      ordinary integer, and a body can be both. This is read positively and not
+      off ``receiver.reason``, which ranks the address-taken unknown *above* the
+      counter one and would therefore admit every such body on an outranked
+      label -- pinned by ``test_11_a_rep_string_op_makes_ecx_a_counter``;
+    * at least one **incoming member ``LEA``** (:func:`_incoming_member_leas`),
+      which is what excludes ``0x00e51010``'s shape, a stack- or local-derived
+      scalar in ECX, register reuse, an adjustor, a read after a call, and a body
+      that only tests ECX.
+
+    A guard of the form "a register loaded from the first popped word is never
+    dereferenced" was written, measured and **rejected**: it is not a soundness
+    requirement (the register-parameter argument above already excludes the COM
+    reading) and it refuses a real shape, a ``__thiscall`` that takes a pointer
+    argument on the stack and dereferences it. ``test_16`` pins that decision.
+
+    It claims the **receiver register** and nothing else. No convention (that is
+    the ordinary ``C6B`` arm reading this function's own ``ret imm``), no class,
+    no vtable identity, no receiver type, no field, no layout -- and in
+    particular the ``LEA`` displacements are **not** published as
+    ``receiver.offsets``, which means displacements the body actually
+    dereferenced. They appear only in the rule's own ``value``.
+    """
+    if not memberships:
+        return None
+    if receiver_evidence.get("present") is not None:
+        return None
+    if cleanup.get("side") != "callee":
+        return None
+    if state.ecx_rep:
+        return None
+    accesses = _ecx_rooted_accesses(state)
+    if accesses:
+        return None
+    defs = _ecx_def_indices(state)
+    leas = _incoming_member_leas(state, defs)
+    if not leas:
+        return None
+    reads = _incoming_ecx_reads_before(state, defs)
+    if not reads:
+        return None
+    return {"table": memberships[0][0], "slot": memberships[0][1],
+            "citations": [item["id"] for item in reads],
+            "leas": leas, "null_test": _incoming_ecx_null_test(state, defs)}
+
+
 def _receiver_evidence(state):
     derefs = state.ecx_derefs
     incoming = [item for item in derefs if item["incoming"]]
@@ -1848,7 +2692,8 @@ def _receiver_evidence(state):
             "reason": None}
 
 
-def infer(observations, state=None, frame=None, meta=None, image_base=0x00400000):
+def infer(observations, state=None, frame=None, meta=None, image_base=0x00400000,
+          vftable_slots=(), tail_target_record=None):
     """Stage 2: the rule set, the only place a `confidence` field is produced.
 
     Called as `infer(disassembly)` it is the whole inference without
@@ -1857,14 +2702,24 @@ def infer(observations, state=None, frame=None, meta=None, image_base=0x00400000
     bare second stage, as the specification's module layout describes.
     """
     if state is None or frame is None or meta is None:
-        return analyze(observations, image_base=image_base)
-    return _infer_rules(observations, state, frame, meta, image_base)
+        return analyze(observations, image_base=image_base,
+                       vftable_slots=vftable_slots,
+                       tail_target_record=tail_target_record)
+    return _infer_rules(observations, state, frame, meta, image_base,
+                        vftable_slots, tail_target_record)
 
 
-def _infer_rules(observations, state, frame, meta, image_base=0x00400000):
+def _infer_rules(observations, state, frame, meta, image_base=0x00400000,
+                 vftable_slots=(), tail_target_record=None):
     abstained = []
     inferences = []
     seen_codes = set()
+    # The two new evidence classes, normalised once, up front, so every arm below
+    # reads the same value and a malformed input is an absence rather than a
+    # claim. Both default to empty, and with them empty every arm added by the
+    # 2026-09-28 extension is false, so a record is byte-identical to the one the
+    # rules before it produced.
+    memberships = vftable_memberships(vftable_slots)
 
     def abstain(code, detail):
         if code not in ABSTENTION_CODES:
@@ -1876,6 +2731,8 @@ def _infer_rules(observations, state, frame, meta, image_base=0x00400000):
         abstained.append(entry)
 
     def infer_rule(rule, claim, confidence, based_on, value=None):
+        if rule not in RULE_IDS:
+            raise AssertionError("unregistered rule id %r" % rule)
         citations = sorted({item for item in based_on if item})
         if not citations:
             return
@@ -2094,7 +2951,96 @@ def _infer_rules(observations, state, frame, meta, image_base=0x00400000):
         "written_through": receiver_evidence["written_through"],
         "bounds_only": True,
     }
-    if receiver["present"] is True:
+    # ---- R1-VFT: the callee-pop receiver form ------------------------------
+    # See `_vftable_dispatch_receiver` for the argument. The whole rule is one
+    # guarded upgrade of the receiver block above; the convention it enables is
+    # named by the ordinary C6B arm further down, off this function's own
+    # `ret imm`, so nothing here states a convention and nothing here can reach
+    # the caller-cleanup shape that V1-VFT already owns.
+    dispatch = _vftable_dispatch_receiver(state, memberships, receiver_evidence,
+                                          cleanup)
+    if dispatch is not None:
+        table, slot, citations = dispatch
+        receiver["present"] = True
+        receiver["register"] = "ECX"
+        receiver["provenance"] = "vftable_slot_dispatch"
+        receiver_confidence = "INFERRED"
+        infer_rule("R1-VFT",
+                   "ECX carries the receiver: %s is slot %d of the vptr-backed "
+                   "vftable at %s, so it is a virtual member of some class and every "
+                   "virtual call that reaches it indexes the vptr through the object "
+                   "address; the body reads its incoming ECX before writing it, and a "
+                   "body that reads a register the vtable dispatch delivered uses the "
+                   "object, so the receiver is in ECX. The callee pops its own stack "
+                   "arguments, which is the COM / __stdcall interface form, and that "
+                   "is the one shape in which a virtual member takes its receiver from "
+                   "the first popped stack word instead -- a body in that form never "
+                   "reads its incoming ECX, which is why this body reading it is what "
+                   "decides the two apart"
+                   % ((_first_va(observations) or "this function"), slot,
+                      _fmt_hex(table)),
+                   "INFERRED", citations,
+                   {"table": _fmt_hex(table), "slot_index": slot,
+                    "membership_count": len(memberships), "receiver_register": "ECX",
+                    "receiver_provenance": "vftable_slot_dispatch",
+                     "cleanup_side": cleanup["side"],
+                     "incoming_ecx_reads": len(citations)})
+    # ---- R2-VFT: the same fact from an address-taken ECX -------------------
+    # See `_vftable_address_receiver` for the argument. Identical in shape and
+    # in what it is allowed to claim; the only difference is the class of read,
+    # and the two are disjoint by construction (R2-VFT refuses any body with an
+    # ECX memory access at all). It runs only when R1-VFT did not, so a record
+    # never carries two rules for one receiver.
+    addressed = None
+    if dispatch is None:
+        addressed = _vftable_address_receiver(state, memberships, receiver_evidence,
+                                              cleanup)
+    if addressed is not None:
+        table, slot = addressed["table"], addressed["slot"]
+        leas = addressed["leas"]
+        receiver["present"] = True
+        receiver["register"] = "ECX"
+        receiver["provenance"] = "vftable_slot_address"
+        receiver_confidence = "INFERRED"
+        infer_rule("R2-VFT",
+                   "ECX carries the receiver: %s is slot %d of the vptr-backed "
+                   "vftable at %s, so it is a virtual member of some class and every "
+                   "virtual call that reaches it indexes the vptr through the object "
+                   "address; the body takes the address of its incoming ECX (LEA at "
+                   "%s) and never touches memory through it%s, and a body that computes "
+                   "an address from a register the vtable dispatch delivered computes "
+                   "it from the object, so the receiver is in ECX. The callee pops its "
+                   "own stack arguments, which is the COM / __stdcall interface form, "
+                   "and that is the one shape in which a virtual member takes its "
+                   "receiver from the first popped stack word instead -- a body in that "
+                   "form has no register parameter and never reads its incoming ECX, "
+                   "which is why this body reading it is what decides the two apart"
+                   % ((_first_va(observations) or "this function"), slot,
+                      _fmt_hex(table),
+                      ", ".join(item["at"] for item in leas
+                                if item["at"]) or "the sites cited below",
+                      ", after a null test of it" if addressed["null_test"] else ""),
+                   "INFERRED", addressed["citations"],
+                   {"table": _fmt_hex(table), "slot_index": slot,
+                    "membership_count": len(memberships), "receiver_register": "ECX",
+                    "receiver_provenance": "vftable_slot_address",
+                    "cleanup_side": cleanup["side"],
+                    "incoming_ecx_reads": len(addressed["citations"]),
+                    "incoming_member_leas": len(leas),
+                    "member_lea_sites": [item["at"] for item in leas
+                                         if item["at"]],
+                    "member_lea_displacements": [item["disp"] for item in leas],
+                    "incoming_ecx_null_test": addressed["null_test"]})
+    # `dispatch` is load-bearing and not cosmetic. When R1-VFT has already set
+    # `present`, neither the R1 arm nor R2 may run: R1 would claim the *same*
+    # receiver a second time, by dereference, with an empty offset list, and R2
+    # would claim the opposite one ("ECX is never read in any form"), which the
+    # listing refutes. One receiver fact gets one rule, whichever rule it is.
+    # The same holds for `addressed`, and it is the reason R2-VFT is entered
+    # only when `dispatch is None`.
+    if dispatch is not None or addressed is not None:
+        pass
+    elif receiver["present"] is True:
         receiver_confidence = "INFERRED"
         if (receiver["distinct_offsets"] >= 3 and receiver["written_through"] >= 1
                 and ret_imm in (None, 0) and not esp_unresolved):
@@ -2264,6 +3210,45 @@ def _infer_rules(observations, state, frame, meta, image_base=0x00400000):
                    [entry["obs"] for entry in state.slot_reads + state.slot_writes]
                    + ret_citations, "__cdecl")
         convention_rule = "C9"
+    elif (memberships and cleanup["side"] == "caller" and not keys
+          and receiver["present"] is not True and not edx_incoming_deref):
+        # V1-VFT. The function is the value of a slot of a table the image itself
+        # proves is a vptr-backed vftable (predicate P, three clauses, in
+        # `vftables.py`), the callee pops nothing, and no entry-relative stack
+        # slot was read. A virtual function is never `static`, so it has a
+        # receiver and a class; the receiver is not in the callee-popped area
+        # (nothing is popped and no stack word is read as an argument), so on
+        # x86-32 MSVC it is in a register, and of __thiscall/__fastcall only
+        # ECX carries one -- with the incoming EDX read excluded above, nothing
+        # else remains. The disjunction is over an exhaustive set.
+        #
+        # The cleanup clause is load-bearing, not decorative: measured on the
+        # frontier, twelve targets are sound vftable slots in the callee-pop
+        # (COM/__stdcall interface) form, and membership alone would have
+        # asserted __thiscall on every one of them. `0x01053e00` is the sharpest
+        # case -- the receiver is its first callee-popped stack word -- and it
+        # also fails P on all five tables the triage index claims for it.
+        table, slot = memberships[0]
+        own_va = _first_va(observations)
+        conventions["calling_convention"] = "__thiscall"
+        conventions["confidence"] = "INFERRED"
+        conventions["candidate_conventions"] = ["__thiscall", "__fastcall"]
+        stack_arguments["total_bytes"] = 0
+        receiver["register"] = "ECX"
+        receiver["provenance"] = "vftable_slot"
+        infer_rule("V1-VFT",
+                   "calling convention is __thiscall: %s is slot %d of the vptr-backed "
+                   "vftable at %s, so it is a virtual member of some class; the callee "
+                   "pops nothing and no stack word is read as an argument, so the "
+                   "receiver is in a register, and ECX is the only one that carries one"
+                   % (own_va if own_va else "this function",
+                      slot, _fmt_hex(table)),
+                   "INFERRED", ret_citations,
+                   {"table": _fmt_hex(table), "slot_index": slot,
+                    "membership_count": len(memberships), "receiver_register": "ECX",
+                    "cleanup_side": cleanup["side"],
+                    "receiver_provenance": "vftable_slot"})
+        convention_rule = "V1-VFT"
     else:
         conventions["candidate_conventions"] = list(CONVENTIONS)
         # The reason has to name what is actually missing. The spec's own C10
@@ -2294,12 +3279,49 @@ def _infer_rules(observations, state, frame, meta, image_base=0x00400000):
     tail = _tail_call(state, frame, ret_citations, infer_rule, terminal)
     return_block = _return_block(state, frame, ret_imm, has_ret, conflict,
                                  infer_rule, terminal, ret_citations)
-    if tail["present"] and not has_ret:
+    # ---- tail-call forwarding: T1-FWD -------------------------------------
+    # Placed *before* the override below, and the override is then skipped when a
+    # forward was established. A thunk whose target's ABI was resolved is not an
+    # unknown convention that a tail call made undecidable -- it is a call whose
+    # convention was read off the function the call actually reaches -- so the
+    # override must not demote it back to UNKNOWN. When no forward was
+    # established the override runs exactly as before, byte for byte.
+    forwarded = None
+    if tail["present"] and not has_ret and state.jmps_direct:
+        # The site count is no longer the gate; `_tail_forward` re-derives the
+        # shared target through `_shared_target_hops` and refuses everything the
+        # old `== 1` refused. `jmps_direct[0]` is that shared target whenever the
+        # guard can pass, and is ignored when it cannot.
+        hop_va = state.jmps_direct[0]["target"]
+        forwarded = _tail_forward(state, frame, tail, stack_arguments,
+                                  tail_target(tail_target_record, hop_va), hop_va,
+                                  infer_rule, terminal)
+    if forwarded:
+        if forwarded["cleanup"] is not None:
+            cleanup = dict(forwarded["cleanup"])
+        if forwarded["convention"] is not None:
+            conventions["calling_convention"] = forwarded["convention"]
+            conventions["confidence"] = forwarded["confidence"]
+            conventions["corroboration"] = "forwarded_from_tail_target"
+            conventions["candidate_conventions"] = [forwarded["convention"]]
+            convention_rule = "T1-FWD"
+        if forwarded["adjustor_delta"] is not None:
+            # A this-adjustor thunk adjusts the receiver it was handed; the size
+            # of that adjustment belongs to the receiver and is reported as its
+            # own field. The receiver's *identity* is never copied: the target's
+            # `this` is a different object, and only the thunk's own body can
+            # say which class either belongs to.
+            receiver["adjustor_delta"] = forwarded["adjustor_delta"]
+    if tail["present"] and not has_ret and not forwarded:
         conventions["calling_convention"] = None
         conventions["confidence"] = "UNKNOWN"
         conventions["ambiguities"] = list(conventions["ambiguities"]) + ["tail_call"]
         not_complete = True
         stack_arguments["not_complete"] = True
+    elif forwarded and forwarded["convention"] is None:
+        # The cleanup moved but no convention did, so the record still does not
+        # name one: the ambiguity stays, and what is new is the cleanup.
+        conventions["ambiguities"] = list(conventions["ambiguities"]) + ["tail_call"]
     stack_arguments["not_complete"] = not_complete
 
     dispatch = {
@@ -2662,6 +3684,19 @@ def cross_validate(record, ghidra_calling_convention=None, ghidra_parameter_coun
     drop (floor INFERRED) or record a conflict. It may never set
     calling_convention, sret.present or receiver.present, and it can never
     promote an abstention. Ghidra silence is not agreement.
+
+    **Our own abstention is not disagreement either.** That sentence used to
+    exempt only the Ghidra arm's silence, while both arms treated
+    ``inferred is None`` -- the engine having declined to name a convention --
+    as a conflict against whatever the oracle said. A conflict is a record
+    asserting the two sources *contradict* each other, and an abstention
+    contradicts nothing: the engine never said the oracle was wrong, it said the
+    listing cannot decide. The arms below are ordered the other way round, so a
+    silence is recorded as the silence it is (``no_information``, which is what
+    the field already says when no oracle answered) and no conflict is opened.
+    Measured: this opened a false conflict on ``0x005a2320`` and would have
+    opened one on all 25 ``no_terminal_ret`` targets -- every thunk and every
+    tail-jump body, where the engine abstains by design.
     """
     ghidra = _normalise_convention(ghidra_calling_convention)
     persisted = None
@@ -2683,12 +3718,10 @@ def cross_validate(record, ghidra_calling_convention=None, ghidra_parameter_coun
 
     if ghidra is not None:
         if inferred is None:
-            cross["ghidra"] = "disagrees"
-            conflicts.append({
-                "kind": "inferred_vs_ghidra", "field": "calling_convention",
-                "inferred": None, "ghidra": ghidra,
-                "resolution_status": "unresolved",
-            })
+            # An abstention against an external claim: recorded as the silence it
+            # is. `cross["ghidra"]` keeps its "no_information" value, so the pack
+            # shows an oracle that answered and an engine that declined.
+            pass
         elif ghidra == inferred:
             cross["ghidra"] = "agrees"
             cross["agreement"] = True
@@ -2704,12 +3737,8 @@ def cross_validate(record, ghidra_calling_convention=None, ghidra_parameter_coun
             })
     if persisted is not None:
         if inferred is None:
-            cross["persisted"] = "disagrees"
-            conflicts.append({
-                "kind": "inferred_vs_persisted", "field": "calling_convention",
-                "inferred": None, "persisted": persisted,
-                "resolution_status": "unresolved",
-            })
+            # As above: the same silence, for the same reason.
+            pass
         elif persisted == inferred:
             cross["persisted"] = "agrees"
             if not cross["agreement"]:
@@ -2825,7 +3854,8 @@ def _empty_record(image_base):
 
 
 def analyze(disassembly, *, call_sites=(), ghidra_calling_convention=None,
-            ghidra_parameter_count=None, persisted_abi=None, image_base=0x00400000):
+            ghidra_parameter_count=None, persisted_abi=None, image_base=0x00400000,
+            vftable_slots=(), tail_target_record=None):
     """Infer ABI facts from one function's disassembly. Pure; never raises.
 
     `disassembly` accepts a list of {"address", "instruction"} dicts, a dict
@@ -2834,6 +3864,17 @@ def analyze(disassembly, *, call_sites=(), ghidra_calling_convention=None,
     ValueError. `call_sites` is an optional tuple of caller fragments used only
     for the CL1 cleanup corroboration; the default reports
     corroboration "not_available" and changes nothing.
+
+    `vftable_slots` and `tail_target_record` are the two evidence classes added
+    by the 2026-09-28 extension, both keyword-only and both defaulting to the
+    empty answer, so every call site written before them is unaffected and every
+    record is byte-identical while the evidence is absent. They are inputs
+    because the engine has no image and no other function's listing: membership
+    in a vptr-backed vftable is proved by `tools/reconstruction_tooling/
+    vftables.py` over the PE bytes, and a tail target's ABI has to be derived
+    from *its* listing. Neither may be smuggled through `cross_validate`, whose
+    documented precedence forbids an external claim from setting a convention.
+    See `vftable_memberships` and `tail_target` for the accepted shapes.
     """
     try:
         image_base = int(image_base)
@@ -2844,7 +3885,8 @@ def analyze(disassembly, *, call_sites=(), ghidra_calling_convention=None,
         observations, state, frame = extract(insns, meta, image_base)
         _complete_observations(state, observations)
         state.observations = observations
-        record = _infer_rules(observations, state, frame, meta, image_base)
+        record = _infer_rules(observations, state, frame, meta, image_base,
+                              vftable_slots, tail_target_record)
         record, _ = cross_validate(record, ghidra_calling_convention,
                                    ghidra_parameter_count, persisted_abi)
         _apply_caller_corroboration(record, state, call_sites)

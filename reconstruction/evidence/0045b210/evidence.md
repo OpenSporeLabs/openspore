@@ -2,9 +2,54 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `348671fcba05e10e2ef48a6a89bbdf9b33421797c18c09f87e91a737893ac8e6`
+- Content SHA-256: `3b9afbd14b59fcdc538610172d644018854d2c19629dd7ee1f0fefb77e7048fc`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32 (x86:LE:32:windows, image base 0x00400000)",
+  "calling_convention": "__thiscall",
+  "ordinary_stack_argument_slots": 1,
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x4",
+  "return_note": "used by every observed caller as a pointer-like value",
+  "return_observation": "0x0045b27a MOV EDX,dword ptr [ECX+4] loads a full dword from the matched node and 0x0045b280 MOV EAX,dword ptr [EBP-0x5c] copies all 32 bits. 0x0045b26d XOR EAX,EAX zeroes all 32 bits on the miss path.",
+  "return_register": "EAX",
+  "return_semantics": "The mapped 32-bit value of the id when the id has an entry, and the literal 0 when it does not. The mapped value is an object pointer in every sampled use: callers load its vtable and dispatch through it.",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP",
+    "EBX is used as a scratch by the callee-prologue spill sequence only"
+  ],
+  "stack_arguments": [
+    {
+      "entry_offset": "EBP+0x8",
+      "name": "id",
+      "observed_values": [
+        "0xb8deeb8b (literal, 0x0058bf39)",
+        "0xabf6fbdd (literal, 0x0043f951)",
+        "dword from [ESI+0x27c] (0x0058bf6a)",
+        "dword from [EBP+0x278] (0x005872dc)",
+        "dword from [EBP+0x27c] (0x005877cb)"
+      ],
+      "read_evidence": "0x0045b219 LEA EAX,[EBP + 0x8] followed by 0x0045b21c PUSH EAX -- the argument is read INDIRECTLY, by passing its address to 0x00421950, not by a direct load. The callee dereferences it at 0x0042195c MOV ECX,dword ptr [EAX].",
+      "type": "std::uint32_t",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "single exit at 0x0045b286"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -68,7 +113,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "66f44bbc3f8b1831d63faa106590a4be4dada9f3cbe8604ac6d5f9d3bc07b823",
+  "content_sha256": "2fd7603da214a15d356a7dc4c456801061448184d35f013ef8978c98556fbaa4",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -87,7 +132,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -273,7 +318,7 @@
       "via": "direct"
     },
     {
-      "a
+
 [TRUNCATED]
 ```
 
@@ -285,9 +330,69 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0043f6b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0045afc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0045b000"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0045b040"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0045b110"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005744b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00575f70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00587270"
+  },
+  {
+    "name": "Editors::cEditor::Update",
+    "reconstructed": false,
+    "va": "0x0058be50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f2f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f920"
+  }
+]
+```
 
 ## contradictions
 
@@ -297,13 +402,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 __fastcall FUN_0045b210(int param_1)\n\n{\n  undefined4 uVar1;\n  int local_c [2];\n  \n  FUN_00421950(local_c,&stack0x00000004);\n  if (local_c[0] == *(int *)(*(int *)(param_1 + 0xc) + *(int *)(param_1 + 0x10) * 4)) {\n    uVar1 = 0;\n  }\n  else {\n    uVar1 = *(undefined4 *)(local_c[0] + 4);\n  }\n  return uVar1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -507,9 +608,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12624,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32 (x86:LE:32:windows, image base 0x00400000)\",\n    \"calling_convention\": \"__thiscall\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x4\",\n    \"return_note\": \"used by every observed caller as a pointer-like value\",\n    \"return_observation\": \"0x0045b27a MOV EDX,dword ptr [ECX+4] loads a full dword from the matched node and 0x0045b280 MOV EAX,dword ptr [EBP-0x5c] copies all 32 bits. 0x0045b26d XOR EAX,EAX zeroes all 32 bits on the miss path.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"The mapped 32-bit value of the id when the id has an entry, and the literal 0 when it does not. The mapped value is an object pointer in every sampled use: callers load its vtable and dispatch through it.\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX is used as a scratch by the callee-prologue spill sequence only\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"EBP+0x8\",\n        \"name\": \"id\",\n        \"observed_values\": [\n          \"0xb8deeb8b (literal, 0x0058bf39)\",\n          \"0xabf6fbdd (literal, 0x0043f951)\",\n          \"dword from [ESI+0x27c] (0x0058bf6a)\",\n          \"dword from [EBP+0x278] (0x005872dc)\",\n          \"dword from [EBP+0x27c] (0x005877cb)\"\n        ],\n        \"read_evidence\": \"0x0045b219 LEA EAX,[EBP + 0x8] followed by 0x0045b21c PUSH EAX -- the argument is read INDIRECTLY, by passing its address to 0x00421950, not by a direct load. The callee dereferences it at 0x0042195c MOV ECX,dword ptr [EAX].\",\n        \"type\": \"std::uint32_t\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"single exit at 0x0045b286\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0043f6b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0045afc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0045b000\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0045b040\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0045b110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005744b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00575f70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00587270\"\n      },\n      {\n        \"name\": \"Editors::cEditor::Update\",\n        \"reconstructed\": false,\n        \"va\": \"0x0058be50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f2f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f920\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0043f7ff\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043f6b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043fa22\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043f6b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043fa39\",\n   
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -528,17 +636,17 @@
     "FUN_00421950"
   ],
   "callers": [
-    "FUN_0045afc0",
-    "FUN_0045b000",
-    "Editors::cEditor::SetActiveMode",
-    "FUN_0043f6b0",
-    "FUN_0062f920",
-    "Editors::cEditor::Update",
     "FUN_0045b110",
-    "FUN_0045b040",
-    "FUN_00575f70",
     "FUN_0062f2f0",
-    "FUN_005744b0"
+    "FUN_0062f920",
+    "FUN_00575f70",
+    "Editors::cEditor::SetActiveMode",
+    "FUN_005744b0",
+    "FUN_0045b040",
+    "FUN_0045afc0",
+    "FUN_0043f6b0",
+    "Editors::cEditor::Update",
+    "FUN_0045b000"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -553,20 +661,50 @@
     {
       "name": "local_c",
       "storage": "Stack[-0xc]:4",
-      "type": "int[2]"
+      "type": "undefined4"
     },
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
+      "type": "undefined4"
     },
     {
-      "name": "uVar1",
-      "storage": "register:00000000:4",
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_50",
+      "storage": "Stack[-0x50]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_54",
+      "storage": "Stack[-0x54]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_58",
+      "storage": "Stack[-0x58]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_5c",
+      "storage": "Stack[-0x5c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_60",
+      "storage": "Stack[-0x60]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_64",
+      "storage": "Stack[-0x64]:4",
       "type": "undefined4"
     }
   ],
-  "locals_count": 3,
+  "locals_count": 9,
   "mode": "live",
   "name": "FUN_0045b210",
   "namespace": null,
@@ -683,9 +821,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b01/0045b210_lookup.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/0045b210_lookup.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/wave13_b01_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b01/0045b210.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -695,9 +848,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime pass would need to record the bucket count and the resolved object pointer for a handful of the hardcoded ids to confirm the id-to-class mapping.",
+    "No original-process trace exists, so the claim that the global at 0x015d0c14 is populated and that lookups succeed is static only.",
+    "The original Cell stage has never been entered in any recorded run, so no stage-level reachability claim is made."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -707,15 +872,30 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t",
+  "std::uint32_t, used by every observed caller as a pointer-like value"
+]
+```
 
 ## vtables
 

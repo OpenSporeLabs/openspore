@@ -1,0 +1,413 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W1-00641490",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x00641490",
+  "address": "0x00641490",
+  "symbol": "re_00641490",
+  "normalized_symbol": "re_00641490",
+  "ghidra_name": "FUN_00641490",
+  "subsystem": "Sporepedia",
+  "cluster": "sporepedia-online",
+  "worker_id": "w17",
+  "queue_id": "function:00641490:FUN_00641490",
+  "captured_on": "2026-09-28",
+  "target_state": "implemented staging handoff. The body was re-derived from the image bytes for this package rather than taken from the committed Ghidra listing, because the committed record truncates it: it carries 25 instructions with body_end 0x006414cf and all three of the body's conditional branches target 0x006414d0, which is outside that span. objdump shows four further instructions to 0x006414d6 (XOR AL,AL / POP ESI / ADD ESP,0x8 / RET) and INT3 padding after, and the live decompilation merges the same block. The reconstruction is the 30-instruction body (see function_extent). Nothing was left structural: the frame, both transfer targets, the dispatch shape and all three branch conditions are machine-fixed. RUNTIME remains GATED at 0 and nothing was attempted.",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_types.hpp",
+    "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490.cpp",
+    "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_model_test.cpp"
+  ],
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490.cpp",
+      "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_types.hpp",
+      "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed and no other package's files were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_00641490",
+    "declaration": "extern \"C\" std::uint8_t PKG_SWARM_W1_00641490_THISCALL re_00641490(SporepediaAssetReceiver *receiver);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX, aliased into ESI at 0x00641494 and used through that alias for the body's only two receiver operations; NO ordinary stack argument. The terminator is a bare RET (0x006414cf and 0x006414d6, both C3) and both exits pop ESI and add the eight reserved bytes back, so ESP lands on its entry value with no argument word consumed. ghidra_function.parameter_count is 0 and abi_derived.cleanup is {bytes 0, side caller, evidence 'ret with no immediate, no stack reads'}. The live decompilation disagrees: it declares __fastcall and models the receiver as a stack parameter `param_1`; the listing is followed.",
+    "return_type": "std::uint8_t",
+    "return_type_note": "Both exits write AL with an 8-bit instruction -- 0x006414c9 MOV AL,0x1 and 0x006414d0 XOR AL,AL -- and the only test applied to a callee's return is 0x006414b8 TEST AL,AL, also 8-bit. The machine therefore fixes the width the body touches and not a C++ spelling; the byte is what is declared. The record's canonical return claim is the register-class label 'integral_in_EAX' (abi.return_semantics, abi_derived.return.type null, register_class integral), which fixes no width at all. See validation.expected_reasons.RETURN SEMANTICS and unresolved_questions.",
+    "source": "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490.cpp",
+    "header": "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_types.hpp",
+    "model_test": "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490_model_test.cpp",
+    "receiver_model": "a 0x10-byte opaque byte run with no named member. Displacement 0x00 is the dispatch word this body reads at 0x006414a7; displacement 0x04 is an address this body FORMS at 0x00641496 and hands to 0x00552300, which dereferences it and reads three dwords at its +0/+4/+8 (0x0055231b, 0x00552320, 0x00552326), which is why the run is modelled to 0x10. No word is named: the machine-derived receiver record carries offsets [0] with bounds_only true, so it states where the body was seen reaching and not which member is which.",
+    "dispatch_model": "the two-level table load the instruction stream shows: the receiver's word at displacement 0 (0x006414a7) is a table address, and the table's word at displacement 0x90 (0x006414a9) is the transfer target used by CALL EDX at 0x006414b6. The model names the table a local and the target a SlotTarget pointer, calls through the loaded pointer, and declares no slot INDEX, no table size and no class -- see mechanics.vtable_associations for why no index is claimable.",
+    "dependency_note": "the one direct callee (0x00552300) is declared extern in the package header and defined as an observer in the package's own model test; the dispatched-to function is reached through a table word the test supplies, so no second package's header is included and this package asserts nothing about any slot's occupant beyond its own two signature facts (ECX receiver, callee-owned cleanup) which are read from 0x006417d0's bytes.",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w1-00641490 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. swarm_w1_00641490.cpp swarm_w1_00641490_model_test.cpp -o /tmp/w_00641490 && /tmp/w_00641490 -> clean build, zero warnings, exit 0. The header additionally compiles clean as its own translation unit under the same flags. See validation.compile_result."
+  },
+  "function_extent": {
+    "entry": "0x00641490",
+    "body_end_inclusive": "0x006414d6",
+    "instruction_count": 30,
+    "committed_record_body_end_inclusive": "0x006414cf",
+    "committed_record_instruction_count": 25,
+    "return_site": "0x006414cf: RET (C3) on the surviving path; 0x006414d6: RET (C3) on the shared failure path",
+    "span_bytes": 71,
+    "basic_blocks": 4,
+    "listing_reexported": "objdump -D -b binary -m i386 -M intel --adjust-vma=0x400c00 --start-address=0x641490 --stop-address=0x6414e0 SPORE/SporeBin/SporeApp.exe reproduces the committed 25 instructions byte for byte at the same addresses and then shows the four that close the body: 006414d0 XOR AL,AL (32 C0) / 006414d2 POP ESI (5E) / 006414d3 ADD ESP,0x8 (83 C4 08) / 006414d6 RET (C3), followed by CC CC CC CC CC CC CC from 0x006414d7. Call targets, branch targets and operand displacements are identical to the committed listing. Nothing in the model depends on the committed listing's truncation, and the four extra instructions are the reason the three branch targets are outside its recorded span."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "ESI (PUSH ESI at 0x00641493, MOV ESI,ECX at 0x00641494, POP ESI on both exits; every receiver access goes through the alias, which is why the machine-derived receiver record reports register ECX with shape R-ALIAS)",
+    "ordinary_stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "saved_registers": [
+      "ESI"
+    ],
+    "ret_form": "RET",
+    "termination": "RET",
+    "return_register": "EAX",
+    "return_value_width": "8 bits in AL (0x006414c9 MOV AL,0x1 / 0x006414d0 XOR AL,AL); the upper three bytes of EAX are dead on both paths and are not cleared by the body",
+    "frame": "SUB ESP,0x8 then PUSH ESI: eight bytes of locals at entry-8..entry-1, the saved ESI at entry-12, the return address at entry+4, and no argument word. Both exits pop ESI and add the eight bytes back, so the walk ends at entry+4 on each, which is where a bare RET expects it.",
+    "ghidra_prototype": "undefined FUN_00641490(void)",
+    "ghidra_decompiled_signature": "uint __fastcall FUN_00641490(int *param_1)",
+    "ghidra_convention_note": "The live decompilation models the hidden receiver as a stack parameter (`param_1`, read as `*param_1` and `param_1 + 1`) and declares __fastcall, which is what the 25-instruction slice plus a shifted stack model produces. ghidra_function reports ghidra_calling_convention null, ghidra_has_calling_convention false, ghidra_calling_convention_signal no_information, ghidra_parameter_count 0; abi_derived reports conventions.calling_convention __thiscall with candidates [__thiscall, __fastcall] and confidence INFERRED. The listing decides it: ECX is copied into ESI and dereferenced through the alias before any definite write, and the terminator is a bare RET with no immediate.",
+    "dispatch": "abi_derived.dispatch records indirect_calls 1, call_offsets [] and vtable_shaped_loads 0. The one indirect site is 0x006414b6 CALL EDX, and its shape is read from the listing bytes: EDX is loaded at 0x006414a7 from a memory operand whose base is ESI (the receiver), then reloaded at 0x006414a9 from a memory operand whose base is that same loaded word, so the transfer reads slot displacement 0x90 of the receiver's table.",
+    "callee_conventions": "0x00552300 is cdecl: its last bytes are 8B E5 5D C3 (MOV ESP,EBP; POP EBP; RET) with no immediate, and this body drops the one word itself with ADD ESP,0x4 at 0x0064149f. The dispatched-to function is __thiscall with callee-owned cleanup: 0x006417d0, the entry the table run at 0x013ff648 holds at displacement 0x90, ends C2 04 00 (RET 0x4) after writing [ECX] and [ECX+0x4] of its one argument, which is why there is no ADD ESP after 0x006414b6 and why the two reads at 0x006414bc/0x006414c0 are at ESP+4 and ESP+8 rather than one word higher.",
+    "evidence_level": "ABI_INFERRED (abi_derived.verdict = ABI_INFERRED, conventions.confidence = INFERRED, completeness = CORE_RESOLVED)"
+  },
+  "mechanics": {
+    "body_shape": "reserve eight bytes and save ESI; ask 0x00552300 for a status of the run at receiver+0x04; return 0 unless that status is exactly 2; load the receiver's dispatch word, take the target at table slot 0x90, and call it with the receiver in ECX and the eight-byte pair as its single argument; return 0 unless that call's AL is non-zero; AND the pair's two words and return 0 if the result is all-ones; otherwise return 1",
+    "frame_resolution": {
+      "method": "one linear walk of ESP through the prologue and both exits. Entry ESP is 0. SUB ESP,0x8 (0x00641490) and PUSH ESI (0x00641493) put ESP at entry-12 for the whole of the body; the direct call's own push/ADD ESP,0x4 pair is balanced by 0x0064149f; the dispatched call's single word is popped by the callee, so ESP is back at entry-12 for 0x006414bc; POP ESI and ADD ESP,0x8 land on entry+4 on both exits, which is what a bare RET consumes.",
+      "corroboration": "two independent agreements. (1) The address 0x006414af forms with LEA EAX,[ESP + 0x4] at ESP = entry-12, i.e. entry-8, and 0x006414bc reads the same slot with MOV EAX,[ESP + 0x4] at the same ESP: the caller reads back exactly the address it handed over, inside the eight bytes the prologue reserved. (2) 0x006417d0, the slot's occupant in the table run that agrees, writes [ECX] and [ECX+0x4] of the pointer it is given and nothing else, which are the two words this body ANDs at 0x006414bc/0x006414c0.",
+      "slots": {
+        "entry-12": "the saved ESI (0x00641493), popped at 0x006414cb and 0x006414d2",
+        "entry-8": "the pair's first word: the slot target's argument, formed at 0x006414af, read at 0x006414bc",
+        "entry-4": "the pair's second word: read at 0x006414c0. Never written by this body.",
+        "entry+4": "the return address, consumed by the bare RET. No argument word exists."
+      }
+    },
+    "receiver_displacement": {
+      "0x00": "read at 0x006414a7 (MOV EDX,dword ptr [ESI]) with no displacement on the alias; it is the dispatch word, a table address, and is never dereferenced as an object by this body",
+      "0x04": "formed at 0x00641496 (LEA EAX,[ESI + 0x4]) and pushed at 0x00641499. It is an ADDRESS, not a read: nothing in this body reads the receiver at 0x04, +0x08 or +0x0c. Those three words are read by 0x00552300, which dereferences the pointer it is handed (0x0055231b MOV ECX,[EAX] / 0x00552320 MOV EDX,[EAX+0x4] / 0x00552326 MOV EAX,[EAX+0x8]) and which this body calls with exactly that address."
+    },
+    "pair_derivation": "the pair is 8 bytes at the pair's own +0 and +4, and every part of that is read off two instructions rather than assumed: 0x00641490 reserves exactly 8 bytes; 0x006414af passes the address of the first of them; 0x006414bc and 0x006414c0 read them at ESP+4 and ESP+8 with ESP at entry-12, i.e. entry-8 and entry-4, which are adjacent and inside the reservation. 0x006417d0 independently writes exactly those two words of the pointer it is given, on the one path where it returns non-zero. The body does not initialise either word, so the pair's contents are the callee's to define; the model zero-initialises the C++ object so a callee that reports success without writing is observable as (0,0) rather than as undefined behaviour, and that initialiser is a determinism aid, not a claim.",
+    "sentinel_derivation": "0x006414c0 ANDs the two words and 0x006414c4 compares the result with -1, so the rejected case is 'both words are all-ones' and nothing else: AND yields all-ones only when both operands are. 0x006417d0 makes the same judgement on the same pair with two separate compares (CMP DWORD PTR [EAX],0xffffffff at 0x006417df and CMP DWORD PTR [EAX+0x4],0xffffffff at 0x006417e4, both branching to 0x006417806 which clears AL), which is a second witness that the pair is a pair and that all-ones in both words is the rejected case. Neither body says what the two words measure.",
+    "control_flow": "three conditional branches, all with the same absolute target inside the recovered body span: JNZ 0x006414d0 (0x006414a5), JZ 0x006414d0 (0x006414ba) and JZ 0x006414d0 (0x006414c7); plus the two unconditional terminators 0x006414cf and 0x006414d6. Four blocks, one of which (0x006414d0) is the shared failure exit. All four are modelled.",
+    "fail_paths": "0x006414d0 XOR AL,AL is reached from all three branches and produces 0. On the first (status != 2) the pair was never formed and no dispatch happened; on the second (AL == 0) the pair was written by the callee and is not read; on the third (AND == all-ones) the pair was read. The model's three `return kFalse` sites correspond to those three in order, and the model test drives all three.",
+    "globals": "none. The complete 30-instruction body names no data-segment address. The absolute operands in it are the direct call target 0x00552300 and the three branch targets 0x006414d0, all of which are code.",
+    "direct_call_1": {
+      "target": "0x00552300",
+      "ghidra_name": "FUN_00552300",
+      "at": "0x0064149a",
+      "convention": "cdecl (callee ends 8B E5 5D C3; the body drops the one word itself at 0x0064149f with ADD ESP,0x4)",
+      "arguments": "one word, the ADDRESS receiver+0x04 formed at 0x00641496. The callee dereferences its single parameter (0x00552318 MOV EAX,[EBP+0x8] then 0x0055231b MOV ECX,[EAX]) and reads three dwords through it at +0, +4 and +8.",
+      "cleanup": "caller-side, ADD ESP,0x4 at 0x0064149f",
+      "return": "compared against 0x2 at 0x006414a2 and used for nothing else. The callee's own listing returns 0x0 (0x0055243e), 0x1 (0x0055241a), 0x2 (0x00552439) or the word it loaded at [EBP-0x30] (0x005523ec), so the body selects one of at least four outcomes. No record names any of them and none is named here.",
+      "callee_record": "no metadata record for this address; its contract was read from its own body in the image (0x00552300..0x00552443, plus the INT3 padding at 0x00552444)"
+    },
+    "indirect_call_1": {
+      "site": "0x006414b6",
+      "instruction": "CALL EDX",
+      "shape": "VTABLE_SLOT",
+      "slot_displacement": "0x90",
+      "slot_index": "36 dwords (0x90 / 4; asserted in the package header)",
+      "chain": "0x006414a7 MOV EDX,[ESI] loads the table out of the receiver's own leading word; 0x006414a9 MOV EDX,[EDX + 0x90] loads the target out of that table into the same register; 0x006414b6 transfers through it. Two dereferences, and the second one's displacement is the slot.",
+      "receiver": "ECX, set by 0x006414b4 MOV ECX,ESI -- the receiver itself, not the address formed at 0x00641496",
+      "argument": "one word, the pair's address (0x006414af/0x006414b3)",
+      "cleanup": "callee-side, RET 0x4 in 0x006417d0 -- the entry three of the tables hold at this displacement. That is why no ADD ESP follows the CALL and why the two reads below are at ESP+4 and ESP+8.",
+      "return": "tested as its low byte only: 0x006414b8 TEST AL,AL. Any value with a non-zero AL survives whatever its upper three bytes are; the model test drives both directions with disagreeing upper bytes.",
+      "target_identity": "not named by this body -- the target is a run-time value in EDX. See mechanics.vtable_associations for what the image says about who occupies the slot."
+    },
+    "vtable_associations": {
+      "note": "the evidence pack's record associates this VA with thirteen vtable ids (the merged index record the validator reads carries fifteen) and the xref export records six data references. Reading the image at those addresses settles some of it, refutes some of it, and settles none of it well enough to claim a slot INDEX. None of this is used by the model; it is recorded so a later reader does not re-derive it.",
+      "runs_that_contain_this_body": {
+        "0x013ff648": "0x00641490 at +0x80, 0x006417d0 at +0x90. The xref from 0x013ff6c8 is 0x013ff648+0x80, so that address is a slot entry of this run and not an arbitrary dword.",
+        "0x01489090": "0x00641490 at +0x80, 0x006417d0 at +0x90 -- same two values, same two offsets.",
+        "0x014893b0": "0x00641490 at +0x80, 0x006417d0 at +0x90 -- same again.",
+        "0x01462764": "0x00641490 at +0x74, 0x006417d0 at +0x84 -- the same 0x10 spacing, four bytes lower.",
+        "0x0147cbbc": "0x00641490 at +0x74, 0x006417d0 at +0x84 -- same again."
+      },
+      "runs_that_do_not": "0x013ff6ac, 0x014627bc, 0x0147ca30, 0x0147ca70, 0x0147cc14 and 0x014890f4 hold float constants, ASCII text or an unrelated pointer run at the offsets the record implies. A seventh id, 0x01489414, is the same run as 0x014893b0 mis-anchored: 0x01489414+0x1c is 0x01489430, which is the xref the export already attributes to the slot entry this body occupies. Recorded, not used.",
+      "why_no_slot_index_is_claimed": "one fixed displacement cannot be +0x80 in one run and +0x74 in another, so the two groups are either secondary tables in a multiple-inheritance layout or the record's table starts are off by four bytes, and this record cannot say which. Independently, this binary carries no MSVC RTTI (the byte before the run at 0x013ff648 is the float constant 0x3f000000, not a complete-object locator), so no index 0 can be located and no ordinal can be counted from the top of a table. The model therefore states the displacement 0x90, which is read straight out of the instruction, and nothing else.",
+      "slot_occupant_corroboration": "0x006417d0's own body is the corroboration for the slot's SIGNATURE rather than for the slot's identity: it takes the receiver in ECX, takes one stack word, writes [ECX] and [ECX+0x4] of it, tests the same all-ones-in-both-words condition this body ANDs for, and returns 0x1/0x0 in AL with RET 0x4. So the model test's slot observer is a behavioural stand-in for it, and the model's `SlotTarget` type is that signature."
+    },
+    "return_semantics_machine": "one byte in AL, produced on four of the four paths. 0x006414c9 MOV AL,0x1 on the surviving path; 0x006414d0 XOR AL,AL on the shared failure path reached from all three branches. Both are 8-bit operations and the body clears nothing else, so bits 8..31 of EAX are dead: on the surviving path they carry bits 8..31 of the AND result, and on the three failing paths they carry whatever the last thing to run in EAX left there (0x00552300's status word, the slot call's own return word, or the AND result). The model returns the byte and asserts nothing about the rest; the record lists no caller for this VA at all (all six xrefs are data references from pointer runs), so nothing in this repository observes those bits."
+  },
+  "semantics": {
+    "shape": "a three-way-gated predicate returning one byte",
+    "gate_1": "0x00552300(receiver+0x04) must return exactly 2",
+    "gate_2": "the slot at table displacement 0x90, called on the receiver with a pointer to an 8-byte frame pair, must return a non-zero low byte",
+    "gate_3": "the AND of the pair's two words must not be 0xffffffff",
+    "on_failure": "every failing gate lands on one shared block at 0x006414d0, which clears AL and returns. The three gates are independent: none implies either of the others, and the model test drives each of them with the other two satisfied.",
+    "ownership": "the body performs no reference acquisition or release. It reads one pointer out of the receiver, hands two addresses to callees, and writes nothing to the receiver at all -- the model test asserts that as a byte-level fact over a receiver with a sentinel tail, not as a claim about the struct.",
+    "not_claimed": "what the two words of the pair measure, what 0x00552300's four return values mean, what the dispatch word is beyond being a table address, and whether any of this is reachable in the shipped game. The body is a virtual entry in a Sporepedia asset-data table family and its name is not established by any record here."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "persisted_pack": "reconstruction/evidence/00641490/evidence.json",
+    "assembly": [
+      "00641490: SUB ESP,0x8",
+      "00641493: PUSH ESI",
+      "00641494: MOV ESI,ECX",
+      "00641496: LEA EAX,[ESI + 0x4]",
+      "00641499: PUSH EAX",
+      "0064149a: CALL 0x00552300",
+      "0064149f: ADD ESP,0x4",
+      "006414a2: CMP EAX,0x2",
+      "006414a5: JNZ 0x006414d0",
+      "006414a7: MOV EDX,dword ptr [ESI]",
+      "006414a9: MOV EDX,dword ptr [EDX + 0x90]",
+      "006414af: LEA EAX,[ESP + 0x4]",
+      "006414b3: PUSH EAX",
+      "006414b4: MOV ECX,ESI",
+      "006414b6: CALL EDX",
+      "006414b8: TEST AL,AL",
+      "006414ba: JZ 0x006414d0",
+      "006414bc: MOV EAX,dword ptr [ESP + 0x4]",
+      "006414c0: AND EAX,dword ptr [ESP + 0x8]",
+      "006414c4: CMP EAX,-0x1",
+      "006414c7: JZ 0x006414d0",
+      "006414c9: MOV AL,0x1",
+      "006414cb: POP ESI",
+      "006414cc: ADD ESP,0x8",
+      "006414cf: RET",
+      "006414d0: XOR AL,AL",
+      "006414d2: POP ESI",
+      "006414d3: ADD ESP,0x8",
+      "006414d6: RET"
+    ],
+    "assembly_provenance": "the first 25 lines are the committed Ghidra listing (ghidra_function / disassemble_function, reproduced in reconstruction/evidence/00641490/evidence.json categories.disassembly.value.instructions) and are byte-identical to the objdump pass described in function_extent.listing_reexported; the last five are that pass alone and are outside the committed record's body span.",
+    "decompiler": "uint __fastcall FUN_00641490(int *param_1) { uint uVar1; uint unaff_ESI; uint local_8[2]; uVar1 = FUN_00552300(param_1 + 1); if (uVar1 == 2) { uVar1 = (**(code **)(*param_1 + 0x90))(local_8); if (((char)uVar1 != '\\0') && (uVar1 = unaff_ESI & local_8[0], uVar1 != 0xffffffff)) { return CONCAT31((int3)(uVar1 >> 8),1); } } return uVar1 & 0xffffff00; }",
+    "decompiler_disagreements": "the live decompilation is used here as a hint and is contradicted by the listing in four places, each resolved in favour of the listing: (1) it declares __fastcall and models the receiver as a stack parameter `param_1`, so its `param_1 + 1` is receiver+4 and its `*param_1` is the dispatch word -- the values are right and the model is wrong, and the listing has ECX; (2) it passes `local_8` (its own two-word local) to the slot call, which is the right object and the right shape, but its `local_8` is modelled as an array of two words with no address taken for the AND; (3) it writes `unaff_ESI & local_8[0]`, folding the AND's second operand into a register it believes was never written -- the operands are the same two words with the roles swapped, which is harmless for the value and is modelled in listing order; (4) its final `return uVar1 & 0xffffff00` is the merged form of the shared failure block's XOR AL,AL, which the committed 25-instruction record does not contain but the image does (0x006414d0 XOR AL,AL) and which the decompilation's own flow reaches.",
+    "direct_callees": [
+      "0x00552300 FUN_00552300"
+    ],
+    "indirect_transfers": [
+      "0x006414b6 CALL EDX -- VTABLE_SLOT at slot displacement 0x90, two-level load, one site"
+    ],
+    "direct_callers": [],
+    "caller_note": "the record lists no caller: ghidra_function.callers is empty, callees_dependencies and callers_dependencies are both unavailable, and all six of the VA's xrefs (0x013ff6c8, 0x014627d8, 0x0147ca78, 0x0147cc30, 0x01489110, 0x01489430) are data references from pointer runs. So the body's ABI is fixed from its own bytes and nothing about how a caller reads the return is evidenced.",
+    "xref_export_edges": [
+      { "callsite": "0x0064149a", "direction": "out", "other": "0x00552300", "reference_type": "direct-call" },
+      { "from": "0x013ff6c8", "direction": "in", "other": "data", "reference_type": "data-reference", "note": "0x013ff648+0x80, the slot entry holding this body" },
+      { "from": "0x014627d8", "direction": "in", "other": "data", "reference_type": "data-reference" },
+      { "from": "0x0147ca78", "direction": "in", "other": "data", "reference_type": "data-reference" },
+      { "from": "0x0147cc30", "direction": "in", "other": "data", "reference_type": "data-reference" },
+      { "from": "0x01489110", "direction": "in", "other": "data", "reference_type": "data-reference" },
+      { "from": "0x01489430", "direction": "in", "other": "data", "reference_type": "data-reference" }
+    ],
+    "machine_abi_record": "abi_derived verdict ABI_INFERRED, completeness CORE_RESOLVED, conventions.calling_convention __thiscall with candidates [__thiscall, __fastcall] and confidence INFERRED, parse {declared_count 25, unparsed 0, degraded false, frame.sub 8, flow_complete false}, dispatch {indirect_calls 1, call_offsets [], vtable_shaped_loads 0}, receiver {register ECX, offsets [0], max_offset 0, bounds_only true, written_through 0, shape R-ALIAS}, return {register EAX, register_class integral, type null, void_possible false}, cleanup {bytes 0, side caller, evidence 'ret with no immediate, no stack reads'}, stack_arguments [] (no slot), tail_call false, sret false, variadic false",
+    "vtable_associations_not_used_as_evidence": [
+      "vtable:0x013ff648",
+      "vtable:0x013ff6ac",
+      "vtable:0x01462764",
+      "vtable:0x014627bc",
+      "vtable:0x0147c9e8",
+      "vtable:0x0147ca30",
+      "vtable:0x0147ca70",
+      "vtable:0x0147cbbc",
+      "vtable:0x0147cc14",
+      "vtable:0x01489090",
+      "vtable:0x014890f4",
+      "vtable:0x014893b0",
+      "vtable:0x01489414"
+    ],
+    "sibling_packages_same_table_family": "0x00641780, 0x006413d0 and 0x00641fa0 are reconstructed in this same wave (reconstruction/staging/pkg-swarm-w1-*) and 0x00641400, 0x00641460, 0x00641770, 0x006417b0, 0x006417c0, 0x00641810, 0x00641820 and 0x00641850 are recorded as this VA's analogues. Their packages were read for shape only; every offset, constant and branch condition asserted here comes from this body's own bytes. The one thing taken from a sibling is the observation that this family of bodies writes AL with MOV/XOR and returns a predicate, which is why this package's declared return width is 8 bits -- and that is corroborated independently, inside this VA's own image, by 0x006414c9, 0x006414d0 and 0x006414b8."
+  },
+  "provenance": [
+    "/tmp/opencode/factory/w1/tasks/00641490.json (the assembled briefing: disassembly, abi, abi_derived, decompilation, ghidra_function, xrefs, vtables, types, validation_requirements)",
+    "reconstruction/evidence/00641490/evidence.json (categories.disassembly, categories.abi, categories.abi_derived, categories.decompilation, categories.ghidra_function, record.dependencies)",
+    "objdump -D -b binary -m i386 -M intel --adjust-vma=0x400c00 --start-address=0x641490 --stop-address=0x6414e0 SPORE/SporeBin/SporeApp.exe, which is where the 30-instruction assembly list above comes from and where the four instructions outside the committed record were found",
+    "the same objdump pass over 0x00552300 (0x144 bytes to its INT3 padding) and over 0x006417d0 (0x3d bytes), read from the image to fix the direct callee's convention, argument shape and return values, and the dispatched-to function's convention, argument count, written words and all-ones test",
+    "a direct read of the image's bytes at the thirteen vtable addresses the record associates with this VA, and at the six xref addresses, to establish which of them are pointer runs (mechanics.vtable_associations)",
+    "tools/reconstruction_tooling/validate.py, evidence_dispatch.py, evidence_returns.py and evidence_fields.py, read to establish which of the eight checks a given source shape can and cannot pass before writing the source rather than after",
+    "GhidraMCP REST /get_function_by_address @ 127.0.0.1:8089 for 0x00641490 (read-only, via the assembled briefing; Ghidra was not restarted and not modified)"
+  ],
+  "unresolved_questions": [
+    "The committed record's body span is four bytes short. ghidra_function reports body_end 0x006414cf, size 64 and 25 instructions, and all three conditional branches in it target 0x006414d0 -- outside that span. The image shows the body continuing to 0x006414d6 and the live decompilation follows it. Whether the right fix is to extend the recorded body, to split the failure block into its own function, or to leave it, is a decision for the integrator and for whatever owns the evidence pack; this package reconstructed the body the bytes show and says so in function_extent. It is also why CONTROL FLOW cannot pass for this target: the check bounds the body with the committed listing's own addresses, and no source shape can change that.",
+    "Why are this body's slot entries at +0x80 in three tables and at +0x74 in two others? A single fixed displacement cannot be both. Either the two groups are primary and secondary tables of a multiple-inheritance hierarchy (in which case the object's address within itself differs by four bytes between them) or the record's table starts are off by four bytes for one group. Nothing in this repository settles it, and no slot index is claimed anywhere in this package because of it.",
+    "What is the function at slot displacement 0x90? Three tables hold 0x006417d0 there, and that function's shape (one stack word, writes two words, rejects all-ones in both, returns AL) matches everything this body does with the call -- but the transfer target is a run-time value in EDX and this body never names it, so a table whose 0x90 entry is a DIFFERENT function of the same signature would be indistinguishable here. The model calls through the loaded pointer and the test supplies its own observer, which is the honest shape for a dispatch.",
+    "What do the pair's two words measure? Nothing in either body says. 0x006417d0 fetches them through its own receiver+0x1c and rejects all-ones in both, which is consistent with a range, an extent or an index pair, and the body ANDs them rather than comparing either, which is consistent with 'both ends unset'. No name is used.",
+    "What do 0x00552300's four return values (0x0, 0x1, 0x2, and the word it loads at [EBP-0x30]) mean, and why does this body want the one at 0x0055241f -- the arm its listing takes after 0x005523f9 MOVZX EAX,AL / 0x005523fc TEST EAX,EAX falls through to when its own 0x00550970 call returns zero? The body tests only 2 and names only 2. The callee is not owned by this package and nothing about its internals is asserted beyond its convention, its pointer argument and the four values it can return.",
+    "What is the receiver's real extent? 0x10 is where this body and 0x00552300 were observed reaching; the object may be larger, and the three dwords 0x00552300 reads through receiver+0x04 are themselves opaque. No member is named for any of them.",
+    "Is the pair's uninitialised state ever observable? The body reads the pair only after the slot call reported a non-zero AL, and the one slot occupant this evidence identifies always writes both words on that path -- but the body cannot know that of a table it has not seen, so a table whose 0x90 entry returns non-zero without writing the pair would make this body read uninitialised frame bytes. That is a property of the machine, not of the reconstruction; the model zero-initialises the object and says so in the .cpp.",
+    "The declared return type is std::uint8_t and the record's canonical return claim is the string 'integral_in_EAX'. Those do not agree textually, which is why RETURN SEMANTICS is a WARN and not a PASS. The machine fixes the width the body writes and tests (8 bits in AL, at 0x006414c9, 0x006414d0 and 0x006414b8) and no record narrows the register class to a width; a C++ spelling that satisfied the string comparison would be a fiction, so the byte is declared and the disagreement is reported instead of gamed. The original source almost certainly said `bool` (the MOV AL,1 / XOR AL,AL idiom is what MSVC emits for it) but that is INFERRED, not machine-fixed, and the model does not claim it."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The original process is driven to a Sporepedia asset-data receiver whose dispatch word is a table this body is an entry of, and the call is made four times: with a status other than 2, with status 2 and a zero AL, with status 2 and a non-zero AL and a non-all-ones pair, and with status 2 and an all-ones pair.",
+      "A trace records the address 0x00552300 receives and confirms it is receiver+0x04 rather than the receiver, and the status word it returns.",
+      "A trace records the receiver's leading word, the table address it holds, the function pointer at table+0x90, and confirms that pointer is 0x006417d0 for the receiver actually used.",
+      "A trace captures the pair's address as it is passed, the two words as the callee leaves them, and the value of EAX on all four paths including its upper three bytes, so the dead-bits claim in mechanics.return_semantics_machine is confirmed against a live process and the declared return width can be settled.",
+      "A trace confirms the dispatch receiver in ECX is the receiver itself, so the `MOV ECX,ESI` reading of 0x006414b4 is not an over-reading."
+    ]
+  },
+  "validation": {
+    "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x00641490', write=False)\"",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w1-00641490 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. swarm_w1_00641490.cpp swarm_w1_00641490_model_test.cpp -o /tmp/w_00641490 && /tmp/w_00641490",
+    "compile_result": "clean build, zero warnings under -Wall -Wextra -Werror, test exit 0. The header additionally compiles clean as its own translation unit under the same flags (g++ -m32 -std=c++17 -Wall -Wextra -Werror -c swarm_w1_00641490_types.hpp). The package is not -Wpedantic-clean on GCC for the reason the reference package records: GCC 16 rejects __attribute__((thiscall)) on a non-class free function under -Wattributes, which -Wpedantic promotes, so even the two-line #define block alone fails. The mandated gate does not enable -Wpedantic and passes clean.",
+    "header_only_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. -c swarm_w1_00641490_types.hpp -o /tmp/hdr_00641490.o -> clean",
+    "model_test": "plain int main() with explicit checks, no framework and no external dependency. Both transfer targets are defined as observers: 0x00552300 as a cdecl function returning a scripted status, and the slot occupant as a thiscall function the reconstruction reaches through a table the test builds, so the test controls the table, the slot and the neighbour decoys rather than the call. Cases: A the surviving path with both transfers and every argument checked; B the status value is exactly 2, driven with 0/1/2/3/0xffffffff; C the two-level dispatch at 0x90 with decoys at 0x00, 0x8c and 0x94 and a fixture self-check; D the dispatch word is the receiver's +0x00 with decoy table pointers at +0x04/+0x08/+0x0c; E the status argument is a pointer to receiver+0x04, with the observer scribbling through it; F the AND is of both words, over eight rows that separate the four wrong rules; G only AL is tested, over six rows that separate 'AL', 'whole EAX' and '!= 0'; H the pair is read after the dispatch, per call; I the return is the byte and not the AND value; J the pair and the status argument are two distinct objects, neither of them receiver memory; K a slot that reports success without writing the pair; L the ABI, measured by sampling ESP around a trampolined call. Plus V1..V14, which state each machine constant the model uses.",
+    "model_test_result": "exit 0, no failed check",
+    "decoys": [
+      "table slots at 0x00, 0x8c and 0x94 all holding a differently-behaved decoy target, so a model that reads the table's base word or lands one dword either side of 0x90 is caught",
+      "a second dispatch table parked at the receiver's +0x04, +0x08 and +0x0c, so a model that reads the dispatch word at the wrong offset calls it",
+      "a status observer that writes 0xffffffff through the pointer it was handed, so a model that reads the receiver's bytes back instead of the callee's return is caught",
+      "slot return values 0x100 (AL == 0) and 0x1ff / 0xffffff00 (upper bytes only differ), which separate a low-byte test from a whole-register test and from a != 0 test",
+      "pairs (0xffffffff, 0x7fffffff), (0x7fffffff, 0xffffffff), (0xfffffffe, 0xffffffff), (0xffffffff, 0xfffffffe), (0, 0xffffffff) and (0, 0), which separate AND-of-both from either-word-alone, from 'either is all-ones' and from 'non-zero'",
+      "a slot that reports success and writes nothing, which shows the outcome tracks the words actually written rather than the words the test intended"
+    ],
+    "not_asserted": [
+      "the upper three bytes of EAX on any path: both exits write AL with an 8-bit instruction, the record lists no caller for this VA, and nothing in this repository observes them",
+      "the pair's address relative to ESP: the listing fixes the pair at entry-8 and entry-4 and the model uses that, but the C++ object is a local and asserting its offset from ESP would be asserting the compiler",
+      "ESI across the call: the body pushes and pops it, but a C++ reconstruction emits its own prologue, so a register test would measure GCC",
+      "which function occupies slot 0x90: the model calls through the loaded pointer and the test supplies its own observer; three tables hold 0x006417d0 there and the model asserts nothing about the table's contents",
+      "the receiver's extent past 0x10, and the meaning of the three dwords 0x00552300 reads through receiver+0x04",
+      "case K's strength: it shows the outcome depends on the words the callee wrote, not that the body reads nothing else -- the body reads exactly two words of exactly that object and the model's read count is not otherwise observable"
+    ],
+    "mutation_checking": {
+      "method": "the package was copied to /tmp/mut00641490, one deliberate defect injected, then rebuilt and rerun with the mandated command.",
+      "results": [
+        { "mutation": "status constant 2 -> 1", "outcome": "KILLED: 39 failed checks, exit 1" },
+        { "mutation": "status branch polarity inverted (== / !=)", "outcome": "KILLED: 48 failed checks, exit 1" },
+        { "mutation": "status test 2 -> 'status < 2'", "outcome": "KILLED: 7 failed checks, exit 1" },
+        { "mutation": "slot displacement 0x90 -> 0x8c", "outcome": "KILLED: SIGSEGV (the decoy target's return value drives the body off the surviving path), exit 139" },
+        { "mutation": "slot displacement 0x90 -> 0x94", "outcome": "KILLED: SIGSEGV, exit 139" },
+        { "mutation": "dispatch word receiver+0x00 -> receiver+0x04", "outcome": "KILLED: SIGSEGV, exit 139" },
+        { "mutation": "one-level dispatch (drop the table load, call the receiver's own word)", "outcome": "KILLED: SIGSEGV, exit 139" },
+        { "mutation": "AND -> OR on the pair's two words", "outcome": "KILLED: 7 failed checks, exit 1" },
+        { "mutation": "AND of the first word with itself", "outcome": "KILLED: 2 failed checks, exit 1" },
+        { "mutation": "sentinel test inverted (== / !=)", "outcome": "KILLED: 21 failed checks, exit 1" },
+        { "mutation": "sentinel constant 0xffffffff -> 0xfffffffe", "outcome": "KILLED: 5 failed checks, exit 1" },
+        { "mutation": "sentinel test -> 'combined == 0'", "outcome": "KILLED: 5 failed checks, exit 1" },
+        { "mutation": "sentinel test -> 'either word is all-ones'", "outcome": "KILLED: build failure under -Werror" },
+        { "mutation": "slot return test inverted (AL == 0 / AL != 0)", "outcome": "KILLED: 22 failed checks, exit 1" },
+        { "mutation": "return the AND value instead of 1", "outcome": "KILLED: 18 failed checks, exit 1" },
+        { "mutation": "the failure path returns 1 instead of 0", "outcome": "KILLED: 5 failed checks, exit 1" },
+        { "mutation": "0x00552300 handed the receiver instead of receiver+0x04", "outcome": "KILLED: SIGSEGV, exit 139" },
+        { "mutation": "0x00552300 handed the dispatch word", "outcome": "KILLED: SIGSEGV, exit 139" },
+        { "mutation": "0x00552300 handed receiver+0x08", "outcome": "KILLED: 4 failed checks, exit 1" },
+        { "mutation": "the slot's receiver is self+0x04 instead of the receiver", "outcome": "KILLED: 3 failed checks, exit 1" },
+        { "mutation": "the dispatch is never taken (the slot's return is replaced by a constant)", "outcome": "KILLED: build failure under -Werror (the loaded target becomes unused)" },
+        { "mutation": "the status test removed", "outcome": "KILLED: build failure under -Werror" },
+        { "mutation": "the AL test removed", "outcome": "KILLED: build failure under -Werror" },
+        { "mutation": "the sentinel test removed", "outcome": "KILLED: build failure under -Werror" },
+        { "mutation": "the two pair displacements swapped", "outcome": "KILLED: build failure (the header's adjacency static_assert fires)" },
+        { "mutation": "the pair pre-zeroed before the dispatch instead of at its declaration", "outcome": "SURVIVED, and it is an equivalent mutation: the callee overwrites both words after the zeroing, so the observable behaviour is identical. It is recorded because a survivor that is not a defect is worth stating rather than hiding." }
+      ],
+      "survivors": "one, and it is semantically equivalent (see the last row). No behavioural defect survived.",
+      "known_limits": "the three 'build failure under -Werror' kills are real kills but blunt ones: removing a test leaves its operand unused and -Werror stops the build before the test can fail. The behavioural counterparts of all three are covered (the inverted forms, the wrong constant and the wrong operator) and those were killed by assertion failures."
+    },
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "WARN",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "WARN",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "expected_reasons": {
+      "ABI": "PASS. abi_derived.verdict is ABI_INFERRED (not ABI_UNKNOWN) and conventions.confidence is INFERRED (not unknown/approximation), the persisted abi's calling_convention is '__thiscall' and the derived one is '__thiscall', so both resolve to the key `thiscall`. The target span names PKG_SWARM_W1_00641490_THISCALL and the macro resolves through the header the .cpp includes by quoted name. The decompilation's __fastcall is cross-validation-only by the record's own statement (ghidra_calling_convention null, ghidra_calling_convention_signal no_information), and it is recorded as a disagreement in mechanics and evidence.decompiler_disagreements rather than followed.",
+      "CALLS": "PASS. The source span names one address-suffixed callee (sporepedia_asset_status_00552300) and no other, which equals both machine oracles: the xref export's single out-edge (0x0064149a -> 0x00552300) and the listing's single direct transfer. The indirect CALL EDX is not a direct transfer and is deliberately not named as a callee in the source, because the model calls through a pointer it loaded. edges_truncated and callees_truncated are both false.",
+      "GLOBALS": "PASS. The complete listing names no data-segment address and the source span names none. The span was audited on its raw text as well as on its comment-stripped text: the data-segment addresses this target is associated with appear only in the package header's and the .cpp's file-header comments, which are outside the target span, and the span's own comments mention none.",
+      "FIELDS/OFFSETS": "PASS, and on a stronger arm than the literal-operand scan alone would have reached. The machine-derived receiver record enumerates offsets [0] with bounds_only true, but evidence_fields' alias-aware scan reads the complete listing through the receiver's ECX -> ESI alias and attributes TWO displacements to the receiver as proven, 0x0 (0x006414a7 MOV EDX,[ESI]) and 0x4 (0x00641496 LEA EAX,[ESI + 0x4]) -- and it prefers the complete listing over the record's own open enumeration, which is why 0x4 is not a warning even though the record does not list it. The source span declares no field offset and no field name either: every displacement the model uses is a named constexpr in the package header, and the span reaches memory only through the word_at/word_value_at helpers. This is a real pass about the offsets and NOT a claim that the body addresses no receiver field -- it addresses exactly those two, one of which is an address formed rather than a read, which mechanics.receiver_displacement and the package header both state.",
+      "CONSTANTS": "PASS. abi_derived.parse is {declared_count 25, unparsed 0, degraded false} and the listing holds exactly those 25 instructions, so the parse-count integrity arm is satisfied. The source span states no hexadecimal literal at all -- every constant and displacement it uses is a named constexpr in the header -- so the source-vs-listing arm has nothing unproven.",
+      "CONTROL FLOW": "WARN, and it is not fixable from this package. All three conditional branch targets in the committed listing are 0x006414d0, and the span the check bounds the body with is min..max of the committed listing's own instruction addresses, 0x00641490..0x006414cf. The targets fall one byte past it, so the check reads the listing as a slice. The image shows the body continuing to 0x006414d6 with the four instructions the .cpp reconstructs (see function_extent.listing_reexported), so this is a property of the committed record's body_end and not of the reconstruction. The source span declares `if` and the keyword shape is explicitly not part of the verdict.",
+      "VIRTUAL DISPATCH": "PASS. The complete body names one indirect transfer (CALL EDX at 0x006414b6) and the machine dispatch record independently counts 1, so the two machine sources agree; the site classifies as VTABLE_SLOT with slot displacement 0x90 and the classification is reproducible from the listing bytes; and the parse record is whole (25 of 25, 0 unparsed, not degraded, not truncated). The source span declares a slot boundary (it names a local `vtable` and a table-slot read at a named displacement) and states no slot displacement this parser can read, because the 0x90 literal lives in the package header rather than in the span -- so the machine dispatch is proven and the source's own slot naming is explicitly NOT verified by this check, which is the honest split and is stated in the check's own wording.",
+      "RETURN SEMANTICS": "WARN, and it is a disagreement about a string rather than about the machine. The canonical claim is the first non-empty of abi_sources for return_type/return_semantics, which is the persisted 'integral_in_EAX' -- a register-class label, with abi_derived.return.type null -- and the target span's declared return type is std::uint8_t. They do not match, so the check warns. The machine itself is unambiguous: 0x006414c9 MOV AL,0x1 and 0x006414d0 XOR AL,AL are both 8-bit, and the only test applied to any return value, 0x006414b8 TEST AL,AL, is 8-bit too. Declaring a C++ type whose spelling normalises to 'integral_in_eax' would convert this WARN into a PASS whose detail claims agreement that does not exist, so the width the machine writes is declared instead and the disagreement is reported. See unresolved_questions, last item.",
+      "EVIDENCE COVERAGE": "WARN, fixed and not fixable from this package. It is derived purely from the pack's categories[*].availability over the 17 static categories, and this pack reports unavailable/MISSING for callees_dependencies, callers_dependencies, contradictions, external_callees, globals, semantic_hypotheses and types, giving 10 of 17. No source file, sidecar field or metadata edit can move it. The runtime axis is separate and is GATED at 0."
+    },
+    "observed": {
+      "captured_on": "2026-09-28",
+      "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x00641490', write=False)\"",
+      "write": false,
+      "static": "WARN",
+      "runtime": "GATED",
+      "runtime_validated": 0,
+      "coverage": "0.667 (6 PASS, 3 WARN of 9; the 3 WARN are CONTROL FLOW, RETURN SEMANTICS and EVIDENCE COVERAGE)",
+      "structural_coverage": "0.75 (6 PASS, 2 WARN of 8 structural; no FAIL and no UNKNOWN)",
+      "aggregate_note": "the STATIC aggregate is WARN because CONTROL FLOW and RETURN SEMANTICS are two of the eight and both warn, and because EVIDENCE COVERAGE is short. Both structural warnings are statements about the evidence rather than defects in the source, and both are argued in expected_reasons above. Six of the eight structural checks pass, which is one more than the reference package pkg-dfw-006a2e20 managed, and the extra one is FIELDS/OFFSETS.",
+      "source_resolution": "reconstruction/staging/pkg-swarm-w1-00641490/swarm_w1_00641490.cpp, sha256 8064c1f7a860fa7ec51cf68e51c0ddfad5e4ae6f9cb32b570068a502f68a9a53, role staging. The sidecar's source_files array is what makes this VA resolve to this package at all: this VA had no other sidecar before this one, so there is no duplicate-ownership question here.",
+      "paths_written": "none -- the run was made with write=False, so it read the committed pack and the in-memory index and wrote nothing (report paths.written = false, validation_json = null, validation_md = null).",
+      "checks": {
+        "ABI": "PASS",
+        "CALLS": "PASS",
+        "GLOBALS": "PASS",
+        "FIELDS/OFFSETS": "PASS",
+        "CONSTANTS": "PASS",
+        "CONTROL FLOW": "WARN",
+        "VIRTUAL DISPATCH": "PASS",
+        "RETURN SEMANTICS": "WARN",
+        "EVIDENCE COVERAGE": "WARN"
+      },
+      "check_details_as_reported": {
+        "ABI": "calling convention is present in the target source span and canonical metadata",
+        "CALLS": "the machine-vs-machine rule: the xref export and the complete 25-instruction listing name the same 1 direct transfer target(s); the xref export at knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 1 outgoing call edge row(s) over 1 distinct address(es) for 0x00641490; the source span names 1 of them and no others",
+        "GLOBALS": "the complete 25-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no global",
+        "FIELDS/OFFSETS": "the source span declares no field offset, so there is nothing of its own to ground and nothing ungrounded either; the complete 25-instruction listing nevertheless reaches 2 receiver displacement(s) through ECX (0x0, 0x4), all of which the record accounts for or the listing is the better witness on; the scan attributes 2 displacement(s) to the receiver as proven (0x0, 0x4); the machine-derived receiver record enumerates 1 displacement(s) (0x0), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open; the listing shows 1 displacement(s) the record does not enumerate (0x4), and a complete listing outranks a record that declares itself incomplete",
+        "CONSTANTS": "the machine listing is fully parsed (25 of 25 instruction(s), 0 unparsed) and the source span states no hexadecimal constant for it to lack",
+        "CONTROL FLOW": "3 of 3 conditional branch target(s) fall outside the recovered body span 0x00641490..0x006414cf, so the listing is a slice and flow continues past it; the source span declares if",
+        "VIRTUAL DISPATCH": "the complete 25-instruction body names 1 indirect transfer(s): 0x006414b6 dispatches slot 0x90 through the table word in EDX; the machine parse consumed 25 of 25 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 1. Every site is a two-level table load, so the machine dispatch is proven against the original binary ... Neither the record's own association with 15 vtable(s) nor the xref export's 0 vtable reference(s) was read: they are not independent of each other ... The source span declares a slot boundary but states no slot displacement this parser can read, so the two claims are reported separately: the machine dispatch is proven, and the source's own slot naming is NOT verified by this check",
+        "RETURN SEMANTICS": "return type differs or is semantically renamed; review required",
+        "EVIDENCE COVERAGE": "10 of 17 static evidence categories are available"
+      },
+      "one_prediction_corrected": "before the run, FIELDS/OFFSETS was predicted to pass on the plain evidenced-absence arm, on the reasoning that the literal-operand scan through ECX would find no displacement (the body reaches the receiver only through its ESI alias) and that the source span declares none. It passed, but on a better arm: evidence_fields' alias-aware scan attributes both 0x0 and 0x4 to the receiver as proven from the complete listing and prefers that over the record's own single-displacement enumeration. The expected_reasons entry above has been rewritten to say what the check actually did. The prediction's conclusion was right and its mechanism was not, which is recorded rather than quietly corrected."
+    },
+    "not_verified": [
+      "RUNTIME. Nothing in this package says anything about the original process. The axis is GATED at 0, no trace exists in this repository and none was attempted; the five conditions in runtime_gate are what a trace would have to capture.",
+      "The slot occupant's identity. Three table runs hold 0x006417d0 at displacement 0x90 and its shape corroborates everything this body does with the call, but the transfer target is a run-time value in EDX and no trace confirms which table a real receiver points at. The model calls through the loaded pointer and claims no occupant.",
+      "The upper three bytes of EAX on all four paths. Both exits write AL with an 8-bit instruction and the record lists no caller for this VA, so nothing in this repository observes them; the dead-bits claim in mechanics.return_semantics_machine is read off the instructions and confirmed by no second source.",
+      "The three structural warnings are reported, not fixed. CONTROL FLOW needs the evidence pack's body_end corrected (0x006414cf -> 0x006414d6), RETURN SEMANTICS needs a canonical return_type narrower than the label 'integral_in_EAX', and EVIDENCE COVERAGE needs seven unavailable pack categories. None is this package's to change."
+    ]
+  },
+  "known_blockers": [
+    "RETURN SEMANTICS (WARN, real and not fixable from this package without dishonesty): the canonical return claim is the string 'integral_in_EAX' and no C++ spelling of it is a type. The machine fixes an 8-bit value in AL and the source declares std::uint8_t. Reported, not gamed.",
+    "CONTROL FLOW (WARN, real and not fixable from this package): the committed record's body span ends at 0x006414cf while all three of the body's branches target 0x006414d0, so the check reads the listing as a slice. The reconstruction covers the instructions the image shows. Fixing the check needs the evidence pack's body_end corrected, which is not this worker's file.",
+    "EVIDENCE COVERAGE (WARN, real and not fixable from this package): 10 of 17 static evidence categories are available; the pack reports unavailable/MISSING for seven of them and the check is derived purely from that field.",
+    "RUNTIME is GATED at 0. No original-process trace exists in this repository, nothing was attempted, and nothing failed. The gate is open and the static verdict says nothing about the original process.",
+    "No slot index, no class name and no slot occupant are claimed for this body, because the record's thirteen vtable associations disagree with each other about where the body sits in a run of pointers and this binary carries no MSVC RTTI. That is a deliberate limit of the package, not a gap in it; see mechanics.vtable_associations and unresolved_questions item 2."
+  ],
+  "types": [
+    "Word",
+    "DisplacementRange",
+    "SporepediaAssetReceiver",
+    "SlotTarget"
+  ],
+  "blockers": [],
+  "runtime_gates": [
+    "no original-process trace exists for this VA; the runtime axis is GATED at 0 and nothing was attempted"
+  ],
+  "vtables": {
+    "slot_displacement_read_by_the_body": "0x90",
+    "claimed_slot_index": null,
+    "claimed_class": null,
+    "slot_occupant_observed_in_three_tables": "0x006417d0 (at 0x013ff648+0x90, 0x01489090+0x90, 0x014893b0+0x90); two further tables hold this body 0x10 earlier and 0x006417d0 at +0x84. Not used as evidence for anything in the model.",
+    "receiver_dispatch_word_displacement": "0x00"
+  },
+  "state_events": [],
+  "review_status": "candidate",
+  "integration_status": "staging only; not promoted to src/ by this worker",
+  "confidence": {
+    "body_extent": "HIGH -- the four instructions outside the committed record are read straight out of the image and the decompilation follows them",
+    "control_flow": "HIGH -- three branches, one shared target, all inside the reconstructed span",
+    "frame": "HIGH -- the walk balances on both exits and two independent facts corroborate the pair's position",
+    "dispatch": "HIGH for the displacement and the two-level shape (both read out of the listing bytes and reproducible by the validator's own classifier); NOT CLAIMED for the index, the class or the occupant's identity",
+    "status_constant": "HIGH -- one CMP immediate, and the callee's own listing shows which of its four return values it selects",
+    "return_width": "MEDIUM -- the machine's 8-bit stores and 8-bit test fix the width the body touches; no record and no caller fixes a C++ type",
+    "receiver_layout": "LOW and deliberately not named -- two displacements, one of them an address rather than a read, and a three-dword run the callee reads through the pointer the body forms"
+  }
+}

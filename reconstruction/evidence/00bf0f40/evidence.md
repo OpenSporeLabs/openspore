@@ -2,9 +2,288 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `1971bee2fc12caca89a4d50c55e2c97958f52fbbed8b7b0d0ba389cb69696ad2`
+- Content SHA-256: `2f98a7280ef3cae3e4317dcccc85f33522b46206a948d439238157aa1aecb34a`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "7f3c967f2f3d8eed6912a9c1e5bf5308265ad824e8cb71ad81f5d8fcf2172da1",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0005",
+        "obs-0006",
+        "obs-0007",
+        "obs-0009"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0003"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          156,
+          160
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0003",
+        "obs-0005",
+        "obs-0006",
+        "obs-0007",
+        "obs-0009"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0005",
+        "obs-0006",
+        "obs-0007",
+        "obs-0009"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0005",
+        "obs-0006",
+        "obs-0007",
+        "obs-0009"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0005",
+        "obs-0006",
+        "obs-0007",
+        "obs-0009"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00bf0f40",
+      "count": 4,
+      "first_use": 0,
+      "first_write_index": 4,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ECX + 0xa0]",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00bf0f40",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ECX + 0xa0]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00bf0f53",
+      "definite": true,
+      "id": "obs-0003",
+      "index": 4,
+      "kind": "REG_WRITE",
+      "raw": "MOV ECX,dword ptr [ECX + 0x9c]",
+      "reg": "ECX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00bf0f5f",
+      "id": "obs-0004",
+      "index": 8,
+      "kind": "CALL_DIRECT",
+      "raw": "CALL 0x00bd81d0",
+      "target": "0x00bd81d0"
+    },
+    {
+      "at": "0x00bf0f76",
+      "form": "RET",
+      "id": "obs-0005",
+      "imm": null,
+      "index": 16,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00bf0f7c",
+      "form": "RET",
+      "id": "obs-0006",
+      "imm": null,
+      "index": 18,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00bf0f82",
+      "form": "RET",
+      "id": "obs-0007",
+      "imm": null,
+      "index": 20,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00bf0f83",
+      "count": 1,
+      "first_use": 21,
+      "first_write_index": 0,
+      "id": "obs-0008",
+      "index": 21,
+      "kind": "REG_READ",
+      "raw": "XOR EAX,EAX",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x00bf0f85",
+      "form": "RET",
+      "id": "obs-0009",
+      "imm": null,
+      "index": 22,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 23,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "INFERRED",
+    "distinct_offsets": 2,
+    "max_offset": 160,
+    "offsets": [
+      156,
+      160
+    ],
+    "present": true,
+    "register": "ECX",
+    "shape": "R-DIRECT",
+    "written_through": 0
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "integral",
+    "type": 
+[TRUNCATED]
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -303,13 +582,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 __fastcall FUN_00bf0f40(int param_1)\n\n{\n  int iVar1;\n  \n  if (((*(int *)(param_1 + 0xa0) - *(int *)(param_1 + 0x9c) & 0xfffffffcU) != 0) &&\n     (**(int **)(param_1 + 0x9c) != 0)) {\n    iVar1 = FUN_00bd81d0();\n    if (iVar1 != 0) {\n      if (iVar1 == 1) {\n        return 2;\n      }\n      if (iVar1 != 2) {\n        return 0xffffffff;\n      }\n      return 1;\n    }\n  }\n  return 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -446,26 +721,26 @@
     "FUN_00bd81d0"
   ],
   "callers": [
-    "FUN_00bf74a0",
-    "FUN_00d04320",
-    "FUN_00dd35c0",
-    "FUN_00e053c0",
-    "FUN_00d02050",
-    "FUN_00be88d0",
-    "FUN_00cf9ba0",
-    "FUN_00ae7ce0",
-    "FUN_00bf7230",
+    "FUN_00e04770",
+    "FUN_00aee830",
     "FUN_00dd3810",
     "FUN_00bf1fd0",
-    "FUN_00e2d6a0",
-    "FUN_00dd1f70",
-    "FUN_00d00b40",
     "FUN_00cfe820",
-    "FUN_00e04770",
-    "FUN_00bf8440",
+    "FUN_00d02050",
+    "FUN_00dd1f70",
     "FUN_00dd2320",
+    "FUN_00bf8440",
+    "FUN_00bf74a0",
+    "FUN_00cf9ba0",
+    "FUN_00ae7ce0",
+    "FUN_00be88d0",
     "FUN_00dd1e30",
-    "FUN_00aee830"
+    "FUN_00e053c0",
+    "FUN_00e2d6a0",
+    "FUN_00d04320",
+    "FUN_00d00b40",
+    "FUN_00bf7230",
+    "FUN_00dd35c0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -476,19 +751,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "iVar1",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00bf0f40",
   "namespace": null,

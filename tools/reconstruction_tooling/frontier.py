@@ -108,8 +108,78 @@ def _claims(root, vas):
     return result
 
 
+def _identity_map(index):
+    """requested VA -> canonical VA, from the index's own resolution records.
+
+    The canonical triage queue is a committed artifact and this module must read
+    it as written; it does not rewrite it. What the queue cannot do on its own is
+    tell a function entry from an address that merely falls inside one, and a
+    queue row may name either. The index already resolved that question when it
+    minted its records, and it recorded the answer under ``identity_resolution``
+    with the requested address preserved, so the mapping is read back from there
+    rather than recomputed here. A row that was never resolved keys under its own
+    address exactly as before.
+    """
+    mapping = {}
+    records = index.get("records")
+    if not isinstance(records, dict):
+        return mapping
+    for canonical, record in records.items():
+        if not isinstance(record, dict):
+            continue
+        resolution = record.get("identity_resolution")
+        if not isinstance(resolution, dict):
+            continue
+        for item in resolution.get("requested") or []:
+            if isinstance(item, dict):
+                try:
+                    mapping[normalize_va(item.get("va"))] = normalize_va(canonical)
+                except (TypeError, ValueError):
+                    continue
+    return mapping
+
+
+def _promoted_vas(root):
+    """canonical VA -> promoted src_package, read from the promotion markers.
+
+    A package is promoted when, and only when, ``src/reconstruction/<pkg>``
+    holds a ``promotion.json`` carrying the frozen ``openspore-promotion-1``
+    schema and an ``src_package`` the build would accept -- the same rule
+    ``build_gate.discover_packages`` and ``src/reconstruction/CMakeLists.txt``
+    apply. This module deliberately reuses that rule instead of restating it,
+    because a second copy of "what counts as promoted" is exactly how the
+    frontier and the build come to disagree about the same tree.
+
+    Why the frontier needs it at all: readiness was decided from
+    ``reconstruction_knowledge.status_for``, which reads ``body_status`` /
+    ``integration_status`` out of the source reconstruction manifest. The
+    manifest is integrator-owned and lags promotion by design, so a VA promoted
+    before the manifest was next curated keeps a non-reconstructed status and is
+    offered again as eligible work. That is not a duplicate to redo -- it is a
+    package already installed, built and tested in ``src/`` -- so offering it
+    risks re-promoting a second package over the same VA. The marker is the
+    authoritative, self-maintaining record; the manifest is a curated index
+    over it, not a substitute for it.
+    """
+    try:
+        from .build_gate import discover_packages, promotion_targets
+    except ImportError:
+        return {}
+    promoted = {}
+    for package in discover_packages(Path(root)):
+        document = optional_json(Path(root) / "src" / "reconstruction" /
+                                 package["dir"] / "promotion.json")
+        for va in promotion_targets(document):
+            try:
+                promoted[normalize_va(va)] = package["src_package"]
+            except (TypeError, ValueError):
+                continue
+    return promoted
+
+
 def _queue_rows(root, index):
     rows = {}
+    identities = _identity_map(index)
     document = _queue(root)
     for row in document.get("queue", []):
         if not isinstance(row, dict):
@@ -118,7 +188,7 @@ def _queue_rows(root, index):
             va = normalize_va(row.get("va"))
         except (TypeError, ValueError):
             continue
-        rows[va] = row
+        rows.setdefault(identities.get(va, va), row)
     for row in index.get("frontier", []):
         if not isinstance(row, dict):
             continue
@@ -141,6 +211,25 @@ def _status(record, row):
 
 def _reason(code, detail, source="persisted", state="present", ref=None):
     return {"code": code, "detail": detail, "source": source, "state": state, "ref": ref}
+
+
+def _validated_source_role(path):
+    """The validation role a source path would resolve under, or ``None``.
+
+    Read from :data:`validate.SOURCE_ROLES` rather than restated here, because a
+    second copy of the list is exactly how two tools come to disagree about the
+    same record. A path outside every validated role still *exists* -- several
+    point into the git-ignored Ghidra export -- and saying so is what
+    ``source_path_unvalidated`` reports; calling it a canonical source is not.
+    """
+    try:
+        from .validate import SOURCE_ROLES
+    except ImportError:
+        return None
+    for prefix, role in SOURCE_ROLES:
+        if str(path).startswith(prefix):
+            return role
+    return None
 
 
 def _record_paths(record, root):
@@ -184,7 +273,8 @@ def _analogues(record):
     return sorted(record.get("analogues", []) or [], key=lambda item: (-float(item.get("score", 0) or 0), str(item.get("va", ""))))
 
 
-def _score(record, row, root, known_records, cluster_counts):
+def _score(record, row, root, known_records, cluster_counts, promoted=None):
+    promoted = promoted or {}
     priority = str(row.get("priority", "")).upper()
     priority_score = PRIORITY.get(priority, 0)
     evidence = str(record.get("evidence_level") or row.get("evidence") or "UNKNOWN").upper()
@@ -200,16 +290,53 @@ def _score(record, row, root, known_records, cluster_counts):
         inspectability += 10
         reasons.append(_reason("decomp_available", "persisted decompilation capture exists", ref=str(decomp_path)))
     if source_paths:
-        inspectability += 4
-        reasons.append(_reason("source_available", "canonical source path exists", ref=source_paths[0]))
+        role = _validated_source_role(source_paths[0])
+        if role is None:
+            # The path exists but no validation role admits it, so the validator
+            # will report the source span as not deterministically available.
+            # Reporting it as a canonical source here would be the two tools
+            # disagreeing about one record; this is the same fact, stated once.
+            inspectability += 4
+            reasons.append(_reason(
+                "source_path_unvalidated",
+                "source path exists outside every validated role",
+                ref=source_paths[0]))
+        else:
+            inspectability += 4
+            reasons.append(_reason("source_available",
+                                   "%s source path exists" % role,
+                                   ref=source_paths[0]))
     if (record.get("source", {}) or {}).get("metadata"):
         inspectability += 4
     open_callees = []
     for callee in callees:
+        if callee in promoted:
+            # The same rule that retires a promoted target from the frontier
+            # retires it as an open dependency. A callee that is already
+            # installed, built and tested in src/ is not outstanding work, and
+            # treating it as outstanding defers every caller behind a
+            # dependency that has in fact been done.
+            continue
         target = known_records.get(callee, {})
         if _status(target, {}) not in ("reconstructed", "runtime_gated", "integrated"):
             open_callees.append(callee)
-    dependency_uncertain = bool(dependencies.get("callees_truncated") or dependencies.get("edges_truncated"))
+    # Readiness is decided by ``open_callees``, and ``open_callees`` is computed
+    # from ``dependencies["callees"]``. Only ``callees_truncated`` can make that
+    # computation incomplete, so only ``callees_truncated`` makes readiness
+    # unknown. ``edges_truncated`` is a cap on ``edges`` -- the separate, richer
+    # display list of xref rows with their callsites -- and both lists are built
+    # from the same export as complete sorted sets before their own caps are
+    # applied (``reconstruction_knowledge.load_xrefs``). A cap on a list that does
+    # not feed this computation is not missing evidence: reading it as one defers
+    # targets every one of whose callees was already visible. It is still reported
+    # below, as its own reason, so nothing about the record is hidden.
+    dependency_uncertain = bool(dependencies.get("callees_truncated"))
+    if dependencies.get("edges_truncated"):
+        reasons.append(_reason(
+            "dependency_edge_rows_capped",
+            "the xref edge display list is capped; readiness is decided by the "
+            "callee set, which is complete",
+            source="derived", ref="reconstruction/knowledge/index.json#/records"))
     dependency_score = 10 if not open_callees and not dependency_uncertain else 0
     reconstructed_callers = sum(1 for caller in callers if _status(known_records.get(caller, {}), {}) == "reconstructed")
     dependency_score += 3 if reconstructed_callers else 0
@@ -307,6 +434,7 @@ def frontier(root=ROOT, args=None):
     index = _index(root)
     records = index.get("records", {}) if isinstance(index.get("records", {}), dict) else {}
     rows = _queue_rows(root, index)
+    promoted = _promoted_vas(root)
     claims = _claims(root, set(rows))
     current_binary = _manifest_binary(root, index)
     cluster_counts = {}
@@ -320,12 +448,31 @@ def frontier(root=ROOT, args=None):
         row = rows[va]
         record = records.get(va, {})
         status = _status(record, row)
-        score, components, reasons, open_callees, dependency_uncertain = _score(record, row, root, records, cluster_counts)
+        promoted_package = promoted.get(va)
+        if promoted_package is not None:
+            # An installed promotion marker outranks the curated manifest. The
+            # marker is written by the gate that built and tested the package, so
+            # it is the record of what is actually in ``src/``; the manifest's
+            # ``integration_status`` is a curated index over that tree and lags
+            # it. Without this, a VA promoted between two manifest curations
+            # keeps a non-reconstructed status and is offered a second time.
+            status = "reconstructed"
+        score, components, reasons, open_callees, dependency_uncertain = _score(
+            record, row, root, records, cluster_counts, promoted)
         claim = _claim_view(claims.get(va) if claims is not None else None, current_binary, claims is not None)
         if status in ("reconstructed", "blocked") or claim["state"] in ("completed", "blocked"):
             disposition = "excluded"
-            reason_code = "already_completed" if status == "reconstructed" or claim["state"] == "completed" else "blocked"
-            reasons.append(_reason(reason_code, "target is not claimable", source="derived"))
+            if promoted_package is not None and status == "reconstructed":
+                reasons.append(_reason(
+                    "already_promoted",
+                    "promotion marker for %s is installed under src/reconstruction"
+                    % promoted_package,
+                    source="persisted",
+                    ref="src/reconstruction/%s/promotion.json"
+                        % promoted_package.replace("_", "-")))
+            else:
+                reason_code = "already_completed" if status == "reconstructed" or claim["state"] == "completed" else "blocked"
+                reasons.append(_reason(reason_code, "target is not claimable", source="derived"))
         elif claim["state"] in ("claimed", "stale_binary", "active_unowned"):
             disposition = "excluded"
             reasons.append(_reason("claim_conflict", "coordination state is %s" % claim["state"], source="persisted", ref="db:investigations"))

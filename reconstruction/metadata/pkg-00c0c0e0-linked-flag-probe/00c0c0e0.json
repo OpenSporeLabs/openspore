@@ -1,0 +1,61 @@
+{
+ "address": "0x00c0c0e0",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "reconstruction/evidence/00c0c0e0/evidence.json",
+  "reconstruction/evidence/00c0c0e0/context.md",
+  "GhidraMCP /disassemble_function @ 0x00c0c0e0 (LIVE, 9 instructions, complete)",
+  "GhidraMCP REST /decompile_function @ 0x00c0c0e0 (LIVE)",
+  "GhidraMCP /read_memory @ 0x00c0c0e0 len 28 (LIVE, 8b81840e0000 85c0 740f 80b88803000000 7406 b801000000 c3 33c0 c3)",
+  "GhidraMCP /get_function_by_address + /analyze_function_complete (body_span_bytes 28, classification leaf, 73 xrefs)",
+  "tools/reconstruction_tooling/abi_infer.py derived ABI (__thiscall, ECX receiver, cleanup 0 caller, EAX integral, dispatch 0)",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv (0 outgoing, 61 incoming call rows)",
+  "knowledgegraph/triage/datarefs-2540f2ca.tsv (no data reference out of this target)",
+  "docs/tooling/reconstruction-failure-modes.md"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0.hpp",
+  "model_test": "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0_model_test.cpp",
+  "source": "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0.cpp"
+ },
+ "normalized_symbol": "linked_flag_probe_00c0c0e0",
+ "package": "PKG-00C0C0E0-LINKED-FLAG-PROBE",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "linked_flag_probe_00c0c0e0",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  "The body is a two-level guarded byte probe: a 32-bit link word at 0xe84 of the receiver, tested against zero, then a single flag byte at 0x388 of the object that word addresses.",
+  "0x388 is reached through EAX, not ECX, so it is not a receiver field; the body addresses two distinct objects and the reconstruction models them as two separate opaque types.",
+  "Both conditional branches target the same 0x00c0c0f9 block, so the two tests share one zero-return exit; the CFG is a single fall-through plus one shared block.",
+  "The return value is the constant 1, not the flag byte: a flag of 0x2a still yields 1. This is pinned by a scenario and by a mutant that forwards the byte.",
+  "The body stores nothing and calls nothing; its only memory effects are the two loads, verified by comparing both modelled arenas byte-for-byte across every scenario.",
+  "Both exits write EAX at a determinate 4-byte width (MOV EAX,0x1 and XOR EAX,EAX), so the value is a full 32-bit register, not a byte in AL. Verified by poisoning EAX with 0xdeadbeef before the call.",
+  "Both terminators are a bare RET with no immediate and the body never reads the stack, so the callee pops nothing and the caller owns cleanup; ESP before and after a call is measured equal."
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0.cpp",
+  "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0.hpp",
+  "reconstruction/staging/pkg-00c0c0e0-linked-flag-probe/linked_flag_probe_00c0c0e0_model_test.cpp"
+ ],
+ "staging_package": "pkg-00c0c0e0-linked-flag-probe",
+ "subsystem": "Simulator",
+ "summary": "FUN_00c0c0e0 is a 9-instruction / 28-byte __thiscall leaf predicate with zero callees, zero stores and no vtable involvement. The complete listing transcribes to a two-level guarded byte probe: load the 32-bit word at 0xe84 of the ECX receiver, return 0 if it is zero, otherwise read one byte at 0x388 of the object that word addresses and return 1 if that byte is non-zero else 0. Both conditional branches (0x00c0c0e8, 0x00c0c0f1) share the single XOR EAX,EAX/RET zero exit at 0x00c0c0f9; the fall-through writes a full 32-bit 1. Reconstructed as linked_flag_probe_00c0c0e0 with two opaque byte-run types, because 0x388 is reached through EAX and is therefore NOT a receiver field. No class, member or SDK name is claimed: the derived receiver record is bounds_only. Promotion gate clean under clang++ and g++ (-m32 -Wall -Wextra -Werror, static-archive link, exit 0); validate reports 8/8 static checks PASS. Mutation battery kills all 9 perturbations of the reconstruction and additionally requires 10 in-file known-wrong bodies to be rejected, so the battery's own discriminating power is asserted.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "What class is the ECX receiver? The evidence pack carries no class association, no namespace and no SDK name for FUN_00c0c0e0, so none is claimed and the receiver stays opaque.",
+  "What does the 32-bit word at 0xe84 point at? The machine only tests it against zero and uses it as an address, so it is modelled as an opaque base; the pointee's identity is unrecoverable from these 28 bytes.",
+  "Why does the derived receiver record enumerate 0x120c when the listing shows only 0xe84 (through ECX) and 0x388 (through EAX)? 0x120c is not an operand of this body. It is either a base offset from a different derivation pass or evidence that the record's bounds conflate the two objects. It was deliberately not modelled.",
+  "What do the 61 call sites ask this predicate? The high fan-in makes an IsX-shaped reading attractive, but what is being queried is not recoverable from the body and is not claimed.",
+  "Are the 0x00c0c0e8 and 0x00c0c0f1 branches semantically two different questions (link absent vs flag clear) that happen to share one exit, or one question tested twice? The machine merges them into one block and gives no way to tell.",
+  "Why is the subsystem tag 'Simulator' when no type, string or vtable in the pack corroborates it? The tag comes from the index projection and this package found no evidence for or against it.",
+  "No runtime validation exists for this target: zero differential traces, so the whole reconstruction is static-only and the runtime dimension reports GATED."
+ ],
+ "va": "0x00c0c0e0",
+ "version": "3.1.0.22",
+ "worker_outcome": "IMPLEMENTED"
+}

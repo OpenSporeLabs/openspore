@@ -2,9 +2,38 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `2d3e699d8ed8beda745d1e2d9ab5fcba15f1de2e538b3e29c7f5128e049a6418`
+- Content SHA-256: `a6d1c5055a608a9b2991cf2f5576ec2e0c28ec0e05557dca406d88c8a756a11b`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this_register": "ECX, spilled to [EBP-0x4] at 0x004adb04 and reloaded at 0x004adb07",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x004adb0a is FLD dword ptr [EAX+0x40], an 80-bit x87 load whose 32-bit single-precision source is promoted to extended precision; nothing is written to EAX, XMM0 or any general register after the load. Every inspected caller consumes the result with FSTP, either to memory (0x0043fda3, 0x005d37c7) or to [ESP+0xc] (0x005d37bc), which is only correct for an ST0 return. On x86-32 a float return therefore does NOT travel in XMM0 as it would under a different ABI, and Ghidra's float10 rendering is the accurate one.",
+  "return_register": "ST(0) of the x87 stack",
+  "return_semantics": "the 32-bit float stored at receiver+0x40, returned unchanged",
+  "return_type": "float",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single exit at 0x004adb10"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -39,7 +68,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "3f24a92364b8a379eb8131a2a8ad50c893bd4ebdacc73a3168d327df37bc08e0",
+  "content_sha256": "bd2320cc0ba63ad4900dbd8dd64dafaa3fce89cf83518e379a56166253b91010",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -47,16 +76,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -273,7 +302,7 @@
       "mov_ebp_esp": true,
       "mov_ebp_esp_at": 1,
       "push_ebp": true,
-      "push_ebp_at": 0,
+      "push_ebp_at":
 [TRUNCATED]
 ```
 
@@ -285,9 +314,54 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0043fc20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00485b90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00486910"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0048dcd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0049a2a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b9840"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005be500"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005d36e0"
+  }
+]
+```
 
 ## contradictions
 
@@ -297,13 +371,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nfloat10 __fastcall FUN_004adb00(int param_1)\n\n{\n  return (float10)*(float *)(param_1 + 0x40);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -363,9 +433,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 9449,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this_register\": \"ECX, spilled to [EBP-0x4] at 0x004adb04 and reloaded at 0x004adb07\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x004adb0a is FLD dword ptr [EAX+0x40], an 80-bit x87 load whose 32-bit single-precision source is promoted to extended precision; nothing is written to EAX, XMM0 or any general register after the load. Every inspected caller consumes the result with FSTP, either to memory (0x0043fda3, 0x005d37c7) or to [ESP+0xc] (0x005d37bc), which is only correct for an ST0 return. On x86-32 a float return therefore does NOT travel in XMM0 as it would under a different ABI, and Ghidra's float10 rendering is the accurate one.\",\n    \"return_register\": \"ST(0) of the x87 stack\",\n    \"return_semantics\": \"the 32-bit float stored at receiver+0x40, returned unchanged\",\n    \"return_type\": \"float\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single exit at 0x004adb10\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0043fc20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00485b90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00486910\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0048dcd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0049a2a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b9840\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005be500\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005d36e0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0043fda9\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043fc20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00485bb0\",\n        \"direction\": \"in\",\n        \"other\": \"0x00485b90\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00485c8d\",\n        \"direction\": \"in\",\n        \"other\": \"0x00485b90\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004869df\",\n        \"direction\": \"in\",\n        \"other\": \"0x00486910\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048ddfe\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0049ad2d\",\n        \"direction\": \"in\",\n        \"other\": \"0x0049a2a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0049ae31\",\n        \"direction\": \"in\",\n        \"other\": \"0x0049a2a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005b9a14\",\n        \"direction\": \"in\",\n        \"other\": \"0x005b9840\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": 
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -382,14 +459,14 @@
   "body_start": "004adb00",
   "callees": [],
   "callers": [
+    "FUN_005b9840",
     "FUN_0043fc20",
     "FUN_005d36e0",
-    "FUN_00486910",
-    "FUN_005b9840",
+    "FUN_005be500",
     "FUN_00485b90",
-    "FUN_0049a2a0",
     "FUN_0048dcd0",
-    "FUN_005be500"
+    "FUN_00486910",
+    "FUN_0049a2a0"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -402,9 +479,9 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     }
   ],
   "locals_count": 1,
@@ -479,9 +556,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b03/004adb00.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -491,9 +582,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential test must confirm that the value is returned in ST0 and not in XMM0 in the shipping build. The static evidence for ST0 is strong - FLD with no FXCH and FSTP at every consumer - but it is static.",
+    "A trace with a concrete receiver is required before the owning class can be named, because no vtable could be located.",
+    "No original-process trace exists for this function. Static analysis cannot show the live value of the +0x40 float, so the SDK's documented -2.0 default is unverified for the shipping build."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -503,15 +606,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "float"
+]
+```
 
 ## vtables
 

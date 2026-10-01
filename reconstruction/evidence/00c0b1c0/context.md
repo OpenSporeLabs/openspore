@@ -1,7 +1,7 @@
 # Reconstruction context 0x00c0b1c0
 
 - Status: `partial`
-- Content SHA-256: `a3e7f9a8a646f76c0ebaa4d6fbc6a31939e414fa5d72f1cac6cb309f04c68743`
+- Content SHA-256: `edbf53e0a912dad96688383e4b5ea08b1fa7fd0e6743a91db6794ac46f553ef5`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "bbecb4ffca0634b50922643d19a7fbccbb3c2c6fc9c61ad7a9880e6c81c544dd",
-  "live_attempts": [],
+  "content_sha256": "6c51a68f112ca38f7e78b62ef2c27b0e0f27e8767bcff856664570973b5a5b6b",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00c0b1c0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,35 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-/* WARNING: Enum "Names": Some values do not have unique names */
-
-undefined4 FUN_00c0b1c0(uint32_t param_1,uint *param_2,PropertyList *param_3)
-
-{
-  bool bVar1;
-  int iVar2;
-  size_t local_8;
-  uint *local_4;
-  
-  local_8 = 0;
-  local_4 = (uint *)0x0;
-  bVar1 = App__Property__GetArrayUInt32(param_3,param_1,&local_8,&local_4);
-  if ((bVar1) && (0 < (int)local_8)) {
-    iVar2 = FUN_00a68fb0(local_8);
-    *param_2 = local_4[iVar2];
-    return 1;
-  }
-  return 0;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -179,7 +160,7 @@ undefined4 FUN_00c0b1c0(uint32_t param_1,uint *param_2,PropertyList *param_3)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -207,11 +188,6 @@ undefined4 FUN_00c0b1c0(uint32_t param_1,uint *param_2,PropertyList *param_3)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

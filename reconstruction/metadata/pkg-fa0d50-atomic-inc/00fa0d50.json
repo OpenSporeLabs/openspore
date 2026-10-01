@@ -1,0 +1,105 @@
+{
+  "schema": "pkg-fa0d50-atomic-inc-function-handoff.v1",
+  "package": "pkg-fa0d50-atomic-inc",
+  "address": "0x00fa0d50",
+  "sdk_name": null,
+  "staging_symbol": "atomic_increment_00fa0d50",
+  "source_files": [
+    "reconstruction/staging/pkg-fa0d50-atomic-inc/atomic_inc.cpp",
+    "reconstruction/staging/pkg-fa0d50-atomic-inc/atomic_inc.hpp",
+    "reconstruction/staging/pkg-fa0d50-atomic-inc/atomic_inc_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "scope": "local atomic increment of a receiver-relative counter; no network behavior",
+  "raw_declaration": "std::uint32_t __thiscall atomic_increment_00fa0d50(std::uint8_t *receiver);",
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver": {
+      "register": "ECX",
+      "provenance": "vftable_slot",
+      "width_bytes": 4
+    },
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "std::uint32_t",
+    "return_semantics": "integral_in_EAX",
+    "return_observation": "XADD.LOCK leaves the pre-increment value in EAX; INC EAX makes the returned word the post-increment value.",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "raw_body": [
+    "83 c1 14",
+    "b8 01 00 00 00",
+    "f0 0f c1 01",
+    "40",
+    "c3"
+  ],
+  "mechanics": {
+    "receiver_adjust": "0x14: ADD ECX,0x14 adjusts the receiver before any memory operand names it; it is a this-pointer adjustment, not a field read",
+    "atomic_operation": "XADD.LOCK dword ptr [ECX],EAX with EAX=1: the dword at the adjusted address is increased by 1 as one locked step, and the pre-increment value lands in EAX",
+    "return_value": "INC EAX turns the pre-increment value into the post-increment value, so the function returns the new counter value",
+    "field_offset": "none: the body addresses no receiver field; the only memory operand is the bare [ECX] after the adjust",
+    "null_receiver": "faults inside the locked exchange at the adjusted address",
+    "success": "returns the post-increment value of the dword at receiver +0x14"
+  },
+  "structure_evidence": {
+    "ghidra_type": null,
+    "use_limit": "Vftable slot membership proves a non-static virtual member of some class and nothing more; no class name, no field layout, and no member identity is inferred. The +0x14 adjust is recorded as a receiver adjustment, not as a named field."
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "direct_callees": [],
+    "note": "The xref export records no outgoing call edge of any reference type; the complete 5-instruction listing contains no transfer."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00fa0d50",
+      "observation": "ADD ECX,0x14; MOV EAX,0x1; XADD.LOCK dword ptr [ECX],EAX; INC EAX; RET is the complete body."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00fa0d50",
+      "observation": "83 c1 14 b8 01 00 00 00 f0 0f c1 01 40 c3 over 14 bytes."
+    },
+    {
+      "tool": "vftables.py predicate P",
+      "address": "0x00fa0d50",
+      "observation": "Slot 1 of the vptr-backed vftable at 0x0140a028 and slot 0 of the vptr-backed vftable at 0x01490be8; basis vftable_predicate."
+    },
+    {
+      "tool": "abi_infer.analyze (V1-VFT)",
+      "address": "0x00fa0d50",
+      "observation": "Non-static virtual member: callee pops nothing and no stack word is read as an argument, so the receiver is in ECX and the convention is __thiscall with caller cleanup and zero ordinary stack arguments; confidence INFERRED."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00fa0d50",
+      "observation": "The body has no direct or indirect callees."
+    }
+  ],
+  "model_tests": [
+    "the counter is read and written at receiver +0x14, not at offset 0: a canary-filled receiver returns the canary plus one if the adjust is dropped",
+    "the returned word is the post-increment value: a body that drops INC EAX returns the pre-increment value and fails",
+    "only the dword at +0x14 is written: the surrounding canary is intact after the call",
+    "the read-modify-write is one atomic step: 4 threads x 2500 concurrent increments through the slot lose nothing, which a plain read-then-write body does not",
+    "the machine ABI is asserted at compile time: the slot is assigned to a __thiscall pointer-to-function taking one pointer argument and nothing on the stack"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: clang++ -std=c++17 -Wall -Wextra -Werror -m32 compiled the source and model test, the package was archived as a static library, and the test binary ran green",
+    "instruction_parity": "passed: llvm-objdump shows addl $0x14 for the receiver adjust, lock xaddl %eax,(%ecx) for the exchange, and addl $0x1,%eax for the post-increment return",
+    "format": "not run: clang-format is not part of the worker gate",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "Which class this virtual member belongs to: vftable slot membership yields 'virtual member of some class' and no class name is inferred.",
+    "Whether the two memberships (0x0140a028 slot 1, 0x01490be8 slot 0) are one class seen through two bases or two distinct classes.",
+    "The runtime role of the counter at receiver +0x14 (reference count, ownership flag, or other): the body fixes its location, width, and atomic increment, not its meaning."
+  ],
+  "blockers": [
+    "Runtime validation against the original process is an open capability gate: nothing was attempted and nothing failed."
+  ]
+}

@@ -1,0 +1,296 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00C70E00-FIELD13C",
+  "subsystem": "Simulator",
+  "cluster": "unknown-fun-mass",
+  "queue_id": "",
+  "va": "0x00c70e00",
+  "address": "0x00c70e00",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "field13c_00c70e00",
+  "reconstructed_symbol": "field13c_00c70e00",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00.hpp",
+    "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00.cpp",
+    "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00.hpp",
+    "source": "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00.cpp",
+    "model_test": "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (one register argument in ECX, read before any definite write and dereferenced; zero ordinary stack arguments; the callee pops nothing because 0x00c70e14 is the bare byte 0xc3, so the caller owns stack cleanup)",
+    "calling_convention_discrimination": "THE BYTES DO NOT DISCRIMINATE __thiscall FROM __fastcall, and this record says so rather than pretending otherwise. What the listing PROVES and discriminates: exactly one register argument, arriving in ECX (0x00c70e00 reads ECX on entry as the base of the body's only memory operand); exactly zero ordinary stack arguments (no instruction in the body names a memory operand relative to ESP); zero bytes of callee cleanup, owned by the caller. The first of those REFUTES __cdecl, under which the receiver would arrive at [ESP+4] and the register-relative read at 0x00c70e00 would have no receiver to read through. What the listing CANNOT discriminate: for a function with one register argument and zero stack arguments the __thiscall and __fastcall forms emit IDENTICAL machine code, and no byte of this body distinguishes them - the derived record says so in its own candidate_conventions list ['__thiscall', '__fastcall']. What would distinguish them is a source-level fact the evidence does not carry: that the register argument is a C++ `this` on a class rather than an ordinary first parameter. Nothing in the pack names a class (class_type null, namespace null, sdk_type null, sdk_name null, receiver.bounds_only true), so that distinction is UNKNOWN. The __thiscall spelling above is therefore the derived ABI record's own name for the shape, adopted in preference to the Ghidra decompilation's __fastcall rendering - and that rendering is not independent evidence, because the live ghidra_function record for this VA carries ghidra_has_calling_convention: false, ghidra_calling_convention: null and ghidra_calling_convention_signal: 'no_information', with the role marked 'cross-validation-only'. The derived record's own confidence on its C7 conclusion is INFERRED with corroboration: not_available, and its cross_validation block reports agreement: false (ghidra no_information, persisted no_information). Nothing in this reconstruction depends on the difference: both candidates give the same code, the same one-ECX-argument shape and the same zero-byte cleanup.",
+    "receiver": "ECX, read at 0x00c70e00 as the base of the body's only memory operand `dword ptr [ECX + 0x13c]` and never written before that read",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (0x00c70e14, byte 0xc3, no imm16)",
+    "return_register": "EAX",
+    "return_type": "32-bit dword",
+    "return_note": "unsigned at the source level: the tail path copies bits and the only immediate write is an unsigned 32-bit constant. Any ordered reading of the result belongs to the callers, not to this body.",
+    "return_semantics": "on the null arm the immediate 1 written by `MOV EAX,imm32` at 0x00c70e0f; on the non-null arm the 32-bit word the tail target reads at receiver+0x194",
+    "return_type_rationale": "BOTH PATHS WRITE A FULL DWORD, and nothing wider or narrower is claimed. The null arm is `b8 01 00 00 00`, which is MOV EAX,imm32 - a 32-bit immediate write, not the 8-bit `MOV AL` form, so all thirty-two bits of EAX are written and the top three bytes are not left unproven. The non-null arm is a transfer to 0x00b8dab0, whose live body is `8b 81 94 01 00 00 c3` = `MOV EAX,dword ptr [ECX + 0x194]` / `RET`, a 32-bit load into the full register. What is NOT claimed: any source-level type (the derived record's return.type is null), any signedness (the body copies bits; the ordered reading belongs to the callers), and that the two paths' values are the same quantity - nothing in the evidence says they are, and the four sampled callers only order the result against 0x4 or 0x5, which is consistent with either.",
+    "locals": "none; the body allocates no frame, saves no register and builds no record (derived parse record: frame.push_ebp false, frame.mov_ebp_esp false, frame.sub null, local_extent 0)",
+    "outgoing_calls": "one, and it is a TAIL TRANSFER rather than a nested call: 0x00c70e0a `e9 a1 cc f1 ff` = JMP 0x00b8dab0 with no preceding frame teardown (derived record: tail_call.present true, form epilogue_then_jmp, after_frame_setup false)"
+  },
+  "observed_mechanics": [
+    "0x00c70e00 8b 89 3c 01 00 00 - MOV ECX,dword ptr [ECX + 0x13c]: ModRM 0x89 is mod=10 (a disp32 follows), reg=001 (ECX), rm=001 (ECX); the disp32 is 0x0000013c. Base and destination being the same register is the in-place load the whole chain-of-ECX argument depends on.",
+    "0x00c70e06 85 c9 - TEST ECX,ECX: ModRM 0xc9 is reg=001 (ECX) and rm=001 (ECX), so the FLAGS come from the LOADED WORD and not from the incoming receiver. The instruction writes EFLAGS only.",
+    "0x00c70e08 74 05 - JZ 0x00c70e0f: rel8 = 5, which is exactly the length of the instruction it skips, so the false arm lands on 0x00c70e0f and the TRUE arm is the whole tail transfer at 0x00c70e0a.",
+    "0x00c70e0a e9 a1 cc f1 ff - JMP 0x00b8dab0: rel32 = 0xfff1cca1, sign-extended to -930655, and 0x00c70e0a + 5 - 930655 = 0x00b8dab0 exactly. ECX is NOT REWRITTEN between 0x00c70e00 and this jump (TEST and JZ write EFLAGS only, and no frame teardown is needed because no frame was built), so the target receives the loaded word as its own ECX receiver.",
+    "0x00c70e0f b8 01 00 00 00 - MOV EAX,0x1: opcode b8+r is a 32-bit immediate write; the alternative 8-bit form b0+r would leave the top of EAX unproven and does not occur.",
+    "0x00c70e14 c3 - RET: single byte, no imm16; the callee pops nothing, so stack cleanup is 0 bytes and is owned by the caller.",
+    "Raw bytes at 0x00c70e00..0x00c70e17, read live from the program database: 8b 89 3c 01 00 00 85 c9 74 05 e9 a1 cc f1 ff b8 01 00 00 00 c3 cc cc cc. The body is 21 bytes (0x00c70e00..0x00c70e14, matching the live ghidra_function record's body_span_bytes 21 and body_end 00c70e14) and the three 0xcc bytes at 0x00c70e15..0x00c70e17 are alignment padding, NOT part of the body.",
+    "0x00b8dab0 8b 81 94 01 00 00 c3 cc - read live for this package: MOV EAX,dword ptr [ECX + 0x194] / RET, then INT3 pad. This is what makes the transfer's shape a byte-level fact rather than a name-level assumption, and it is why the promoted sibling package pkg-00b8dab0-field194-getter fits the target.",
+    "The committed xref export knowledgegraph/triage/xrefs-2540f2ca.tsv, read whole for this VA: 41 direct-call edges INTO 0x00c70e00 from 32 distinct caller functions, and exactly ONE edge out - `00c70e00 00b8dab0 direct-call 00c70e0a` - whose callsite_va is the JMP. The export records a tail transfer as a direct-call edge, so the one callee has an independent machine oracle.",
+    "knowledgegraph/triage/datarefs-2540f2ca.tsv contains ZERO rows for 0x00c70e00: the body records no data-segment reference. A recorded absence, consistent with the derived dispatch record at 0 indirect calls and 0 vtable-shaped loads."
+  ],
+  "field_offsets": {
+    "note": "No field of any type is NAMED. The receiver record is bounds_only ('where the body was SEEN reaching', not a layout), and the pack carries categories.types MISSING, categories.globals MISSING and categories.vtables MISSING. The displacement is spelled literally in the source, as the promoted sibling package does for its own 0x194.",
+    "receiver": [
+      {
+        "offset": "0x13c",
+        "width_bytes": 4,
+        "access": "read",
+        "name": null,
+        "identity": "UNKNOWN - unnamed",
+        "confidence": "OBSERVED",
+        "listing_evidence": "0x00c70e00 is `8b 89 3c 01 00 00`; ModRM 0x89 selects ECX as base and as destination, and the disp32 is 0x0000013c",
+        "modelling_use": "the receiver fixture is sized to 0x140 so the word at +0x13c is addressable; that extent is a MODELLING BOUND, not a recovered object size"
+      }
+    ],
+    "tail_target_offsets": [
+      {
+        "offset": "0x194",
+        "width_bytes": 4,
+        "access": "read",
+        "name": null,
+        "identity": "UNKNOWN - unnamed",
+        "confidence": "OBSERVED",
+        "listing_evidence": "0x00b8dab0 is `8b 81 94 01 00 00 c3`, read live; the disp32 is 0x00000194 and ModRM 0x81 selects ECX as base",
+        "modelling_use": "belongs to the TAIL TARGET's body and to the tail receiver, which is a DIFFERENT object from this body's receiver. It is strictly beyond this body's receiver extent (0x194 > 0x140), which is the check that stops the two receivers being merged. The tail fixture is sized to 0x198, the same modelling bound the promoted sibling uses and for the same reason."
+      }
+    ],
+    "sibling_offsets_observed_but_not_claimed": [
+      "0x138",
+      "0x140"
+    ],
+    "sibling_note": "The model test plants a fully-formed decoy tail receiver immediately after each neighbour of 0x13c, so that a reconstruction reading one word low or one word high hands the tail a perfectly usable object and the mistake shows up in the RETURNED VALUE rather than in a crash. Those two displacements are what the neighbours are; no layout claim follows from the adjacency."
+  },
+  "globals": [],
+  "globals_note": "None. The body's only memory operand is receiver-relative through ECX, and knowledgegraph/triage/datarefs-2540f2ca.tsv records no data reference out of 0x00c70e00, which is a recorded absence and not a missing read.",
+  "vtables": [],
+  "vtables_note": "None recorded. The derived dispatch record is at zero indirect calls, zero call offsets and zero vtable-shaped loads; the body contains no indirect transfer of any kind; and datarefs-2540f2ca.tsv has zero rows for this VA, so on this pinned snapshot the entry is not the target of any recorded data reference. A function reached only through a vtable would appear as the target of a data reference from its table. This is a recorded absence, not an exhaustive proof that no table exists.",
+  "types": [
+    {
+      "name": "OpaqueReceiver",
+      "kind": "opaque fixture",
+      "size": "0x140",
+      "note": "sized to the single reached displacement 0x13c plus its four bytes; no member is declared and no class is asserted. The word at 0x13c is UNNAMED."
+    },
+    {
+      "name": "OpaqueTailReceiver",
+      "kind": "opaque fixture",
+      "size": "0x198",
+      "note": "the receiver the TAIL TRANSFER receives - the word this body's receiver holds at +0x13c, not this body's receiver. Declared as a distinct type so the two objects cannot be confused: 0x194 is past the OpaqueReceiver extent, so no valid OpaqueReceiver can stand in for one."
+    }
+  ],
+  "type_scope": "The reconstructed symbol takes an opaque receiver pointer and returns a 32-bit dword. That both paths write a full dword of EAX is OBSERVED. Which game concept either path's value names is UNKNOWN and is not claimed; the four sampled callers only order the result against the small constants 0x4 and 0x5.",
+  "analogues": [
+    {
+      "va": "0x00b8dab0",
+      "symbol": "FUN_00b8dab0",
+      "relation": "the JMP's target, read live as `MOV EAX,[ECX + 0x194]` / `RET`; reconstructed and PROMOTED as pkg-00b8dab0-field194-getter. Its seven bytes are re-read and re-pinned by this package so that 'the transfer hands ECX over as the callee's receiver' is a statement about bytes."
+    },
+    {
+      "va": "0x00c70e0f",
+      "symbol": "null arm",
+      "relation": "the only returning path inside this body: `MOV EAX,imm32` with imm32 = 1, then the bare RET at 0x00c70e14."
+    },
+    {
+      "va": "0x01021260",
+      "symbol": "FUN_01021260",
+      "relation": "the immediate receiver source in two of the four sampled call sites (0x00be2127 and 0x00d56c57 both `MOV ECX,EAX` after calling it), so the receiver of this entry arrives from a function's return value rather than from a field."
+    }
+  ],
+  "semantic_findings": [
+    "The entry is a receiver-field presence test whose answer is a 32-bit dword: load a pointer out of the receiver at +0x13c, and if it is non-null BECOME 0x00b8dab0 - hand that pointer over as a receiver and let it produce the answer - otherwise return the constant 1.",
+    "THE CHAIN OF ECX is the load-bearing fact and it is proved from the listing, not assumed: 0x00c70e00 reads ECX and overwrites it with the loaded word in the same instruction (ModRM 0x89, reg=ECX and rm=ECX); nothing between there and the JMP writes a register except EFLAGS; and 0x00b8dab0 reads through ECX (its ModRM 0x81 has rm=001). The value crossing the transfer is therefore the word at incoming-receiver + 0x13c.",
+    "The JZ's rel8 is 5, which is the length of the JMP it skips, so the two arms are exactly {transfer to 0x00b8dab0} and {return 1}. There is no third path and no fallthrough into the JMP.",
+    "The transfer is a TAIL call, not a nested call: there is no frame teardown to perform because no frame was built, and the callee's result lands in the same register the caller would have used. The derived record classifies the same body as `form: epilogue_then_jmp`, `after_frame_setup: false`.",
+    "41 direct-call edges in from 32 distinct callers, and exactly one out. Fan-in says nothing about the field's meaning and is not used as evidence for one.",
+    "The four sampled call sites (0x00ba0245, 0x00be2127, 0x00d56c57, 0x00ff749b) all put the receiver in ECX immediately before the call and push nothing between that write and the call - four of four, which is the observational counterpart of the zero-stack-argument claim. All four then order the result against a small constant (0x4 or 0x5) and none dereferences it.",
+    "Nothing is written. The whole body is a read, a test, a transfer and a constant, and the model test asserts the entire 0x688-byte fixture arena is byte-identical across every call."
+  ],
+  "not_claimed": [
+    "Whether the receiver argument is a C++ `this` or an ordinary first parameter. UNKNOWN: the bytes do not discriminate __thiscall from __fastcall for this shape, and nothing in the pack names a class (class_type null, namespace null, sdk_type null, sdk_name null, receiver.bounds_only true).",
+    "Any name for the word at receiver+0x13c, and any name for the receiver's class. UNKNOWN; see field_offsets.note.",
+    "Any name for the word at tail-receiver+0x194, and any name for the tail receiver's class. UNKNOWN; the promoted sibling package declines to name it too.",
+    "That the two paths return the same KIND of quantity. The null arm yields 1 and the transfer arm yields an arbitrary stored word, and nothing in the evidence says they are one thing. std::uint32_t is the widest type both paths provably agree on.",
+    "That the guard is a test against zero rather than an address-plausibility test. The modelled tail target has no null check and faithfully reads at +0x194 of whatever it is handed, so a word that is not a usable address faults in the model exactly as it would in the original process, and no such case can be exercised. What IS proved is that a null word yields 1 and that every address the fixture holds takes the transfer.",
+    "Any nullability, ownership, AddRef/Release, thread-safety or lifetime contract for the receiver, for the word it holds, or for the object that word names.",
+    "Any variadic behaviour: the derived record's variadic field is UNKNOWN.",
+    "Any callee-side stack cleanup, and any ordinary stack argument.",
+    "Any second definition of 0x00b8dab0. The mechanism is modelled locally so that the transferred receiver is observable and assertable; the promoted sibling remains the record of that address.",
+    "That this entry is or is not reachable through a vtable beyond the recorded zero data references in the pinned sidecar.",
+    "Any runtime, Wine, trace, differential or OBSERVED-behaviour claim. No runtime evidence exists for this VA."
+  ],
+  "tooling_findings": [
+    {
+      "id": "TF1",
+      "component": "tools/reconstruction_tooling/validate.py (ABI arm) + the openspore-abi-inference-1 derivation",
+      "finding": "NO TAIL-TRANSFER BODY CAN REACH A STATIC PASS, so none can be promoted. The derived ABI record for 0x00c70e00 carries `verdict: ABI_UNKNOWN` and the validator's ABI arm tests that verdict BEFORE the arm that would pass a source which declares the convention: the order is (FAIL on conflict) -> (FAIL on source/machine convention mismatch) -> (WARN when verdict == ABI_UNKNOWN) -> (WARN on low confidence) -> (PASS when the convention is present in the source span and in canonical metadata). With verdict ABI_UNKNOWN the PASS arm is unreachable, so the ABI check is WARN whatever a reconstruction writes - and the aggregate ladder gives PASS only when all eight structural checks PASS.",
+      "evidence": "Measured over every committed evidence pack: 7 of 651 packs carry `tail_call.present == true` (0x0102adf0, 0x00b5b820, 0x007c4000, 0x00c70e00, 0x00d1e610, 0x00e36650, 0x00980330) and ALL SEVEN carry `verdict: ABI_UNKNOWN` - 7 of 7, no exceptions. The inference record's own T2 entry gives the reason, at `confidence: UNKNOWN`: 'the function can reach a caller by transferring out of the listing, so the path that actually returns was never observed'.",
+      "why_it_looks_wrong_for_this_body": "The observation T2 rests on is incomplete here, and this body makes it obvious. 0x00c70e0f/0x00c70e14 IS a returning path in the same listing, the JZ that guards the transfer is a two-byte instruction whose rel8 is the length of the transfer, and the transfer's own target is a seven-instruction body (8b 81 94 01 00 00 c3) whose MOV EAX/RET was read live for this package. The path that actually returns was observed.",
+      "secondary_symptom": "The same record carries `abstained_because: []`, so the validator's ABI WARN reads 'the derived ABI record abstained (ABI_UNKNOWN): no reason recorded' even though inference T2 records the reason informally. An abstention with no machine-readable reason is the shape a reviewer least wants.",
+      "not_fixed_here": "Reported, not fixed. No tooling, validator or evidence file outside this VA's own package was modified."
+    },
+    {
+      "id": "TF2",
+      "component": "tools/reconstruction_tooling/evidence_returns.py",
+      "finding": "RETURN SEMANTICS is NOT_AVAILABLE for this target because one of its two reachable returns is a call result, and that is the module's DOCUMENTED design rather than an accident: 'A CALL inside the body defeats this state on its own ... on x86-32 whether a caller may read EAX after a call is decided by the callee's signature, which this listing cannot show.' For a tail transfer the callee is not even named CALL in the listing but the transfer is treated the same way, so the state is UNCLASSIFIED and the check is NOT_AVAILABLE.",
+      "evidence": "Live verdict: 'the machine return state is UNCLASSIFIED and the source span declares return type SlotWord: the return register EAX is written at a width this module cannot bound on at least one of the 2 reachable return(s) in the complete 6-instruction listing (a call result, a conditional destination, or two returns reached with different widths), so no width is determinable.' The two reachable returns are 0x00c70e0f (`b8 01 00 00 00`, a boundable 32-bit immediate write) and the 0x00c70e0a transfer (unboundable).",
+      "note": "The module's route is not even entered here: `decide()` defers to the string-agreement arms whenever a canonical `return_type` claim exists, and the index projection deliberately files a worker's `observed_original_abi.return_type` under `return_note`, so no source-side declaration can change this verdict. Verified by adding `return_type` to this record's metadata and re-running: the verdict did not move.",
+      "not_fixed_here": "Reported, not fixed."
+    },
+    {
+      "id": "TF3",
+      "component": "g++ 16.2.1 (CachyOS/Arch), -fPIE, -m32, -O1 and -O2",
+      "finding": "AN INLINE-ASM BLOCK CONTAINING A CALL, WITH MEMORY OPERANDS, IS CODE-GENERATED WRONG: g++ held the -fPIC GOT base in EDX across the call and computed a POST-call operand address from it, while the callee uses EDX as its own scratch. In this package's ESP measurement the second sample was written through the clobbered base, the slot kept its initial value, and the failure read exactly like a reconstruction that had failed to balance its stack.",
+      "evidence": "Generated code for the failing spelling, verified by objdump at -O1: `__x86.get_pc_thunk.dx` -> `addl $0x5c29,%edx` (GOT base in EDX) -> `movl %esp,0x30(%edx)` -> `call *0x18(%esp)` -> `movl %esp,0x2c(%edx)`, against a callee whose body is `mov 0x13c(%ecx),%edx`. The recovered value was 0xf7805e7b where a stack address was expected. Adding an unrelated fprintf to the same function made the symptom vanish, which is what identified it as code generation rather than as a property of the reconstruction.",
+      "mitigation_applied_here": "Every thiscall trampoline in the model test now carries NO memory operand in any block containing a call, and pins the receiver to ECX (\"+c\"), the target to EDX (\"+d\") and the result to EAX (\"=a\"), so neither register allocation nor aliasing is possible; the ESP measurement was reduced to two single-instruction asm blocks around a plain C++ call. Codegen verified by disassembly at -O0, -O1 and -O2 for both compilers.",
+      "why_it_is_worth_reporting": "The promoted sibling package src/reconstruction/pkg_00b8dab0_field194_getter/ carries the SAME trampoline shape - one asm block that samples ESP, calls through a register and samples ESP again, with two `\"=m\"` operands straddling the call. Its build_matrix in the committed metadata records only g++ -O1 and -O2 with no -O0 and no clang++, and it was built before this pattern was found to be unreliable. It is a latent hazard in already-promoted work, not a defect in this package.",
+      "not_fixed_here": "Reported, not fixed. The sibling package belongs to another worker and was not touched."
+    },
+    {
+      "id": "TF4",
+      "component": "tools/reconstruction_tooling/validate.py (_convention_key)",
+      "finding": "_convention_key scans a free-text convention claim for the first of (\"fastcall\", \"thiscall\", \"stdcall\", \"cdecl\") that APPEARS ANYWHERE in it, in that fixed order and independently of position. A worker that writes an honest, detailed convention string which happens to DISCUSS the rejected alternative is therefore recorded as claiming the alternative, and the ABI arm then FAILs with 'source convention [thiscall] conflicts with persisted fastcall' - the opposite of the intent.",
+      "evidence": "Observed on this VA: the first metadata draft carried the full discrimination argument in `observed_original_abi.calling_convention` and mentioned __fastcall before __thiscall; the validator returned ABI = FAIL with detail 'source convention ['thiscall'] conflicts with persisted fastcall'. The claim reached the check through the index projection of the metadata, where `calling_convention` is passed through verbatim.",
+      "mitigation_applied_here": "The claim string is now short and names only __thiscall, exactly as the promoted sibling package's does, and the whole discrimination argument moved to a separate `calling_convention_discrimination` field where no tokenizer reads it. The result is ABI = WARN on the TF1 abstention rather than a false FAIL.",
+      "not_fixed_here": "Reported, not fixed."
+    }
+  ],
+  "confidence": "high for the mechanism (six instructions, one displacement, one branch whose rel8 equals the length of the jump it skips, one signed rel32 that computes to the recorded tail target, one bare RET), none for the field identities or for the meaning of either path's value",
+  "unresolved_questions": [
+    "What does the word at receiver+0x13c name, and what class does the receiver belong to? Nothing in the pack names either; the receiver record is bounds_only and the types/globals/vtables categories are all MISSING.",
+    "Is the receiver argument a `this` or an ordinary first parameter? The bytes cannot say (see not_claimed), and the answer is what would settle __thiscall against __fastcall.",
+    "Is the constant 1 a boolean, an enum member, a sentinel, or a count? The four sampled callers only order the result against 0x4 and 0x5, which is consistent with every one of those readings.",
+    "Do the two paths' return values denote the same quantity? Nothing in the evidence settles it, and the two arms share one signature.",
+    "What class is the TAIL receiver, and does it need an AddRef? The tail target's body is seven bytes with no room for a reference call, so ownership is undetermined; the promoted sibling pkg-00b8dab0-field194-getter carries the same open question for the same word.",
+    "Why does the derived ABI record abstain with verdict ABI_UNKNOWN? Its own inference T2 gives the reason as the tail transfer - 'the function can reach a caller by transferring out of the listing, so the path that actually returns was never observed' - at confidence UNKNOWN. That observation is incomplete for this body: 0x00c70e0f/0x00c70e14 IS a returning path in the same listing, and the transfer's own target is a two-instruction body whose MOV EAX/RET was read live. See the tooling note in the report."
+  ],
+  "evidence_provenance": [
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_function @ 0x00c70e00 (6 instructions, complete) and /read_memory @ 0x00c70e00 (24 bytes: 8b 89 3c 01 00 00 85 c9 74 05 e9 a1 cc f1 ff b8 01 00 00 00 c3 cc cc cc)"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /read_memory @ 0x00b8dab0 (8 bytes: 8b 81 94 01 00 00 c3 cc) - the tail target's body, re-read for this package"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /decompile_function @ 0x00c70e00: `undefined4 __fastcall FUN_00c70e00(int param_1) { if (*(int *)(param_1 + 0x13c) != 0) { uVar1 = FUN_00b8dab0(); return uVar1; } return 1; }` - the `__fastcall` spelling is NOT treated as evidence; the live ghidra_function record carries ghidra_has_calling_convention false and ghidra_calling_convention_signal no_information"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_bytes on the four sampled call sites 0x00ba0240, 0x00be2120, 0x00d56c50 and 0x00ff7498, showing the receiver reaching ECX with nothing pushed and the result ordered against 0x4 / 0x5"
+    },
+    {
+      "mode": "derived",
+      "source_class": "evidence_pack",
+      "ref": "reconstruction/evidence/00c70e00/evidence.json categories: disassembly (OBSERVED, LIVE), decompilation (LIVE), ghidra_function (LIVE), abi and abi_derived (schema openspore-abi-inference-1, verdict ABI_UNKNOWN)"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/xrefs-2540f2ca.tsv - 41 direct-call edges into 0x00c70e00 from 32 distinct callers, and exactly one out (00c70e00 -> 00b8dab0 at callsite 00c70e0a)"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/datarefs-2540f2ca.tsv - zero rows for 0x00c70e00"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "src/reconstruction/pkg_00b8dab0_field194_getter/ and reconstruction/metadata/pkg-00b8dab0-field194-getter/00b8dab0.json - the promoted reconstruction of the tail target, whose seven bytes this package re-reads independently"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-00c70e00-field13c/field13c_00c70e00_model_test.cpp",
+    "groups": 9,
+    "assertion_style": "abort on the first failure; each group names the hypothesis it refutes",
+    "coverage": [
+      "A - the guard is on the LOADED WORD and its null arm returns exactly 1: a null word with a NON-NULL receiver yields 1, and yields none of the five trap tags, so a guard on the receiver (which would have taken the transfer arm) fails",
+      "B - the transferred object is the word at +0x13c and nothing else: four fully-formed 0x198-byte decoy receivers each with a DISTINCT word at their own +0x194 cover one-word-low, one-word-high, address-of-the-word and receiver-passthrough, and a four-case sweep proves the answer tracks the word at +0x13c rather than any cached object",
+      "C - 0x13c is a BYTE displacement: the disp32-as-element-count reading lands at byte 0x4f0, past the modelled extent; the header's named accessor and the entry's literal arithmetic are checked against each other; the tail's 0x194 is proved to belong to a strictly larger, distinct receiver",
+      "D - the body reads and never writes: the entire 0x688-byte arena is byte-identical before and after every call, on BOTH paths, and the canary bands on both sides are intact",
+      "E - the value crosses verbatim: nine extreme values and a 4x4 sweep of the byte pattern at +0x194 all come back unchanged, and four further distinct arena addresses all take the transfer. The note in the test states the honest bound: a word that is not a usable address cannot be exercised, because the faithful tail target faults on it exactly as the machine would",
+      "F - a wrong DISPATCH TARGET is observable and the trap is PROVEN LIVE, not assumed: the callable sentinel occupies the word immediately past the last modelled slot (asserted by offsetof), and the test actually calls the modelled slot, the sentinel and a decoy and requires three pairwise distinct return values, so a one-slot-too-far dispatch cannot land on a value that impersonates the right one",
+      "G - the ABI is MEASURED, not asserted: ESP is sampled immediately before the call and immediately after the return and must agree (the callee pops nothing), and a second receiver at a different address yields a different answer",
+      "H - the encoding IS the observed twenty-one bytes, byte for byte, with the ModRM fields decoded (mod=10, reg=ECX, rm=ECX on this body's load; mod=10, reg=EAX, rm=ECX on the tail's), and BOTH addresses are COMPUTED from the encoded operands - the rel32 to 0x00b8dab0 and the rel8 to 0x00c70e0f - so a wrong branch or jump displacement fails here rather than passing",
+      "I - the four sampled call sites' ordered comparisons against 0x4 and 0x5 behave as the binary's do, including that both paths can produce 1 and that they are distinguishable the moment the transferred word differs"
+    ],
+    "build_matrix": "g++ 16.2.1 and clang++ 22.1.8, -m32 -std=c++17 -Wall -Wextra -Werror, at -O0, -O1 and -O2: all six combinations build with zero diagnostics and exit 0. clang++ additionally clean under -Wshadow -Wconversion.",
+    "trampoline_note": "The three thiscall trampolines carry NO memory operand in any block containing a call, and pin the receiver to ECX (\"+c\") and the target to EDX (\"+d\") with the result read from EAX (\"=a\"). Two earlier spellings failed on g++ -O1/-O2 in ways that read exactly like reconstruction defects - see report section 7; the surviving shape was chosen because no allocation or aliasing is possible in it, and the codegen was verified by disassembly at -O0, -O1 and -O2.",
+    "mutation_tests": [
+      {"id": "M1", "perturbation": "read receiver+0x140 instead of +0x13c (one word high)", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M2", "perturbation": "read receiver+0x138 instead of +0x13c (one word low)", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M3", "perturbation": "double the displacement to 0x278", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M4", "perturbation": "transfer the ADDRESS of the word at +0x13c instead of its VALUE", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M5", "perturbation": "dropped null guard: transfer unconditionally", "expected": "FAIL", "observed": "killed (SIGSEGV - the guard's absence hands 0x00b8dab0 a null receiver and it reads at 0x194)"},
+      {"id": "M6", "perturbation": "inverted null guard: return the constant when the word is NON-null", "expected": "FAIL", "observed": "killed (SIGSEGV on the null case, and the wrong value on the non-null case)"},
+      {"id": "M7", "perturbation": "null-arm constant 2 instead of 1", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M8", "perturbation": "null-arm constant 0 instead of 1", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M9", "perturbation": "pass the receiver straight through instead of the loaded word", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M10", "perturbation": "wrong tail target: the target reads +0x190 instead of +0x194", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M11", "perturbation": "wrong tail target: a target that answers 1 for every receiver", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M12", "perturbation": "wrong tail target: mask the tail's word to 16 bits", "expected": "FAIL", "observed": "killed (exit 134)"},
+      {"id": "M13", "perturbation": "wrong tail target: the tail publishes the word back through the receiver", "expected": "FAIL", "observed": "killed (exit 134) - caught by group D's whole-arena byte comparison"},
+      {"id": "M14", "perturbation": "inline the tail body and drop the call edge (identical value, no call)", "expected": "kills at the VALUE level", "observed": "SURVIVES the runtime test, and this is a property of C++ rather than a gap in the fixture: the mutant computes the same word from the same receiver, so no value-level assertion can see it. It IS caught one level up - the validator's CALLS check reads the source span for an address-suffixed callee, and the unmutated span yields ['0x00b8dab0'] while the M14 span yields the EMPTY set (verified with tools/reconstruction_tooling/validate._callee_addresses). Not weakened: the model test claims nothing about the call edge, and the header says so."},
+      {"id": "M15", "perturbation": "write the transfer as a call plus an explicit return instead of a tail-shaped return", "expected": "kills at the VALUE level", "observed": "SURVIVES, and unkillable by construction at any level: `return f(x)` and `{ auto r = f(x); return r; }` are the same C++ program, and whether the compiler emits a jump or a call-plus-return is an EMITTED-CODE property that differs between -O0 and -O2 for the SAME source. Asserting it would mean asserting one compiler's register allocation. Recorded as a boundary, not papered over: the .cpp says in so many words that the transfer is written in the tail-shaped source form, that the compiler is free to emit either, and that the model test asserts the call and the receiver it was given - which is what the bytes pin - rather than pretending to assert the jump."},
+      {"id": "H1", "perturbation": "encoding opcode 0x8b -> 0x8d (LEA)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H2", "perturbation": "encoding ModRM 0x89 -> 0x49 (disp8 form)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H3", "perturbation": "encoding disp32 0x3c -> 0x38", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H4", "perturbation": "encoding JZ rel8 5 -> 4 (the branch would land inside the JMP)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H5", "perturbation": "encoding 0x00c70e0f 0xb8 -> 0xb0 (MOV AL,imm8)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H6", "perturbation": "encoding tail 0xc3 -> 0xc2 (RET imm16)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H7", "perturbation": "encoding JMP rel32 off by one", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H8", "perturbation": "tail target ModRM 0x81 -> 0x41 (its rm stops naming ECX, breaking the chain of ECX at the byte level)", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H9", "perturbation": "tail target disp32 0x94 -> 0x90", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H10", "perturbation": "modelled receiver extent 0x140 -> 0x100", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H11", "perturbation": "modelled tail extent 0x198 -> 0x190", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H12", "perturbation": "declared displacement 0x13c -> 0x140 while the encoding still says 0x13c", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H13", "perturbation": "null-arm constant 1 -> 2 while the encoding still says 1", "expected": "FAIL", "observed": "killed: static_assert at compile time"},
+      {"id": "H14", "perturbation": "the derived verdict string edited away", "expected": "FAIL", "observed": "killed (exit 134) - the abstention is pinned as a compile-time fact and re-checked at run time"}
+    ],
+    "mutation_summary": "27 of 29 killed: 13 at run time (exit 134 / SIGSEGV) and 14 at compile time. The two survivors are M14 and M15, both reported above with the precise reason each is invisible to a value-level test; neither is a gap in the fixture's discrimination, which is exercised by M1-M4 and M9-M13.",
+    "mutation_method": "Each mutation is applied to a throwaway copy of the package under /tmp/opencode/wk-c70e00-mut (never to the staging files), built with g++ -m32 -std=c++17 -O1 -Wall -Wextra, and run. A mutation counts as detected only when the build fails or the binary exits non-zero. The unmutated baseline is rebuilt and re-run after EVERY mutant and passes each time; the battery aborts if it ever does not. Driver: /tmp/opencode/mutation_battery.py."
+  },
+  "runtime_validation": "none",
+  "runtime_validation_status": "not-run",
+  "runtime_gates": [],
+  "review_status": "pending",
+  "integration_status": "staging only; not promoted, not committed",
+  "worker_ownership": {
+    "implementer_id": "orch-final-lap-c70e00",
+    "staging_dir": "reconstruction/staging/pkg-00c70e00-field13c",
+    "note": "This worker claims only 0x00c70e00. The tail target 0x00b8dab0 and its promoted package, the four sampled call sites, and the two immediate receiver sources 0x01021260 and the sibling accessor family are read-only references; no other worker's staging package or metadata record is touched."
+  }
+}

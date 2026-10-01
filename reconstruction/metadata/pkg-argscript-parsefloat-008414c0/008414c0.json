@@ -1,0 +1,250 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "pkg-argscript-parsefloat-008414c0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "version": "3.1.0.22",
+  "image_base": "0x00400000",
+  "va": "0x008414c0",
+  "address": "0x008414c0",
+  "name": "FUN_008414c0",
+  "normalized_symbol": "FUN_008414c0",
+  "reconstructed_symbol": "argscript_formatparser_get_field_008414c0",
+  "subsystem": "ArgScript",
+  "cluster": "scripting-content",
+  "captured_on": "2026-09-30",
+  "target_state": "implemented staging candidate; integrator review pending",
+
+  "name_source": {
+    "recorded_identity": "FUN_008414c0",
+    "rule": "The SDK symbol attached to this address is refuted by the bytes (see refuted_symbol), so it is not this record's identity. name and normalized_symbol therefore carry the Ghidra default placeholder for an unclaimed address, which is the only name the analysis graph currently holds for 0x008414c0 that no evidence contradicts.",
+    "index_record_identity": "reconstruction/knowledge/index.json records[\"0x008414c0\"] carries name = normalized_symbol = \"ArgScript::FormatParser::ParseFloat\", which is the refuted SDK import name and not a machine-derived identity.",
+    "ghidra_symbol_at_0x008414c0": "ArgScript::FormatParser::ParseFloat, symbol type Function, primary=true, source=IMPORTED (inline GhidraScript over SymbolTable.getSymbols(0x008414c0)). It is an imported SDK label on the address, not an analysis-derived identity, so it is recorded under refuted_symbol rather than as this record's name.",
+    "why_not_the_imported_name": "The name is the SDK's and it is contradicted twice over by the seven body bytes; a reader must not be able to mistake it for a finding. It appears in this record exactly once, under refuted_symbol, together with the instruction that refutes it.",
+    "reconstructed_symbol_choice": "argscript_formatparser_get_field_008414c0 is the staging entry point name. It embeds the bare 8-hex VA 008414c0 and describes what the body does (read one receiver word) rather than the refuted SDK behaviour."
+  },
+
+  "refuted_symbol": {
+    "refuted": "ArgScript::FormatParser::ParseFloat",
+    "recorded_in": [
+      "reconstruction/knowledge/index.json records[\"0x008414c0\"].name and .normalized_symbol",
+      "reconstruction/knowledge/index.json records[\"0x008414c0\"].triage.name / .triage.sdk_name / .triage.ghidra_name",
+      "Ghidra SymbolTable at 0x008414c0: one Function symbol 'ArgScript::FormatParser::ParseFloat', primary=true, source=IMPORTED",
+      "knowledgegraph/triage/triage-2540f2ca.jsonl and triage-f0e310e0-v6.jsonl: ghidra_name / norm_name / sdk_name = ArgScript::FormatParser::ParseFloat",
+      ".spore-analysis/ghidra-exports/vtables.json candidate 0x0141c97c slot 3: func = ArgScript::FormatParser::ParseFloat, sdk = true"
+    ],
+    "gdecompiled_signature_refuted": "float ArgScript::FormatParser::ParseFloat(FormatParser * this, char * pString)",
+    "refutations": [
+      {
+        "claim": "the char *pString stack parameter exists",
+        "refuting_instruction": "0x008414c6",
+        "instruction_bytes": "c3",
+        "why": "A __thiscall member with one 4-byte second argument must pop it, so its epilogue must encode RET 4 as the three bytes C2 04 00. The byte at 0x008414c6 is 0xC3, a bare RET with no imm16, so the callee pops zero argument words. Independently, the body contains no [ESP] or [EBP] operand at all, so there is no stack slot from which an argument could be read."
+      },
+      {
+        "claim": "the return type is float",
+        "refuting_instruction": "0x008414c0",
+        "instruction_bytes": "8b 81 54 01 00 00",
+        "why": "On x86-32 an MSVC float return travels in ST0. The complete 7-byte body contains no FPU or SSE opcode, so ST0 is never written and no float can be produced; and the only write to a return register anywhere in the body is the 32-bit dword load into EAX at 0x008414c0. The body cannot return a float."
+      },
+      {
+        "claim": "the function parses (behaviour of ParseFloat)",
+        "refuting_instruction": "0x008414c0..0x008414c6",
+        "why": "The body contains no CALL, no branch (Jcc/JMP), no CMP, no TEST and no constant. There is nothing to call, nothing to compare and no side of a branch to take. What the body does is read one receiver word at displacement 0x154 and return it."
+      }
+    ],
+    "status": "REFUTED BY THE MACHINE BYTES; the SDK name is not used as this record's identity, as the declared return type, or as a claim about behaviour anywhere in this file.",
+    "decompiler_artefact_not_followed": {
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__ParseFloat.c",
+      "text": "/* WARNING: Unknown calling convention */ float ArgScript__FormatParser__ParseFloat(FormatParser *this,char *pString) { float10 in_ST0; return (float)in_ST0; }",
+      "finding": "It models neither of the two instructions that exist and synthesises an ST0 input from no instruction at all. It is a consequence of the declared prototype, not evidence, and it is deliberately not followed."
+    }
+  },
+
+  "source_files": [
+    "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0.hpp",
+    "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0.cpp",
+    "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_rationale": "The ModRM byte of the load at 0x008414c0 is 0x81, i.e. mod=10 (a 32-bit displacement follows, so the operand is register-relative and not an absolute address), reg=000 (destination EAX), r/m=001 (base register ECX). ECX is therefore the base of the body's only memory operand, which is the shape of a register-passed receiver. The epilogue at 0x008414c6 is the single byte 0xC3, a RET with no imm16, so the callee cleans zero bytes and the caller owns the stack, which is precisely the thiscall spelling (caller cleanup); with zero stack arguments __thiscall and __fastcall emit the same bytes, and __cdecl is excluded because a __thiscall member here is the identity the ModRM fixes. Five call sites confirm the receiver role from the caller side; the decisive one is 0x00bbc340, where MOV ECX,dword ptr [ESP+0x4] moves the caller's own first stack word into ECX and CALL 0x8414c0 makes it the receiver, so ECX carries an object pointer and not a value.",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "receiver_type_claim": "none. SporeApp.exe carries no MSVC RTTI; the receiver is an opaque, vtable-owning object reached through the slot recorded under vtable_placement. No class name is inferred from the address.",
+    "return_type": "uint32_t (an opaque 32-bit word)",
+    "return_type_rationale": "The machine fixes only a 32-bit word: the sole write to EAX in the whole body is the dword load MOV EAX,dword ptr [ECX + 0x154] at 0x008414c0, and the epilogue at 0x008414c6 returns it unchanged -- no sign extension, no narrowing, no re-encoding, no float conversion. NO DECLARED SEMANTIC TYPE IS CLAIMED for the word: it is not asserted to be a pointer, a handle, a bool, a count or anything else. Caller-side observations (0x00acf7c8 MOV [ESP+0xf8],EAX stores it; 0x00bbc349 and 0x010050b3 TEST EAX,EAX / JE null-test it; 0x00f35f55 and 0x00cdd896 MOV ECX,EAX and call through it) are consistent with a pointer-shaped word, but that is caller behaviour and not a declared type of the returned value.",
+    "return_width_bytes": 4,
+    "return_register": ["EAX", "AL"],
+    "return_semantics": "EAX receives the 32-bit little-endian word at receiver+0x154 bit-for-bit. It is the only register the body writes.",
+    "ret_form": "RET",
+    "termination": "RET at 0x008414c6, the bare single byte 0xC3 with no imm16 operand",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "saved_registers": "none; the body touches only EAX and reads ECX",
+    "stack_frame": "none; no EBP frame is formed and there is no [ESP] or [EBP] operand anywhere in the body",
+    "receiver_null_handling": "none. There is no TEST or CMP, so the load is unconditional and a null receiver faults at 0x008414c0 exactly as in the original; no null guard is modelled.",
+    "vtable_slot": {
+      "table": "0x0141c97c",
+      "slot_index": 3,
+      "slot_address": "0x0141c988",
+      "slot_byte_offset": "0x0c",
+      "table_slot_count": 18,
+      "equivalently": "slot 22 of the table at 0x0141c930 (0x0141c988 - 0x0141c930 = 0x58 = 22 * 4)",
+      "evidence": ".rdata image read of SporeApp.exe 3.1.0.22, independently reproduced in this session two ways. (1) objdump -s -j .rdata SPORE/SporeBin/SporeApp.exe, line '141c980 00138400 70138400 c0148400 d0148400': the dword at 0x0141c988 is 0x008414c0. (2) a direct python3 struct.unpack('<I') read of the same file at .rdata (VMA 0x013cc000, file offset 0x00fcb400), giving 0x00841290 at 0x0141c97c, 0x00841300, 0x00841370, then 0x008414c0 at 0x0141c988, then 0x008414d0. 0x0141c988 - 0x0141c97c = 0x0c = 3 dword slots.",
+      "table_extent": "The table is bounded at 18 slots: the words at 0x0141c9c4, 0x0141c9c8, 0x0141c9cc and 0x0141c9d0 are 0x008413e0, 0x008413f0, 0x00841400 and 0x00841400, and objdump -d -M intel shows each of those three distinct addresses is the two-instruction MSVC adjusting thunk 'ADD ECX,0x4c ; JMP <base>' (0x008413e0 -> jmp 0x83f510, 0x008413f0 -> jmp 0x83e4f0, 0x00841400 -> jmp 0x83edc0). Four consecutive adjusting thunks end a virtual-function table. That bound is why the slot index is stated as 3 of 18 rather than as an offset into arbitrary data.",
+      "xref_export_records_no_vtable_ref": "knowledgegraph/triage/xrefs-2540f2ca.tsv holds 34 rows whose callee_va is 008414c0 and `cut -f3 | sort | uniq -c` over them yields exactly '34 direct-call' and nothing else -- zero vtable-ref rows, even though the export carries 11,898 vtable-ref rows in total. knowledgegraph/triage/datarefs-2540f2ca.tsv holds 0 rows for this VA. The slot claim therefore rests on the .rdata image read alone, and is recorded with that single source of evidence rather than as a corroborated fact.",
+      "not_claimed": "No class hierarchy, no owning type and no member identity is claimed. Ghidra's own function symbol at this address is an IMPORTED SDK label; the address being a vtable slot proves only that it is a non-static virtual member of some class.",
+      "sdk_association_not_adopted": ".spore-analysis/ghidra-exports/vtables.json candidate 0x0141c97c records the same slot 3 with func = ArgScript::FormatParser::ParseFloat and sdk = true, and its sdk_associations block for 0x0141c97c lists ParseFloat among the table's sdkFuncs. That association is a consequence of the imported label, not independent evidence, and it is not adopted here."
+    },
+    "field_access": {
+      "displacement": "0x154",
+      "addressing_address": "0x008414c0",
+      "width_bytes": 4,
+      "access": "dword read only; the body writes no memory at all",
+      "evidence": "The disp32 bytes 54 01 00 00 sit at 0x008414c2..0x008414c5 of the MOV whose ModRM at 0x008414c1 is 0x81 (mod=10), so the operand is [ECX + 0x154] and the displacement is little-endian 0x00000154.",
+      "no_named_member_claimed": "Because 851 separate [reg+0x154] sites exist across the binary (independently recounted in this session over `objdump -d -M intel SporeApp.exe` as 851 matching instruction lines at 756 distinct addresses), the displacement on its own identifies no named member and none is claimed. The reconstruction models the receiver as an opaque byte array of exactly 0x154 + 4 bytes, sized from the displacement, with no field names and no layout claim."
+    }
+  },
+
+  "function_extent": {
+    "entry": "0x008414c0",
+    "body_end_inclusive": "0x008414c6",
+    "ghidra_body_end": "0x008414c6",
+    "instruction_count": 2,
+    "size_bytes": 7,
+    "bytes": "8b8154010000c3",
+    "padding": "0x008414c7..0x008414cf are nine 0xCC int3 bytes; the next function in the image is at 0x008414d0",
+    "instructions": [
+      "0x008414c0  MOV EAX,dword ptr [ECX + 0x154]   (8b 81 54 01 00 00)",
+      "0x008414c6  RET                                (c3)"
+    ],
+    "absent_instruction_classes": {
+      "call": 0,
+      "branch": 0,
+      "compare": 0,
+      "test": 0,
+      "fpu_or_sse": 0,
+      "stack_operand": 0,
+      "memory_write": 0
+    }
+  },
+
+  "mechanics": {
+    "kind": "unconditional 32-bit field load returned verbatim",
+    "direct_callers": 30,
+    "direct_callers_rows": "34 direct-call xref rows in knowledgegraph/triage/xrefs-2540f2ca.tsv, spanning 30 distinct caller functions; three callers call the site more than once (0x01049040 three times, 0x010225d0 and 0x00bc1b10 twice each)",
+    "direct_callees": 0,
+    "memory_writes": 0,
+    "reads": ["dword [ECX+0x154] exactly once, unconditionally, at 0x008414c0"],
+    "receiver_is_unchanged": "ECX is only read as a base register and is never written; the body is a pure load and cannot mutate the receiver.",
+    "receiver_unaligned_ok": "The original's operand is a plain dword load and asserts no alignment. The reconstruction reads through memcpy, so it makes no alignment requirement the original does not have either."
+  },
+
+  "call_site_evidence": {
+    "note": "Five of the 34 call sites were disassembled by objdump -d -M intel to establish the receiver role and the consumption of the returned word. They are caller-side observations and fix no declared type of the return value.",
+    "sites": [
+      {"callsite": "0x00acf7c3", "receiver_setup": "0x00acf7ba MOV ECX,ESI", "result_use": "0x00acf7c8 MOV [ESP+0xf8],EAX"},
+      {"callsite": "0x00bbc344", "receiver_setup": "0x00bbc340 MOV ECX,dword ptr [ESP+0x4] -- the caller's own first stack word becomes the receiver", "result_use": "0x00bbc349 TEST EAX,EAX / 0x00bbc34b JE"},
+      {"callsite": "0x00f35f50", "receiver_setup": "0x00f35f4e MOV ECX,ESI", "result_use": "0x00f35f55 MOV ECX,EAX -> 0x00f35f57 CALL 0xc82f80"},
+      {"callsite": "0x00cdd88a", "receiver_setup": "0x00cdd884 MOV ECX,ESI", "result_use": "0x00cdd896 MOV ECX,EAX -> CALL"},
+      {"callsite": "0x010050ae", "receiver_setup": "0x010050ac MOV ECX,ESI", "result_use": "0x010050b3 TEST EAX,EAX / 0x010050b5 JE"}
+    ]
+  },
+
+  "globals": [
+    {
+      "id": "none",
+      "finding": "The body names no global. This is an instruction fact rather than a negative search: the sole memory operand is ECX-relative (ModRM mod=10), so the seven bytes contain no absolute address operand at all. knowledgegraph/triage/datarefs-2540f2ca.tsv independently records 0 rows for this VA."
+    }
+  ],
+
+  "vtables": [
+    "vtable:0x0141c97c",
+    "vtable:0x0141c930"
+  ],
+
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "argscript_formatparser_get_field_008414c0",
+    "namespace": "openspore::reconstruction::pkg_argscript_parsefloat_008414c0",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "return_type": "std::uint32_t",
+    "argument_surface": "one 4-byte receiver in ECX and nothing on the stack",
+    "source": "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0.cpp",
+    "header": "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0.hpp",
+    "model_test": "reconstruction/staging/pkg-argscript-parsefloat-008414c0/parsefloat_008414c0_model_test.cpp",
+    "compile_time_assertions": "The header static_asserts every machine fact it depends on: the 7 body bytes, ModRM 0x81 decomposed to mod=2/reg=0/rm=1, disp32 = 0x154, the bare 0xC3 epilogue, the instruction-class counts above, the vtable slot arithmetic, the 34/0 xref-row split and the 0/0 global counts.",
+    "build_check": "re-run in this session: clang++ -m32 -std=c++17 -Wall -Wextra -Werror on parsefloat_008414c0.cpp and parsefloat_008414c0_model_test.cpp compiles clean and the test binary prints '88 checks (37 discriminating), 0 failures' and exits 0."
+  },
+
+  "focused_test_evidence": {
+    "discriminating_cases": [
+      "the returned word is the one at receiver+0x154, and is not the 0xA5A5A5A5 canary that fills every other covered byte",
+      "with 0x150, 0x154 and 0x158 all set to distinct sentinels, only the +0x154 word comes back: displacements 0x150 and 0x158 both fail",
+      "the result is the full 32-bit word for eight sentinels including 0x00000000 and 0xFFFFFFFF: a 16-bit or 8-bit truncation, a bool, and any sign- or zero-extending narrowing all fail",
+      "the result is not the receiver pointer and not the address of the field",
+      "the loaded word is not dereferenced",
+      "the receiver is byte-identical after the call",
+      "zero stack arguments leave the caller's frame intact",
+      "the target's address converts to MachineAbi, a __thiscall pointer-to-function taking one pointer argument and nothing on the stack"
+    ],
+    "sdk_refutation_cases": [
+      "kRetOpcode == 0xC3 with kStackArgumentWords == 0 refutes the SDK's char *pString parameter",
+      "kFloatingPointCount == 0 refutes the float return",
+      "kBranchCount, kCompareCount, kTestCount and kCallCount all 0 refute the parse behaviour"
+    ],
+    "count": "88 checks, 37 of them discriminating; the test fails if the discriminating count falls below a floor of 20"
+  },
+
+  "evidence": [
+    "GhidraMCP /disassemble_function @ 0x008414c0 -- 2 instructions: 0x008414c0 MOV EAX,dword ptr [ECX + 0x154], 0x008414c6 RET",
+    "GhidraMCP /get_function_by_address @ 0x008414c0 -- body_start 0x008414c0, body_end 0x008414c6, name ArgScript::FormatParser::ParseFloat, signature 'float ArgScript::FormatParser::ParseFloat(FormatParser * this, char * pString)'",
+    "GhidraMCP inline GhidraScript over SymbolTable.getSymbols(0x008414c0) -- exactly one symbol, 'ArgScript::FormatParser::ParseFloat', type Function, primary=true, source=IMPORTED; the imported SDK label is the only name at the address",
+    "objdump -d -M intel SPORE/SporeBin/SporeApp.exe at 0x008414c0 -- 8b 81 54 01 00 00 / c3, then 0xCC padding to 0x008414d0",
+    "objdump -s -j .rdata SPORE/SporeBin/SporeApp.exe -- line '141c980 00138400 70138400 c0148400 d0148400', the dword at 0x0141c988 = 0x008414c0",
+    "python3 struct.unpack('<I') read of SporeApp.exe .rdata (VMA 0x013cc000, file offset 0x00fcb400) -- the whole 0x0141c930..0x0141c9d0 run dword by dword, independently reproducing the slot word at 0x0141c988 = 0x008414c0 and the four adjusting-thunk words at 0x0141c9c4..0x0141c9d0",
+    "objdump -d -M intel at 0x008413e0, 0x008413f0 and 0x00841400 -- each is 'ADD ECX,0x4c ; JMP <base>', the MSVC adjusting thunk that bounds the 0x0141c97c table at 18 slots",
+    "objdump -d -M intel at five call sites (0x00acf7c3, 0x00bbc344, 0x00f35f50, 0x00cdd88a, 0x010050ae) -- receiver loaded into ECX immediately before each CALL, and the returned EAX consumed as listed in call_site_evidence",
+    "knowledgegraph/triage/xrefs-2540f2ca.tsv -- 34 rows with callee_va 008414c0, all reference_type direct-call, 0 vtable-ref rows",
+    "knowledgegraph/triage/datarefs-2540f2ca.tsv -- 0 rows for 008414c0",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__ParseFloat.c -- the persisted decompilation, read as an artefact of the declared prototype and not as evidence",
+    ".spore-analysis/ghidra-exports/vtables.json -- candidate 0x0141c97c (33 slots as scanned) with slot 3 = 0x008414c0 flagged sdk = true; read as a label carrier, its slot count is a scan length and is not the 18-slot bound used here",
+    "objdump -d -M intel over the whole image -- 851 instruction lines matching [reg+0x154] at 756 distinct addresses, which is why the displacement names no member",
+    "analogue:0x008414d0 -- reconstruction/metadata/pkg-argscript-format-008414d0/008414d0.json: the neighbouring vtable slot 4 of the same table (the word at 0x0141c98c), whose own SDK name is likewise refuted by its body; read as a prior and left untouched"
+  ],
+
+  "corroboration": {
+    "disassembly_vs_image": "The 7 bytes were obtained three ways -- Ghidra disassemble_function, objdump -d, and the committed .rdata/header assertions -- and all three agree.",
+    "decompiler_vs_listing": "Disagreement, and the listing wins. The decompilation prints 'return (float)in_ST0' with 'in_ST0' an uninitialised synthetic input; the listing contains one dword load into EAX and one bare RET, with no FPU opcode. The decompilation's only load-bearing contribution is the warning that its own convention inference is unrecognised.",
+    "gaps": [
+      "The evidence pack reconstruction/evidence/008414c0/validation.json reports ABI, CALLS, CONSTANTS, CONTROL FLOW, FIELDS/OFFSETS, GLOBALS, RETURN SEMANTICS and VIRTUAL DISPATCH as NOT_AVAILABLE, and EVIDENCE COVERAGE as WARN (6 of 17 categories available). Every ABI fact in this sidecar is therefore read off the bytes and the image directly, not off that pack.",
+      "The pack's VIRTUAL DISPATCH check abstains on exactly the right grounds and says so: 'the xref export records 0 vtable reference(s) and the record associates 2 vtable(s), which are not independent of each other'. The slot claim here is made from the .rdata read alone and is labelled as resting on that single source.",
+      "The index record's triage.provenance.vtable_addrs lists 0141c930 and 0141c97c, which is consistent with the image read, but that list originates from the same scan that named the slots from imported labels."
+    ]
+  },
+
+  "unresolved_questions": [
+    "What class owns this slot? SporeApp.exe has no MSVC RTTI, the table's other slots carry FUN_ placeholders and four SDK-imported labels, and the exported decompilation is an artefact, so no owner is named here.",
+    "What is the 32-bit word at receiver+0x154 semantically? The body fixes its offset, width and read-only access and nothing else; 851 other [reg+0x154] sites exist in the binary, so the displacement alone identifies no member.",
+    "Does any of the 34 direct call sites pass a receiver of a different concrete type, and are all 30 caller functions reaching it through the same vtable as the slot at 0x0141c97c?",
+    "Why do four of the five inspected call sites consume the returned word as an address (move to ECX and call, or null-test then dereference at [EAX+0x1fd4] at 0x00bbc34d)? That is suggestive of a pointer, but no caller and no native rebuild fixes it here and no type is claimed.",
+    "Are the two tables 0x0141c930 and 0x0141c97c one vftable seen at two scan offsets, or two related tables? The scan that found them reports 40 and 33 slots respectively; the 18-slot bound claimed here is the thunk argument and the two numbers are not reconciled."
+  ],
+
+  "blockers": [],
+
+  "runtime_gates": [
+    "Runtime validation against the original process is an open capability gate: nothing was attempted and nothing failed.",
+    "The function is also reachable as a direct call from 34 sites across 30 caller functions, so a differential run can exercise it either through the vtable slot at 0x0141c97c slot 3 or through any of those direct callers."
+  ],
+
+  "notes": "Recorded from the two-instruction body (7 bytes), its raw image bytes, the .rdata word that makes it a vtable slot, and the committed xref exports. The reconstruction is total for this body: both instructions, the disp32, the ModRM decomposition, the epilogue form and the return width are accounted for and nothing is asserted beyond them. The central finding of this record is negative and is preserved rather than smoothed over: the SDK symbol attached to 0x008414c0, ArgScript::FormatParser::ParseFloat, is refuted twice by the bytes -- the bare 0xC3 at 0x008414c6 admits no callee-popped char* and the complete absence of any FPU or SSE opcode admits no ST0 float -- so the record's own identity is the address placeholder FUN_008414c0 and the SDK name appears only under refuted_symbol, with the refuting instruction named in each case. The vtable slot rests on a single .rdata image read because the xref export records no vtable-ref row for this VA, and the +0x154 displacement names no member because 851 other [reg+0x154] sites exist in the same binary. No declared semantic type is claimed for the returned word."
+}

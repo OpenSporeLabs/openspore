@@ -1,7 +1,7 @@
 # Reconstruction context 0x01053790
 
 - Status: `partial`
-- Content SHA-256: `e0cc4af1e5fda52da08fe48ec9e60bff0643e0809898bb2086c0ac9762006b2e`
+- Content SHA-256: `826d07093eb545e459a34c0a75e654d1d6e2042bb43266018d78c9c09811b0e8`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "2bb73b4d98cceb145fcd98b04e84741be546d9e8ac115a4d2509f230e1e25cda",
-  "live_attempts": [],
+  "content_sha256": "b526252678c882174733403d56b391c68d05ad74e392f0b802e2a3a1484996d7",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x01053790 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,40 +71,41 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Unknown calling convention */
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-/* WARNING: Enum "Names": Some values do not have unique names */
-
-bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pTool)
-
-{
-  undefined4 *in_ECX;
-  
-  *in_ECX = &PTR_Simulator__cToolStrategy__OnSelect_01403934;
-  if (((uint)this & 1) != 0) {
-    FUN_00f47380();
-  }
-  return SUB41(in_ECX,0);
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 8024,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          1\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x4\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          1\n        ],\n        \"written\": false\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4\"\n  },\n  \"abstained_because\": [],\n  \"cleanup\": {\n    \"bytes\": 4,\n    \"confidence\": \"OBSERVED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret 0x4\",\n    \"side\": \"callee\"\n  },\n  \"completeness\": \"CORE_RESOLVED\",\n  \"conflicts\": [],\n  \"content_sha256\": \"c7e5f571354c43e8df9428425f2c879aeadf76b94f939613c8b9e8446db72826\",\n  \"conventions\":
-[TRUNCATED]
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "return_register": "EAX",
+  "return_semantics": "EAX receives the receiver verbatim; under the SDK bool prototype this is true for every non-null receiver. The ABI analyzer classified the EAX write as aggregate_unknown and did not observe an explicit zero/nonzero materialization.",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "ESI"
+  ],
+  "stack_arguments": [
+    {
+      "bit_tested": 0,
+      "byte_offset_tested": 0,
+      "entry_offset": "entry_ESP+0x4",
+      "observed_encoding": "TEST byte ptr [ESP + 0x4],0x1",
+      "observed_use": "Only bit 0 of the low byte is read. It is never read as a dword and never written.",
+      "position": 1,
+      "slot_width_bytes": 4,
+      "staged_type": "std::uint32_t (untyped argument word)"
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee"
+}
 ```
 
 ## 07_callers_callees
@@ -128,7 +137,9 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "const Vftable01403934 *"
+  ],
   "vtables": [
     "vtable:0x01416698",
     "vtable:0x014166c4",
@@ -190,7 +201,7 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
   "manifest_callers": [],
   "nearby_reconstructed": [],
   "scc": {
-    "id": "scc-0530",
+    "id": "scc-0602",
     "size": 1
   },
   "vtable_reference_count": 0
@@ -204,6 +215,26 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
 
 ```json
 [
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "PKG-SIMULATOR-SAFE-WAVE11",
+    "score": 8,
+    "symbol": "cycle_key_006286a0",
+    "va": "0x006286a0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "PKG-SIMULATOR-SAFE-WAVE11",
+    "score": 8,
+    "symbol": "release_child_0062c910",
+    "va": "0x0062c910"
+  },
   {
     "match_basis": [
       "same_subsystem"
@@ -221,24 +252,6 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
     "score": 6,
     "symbol": "dispatch_key_00628450",
     "va": "0x00628450"
-  },
-  {
-    "match_basis": [
-      "same_subsystem"
-    ],
-    "package": "PKG-SIMULATOR-SAFE-WAVE11",
-    "score": 6,
-    "symbol": "cycle_key_006286a0",
-    "va": "0x006286a0"
-  },
-  {
-    "match_basis": [
-      "same_subsystem"
-    ],
-    "package": "PKG-SIMULATOR-SAFE-WAVE11",
-    "score": 6,
-    "symbol": "release_child_0062c910",
-    "va": "0x0062c910"
   },
   {
     "match_basis": [
@@ -269,12 +282,13 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
   },
   {
     "match_basis": [
-      "same_subsystem"
+      "shared_vtable:vtable:0x014402c4,vtable:0x014431c4",
+      "same_calling_convention"
     ],
-    "package": "PKG-13-E4-EMPIRE-WAVE3",
+    "package": "pkg-sporepedia-nop-slot",
     "score": 6,
-    "symbol": "EmpirePoliticalColor_00c32cd0",
-    "va": "0x00c32cd0"
+    "symbol": "sporepedia_nop_slot_FUN_00c2e4e0",
+    "va": "0x00c2e4e0"
   }
 ]
 ```
@@ -288,10 +302,15 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
 {
   "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cToolStrategy__OnSelect.c",
   "files": [
-    ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cToolStrategy__OnSelect.c"
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cToolStrategy__OnSelect.c",
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp",
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.hpp",
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect_model_test.cpp"
   ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/pkg11-i1-tool-onselect/01053790.json"
+  ]
 }
 ```
 
@@ -365,21 +384,11 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cToolStrategy__OnSelect.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cToolStrategy__OnSelect.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg11-i1-tool-onselect/01053790.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -393,11 +402,6 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {
@@ -419,10 +423,24 @@ bool Simulator__cToolStrategy__OnSelect(cToolStrategy *this,cSpaceToolData *pToo
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json",
-    ".spore-analysis/ghidra-export
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg11-i1-tool-onselect/01053790.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reco
 [TRUNCATED]
 ```

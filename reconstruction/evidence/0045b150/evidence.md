@@ -2,9 +2,44 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `222dcb5329b4d5d610ffb4a2474c753d4a7a88d9376b7c28a14162a200be78fe`
+- Content SHA-256: `f9f5dc9d4ab6d6e3be02c40680e44253837510ac258bab8312935455cd96bd76`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, spilled to [EBP-0x78] at 0x0045b156 and reloaded at 0x0045b161 and 0x0045b1f2",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_observation": "the body ends with MOV ESP,EBP / POP EBP / RET 0x4; no MOV to EAX participates in any result.",
+  "return_register": "none (EAX is scratch; the last comparison result is discarded at 0x0045b1fd)",
+  "return_semantics": "no value. The only result is the removal of the matching map entry and the side effects of the value's vtable slot +0xc.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [],
+  "stack_arguments": [
+    {
+      "offset_in_callee": "[EBP + 0x8]",
+      "read_by": "0x0045b159: LEA EAX,[EBP + 8] then 0x0045b15c: PUSH EAX -- the ADDRESS is passed, and 0x00421950 dereferences it at 0x0042199b",
+      "role": "a uint32 key, passed by pointer to the hash-map lookup",
+      "slot": 1,
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x4"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -68,7 +103,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "ad6e28d5883a51ad60017e474244429d7e5732c56402ae312f2f8c2e2349e27c",
+  "content_sha256": "617275de70468c727230b2cf80aaa8ee1b250b782a56fb8ca7cecd638dd22f71",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -87,7 +122,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -273,8 +308,7 @@
     {
       "at": "0x0045b156",
       "base": "EBP",
-      "disp": -120,
-
+      "disp"
 [TRUNCATED]
 ```
 
@@ -286,9 +320,69 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0043f6b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6f10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00575f70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00587270"
+  },
+  {
+    "name": "Editors::cEditor::Update",
+    "reconstructed": false,
+    "va": "0x0058be50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b1e30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005dd610"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f2f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f610"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f920"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ef25a0"
+  }
+]
+```
 
 ## contradictions
 
@@ -298,13 +392,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_0045b150(void)\n\n{\n  undefined4 uStack_88;\n  int *piStack_84;\n  undefined1 *puStack_80;\n  int local_7c;\n  undefined1 *local_78;\n  undefined4 local_74;\n  int local_70;\n  int local_6c;\n  int local_68;\n  int *local_64;\n  int local_60;\n  undefined1 local_24 [12];\n  int local_18;\n  int *local_14;\n  int *local_10;\n  int local_c;\n  undefined4 local_8;\n  \n  puStack_80 = &stack0x00000004;\n  piStack_84 = &local_c;\n  uStack_88 = 0x45b16c;\n  FUN_00421950();\n  local_68 = local_7c + 8;\n  local_64 = (int *)(*(int *)(local_7c + 0xc) + *(int *)(local_7c + 0x10) * 4);\n  local_60 = *local_64;\n  if (local_c != local_60) {\n    local_6c = local_c;\n    local_10 = *(int **)(local_c + 4);\n    puStack_80 = (undefined1 *)0x1;\n    piStack_84 = (int *)0x45b1cb;\n    local_18 = local_60;\n    local_14 = local_64;\n    (**(code **)(*local_10 + 0xc))();\n    local_78 = (undefined1 *)&uStack_88;\n    local_74 = local_8;\n    local_70 = local_c;\n    FUN_0045b3e0(local_24);\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -588,9 +678,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 11575,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX, spilled to [EBP-0x78] at 0x0045b156 and reloaded at 0x0045b161 and 0x0045b1f2\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"the body ends with MOV ESP,EBP / POP EBP / RET 0x4; no MOV to EAX participates in any result.\",\n    \"return_register\": \"none (EAX is scratch; the last comparison result is discarded at 0x0045b1fd)\",\n    \"return_semantics\": \"no value. The only result is the removal of the matching map entry and the side effects of the value's vtable slot +0xc.\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [],\n    \"stack_arguments\": [\n      {\n        \"offset_in_callee\": \"[EBP + 0x8]\",\n        \"read_by\": \"0x0045b159: LEA EAX,[EBP + 8] then 0x0045b15c: PUSH EAX -- the ADDRESS is passed, and 0x00421950 dereferences it at 0x0042199b\",\n        \"role\": \"a uint32 key, passed by pointer to the hash-map lookup\",\n        \"slot\": 1,\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0043f6b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6f10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00575f70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00587270\"\n      },\n      {\n        \"name\": \"Editors::cEditor::Update\",\n        \"reconstructed\": false,\n        \"va\": \"0x0058be50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b1e30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005dd610\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f2f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f610\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f920\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ef25a0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0043f816\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043f6b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0043fa50\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043f6b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a7aa9\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6f10\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00576026\",\n        \"direction\": \"in\",\n        \"other\": \"0x00575f70\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00576054\",\n        \"direction\": \"in\",\n        \"other\": \"0x00575f70\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005760c9\",\n        \"direction\": \"in\",\n        \"other\": \"0x00575f70\",\n        \"reference_type\": \"direct-call\"\n   
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -610,17 +707,17 @@
     "FUN_0045b3e0"
   ],
   "callers": [
+    "FUN_0062f2f0",
+    "FUN_0062f920",
+    "FUN_00575f70",
+    "Editors::cEditor::SetActiveMode",
+    "FUN_005dd610",
     "FUN_004a6f10",
     "FUN_0062f610",
     "FUN_00ef25a0",
-    "Editors::cEditor::SetActiveMode",
-    "FUN_0043f6b0",
-    "FUN_0062f920",
-    "Editors::cEditor::Update",
-    "FUN_00575f70",
     "FUN_005b1e30",
-    "FUN_0062f2f0",
-    "FUN_005dd610"
+    "FUN_0043f6b0",
+    "Editors::cEditor::Update"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -633,13 +730,58 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_7c",
-      "storage": "Stack[-0x7c]:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     },
     {
-      "name": "uStack_88",
-      "storage": "Stack[-0x88]:4",
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_24",
+      "storage": "Stack[-0x24]:1",
+      "type": "undefined"
+    },
+    {
+      "name": "local_60",
+      "storage": "Stack[-0x60]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_64",
+      "storage": "Stack[-0x64]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_68",
+      "storage": "Stack[-0x68]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_6c",
+      "storage": "Stack[-0x6c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_70",
+      "storage": "Stack[-0x70]:4",
       "type": "undefined4"
     },
     {
@@ -648,77 +790,17 @@
       "type": "undefined4"
     },
     {
-      "name": "piStack_84",
-      "storage": "Stack[-0x84]:4",
-      "type": "int *"
-    },
-    {
       "name": "local_78",
-      "storage": "",
-      "type": "undefined1 *"
+      "storage": "Stack[-0x78]:4",
+      "type": "undefined4"
     },
     {
-      "name": "puStack_80",
-      "storage": "Stack[-0x80]:4",
-      "type": "undefined1 *"
-    },
-    {
-      "name": "local_6c",
-      "storage": "Stack[-0x6c]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_70",
-      "storage": "Stack[-0x70]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_64",
-      "storage": "Stack[-0x64]:4",
-      "type": "int *"
-    },
-    {
-      "name": "local_68",
-      "storage": "Stack[-0x68]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_24",
-      "storage": "",
-      "type": "undefined1[12]"
-    },
-    {
-      "name": "local_60",
-      "storage": "Stack[-0x60]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "int *"
-    },
-    {
-      "name": "local_18",
-      "storage": "Stack[-0x18]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_c",
-      "storage": "Stack[-0xc]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_10",
-      "storage": "Stack[-0x10]:4",
-      "type": "int *"
-    },
-    {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
+      "name": "local_7c",
+      "storage": "Stack[-0x7c]:4",
       "type": "undefined4"
     }
   ],
-  "locals_count": 17,
+  "locals_count": 14,
   "mode": "live",
   "name": "FUN_0045b150",
   "namespace": null,
@@ -811,9 +893,22 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b00/registry_0045b150.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b00/registry_0045b150.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b00/0045b150.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -823,9 +918,23 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists for 0x0045b150; every claim is static and the Cell stage has never been entered in any recorded run.",
+    "The 10 uninspected callers are static work and are listed in unresolved_questions rather than as a runtime gate.",
+    "The registry's runtime value and the map's own +0x0 field require a run to observe.",
+    "The vtable slot +0xc callee is the highest-value runtime unknown: it is the function's only side effect, and no static evidence constrains it.",
+    "Whether a live node can ever alias the free-list head, which would make a real hit silently skipped, can only be settled by instrumenting the map's insert path at runtime."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -835,15 +944,38 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "bucket array base pointer",
+  "bucket count",
+  "chain head pointer (nullable)",
+  "element count",
+  "embedded map base address",
+  "free-list head pointer",
+  "next-in-chain pointer",
+  "payload pointer",
+  "uint32 key",
+  "void"
+]
+```
 
 ## vtables
 

@@ -2,9 +2,47 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `8a7ca5b19fd78e8c46c7d7337edb5300ff9e71976d307ab1e039265a91316745`
+- Content SHA-256: `d6ed523f85d2764e60515a053d4f5648c6b6534ae0be40e702a671755a48fe79`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "container",
+  "hidden_this_register": "ECX, read at 0x00643a40 and 0x00643a48",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_observation": "0x00643ab3 LEA EAX,[EDX + 0x14] on the hit path and 0x00643aa1 MOV EAX,dword ptr [ESP + 0x18] + 0x00643aa5 ADD EAX,0x14 on the miss path. Callers dereference the result as a 4-byte value (0x00643df7 MOV EAX,dword ptr [EAX]; 0x00644521 MOV dword ptr [EAX],ECX).",
+  "return_register": "EAX",
+  "return_semantics": "address of the 4-byte mapped slot of the matching (or newly inserted) node",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "read_at": "0x00643a4c",
+      "role": "pointer to the 4-byte key; the same word is reused as the out-slot the insert port publishes the created node into (0x00643a7b zeroes it, 0x00643aa1 reloads it)",
+      "slot": "entry ESP+4"
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "0x00643aae RET 0x4 and 0x00643aba RET 0x4"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -66,7 +104,6 @@
   },
   "abstained_because": [
     "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path",
-    "unparsed_lines_present: 2 line(s) matched no grammar rule",
     "slot_width_ambiguous: one entry slot is read at more than one width",
     "sret_vs_out_param: entry slot 0 is written through a pointer"
   ],
@@ -79,23 +116,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "45042679d36c16a2bd7a40e8da3874928fd0066018590c17270096a4c3ceac4d",
+  "content_sha256": "f5d38dc6501c3c3ee0aca4e05e94bdaec1a2c39d44b22a5a5c8f439dbde762b7",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -105,8 +142,8 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the callee pops 4 byte(s) of stack arguments",
       "confidence": "OBSERVED",
@@ -119,9 +156,9 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0018",
-        "obs-0019",
-        "obs-0021"
+        "obs-0016",
+        "obs-0017",
+        "obs-0019"
       ],
       "claim": "entry-relative argument slots",
       "confidence": "APPROXIMATION",
@@ -135,9 +172,9 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0018",
-        "obs-0019",
-        "obs-0021"
+        "obs-0016",
+        "obs-0017",
+        "obs-0019"
       ],
       "claim": "one entry slot carries several read widths",
       "confidence": "UNKNOWN",
@@ -165,8 +202,8 @@
       "based_on": [
         "obs-0001",
         "obs-0002",
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
       "confidence": "INFERRED",
@@ -176,7 +213,7 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0019"
+        "obs-0017"
       ],
       "claim": "a hidden struct-return pointer is a hypothesis only: entry slot 0 is written through a pointer",
       "confidence": "INFERRED",
@@ -189,8 +226,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "in MSVC x86 a hidden struct-return pointer is always stack slot 0 while this is in ECX, so the two never contend",
       "confidence": "APPROXIMATION",
@@ -201,8 +238,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -211,8 +248,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the last value written to EAX classifies as aggregate_unknown",
       "confidence": "INFERRED",
@@ -264,7 +301,9 @@
       "at": "0x00643a43",
       "definite": true,
       "id": "obs-0004",
-   
+      "index": 1,
+      "kind": "REG_WRITE",
+      "raw": "SUB ES
 [TRUNCATED]
 ```
 
@@ -276,9 +315,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "Editors::cEditor::Initialize",
+    "reconstructed": false,
+    "va": "0x00584300"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00643db0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00644510"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00644530"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0066b0c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00a18d90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32190"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32220"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32250"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32280"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b322c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00baf790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00be1150"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00be11f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00be2110"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00be32b0"
+  }
+]
+```
 
 ## contradictions
 
@@ -288,13 +412,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 * __thiscall FUN_00643a40(int param_1,uint *param_2)\n\n{\n  undefined4 *puVar1;\n  undefined4 *puVar2;\n  undefined4 *puVar3;\n  undefined4 *puVar4;\n  uint local_8 [2];\n  \n  puVar1 = (undefined4 *)(param_1 + 4);\n  puVar4 = puVar1;\n  if (*(undefined4 **)(param_1 + 0xc) != (undefined4 *)0x0) {\n    puVar2 = *(undefined4 **)(param_1 + 0xc);\n    do {\n      if ((uint)puVar2[4] < *param_2) {\n        puVar3 = (undefined4 *)*puVar2;\n      }\n      else {\n        puVar3 = (undefined4 *)puVar2[1];\n        puVar4 = puVar2;\n      }\n      puVar2 = puVar3;\n    } while (puVar3 != (undefined4 *)0x0);\n  }\n  if ((puVar4 != puVar1) && ((uint)puVar4[4] <= *param_2)) {\n    return puVar4 + 5;\n  }\n  local_8[0] = *param_2;\n  param_2 = (uint *)((uint)param_2 & 0xffffff00);\n  local_8[1] = 0;\n  FUN_006432d0(&param_2,puVar4,local_8,param_2);\n  return (undefined4 *)((int)param_2 + 0x14);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -522,9 +642,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 14522,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"container\",\n    \"hidden_this_register\": \"ECX, read at 0x00643a40 and 0x00643a48\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"0x00643ab3 LEA EAX,[EDX + 0x14] on the hit path and 0x00643aa1 MOV EAX,dword ptr [ESP + 0x18] + 0x00643aa5 ADD EAX,0x14 on the miss path. Callers dereference the result as a 4-byte value (0x00643df7 MOV EAX,dword ptr [EAX]; 0x00644521 MOV dword ptr [EAX],ECX).\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"address of the 4-byte mapped slot of the matching (or newly inserted) node\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"read_at\": \"0x00643a4c\",\n        \"role\": \"pointer to the 4-byte key; the same word is reused as the out-slot the insert port publishes the created node into (0x00643a7b zeroes it, 0x00643aa1 reloads it)\",\n        \"slot\": \"entry ESP+4\"\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"0x00643aae RET 0x4 and 0x00643aba RET 0x4\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": \"Editors::cEditor::Initialize\",\n        \"reconstructed\": false,\n        \"va\": \"0x00584300\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00643db0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00644510\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00644530\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0066b0c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00a18d90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32190\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32220\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32250\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32280\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b322c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00baf790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be1150\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be11f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be2110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be32b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be32f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be3f00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be9850\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be9980\"\n      },\n      {\n        \"name\": null,\n   
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -543,35 +670,35 @@
     "FUN_006432d0"
   ],
   "callers": [
-    "FUN_00b32190",
-    "FUN_00b32220",
-    "FUN_00be9980",
-    "FUN_00be11f0",
-    "FUN_00beaa30",
-    "FUN_00baf790",
-    "FUN_00fede80",
-    "FUN_00644530",
-    "FUN_00be32f0",
-    "FUN_00b32280",
-    "FUN_00fe5a20",
-    "FUN_00b322c0",
-    "FUN_0066b0c0",
-    "FUN_00be32b0",
-    "FUN_00be3f00",
-    "Editors::cEditor::Initialize",
-    "FUN_00643db0",
-    "FUN_00a18d90",
     "FUN_00beb1c0",
-    "FUN_00b32250",
-    "FUN_00be9cb0",
-    "FUN_00ce6af0",
-    "FUN_00fede40",
-    "FUN_00fede60",
-    "FUN_00644510",
-    "FUN_00be1150",
-    "FUN_00beb090",
     "FUN_00be9850",
-    "FUN_00be2110"
+    "FUN_00b32190",
+    "FUN_00be9cb0",
+    "FUN_00be11f0",
+    "FUN_00b322c0",
+    "FUN_00be2110",
+    "FUN_00beb090",
+    "FUN_00a18d90",
+    "FUN_00ce6af0",
+    "FUN_00be9980",
+    "FUN_00b32220",
+    "FUN_00643db0",
+    "FUN_0066b0c0",
+    "FUN_00baf790",
+    "Editors::cEditor::Initialize",
+    "FUN_00fede80",
+    "FUN_00fede40",
+    "FUN_00fe5a20",
+    "FUN_00be3f00",
+    "FUN_00b32250",
+    "FUN_00beaa30",
+    "FUN_00be32f0",
+    "FUN_00644530",
+    "FUN_00644510",
+    "FUN_00fede60",
+    "FUN_00b32280",
+    "FUN_00be1150",
+    "FUN_00be32b0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -584,42 +711,22 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "uint *"
-    },
-    {
-      "name": "puVar1",
-      "storage": "unique:00006600:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "puVar2",
-      "storage": "register:00000000:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "puVar3",
-      "storage": "register:00000000:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "puVar4",
-      "storage": "register:00000008:4",
-      "type": "undefined4 *"
+      "name": "local_4",
+      "storage": "Stack[-0x4]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_8",
       "storage": "Stack[-0x8]:4",
-      "type": "uint[2]"
+      "type": "undefined4"
+    },
+    {
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 7,
+  "locals_count": 3,
   "mode": "live",
   "name": "FUN_00643a40",
   "namespace": null,
@@ -908,6 +1015,38 @@
       "from": "00644538"
     },
     {
+      "from": "00be3332"
+    },
+    {
+      "from": "00baf7b2"
+    },
+    {
+      "from": "00fede50"
+    },
+    {
+      "from": "00fede90"
+    },
+    {
+      "from": "00fede70"
+    },
+    {
+      "from": "00be9ad1"
+    },
+    {
+      "from": "00ce7bc9"
+    },
+    {
+      "from": "00ce7bec"
+    },
+    {
+      "from": "00ce7c0b"
+    },
+    {
+      "from": "00fe5a85"
+    },
+    {
+      "from": "0066affc"
+    }
 [TRUNCATED]
 ```
 
@@ -919,9 +1058,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b07/00643a40_eastl_map_find_or_insert.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_opaque_types.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b07/00643a40.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -931,9 +1084,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential test would be needed to confirm that the reserved-key rejection in 0x00643db0 and the registration in cEditor::Initialize are reproduced, and that no runtime patch retargets the container.",
+    "No original-process trace exists for this address; every claim is static.",
+    "The identity of the owning class can only be settled with a receiver trace or a located vtable."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -943,15 +1108,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t"
+]
+```
 
 ## vtables
 

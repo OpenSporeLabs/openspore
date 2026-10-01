@@ -1,0 +1,61 @@
+# Validation 0x00c33580
+
+- Static reconstruction: `WARN`
+- Runtime (original process): `GATED`
+- Source: `reconstruction/staging/pkg-swarm-w2-00c33580/sw2_00c33580.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `PASS` | `partial` | calling convention is present in the target source span and canonical metadata |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 79-instruction listing name the same 10 direct transfer target(s); the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 12 outgoing call edge row(s) over 10 distinct address(es) for 0x00c33580; 1 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees; the source span names 10 of them and no others |
+| GLOBALS | `WARN` | `partial` | the complete 79-instruction listing names 2 data address(es) (0x1667bac, 0x1667bae) and the xref export carries no data-reference edge type, so there is nothing to corroborate them against; read/write mode still needs per-access evidence |
+| FIELDS/OFFSETS | `PASS` | `complete` | the source span declares no field offset, so there is nothing of its own to ground and nothing ungrounded either; the complete 79-instruction listing nevertheless reaches 4 receiver displacement(s) through ECX (0xc, 0x14, 0x3c, 0xb0), all of which the record accounts for or the listing is the better witness on; the 79-instruction listing is the governing witness for what this body reaches -- it was consumed in full by the machine parse (declared_count=79, degraded=false, unparsed=0) -- and it is read alias-aware over receiver register ECX, so that a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the scan attributes 4 displacement(s) to the receiver as proven (0xc, 0x14, 0x3c, 0xb0) and 0 more only on one arm of a branch, which is a may and grounds nothing (none); the machine-derived receiver record enumerates 1 displacement(s) (0xb0), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open, so it widens what a claim may be grounded in and refutes nothing; the listing shows 3 displacement(s) the record does not enumerate (0xc, 0x14, 0x3c), and a complete listing outranks a record that declares itself incomplete |
+| CONSTANTS | `PASS` | `complete` | the machine listing is fully parsed (79 of 79 instruction(s), 0 unparsed) and all 1 source constant(s) appear in it |
+| CONTROL FLOW | `PASS` | `complete` | all 8 conditional branch target(s) in the complete 79-instruction listing lie inside the recovered body span 0x00c33580..0x00c33685, so the branch graph is closed inside it; the source span declares if, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `PASS` | `complete` | the complete 79-instruction body names no indirect transfer through a register or a memory operand and the machine dispatch record agrees at 0, so neither the body nor the source span claims virtual dispatch |
+| RETURN SEMANTICS | `PASS` | `partial` | return type agrees with the bounded ABI record |
+
+Static evidence basis: 8 of 8 static checks evaluated, 7 passed, 0 had no evidence to evaluate; 12 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 12 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `28fc305fc27d0023a5b468d10ee75695b66a9199a111dfd2c6252b952acacf44`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `58d2d3f3c135b06f8d1ea4880eb90150d6b6a5c7e51293c5aca7f5bc0982e2f2`
+- Pack digest quoted by the briefing: `28fc305fc27d0023a5b468d10ee75695b66a9199a111dfd2c6252b952acacf44`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: none recorded
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- RETURN SEMANTICS is a WARN by construction, and this is a choice rather than an oversight. abi.return_semantics is the machine phrase unclassified_in_EAX and abi_derived.return.void_possible is false, so no C++ return type can satisfy the canonical claim. The package declares void, because the listing produces nothing coherent in EAX on any of its eight exits and Ghidra's decompilation returns void throughout, and it records the disagreement here instead of declaring a typedef named after the phrase. If the integrator would rather see a non-void declaration, the only listing-true candidate is a 32-bit value, and no evidence in this repository picks which.
+- The GLOBALS dimension cannot pass for this target and no source change can fix it: the body stores a .rdata address and the xref export carries no data-reference edge type to corroborate the mode. The store is kept because it is in the listing.
+- The four-word block's element 0 and the release range interact in a way this listing cannot explain: the range is (element 2 - element 0) & 0xfffffffe, i.e. it starts at an element the body never wrote and ends two elements into a three-element initialisation. The guard reads as the standard 'more than one element' idiom for a two-byte element type, which does not match four-byte pointers. The reconstruction reproduces the arithmetic exactly and asserts nothing about what the range means.
+- The identity of the .rdata words 0x1667bac and 0x1667bae is unknown. They are stored, in that order, into block elements 1, 2 and 3, and nothing in this body or in any callee it calls reads them back. They are most likely string or asset-table addresses, but no record in this repository maps either address to a name, so none is invented.
+- The receiver at 0x0c, 0x14 and 0x3c is opaque, so the sizes of the map, the sync target and the text sink are unknown; the map's own layout is available in reconstruction/metadata/pkg20-gameglobal/00e5c780.json but its offset inside THIS receiver is not, and no member of this receiver is named anywhere in the package.
+- The twelve-byte block's MEANING is not claimed. 0x00c32cd0 writes three floats into it and this body reads none of them back; the model test proves the INDEPENDENCE (the payload does not change the trace) but says nothing about what the values are.
+- The value at FR+0x14 (entry_ESP-0x10) is UNKNOWN and is read by the body. 0x00c33665 loads it, the null test at 0x00c33675 tests it and 0x00c33677 pushes it, but nothing in the body writes it and neither callee that receives the block's address is given its address. 0x004da330 demonstrably only reads the block; 0x00b6f380 was not analysed deeply enough to exclude a write, so that half remains open. The model therefore reads an injectable one-word residue and asserts only the READ. Whether the original source had a four-element block whose first element it forgot to initialise, or a callee that fills it, cannot be settled from this listing.
+- Whether 0x00e5c780 actually finds key 2 in the map at receiver+0x14 is not claimed. The body passes the key and dereferences the result with NO null test -- 0x00c33653 is `MOV EAX,[EAX]` straight after the call -- so on the original a failed search would fault if the callee wrote a null. The model test cannot drive that case without invoking undefined behaviour, so it is documented as not asserted rather than tested.
+- __thiscall versus __fastcall is not decidable here: the body has no ordinary stack argument, and on x86-32 the two are identical at the boundary. The derived record picks __thiscall with confidence INFERRED and corroboration not_available. __thiscall is declared because every inner call is a callee-cleaned ECX-receiver call, which is a class-method shape, but a fastcall declaration would be byte-identical.

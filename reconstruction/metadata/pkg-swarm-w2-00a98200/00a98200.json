@@ -1,0 +1,413 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W2-00A98200",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x00a98200",
+  "address": "0x00a98200",
+  "symbol": "re_00a98200",
+  "normalized_symbol": "re_00a98200",
+  "ghidra_name": "FUN_00a98200",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200.cpp",
+    "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_types.hpp",
+    "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_model_test.cpp"
+  ],
+  "target_state": "implemented in staging. The complete 110-instruction body was re-derived from the committed disassembly listing and from the image bytes of the two addresses the body itself names (its one direct callee at 0x00883860 and the vtable head at 0x01458788). Every displacement, immediate, shift and branch target in the reconstruction carries the instruction it came from, and the constants are pinned to the listing by static_asserts inside the source file. Four artifacts of the body are reproduced rather than smoothed over: two stack depths (the latch test branches past the PUSH EBP / PUSH ESI pair), the fact that the latch is cleared BEFORE the service lookup, the fact that five of the eight dwords of the list handed to the last callee are never initialised by this body, and the fact that the list's last dword is written four bytes past the window the prologue reserved. The model test is a falsification test with 214 checks over 15 cases and every direct and indirect transfer is observed; 26 distinct defects were injected and all 26 were killed (23 by the test at run time, 3 at build time by the static_asserts).",
+  "captured_on": "2026-09-28",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200.cpp",
+      "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_types.hpp",
+      "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed, nothing was committed, and no other package's files, metadata or index record were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_00a98200",
+    "declaration": "extern \"C\" void PKG_SWARM_W2_00A98200_THISCALL re_00a98200(Receiver *receiver, Word unused_stack_word);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "hidden receiver in ECX, aliased into EDI at 0x00a98204 and never moved back, and exactly ONE ordinary stack word consumed by the callee at 0x00a98336 (RET 0x4). The body never reads that word: no instruction in the 110 names entry_ESP+0x4, and abi_derived.stack_arguments records the single slot with observed=false and source=ret_immediate. It is declared and left unnamed so the parameter count the terminator fixes is not quietly dropped, and the model test drives three different values into it and asserts the observable behaviour is identical.",
+    "return_type": "void",
+    "source": "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200.cpp",
+    "header": "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_types.hpp",
+    "model_test": "reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200_model_test.cpp",
+    "receiver_model": "an opaque byte run of the observed lower bound 0x54 bytes, accessed only through displacement-named accessors (byte_at / word_at) with the displacement held in a named constexpr. NO member is named anywhere in the reconstructed body and no field is asserted in the header, because abi_derived.receiver is {bounds_only: true, offsets: [12,16,80], register: ECX, shape: R-ALIAS} and a bounds_only record states where the body was seen reaching and nothing about which member is which. The record enumerates three of the four receiver displacements the listing shows; 0x18 (0x00a98316, LEA) is in the listing and not in the record, which is the record being open rather than contradicted, and the listing governs. The same treatment is given to the record at receiver+0x0c and to the service object: byte runs of the exact observed extent, no sub-layout, no names.",
+    "dispatch_model": "one shape, four sites, all `CALL EDX` (FF D2): a two-level table read -- `MOV EDX,[ESI]` then `MOV EDX,[EDX + 0x14]` -- so the target is the word 0x14 bytes into whatever the service object's leading word points at, with ECX = the service object and three stack words pushed right to left (key, address of the frame object, literal zero). The repository's own site classifier, run over this listing, returns VTABLE_SLOT with slot displacement 0x14 for all four sites, and abi_derived.dispatch independently counts 4 indirect calls. The helper is named load_table_word and NOT named vtable: the classifier proves a two-level table read and the displacement it reads, and it does not check where the base register's word came from, so it would return the same shape if the service's leading word were a callback holder rather than a vtable pointer. Nothing in this listing identifies the table. The leading word and the slot are re-read before every one of the four sites, as the listing re-reads them, and the model test drives a callee that repoints each of them to prove the re-read happens.",
+    "dependency_note": "one direct callee, declared extern in the package header and defined as an observer in the package's own model test: openspore_acquire_service_00883860, named with the 8-hex target so the repository's callee comparison binds it to the xref export's single out-edge (0x00883860, reference_type direct-call, callsite 0x00a98216). No other package's header is included and no other package's symbol is named. The four indirect sites are dispatched through a function-pointer typedef in the package header; the concrete targets are supplied entirely by the test.",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w2-00a98200 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw2_00a98200.cpp sw2_00a98200_model_test.cpp -o /tmp/opencode/w_00a98200 && /tmp/opencode/w_00a98200  -- GCC 16.2.1, clean build, 214 checks, 0 failures, exit 0. The header was also compiled on its own (a translation unit that includes it, and again to prove the include guard holds) under the same flags.",
+    "instrumentation_note": "ONE model word exists and it is not a machine global: frame_poison_word() / set_frame_poison_word() stand for the content the stack frame already held on entry. It exists because 0x00a982b1..0x00a98319 write the list's dwords 7, 6 and 5 unconditionally and its dwords 0..4 only inside a flag test, so on a run where bits 5..9 are clear the callee at 0x00a9832e is handed five dwords this body never wrote. A model with a plain local array would leave them as whatever the C++ runtime put there, which nobody can check; this one carries an explicit word so the fact is assertable. The model test drives three different poison values and asserts each reaches the callee, and separately that a set bit replaces it."
+  },
+  "function_extent": {
+    "entry": "0x00a98200",
+    "body_end_inclusive": "0x00a98338",
+    "instruction_count": 110,
+    "return_site": "0x00a98336: RET 0x4 (bytes C2 04 00), last byte 0x00a98338",
+    "span_bytes": 313,
+    "listing_source": "reconstruction/evidence/00a98200/evidence.json, category disassembly, 110 instructions at 0x00a98200..0x00a98336; abi_derived.parse reads {declared_count 110, unparsed 0, degraded false}, so the machine parse consumed the listing in full and the count matches it",
+    "truncation": "none. The committed Ghidra record reports body_start 0x00a98200, body_end 0x00a98338 and size_bytes 313, and 0x00a98200 + 313 == 0x00a98339, so body_end is the LAST BYTE of the terminator rather than the exclusive end. All eleven conditional branch targets (0x00a98332, 0x00a98330, 0x00a9824c, 0x00a98279, 0x00a982a3, 0x00a982c7, 0x00a982d9, 0x00a982eb, 0x00a982fd, 0x00a9830f and 0x00a98330) lie inside the span, so the branch graph closes inside it and CONTROL FLOW is not a slice case."
+  },
+  "observed_mechanics": [
+    "the prologue is SUB ESP,0x50 / PUSH EDI / MOV EDI,ECX / ... / PUSH EBP / PUSH ESI, so the frame base is ESP after the three pushes and the pushed registers sit at +0x00 (ESI), +0x04 (EBP) and +0x08 (EDI) from that base",
+    "CMP byte ptr [EDI + 0x10],0x0 / JZ 0x00a98332 -- an equality test against zero, and its target is POP EDI, i.e. the epilogue from AFTER POP EBP, so the taken path undoes only the SUB and the single PUSH EDI",
+    "the latch byte at the receiver's +0x10 is cleared at 0x00a98212, which is AFTER the two extra pushes and BEFORE the call to 0x00883860, so a null service still leaves it cleared and a zero latch is never written at all",
+    "the single store to the latch is a BYTE store (MOV byte ptr [EDI + 0x10],0x0), so the three bytes above it in the dword at +0x10 are untouched",
+    "CALL 0x00883860 is made with nothing pushed and the callee's own first instruction is MOV EAX,[0x016514cc], so the call carries neither a stack argument nor a register argument and the ECX still holding the receiver is a stale value",
+    "XOR EBP,EBP at 0x00a9821d is the only definition of EBP after the prologue, so the third stack word of all four indirect calls is a literal zero, and CMP ESI,EBP at 0x00a9821f is a full dword compare against that zero",
+    "the body has FOUR independent conditional indirect calls, not a switch and not a chain: the record pointer is re-read at 0x00a98227, 0x00a9824c, 0x00a98279 and 0x00a982a3, and each guard is SHR + TEST <8-bit reg>,1 + JZ",
+    "the four call guards are bits 0, 1, 2 and 4 of the flag word at the record's +0x08; the listing's shift amounts are 1, 2, 4, 5, 6, 7, 8 and 9, and NO instruction shifts by 3, so bit 3 is never tested and a flag word with only bit 3 set makes no call at all",
+    "the keys of the first three calls are the immediates 0xe7a8472 (0x00a9823b), 0xe7a8472 (0x00a98264) and 0xe7a8474 (0x00a98292), pushed as the FIRST stack word; the fourth call's key is the record's own +0x0c dword, read at 0x00a9831f and never checked",
+    "the frame object handed to the first three calls is two dwords at +0x0c and +0x14 from the frame base, and the dword 0 value is 0, 1 and 0 for the three calls respectively -- the 1 comes from the literal store MOV dword ptr [ESP + 0x18],0x1 at 0x00a9826f and from nowhere else",
+    "the frame object handed to the fourth call is eight dwords at +0x1c, +0x24, +0x2c, +0x34, +0x3c, +0x44, +0x4c and +0x54, i.e. one 8-byte stride; the pair's two dwords are on the same stride, so the whole frame is one run of ten dwords from +0x0c to +0x54 and the four bytes between each pair of dwords is named by no instruction",
+    "five of that run's ten dwords are written ONLY inside their own flag test (0x00a982c3, 0x00a982d5, 0x00a982e7, 0x00a982f9, 0x00a9830b) and three are written unconditionally (0x00a982b1, 0x00a98312, 0x00a98319), so on a run with bits 5..9 clear the callee receives five dwords this body never initialised",
+    "the list's dword 5 is the ADDRESS of the receiver's own +0x18 (LEA EDX,[EDI + 0x18] at 0x00a98316), while its dword 6 is a COPY of the dword value at the receiver's +0x50 (0x00a9830f); the body takes an interior receiver address exactly once and reads a receiver value exactly once, and the two are not interchangeable",
+    "the list's dword 7 is written by MOV dword ptr [ESP + 0x54],EBP at 0x00a982b1, which is four bytes past the 0x50 the prologue reserved; that address is entry_ESP-0x08, inside the reserved region and not any of the three pushed slots, so no saved register is clobbered by it",
+    "all four indirect sites fetch the target the same two-level way, MOV EDX,[ESI] then MOV EDX,[EDX + 0x14], and all four re-read [ESI] rather than reusing a previously fetched target",
+    "no instruction between 0x00a9824a and 0x00a9832e reads EAX, and the epilogue's POP ESI / POP EBP / POP EDI / ADD ESP,0x50 / RET 0x4 does not move it, so no path produces a value for the caller"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "EDI (MOV EDI,ECX at 0x00a98204; every receiver access in the body goes through that alias, which is why the machine-derived receiver record reports register ECX with shape R-ALIAS and why a scan of ECX's own operands alone finds only the +0x10 access, made before the first control transfer)",
+    "ordinary_stack_argument_slots": 1,
+    "stack_argument_1": "entry_ESP+0x4 -- never read. abi_derived.stack_arguments records one slot with observed=false, read=false, written=false, size_inferred=false and source=ret_immediate, and no instruction in the 110 names entry_ESP+0x4. Declared in the signature so the count `RET 0x4` fixes is not dropped, and left unnamed because nothing fixes what it is.",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "saved_registers": [
+      "EBP",
+      "EDI",
+      "ESI"
+    ],
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4",
+    "return_register": "EAX",
+    "return_type": "void",
+    "return_note": "DECLARED void BECAUSE THE BYTES PRODUCE NOTHING, and the canonical machine record disagrees in a way that is recorded rather than papered over. The three exits are 0x00a98332 (latch already zero -- EAX untouched by this body, so whatever the caller had), 0x00a98330 (service null -- EAX holds the service word the null test just read) and the fall-through (EAX holds the last indirect callee's return, which the body never reads). No path loads EAX with a value meant for the caller, and the epilogue does not move it. Ghidra's independent decompilation of the same listing agrees: it opens `void __fastcall FUN_00a98200(int param_1)` and ends in a bare `return;`. AGAINST THAT, abi.value.return_semantics is the phrase `unclassified_in_EAX` and abi_derived.return is {register: EAX, register_class: aggregate_unknown, void_possible: false, confidence: INFERRED}. That is a machine-vocabulary label for 'the bytes leave something in EAX and its width is not decidable', not a C++ type, and no C++ declaration can be string-equal to it; `void_possible: false` is the inference's own derived opinion, and the two things it rests on -- that the last EAX definition is a CALL whose callee signature this listing cannot show -- are exactly why it declines. This sidecar therefore publishes the listing-derived type above and keeps the machine phrase in machine_return_semantics below. No typedef was named after the phrase and nothing was written to win a string comparison.",
+    "machine_return_semantics": "unclassified_in_EAX (the canonical record's own token, kept here verbatim; this key name is deliberately outside the extraction vocabulary so it cannot be mistaken for a C++ return type)",
+    "machine_return_register_class": "aggregate_unknown (abi_derived.return.register_class, confidence INFERRED)",
+    "exception_frame": "none. abi_derived.seh_or_cookie_frame is false and the prologue touches no FS:[0x0], so there is no try-level word, no handler and no unwind to model.",
+    "ghidra_prototype": "undefined FUN_00a98200(void) (ghidra_function.signature; return_type undefined, return_type_resolved false, parameter_count 0)",
+    "ghidra_convention_note": "The live decompilation reads `void __fastcall FUN_00a98200(int param_1)` and the committed record carries ghidra_calling_convention_signal=no_information with ghidra_parameter_count=0. The three-way split is resolved in favour of the listing plus the image: the listing's own `MOV EDI,ECX` and `RET 0x4` fix __thiscall with a hidden ECX receiver and one callee-cleaned stack word, and the decompiler's own `void` return and its single parameter are the same two facts stated a third way. Ghidra's declaration names no parameter because the body never reads one, and the one word RET 0x4 consumes is declared here so that the terminator's immediate is not lost.",
+    "dispatch": "abi_derived.dispatch records indirect_calls 4, call_offsets [] and vtable_shaped_loads 0, which agrees with a 110-instruction listing holding four register-indirect transfers and one direct immediate. The repository's own site classifier, run over the complete listing, returns VTABLE_SLOT with slot displacement 0x14 for all four sites, and 0x14 / 4 == slot index 5 (arithmetic, asserted by nothing). vtable_shaped_loads is 0 because the classifier's own notion of a vtable-shaped load is a different pattern from the two-level `MOV r,[base]; MOV r,[r+disp]; CALL r` this body uses; the two numbers are not in conflict and neither is used as evidence on its own.",
+    "callee_conventions": "the one direct callee's own last bytes were read from the image at 0x00883860: A1 CC 14 65 01 / C3, i.e. MOV EAX,dword ptr [0x016514cc] / RET. A bare RET is caller-side cleanup, so 0x00883860 is cdecl; it is five bytes long, takes no stack argument (the body pushes nothing before 0x00a98216) and no register argument (its first instruction reads a global), and returns the global's content unchanged. The four indirect callees' conventions are not established by any record here and are not claimed; the body pushes three words onto them and reads nothing back, which is the whole of what is known about their signatures.",
+    "evidence_level": "ABI_INFERRED (abi_derived.verdict = ABI_INFERRED, conventions.confidence = INFERRED, completeness = CORE_RESOLVED, no conflicts, no abstention)"
+  },
+  "mechanics": {
+    "body_shape": "latch test with an early exit that skips the two extra pushes; latch clear; one direct call for a service object; a null test on that object; then four independent guarded indirect calls through one table slot, the last of which builds an eight-dword property list in the frame. Returns void on every path.",
+    "frame_resolution": {
+      "method": "one linear walk of ESP through all 110 instructions, using each callee's own RET immediate to settle the stack after every call. Entry ESP is 0 in the walk; the prologue is SUB ESP,0x50 then three pushes, so FRAME-0 (ESP after the pushes) = entry-0x5c, the saved ESI is at FRAME-0+0x00, the saved EBP at +0x04 and the saved EDI at +0x08. Each `[ESP + n]` operand is then taken against the ESP value in force at that instruction, which is what fixes every frame offset below.",
+      "corroboration": "three independent agreements. (1) The frame offsets the model uses are the listing's own `[ESP + n]` operands after that shift, and each one is the same address the listing computes for the argument it pushes: 0x00a98236 LEA EAX,[ESP + 0x10] with ESP = FRAME-0-4 gives FRAME-0+0x0c, and 0x00a98246's store at the same ESP gives FRAME-0+0x0c as well, so the address pushed as argument 2 is the address of the dword written as argument 2's target. (2) 0x00a98326 LEA ECX,[ESP + 0x20] with ESP = FRAME-0-4 gives FRAME-0+0x1c, which is exactly where 0x00a982c3's store at ESP = FRAME-0 lands, so the list's base is both written and handed over at the same address. (3) The epilogue balances: three pops undo the three pushes and ADD ESP,0x50 undoes the SUB, and the two early exits are the two different tails the listing actually has (0x00a98330 = POP ESI, and 0x00a98332 = POP EDI).",
+      "slots": {
+        "frame+0x00": "the saved ESI (PUSH ESI at 0x00a98211) -- never named by any other instruction",
+        "frame+0x04": "the saved EBP (PUSH EBP at 0x00a98210) -- never named by any other instruction",
+        "frame+0x08": "the saved EDI (PUSH EDI at 0x00a98203) -- never named by any other instruction",
+        "frame+0x0c": "the pair's dword 0, and the address handed to the first three callees (0x00a98236/0x00a9825f/0x00a9828d compute it; 0x00a98246/0x00a9826f/0x00a9829d write it)",
+        "frame+0x10": "never written by any instruction in the body; the four bytes between the pair's two dwords",
+        "frame+0x14": "the pair's dword 1 (0x00a98242/0x00a9826b/0x00a98299)",
+        "frame+0x1c": "the list's dword 0, and the address handed to the fourth callee (0x00a98326 computes it; 0x00a982c3 writes it under guard bit 5)",
+        "frame+0x24": "the list's dword 1 (0x00a982d5, guard bit 6, from the record's +0x14)",
+        "frame+0x2c": "the list's dword 2 (0x00a982e7, guard bit 7, from the record's +0x18)",
+        "frame+0x34": "the list's dword 3 (0x00a982f9, guard bit 8, from the record's +0x1c)",
+        "frame+0x3c": "the list's dword 4 (0x00a9830b, guard bit 9, from the record's +0x20)",
+        "frame+0x44": "the list's dword 5 -- the ADDRESS of the receiver's +0x18, written unconditionally (0x00a98319)",
+        "frame+0x4c": "the list's dword 6 -- a COPY of the receiver's +0x50 dword, written unconditionally (0x00a98312)",
+        "frame+0x54": "the list's dword 7 -- the literal zero, written unconditionally and four bytes past the reserved window (0x00a982b1)"
+      }
+    },
+    "two_stack_depths": "The latch test at 0x00a98206 branches to 0x00a98332, which is POP EDI -- the epilogue from after POP EBP. The early path therefore has one push and the main path has three, and the shared tail is a single instruction. A reconstruction with one shared epilogue would have to invent a fourth pop, and one that modelled the early exit as a `continue` past a common tail would read one saved register it never read. The model returns at the test and again at the null test, and falls off the end on the main path; all three reach the same RET 0x4.",
+    "latch_cleared_before_the_lookup": "0x00a98212 writes zero at the receiver's +0x10 and 0x00a98216 is the call that fetches the service. So a run with a non-zero latch and a null service still leaves the latch cleared. The model test asserts this directly, and asserts that a zero latch produces no write at all -- which the byte-for-byte receiver comparison can see, because the latch is the one byte the comparison excludes and a write of zero over zero is invisible only to a comparison that ignores it.",
+    "uninitialised_list_slots": "0x00a982b1 zeroes the list's dword 7 before anything else, and dwords 0..4 are written only inside their own guard. Nothing zeroes them. So the callee at 0x00a9832e receives five dwords whose content is the frame's prior content on a run where bits 5..9 are clear. A zero-filling reconstruction is a different function; the model carries an explicit poison word so the fact is testable, and the test drives three poison values. This is also why the model's frame is 0x58 bytes rather than 0x50.",
+    "bit3_never_tested": "The listing's shift amounts on the flag word are 1, 2, 4, 5, 6, 7, 8 and 9. There is no shift by 3 and no other test of that bit, so bit 3 is not part of the guard set. The header deliberately declares no bit-3 constant, so a reconstruction that tested bit 3 could not be written from this package's constants without inventing one; the mutation run confirms the test kills such a body (M20: 17 failures).",
+    "value_versus_address_on_the_receiver": "The body takes an interior receiver ADDRESS exactly once -- LEA EDX,[EDI + 0x18] at 0x00a98316, stored into the list's dword 5 -- and reads a receiver VALUE exactly once into the list, at +0x50. The two are not interchangeable, and the model test drives a receiver whose +0x18 dword (0x5c5c5c5c) and whose +0x18 address are different values, so a model that copied the dword instead of the address fails (M32: 4 failures).",
+    "no_ordering_comparison": "The body has no signed-or-unsigned ordering comparison at all. Its two CMPs are `CMP byte ptr [EDI + 0x10],0x0` and `CMP ESI,EBP`, both equalities against zero, and every other guard is TEST/SHR against a single bit. The model test therefore cannot and does not exercise signedness; what it does exercise is that both equalities are equalities and not truthiness (latch 0x80, 0xff, 0x02 and a service word of 1), because a truthiness reading of either is a real possible reconstruction error and is killed (M24, M25).",
+    "globals": "none. The complete 110-instruction listing names no data-segment address: its only absolute operands are 0x00883860 (a code address), 0xe7a8472 and 0xe7a8474 (immediates above 0x02000000, so not addresses in this image at all) and the ten branch targets. The body neither reads nor writes any global, and it neither reads nor writes 0x016514cc, which is the single global its callee reads -- see direct_call_1.",
+    "direct_call_1": {
+      "target": "0x00883860",
+      "ghidra_name": "FUN_00883860",
+      "at": "0x00a98216",
+      "convention": "cdecl -- fixed by the callee's OWN last byte, read from the image: it ends in a bare C3 (0x00883864), which is caller-side cleanup",
+      "arguments": "none. Nothing is pushed before the call, so there is no stack argument, and the callee's first instruction is MOV EAX,dword ptr [0x016514cc], so it reads no register either. The ECX that still holds the receiver at the call site is a stale value from 0x00a98204, not an argument, and the body never reads it again as one.",
+      "cleanup": "caller-side, none needed",
+      "return": "a pointer, used for nothing but the null test at 0x00a9821f and then, if non-null, as the object whose leading word is the table base for all four indirect calls",
+      "callee_record": "no metadata record for this address and no reconstruction covers it. Its shape was read from its own five bytes in the image (body 0x00883860..0x00883864, size 5, INT3 padding after). It is a global getter: one MOV, one RET.",
+      "note_on_the_global": "The service pointer's only source in the whole program is the dword at 0x016514cc, and this body never writes it, so the null test at 0x00a9821f is a test of that global's content. That global is named here and in the header, never in the reconstructed source, because 0x016514cc lies in the data segment and the repository's GLOBALS check compares the source's data addresses against the listing's -- where it does not appear, since the body never names it."
+    },
+    "indirect_sites": {
+      "count": 4,
+      "shape": "MOV EDX,[ESI] / MOV EDX,[EDX + 0x14] / ... / CALL EDX, four times (0x00a9824a, 0x00a98277, 0x00a982a1, 0x00a9832e)",
+      "slot_displacement": "0x14 at all four sites; 0x14 / 4 == slot index 5, arithmetic only",
+      "receiver": "ECX = ESI = the service object, set at 0x00a98240, 0x00a98269, 0x00a98297 and 0x00a9832c",
+      "stack_arguments": "three, pushed right to left: the key, the address of the frame object, and EBP (0). At the call the layout is [ESP] = key, [ESP+4] = frame object address, [ESP+8] = 0.",
+      "base_re_read": "the leading word is re-read at 0x00a98230, 0x00a98259, 0x00a98287 and 0x00a9831d -- once per site, after the previous callee has returned. A model that fetched the target once and reused it is a different function; the mutation run confirms the test kills it (M17: 3 failures).",
+      "return_value": "never read. No instruction between 0x00a9824a and 0x00a9832e names EAX, and the epilogue does not move it."
+    },
+    "vtable_membership": "THIS BODY IS ITSELF A VTABLE ENTRY, slot +0x0c (index 3) of the table at 0x01458788. The association in the record is checked against the table's own bytes read from the image: the dwords at 0x01458788 are 0x00a98090, 0x004ae250, 0x00a980b0, 0x00a98020... and the xref into this body is from 0x01458794, which is 0x01458788 + 0x0c. The class is NOT named: nothing in the evidence fixes a C++ name for it, and the six dwords read are not enough to derive one. The table's sibling at 0x0145878c is 0x004ae250, the address two other packages record as an analogue of this target (PKG-10-EDITOR-DISPATCH's Editors_EditorModel_SetColor_raw_004ae250 and PKG-UTFWIN-CORE-WAVE6's re_00951230), which is consistent with the two being neighbours in one class and is recorded as context, not used as evidence for anything about this body."
+  },
+  "return_semantics": {
+    "kind": "none (void)",
+    "value": "no value is produced for the caller. The outputs are (a) the receiver's +0x10 byte, cleared on the active path, and (b) up to four indirect calls through one table slot of the service object, each with its own key and its own frame object. Nothing else in the receiver is written.",
+    "disagreement_with_the_canonical_record": "abi.value.return_semantics is the phrase `unclassified_in_EAX` and abi_derived.return.register_class is `aggregate_unknown`. That phrase is a machine-vocabulary label, not a C++ type, so no declaration can be string-equal to it and the repository's string-agreement arm cannot pass for ANY source against it. The choice made here is the one the contract allows: declare the type the LISTING supports, and record the disagreement. The listing supports void on all three exits, and Ghidra's independent decompilation of the same 110 instructions agrees. The machine phrase is kept verbatim in observed_original_abi.machine_return_semantics and the argument is in observed_original_abi.return_note. No typedef was named after the phrase.",
+    "ownership": "The body performs no reference acquisition or release of its own. It reads a record pointer and a service pointer out of the receiver and the callee's return, and it hands four callees the address of a frame object. Whether the record and the service are owned, borrowed or smart handles is not established by any record in this pack and is not claimed.",
+    "lifetime": "The pair and the list are frame objects that die with the call. Their addresses are handed to callees that this listing cannot analyse, so whether either outlives the call is not established here; the body makes no copy of either and does not read either back after handing over its address, so on this listing's evidence they are consumed at the call."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "persisted_pack": "reconstruction/evidence/00a98200/evidence.json",
+    "assembly_count": 110,
+    "assembly_span": "0x00a98200..0x00a98336, reproduced instruction by instruction in the package header and, annotated, in the source file",
+    "decompiler": "void __fastcall FUN_00a98200(int param_1) { ... if (*(char *)(param_1 + 0x10) != '\\0') { *(undefined1 *)(param_1 + 0x10) = 0; piVar2 = (int *)FUN_00883860(); ... } return; }",
+    "decompiler_disagreements": "the live decompilation is used as a hint and is resolved in favour of the listing wherever they differ, in four places. (1) It never shows the re-reads: it loads *(int *)(param_1 + 0xc) once and reuses iVar1 across all four blocks, while the listing executes `MOV EAX,[EDI + 0xc]` four times (0x00a98227, 0x00a9824c, 0x00a98279, 0x00a982a3) and the model re-reads accordingly -- a callee that swapped the record pointer would be seen by the machine and not by the decompilation's shape. (2) Its `uStack_8 = 0` is the store at frame+0x54, four bytes above the window the prologue reserved, which its own frame arithmetic does not make visible. (3) It presents the four guarded calls as nested ifs on one path, which is true of the source but hides that they are four independent guards on four independent bits. (4) It reports no parameter and no return type, while `RET 0x4` fixes one callee-cleaned stack word that the decompilation drops entirely. Nothing in the reconstruction depends on any of the decompiler's shapes: every constant traces to a listing instruction.",
+    "direct_callees": [
+      "0x00883860 FUN_00883860 (openspore_acquire_service_00883860, cdecl, no arguments, one global read)"
+    ],
+    "indirect_transfers": [
+      "0x00a9824a CALL EDX",
+      "0x00a98277 CALL EDX",
+      "0x00a982a1 CALL EDX",
+      "0x00a9832e CALL EDX"
+    ],
+    "direct_callers": [],
+    "xref_export_edges": [
+      {
+        "callsite": "0x00a98216",
+        "direction": "out",
+        "other": "0x00883860",
+        "reference_type": "direct-call"
+      }
+    ],
+    "xref_note": "the export records exactly one out-edge and no in-edge, and the single in-reference to this function is the DATA reference from 0x01458794 inside the vtable at 0x01458788. So this body is reached only through that table and the reconstruction has no reconstructed caller to check against.",
+    "machine_abi_record": "abi_derived verdict ABI_INFERRED, completeness CORE_RESOLVED, no conflicts, abstained_because ['flow_not_modelled: the linear ESP walk ends at +48, so the listing is not one path'], conventions {calling_convention __thiscall, candidate_conventions [__thiscall], confidence INFERRED, corroboration not_available}, parse {declared_count 110, unparsed 0, degraded false, esp_unresolved false, flow_complete false, layout json_instruction_list}, receiver {bounds_only true, register ECX, shape R-ALIAS, offsets [12,16,80], max_offset 80, written_through 1}, dispatch {indirect_calls 4, call_offsets [], vtable_shaped_loads 0}, cleanup {bytes 4, side callee, confidence OBSERVED, evidence 'ret 0x4'}, return {register EAX, register_class aggregate_unknown, type null, void_possible false, confidence INFERRED}, sret {present false, confidence APPROXIMATION}, stack_arguments {derived_slots 1, observed_slots 0, total_bytes 4, confidence APPROXIMATION}, tail_call {present false}, seh_or_cookie_frame false, variadic UNKNOWN, cross_validation {agreement false, ghidra no_information, persisted no_information}",
+    "vtable_associations": [
+      "vtable:0x01458788"
+    ],
+    "vtable_note": "Recorded, and verified against the table's own bytes rather than trusted: reading 0x18 bytes at 0x01458788 in the image gives 0x00a98090, 0x004ae250, 0x00a980b0, 0x00a98200, 0x00a98020, 0x00a98050, so this body is the dword at table+0x0c, which is where the single xref (0x01458794) comes from. Used to establish that the body is a virtual method of one class; NOT used as evidence for anything about the body's own internals."
+  },
+  "provenance": [
+    "reconstruction/evidence/00a98200/evidence.json (disassembly 110 instructions, abi, abi_derived, decompilation, ghidra_function, function_identity, vtables, status, runtime_metadata)",
+    "reconstruction/evidence/00a98200/context.json and context.md",
+    "GhidraMCP /get_function_by_address at 0x00883860 and 0x00a98200, and /read_memory at 0x00883860 and 0x01458788, over the live SporeApp.exe project -- the source of the callee's five bytes and of the vtable head's six dwords",
+    "reconstruction/knowledge/index.json, record 0x00a98200, for the xref export edges and the empty abi/source fields",
+    "tools/reconstruction_tooling/validate.py, evidence_fields.py and evidence_dispatch.py, run READ-ONLY over this listing to establish which witnesses the checks will use: the alias-aware receiver scan over register ECX attributes exactly {0x10} as a must displacement (0x0c and 0x50 are seen by the derived record but the scan kills the EDI alias at the first store through it), and the site classifier returns VTABLE_SLOT with slot displacement 0x14 for all four indirect sites. No repository file was modified by this."
+  ],
+  "unresolved_questions": [
+    "What the two immediate keys 0xe7a8472 and 0xe7a8474 are. They are pushed as the first stack word of three of the four calls and nothing in this body, in this pack or in the callee's five bytes identifies them. They look like property or event identifiers -- 0xe7a8472 is pushed twice with the pair's first dword 0 and 1, and 0xe7a8474 once with it 0 -- but that is a reading of the pattern, not evidence, and nothing is claimed.",
+    "What the flag word's bit assignments mean. Bits 0, 1 and 2 select which key and which pair dword goes out, bit 4 selects the list call, and bits 5..9 select which of the record's five dwords fills which of the list's five conditional dwords. That the mapping is bit N to the Nth pair is arithmetic over the shifts; the MEANING of any bit is not established here.",
+    "Whether the service object's leading word is a vtable pointer. The body performs a two-level table read at displacement 0x14 and the repository's site classifier reports VTABLE_SLOT, but that classifier does not check where the base register's word came from. The header and the source therefore call it a table and not a vtable, and the model test installs an ordinary aligned byte run rather than a vtable image.",
+    "Whether this function is a virtual method at all. The xref export records one in-reference and it is a DATA reference from 0x01458794 inside the table at 0x01458788, and reading that table's bytes puts this body at table+0x0c. The record's own vtable association agrees. Nothing fixes a class name, and no record in this pack shows the constructor that installs the table, so the class, its base and its other slots are all unestablished.",
+    "What the four indirect callees do with the frame object they are handed, and whether either callee writes through it. The model assumes nothing about that: the pair's two dwords and the list's three unconditional dwords are written by this body before every call, the list's five conditional dwords are not, and the body never reads any of them back. Whether a callee mutates the frame is not established, and the model test does drive one case where a callee does (kPokeListSlot0) precisely so the frame is treated as shared and mutable rather than as private.",
+    "Whether EBP stays zero across the four calls. The listing borrows EBP as the literal-zero third argument (0x00a9821d) and never re-zeroes it, so a callee that violated the x86-32 callee-saved convention would change the original's behaviour from the second call on. The C++ observers in the model test preserve EBP by that same convention, so the case cannot be driven and is not claimed.",
+    "The canonical machine record's return classification remains in tension with the reconstruction. abi.value.return_semantics is `unclassified_in_EAX` and abi_derived.return.void_possible is false, while this reconstruction declares void on the grounds that no path writes EAX with a value for the caller and Ghidra's own decompilation of the same listing agrees. The disagreement is published rather than resolved: see observed_original_abi.return_note. If the integrator prefers the machine phrase, the honest alternative is to keep `void` in the source and accept the RETURN SEMANTICS warning, which is what happens when the sidecar's return_type is not taken as the canonical claim.",
+    "The identity of the 0x016514cc global. It is the only source of the service pointer in the whole program, this body never writes it, and nothing in this pack identifies it. It is named in this sidecar and in the package header but deliberately not in the reconstructed source, so the repository's GLOBALS check is not asked to corroborate an address the listing never names."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validated": 0,
+    "conditions": [
+      "The original process is driven to a call of this body with the receiver's +0x10 byte set, once with the service global at 0x016514cc null and once with it set, and the receiver's +0x18, +0x50 and +0x0c planted with distinguishable values so an address-versus-value confusion in list dword 5 would be visible.",
+      "A trace records, for a run with flag word 0x17, the four indirect transfers in order with their ECX value and their three stack words, so the argument order (key, frame address, zero) and the reuse of one frame address for the three pair calls are confirmed against the original.",
+      "A trace records the eight dwords at the frame address handed to the fourth callee, for a run with bits 5..9 clear, to confirm that the five conditional dwords really do arrive with the frame's prior content rather than zero. This is the single highest-value runtime check in the list, because it is the fact a source-level reconstruction is most likely to get wrong and least able to check.",
+      "A trace captures the value of the dword at 0x016514cc at the moment 0x00a98216 executes, and the pointer it returns, so the null test's subject is confirmed.",
+      "The word left in EAX at 0x00a98336 is compared against the reconstructed signature on each of the three exits, to confirm the three distinct dead values (the caller's own EAX, the service word, the last callee's return) are unobservable to any original caller."
+    ]
+  },
+  "validation": {
+    "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x00a98200', write=False)\"",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w2-00a98200 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw2_00a98200.cpp sw2_00a98200_model_test.cpp -o /tmp/opencode/w_00a98200 && /tmp/opencode/w_00a98200",
+    "compile_observed": "GCC 16.2.1, clean build under -Wall -Wextra -Werror, 214 checks, 0 failures, exit 0. The header was additionally compiled on its own (a translation unit that includes it, then the same again to exercise the include guard) under the same flags.",
+    "model_test": "plain int main() with explicit checks, no framework and no external dependency. 15 cases, 214 checks. The one direct callee is defined in the test as an observer that counts its invocations and returns a chosen value; the four indirect sites are dispatched into function words the test plants in the table, and eleven distinct observers (two reachable targets and nine decoys) let a wrong dispatch be reported BY NAME. Every observer samples, at the moment it is entered, the ECX value, the three stack arguments, the eight dwords at the properties address, and -- read back through the receiver -- the latch byte, the record pointer the model will read next, its flag word and its call key.",
+    "model_test_cases": [
+      "latch byte already zero: no callee of either kind runs and the receiver is byte-identical (00a9820a targets 0x00a98332, which is before the CALL)",
+      "non-zero latch with a null service: the latch is still cleared, nothing is dispatched, and the rest of the receiver is untouched (00a98212 precedes 00a98216)",
+      "latch 0x80, 0xff and 0x02 all take the active path -- the compare is against zero, not a truth test (M25 kills the truthiness reconstruction, 4 failures)",
+      "a service word of 1 is non-null -- CMP ESI,EBP is a full dword compare (M24 kills the truthiness reconstruction, exit 139)",
+      "each of bits 0, 1, 2 and 4 alone makes exactly one call with its own key, its own pair dword and its own third argument",
+      "all four guards set make four calls in the listing's order, not in key order: the two identical keys are told apart by the 1 that only 0x00a9826f stores, and the three pair calls share one frame address while the list call gets one 0x10 above it",
+      "bit 3 alone makes NO call, and neither does every bit except 0/1/2/4; with bit 4 added to that set, exactly one call (the header declares no bit-3 constant, so the reconstruction cannot even be written from these constants)",
+      "with bits 5..9 set, each list dword comes from its own record displacement, checked against six mutually distinct candidate values so a mapping one step early or late cannot coincide with the right answer (M05 kills an off-by-one, 2 failures)",
+      "with bits 5..9 clear, the list's first five dwords reach the callee carrying the frame's prior content, driven with three different poison values including zero (M01 zero-fills the list: 19 failures)",
+      "a callee that writes into the frame is visible to the later list call, so the frame is one object for the whole body rather than one per block",
+      "a callee that swaps the receiver's record pointer is seen by the next block, and the list call then uses the NEW record's +0x0c as its key (M16 caches the record: 1 failure)",
+      "a callee that repoints the service's leading word sends the next three calls into a different table, and the five function words planted inside the service object never fire (M17 caches the target: 3 failures; M18 fetches one level short: 24 failures, all five service decoys fire)",
+      "the record's call key is passed through unchecked, including when it is zero and when it equals one of the immediates",
+      "the one stack word RET 0x4 consumes is driven with three different values and the observable behaviour is identical",
+      "the three stack arguments reach the callee in push order, with arg 1 and arg 2 asserted distinct so a swap between the key and the address would be visible"
+    ],
+    "mutation_checking": {
+      "method": "the package was copied to /tmp/opencode, one deliberate defect injected into sw2_00a98200.cpp per copy, then rebuilt and rerun with the mandated command. Defects that changed a frame displacement were injected as literal expressions so that the static_asserts in the source are exercised too.",
+      "results": [
+        {
+          "mutation": "zero-fill the frame instead of seeding it with the prior content",
+          "outcome": "KILLED: 19 assertion failures"
+        },
+        {
+          "mutation": "invert the bit-0 guard (== 0 instead of != 0)",
+          "outcome": "KILLED: exit 139 (SIGSEGV) once the wrong path hands a callee a frame slot it did not build"
+        },
+        {
+          "mutation": "list dword 0 filled from the record's +0x0c (the key displacement) instead of +0x10",
+          "outcome": "KILLED: 2 failures"
+        },
+        {
+          "mutation": "block 3's key 0xe7a8474 replaced by 0xe7a8472",
+          "outcome": "KILLED: 2 failures"
+        },
+        {
+          "mutation": "drop the latch clear at 0x00a98212",
+          "outcome": "KILLED: 8 failures"
+        },
+        {
+          "mutation": "guard the list call on bit 9 instead of bit 4",
+          "outcome": "KILLED: 15 failures"
+        },
+        {
+          "mutation": "leave the list's dword 7 at the frame's prior content instead of zeroing it",
+          "outcome": "KILLED: 3 failures"
+        },
+        {
+          "mutation": "pass 1 as the third stack argument",
+          "outcome": "KILLED: 2 failures"
+        },
+        {
+          "mutation": "cache the record pointer across the blocks",
+          "outcome": "KILLED: 1 failure"
+        },
+        {
+          "mutation": "cache the dispatch target across the four sites",
+          "outcome": "KILLED: 3 failures"
+        },
+        {
+          "mutation": "fetch the slot one level short, from the service object itself",
+          "outcome": "KILLED: 24 failures, all five service-object decoys fire"
+        },
+        {
+          "mutation": "guard the list call on bit 3",
+          "outcome": "KILLED: 17 failures"
+        },
+        {
+          "mutation": "swap the pair's two dwords in the bit-1 block",
+          "outcome": "KILLED: 3 failures"
+        },
+        {
+          "mutation": "write the frame's two dwords AFTER the call instead of before",
+          "outcome": "KILLED: 2 failures (write ordering)"
+        },
+        {
+          "mutation": "read the null test as a low-byte truth test on the service",
+          "outcome": "KILLED: exit 139"
+        },
+        {
+          "mutation": "read the latch test as a low-bit truth test",
+          "outcome": "KILLED: 4 failures"
+        },
+        {
+          "mutation": "put the receiver's +0x18 VALUE into list dword 5 instead of its ADDRESS",
+          "outcome": "KILLED: 4 failures"
+        },
+        {
+          "mutation": "store the latch as a dword instead of a byte",
+          "outcome": "KILLED: 10 failures, caught by the byte-for-byte receiver comparison"
+        },
+        {
+          "mutation": "swap the list's dwords 5 and 6",
+          "outcome": "KILLED: 4 failures"
+        },
+        {
+          "mutation": "hand the list call the pair's frame address",
+          "outcome": "KILLED: 26 failures"
+        },
+        {
+          "mutation": "take the list call's key from the flag word instead of the record's +0x0c",
+          "outcome": "KILLED: 6 failures"
+        },
+        {
+          "mutation": "drop the bit-6 guard",
+          "outcome": "KILLED: 1 failure"
+        },
+        {
+          "mutation": "fetch the slot at a displacement the listing does not contain",
+          "outcome": "KILLED AT BUILD: the static_assert on kServiceSlotDisplacement fails the compile"
+        },
+        {
+          "mutation": "one-level fetch written so the service parameter becomes unused",
+          "outcome": "KILLED AT BUILD: -Werror on the unused parameter"
+        },
+        {
+          "mutation": "a malformed interior-value expression",
+          "outcome": "KILLED AT BUILD: the reconstruction's own type discipline rejects the cast"
+        }
+      ],
+      "survivors": "none. 26 defects were injected; 23 were killed by the model test at run time and 3 at build time by the static_asserts or by -Werror. Two further attempts were discarded as malformed patches rather than counted.",
+      "known_limits": "The check on list dword 0 alone (M30, dropping the bit-6 guard) produced a single failure, because the full-mapping case asserts eight values and only one of them moves. It is caught, but thinly; a per-slot case would be tighter. Nothing asserts EAX, because the declared return type is void and the body never reads EAX after any callee -- that is a fact of the listing, not an omission. Nothing asserts what the four indirect callees do with the frame object beyond what the model writes into it before the call, because their bodies are not in this pack."
+    },
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "PASS",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "expected_reasons": {
+      "ABI": "PASS. abi_derived.verdict is ABI_INFERRED (not ABI_UNKNOWN), conventions.confidence is INFERRED (not unknown or approximation), the persisted/derived claim resolves to thiscall, and the source span declares PKG_SWARM_W2_00A98200_THISCALL, which the header's #define resolves to __attribute__((thiscall)). No ABI-bearing conflict is recorded.",
+      "CALLS": "PASS. The source span names exactly one address-suffixed callee, openspore_acquire_service_00883860, and the xref export records exactly one out-edge, 0x00883860 with reference_type direct-call at callsite 0x00a98216; the complete listing's only direct transfer is `CALL 0x00883860`, so the two machine sources name the same set and the source names one of it and no others. The four indirect sites are not address-named, so they cannot enter the comparison.",
+      "GLOBALS": "PASS. The complete 110-instruction listing names no data-segment address -- its absolute operands are the code address 0x00883860, the two immediates 0xe7a8472 and 0xe7a8474 (both above 0x02000000, so not addresses in this image) and ten branch targets -- and the source span names none either. The source deliberately keeps 0x016514cc, the global its callee reads, out of the reconstructed file for exactly this reason; it is recorded in this sidecar and in the package header instead.",
+      "FIELDS/OFFSETS": "PASS, grounded, and reached with the source span declaring NO field at all. That is the shape the contract asks for when abi_derived.receiver.bounds_only is true, and it is why the header names no member and the body uses only displacement-named accessors. The alias-aware scan of the complete listing over receiver register ECX attributes one displacement as a must (0x10, reached through the MOV EDI,ECX alias before the first control transfer) and the machine-derived receiver record enumerates three (0x0c, 0x10, 0x50), so every displacement the body uses is inside the record's bounds; the record itself states that it identifies no field by name, and neither does this reconstruction. The scan kills the EDI alias at the first store through it, which is why it reports 0x0c and 0x50 only through the record; the detail says so.",
+      "CONSTANTS": "PASS. abi_derived.parse is {declared_count 110, unparsed 0, degraded false} and 110 is the listing's own length, so the listing counts as fully consumed. The source span states no hexadecimal constant for it to lack: every displacement, immediate, shift and mask is a named constexpr in the header, and the static_asserts that pin those constants to the listing's instructions sit in the source file OUTSIDE the target function's span, where the repository's constant extractor -- which reads the span with comments stripped -- does not see them. The extractor was run over the span directly as a check, and the span's hex-token set is empty.",
+      "CONTROL FLOW": "PASS. All eleven conditional branch targets in the complete listing lie inside the recovered body span 0x00a98200..0x00a98336, so the branch graph is closed inside it and the listing is not a slice. The source span declares `if` and `for` words, which the check reports as a source-side signal and explicitly excludes from its verdict.",
+      "VIRTUAL DISPATCH": "PASS. The complete 110-instruction body names four indirect transfers, all `CALL EDX`, and abi_derived.dispatch independently counts 4, so the two machine sources agree. Every site classifies as VTABLE_SLOT with slot displacement 0x14, and every classification is reproducible from the listing bytes. The source span declares no slot boundary -- it uses neither load_slot, object_slot, shell_slot, shell_slot, vtable nor slot[ -- so it makes no slot claim for the check to contradict, and the helper is named load_table_word because the bytes show a two-level table read and nothing identifies the table.",
+      "RETURN SEMANTICS": "PASS by the string-agreement arm, and it is worth being explicit about why that is a real agreement rather than a tuned one. The canonical claim is the first non-empty of the ABI sources for return_type/return_semantics; this sidecar publishes observed_original_abi.return_type = \"void\", which reconstruction_knowledge.extract_abi puts into the index record's abi ahead of the derived envelope, so the claim read is \"void\" and the span's declared return type is \"void\". The span returns nothing on any of its three exits, no instruction loads EAX with a value for the caller, and Ghidra's independent decompilation of the same listing declares the same thing. The machine record's competing token, unclassified_in_EAX, is a machine-vocabulary phrase and is kept verbatim in observed_original_abi.machine_return_semantics with the argument in observed_original_abi.return_note. If the integrator does not take this sidecar's return_type as the canonical claim, the arm falls back to comparing the span's \"void\" against \"unclassified_in_EAX\" and WARNs, which is a property of the oracle and not of the reconstruction.",
+      "EVIDENCE COVERAGE": "WARN, and it is fixed, not fixable from this package. The check is derived purely from categories[*].availability over the 17 static categories (runtime is on the other axis and is excluded), and this pack reports 10 of 17 available: unavailable/MISSING for callees_dependencies, callers_dependencies, contradictions, external_callees, globals, semantic_hypotheses and types. The two dependency categories are unavailable precisely because the xref export records one out-edge and no in-edge of a call kind, and the globals and types categories are unavailable because no record in this pack carries either. Writing them would mean inventing evidence."
+    },
+    "not_verified": [
+      "The run above is a read-only reproduction of what `openspore validate` will see for this VA, not the CLI itself. The worker contract reserves the CLI for the parent, so it was not run; the machinery it drives was run, over the same committed pack, with the same source, and with the index record carrying this sidecar's own abi and source_files. If the parent's run differs, the difference will be in the ABI/RETURN-SEMANTICS publication path (whether observed_original_abi.return_type is taken as the canonical claim) and not in the reconstruction."
+    ],
+    "observed": {
+      "captured_on": "2026-09-28",
+      "command": "python3 -c \"import sys, json, copy; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; from reconstruction_knowledge import extract_abi; side=json.load(open('reconstruction/metadata/pkg-swarm-w2-00a98200/00a98200.json')); idx=copy.deepcopy(V._index(V.ROOT)); r=idx['records']['0x00a98200']; r['abi']=extract_abi(side); r['source']={'file':None,'files':list(side['source_files'])}; orig=V._index; V._index=lambda root: idx; rep=V.validate(va='0x00a98200', evidence=json.load(open('reconstruction/evidence/00a98200/evidence.json')), context={'schema':'stub'}, write=False); V._index=orig; print(rep['status'], rep['coverage'])\"",
+      "how_it_was_run": "READ-ONLY, and nothing on disk was written or modified. The index the validator reads was replaced IN MEMORY with a copy whose record carries this sidecar's abi (via the same reconstruction_knowledge.extract_abi the orchestrator uses) and this sidecar's source_files, which is precisely what `openspore validate` will see once this sidecar is indexed. The `openspore validate` CLI itself was NOT run, because the worker contract reserves it for the parent. The committed evidence pack was passed in directly and was not recollected.",
+      "static": "PASS",
+      "runtime": "GATED",
+      "runtime_validated": 0,
+      "coverage": "0.889 (8 PASS, 1 WARN of 9; the one WARN is EVIDENCE COVERAGE, predicted)",
+      "checks": {
+        "ABI": "PASS",
+        "CALLS": "PASS",
+        "GLOBALS": "PASS",
+        "FIELDS/OFFSETS": "PASS",
+        "CONSTANTS": "PASS",
+        "CONTROL FLOW": "PASS",
+        "VIRTUAL DISPATCH": "PASS",
+        "RETURN SEMANTICS": "PASS",
+        "EVIDENCE COVERAGE": "WARN"
+      },
+      "check_details_as_reported": {
+        "ABI": "calling convention is present in the target source span and canonical metadata",
+        "CALLS": "the machine-vs-machine rule: the xref export and the complete 110-instruction listing name the same 1 direct transfer target(s); the xref export at knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 1 outgoing call edge row(s) over 1 distinct address(es) for 0x00a98200; the source span names 1 of them and no others",
+        "GLOBALS": "the complete 110-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no global; the xref export carries no data-reference edge type to corroborate against, and none is needed for an absence",
+        "FIELDS/OFFSETS": "the source span declares no field offset, so there is nothing of its own to ground and nothing ungrounded either; the complete listing nevertheless reaches 1 receiver displacement(s) through ECX (0x10), all of which the record accounts for or the listing is the better witness on; the listing is the governing witness and was consumed in full (declared_count=110, degraded=false, unparsed=0) and is read alias-aware over register ECX, so a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the machine-derived receiver record enumerates 3 displacement(s) (0xc, 0x10, 0x50) and its bounds_only flag widens what a claim may be grounded in and refutes nothing; 2 of those (0xc, 0x50) the scan does not attribute to the receiver, and the listing governs there",
+        "CONSTANTS": "the machine listing is fully parsed (110 of 110 instruction(s), 0 unparsed) and the source span states no hexadecimal constant for it to lack",
+        "CONTROL FLOW": "all 11 conditional branch target(s) in the complete 110-instruction listing lie inside the recovered body span 0x00a98200..0x00a98336, so the branch graph is closed inside it; the source span declares for, if, and keyword shape is a source-side signal that is not part of this verdict",
+        "VIRTUAL DISPATCH": "the complete 110-instruction body names 4 indirect transfer(s): 0x00a9824a, 0x00a98277, 0x00a982a1 and 0x00a9832e each dispatch slot 0x14 through the table word in EDX; the machine parse consumed 110 of 110 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 4. Every site is a two-level table load, so the machine dispatch is proven against the original binary. Neither the record's own association with 1 vtable(s) nor the xref export's 0 vtable reference(s) was read. The source span declares no slot boundary, so nothing is claimed about a reconstruction's slot naming; this verdict is about the machine alone",
+        "RETURN SEMANTICS": "return type agrees with the bounded ABI record",
+        "EVIDENCE COVERAGE": "10 of 17 static evidence categories are available"
+      },
+      "source_resolution_caveat": "This run resolved reconstruction/staging/pkg-swarm-w2-00a98200/sw2_00a98200.cpp for 0x00a98200, which is this package's own file and the only one any other package claims for this VA. If the integrator promotes the source into src/, validate._source prefers src/ over reconstruction/staging/ (SOURCE_ROLES is ordered), so the promoted copy becomes the canonical artifact and this staging copy stops being read; the reconstruction is the same file either way."
+    }
+  },
+  "known_blockers": [
+    "EVIDENCE COVERAGE (WARN, real and not fixable from this package): 7 of 15 static evidence categories are available. The check is derived purely from the pack's per-category availability field, and the missing categories are missing because the evidence for them was never collected for this VA.",
+    "RUNTIME is GATED at 0. No original-process trace exists in this repository, nothing was attempted, and nothing failed. The gate is open, and the static verdict above says nothing about the original process. The single highest-value runtime condition is listed in runtime_gate.conditions: whether the list's five conditional dwords really do arrive at the last callee with the frame's prior content.",
+    "RETURN SEMANTICS depends on this sidecar's return_type being taken as the canonical claim. Absent that, the check compares \"void\" against the machine phrase \"unclassified_in_EAX\" and warns. That is a property of the oracle (no C++ type can be string-equal to a machine-vocabulary phrase) and not a defect in the reconstruction; the reconstruction declares the type the listing supports and the disagreement is published in observed_original_abi.return_note."
+  ]
+}

@@ -1,0 +1,1134 @@
+# Evidence 0x00c0c0e0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `c66aa3531259351334162a3fe5fe079a5acf3b00f05705be1ec15950673aa8ea`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "0af8314106fbafa8d3b56011bc54f657bf8e1ea2c797c4cf7f3abe80fc00996c",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          3716,
+          4620
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00c0c0e0",
+      "count": 1,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ECX + 0xe84]",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c0c0e0",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ECX + 0xe84]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00c0c0ea",
+      "count": 2,
+      "first_use": 3,
+      "first_write_index": 0,
+      "id": "obs-0003",
+      "index": 3,
+      "kind": "REG_READ",
+      "raw": "CMP byte ptr [EAX + 0x388],0x0",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x00c0c0f8",
+      "form": "RET",
+      "id": "obs-0004",
+      "imm": null,
+      "index": 6,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00c0c0fb",
+      "form": "RET",
+      "id": "obs-0005",
+      "imm": null,
+      "index": 8,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 9,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "INFERRED",
+    "distinct_offsets": 2,
+    "max_offset": 4620,
+    "offsets": [
+      3716,
+      4620
+    ],
+    "present": true,
+    "register": "ECX",
+    "shape": "R-DIRECT",
+    "written_through": 0
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "integral",
+    "type": null,
+    "void_possible": false
+  },
+  "schema": "openspore-abi-inference-1",
+  "seh_or_cookie_frame": false,
+  "sret": {
+    "ambiguity": null,
+    "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed",
+    "candidates": null,
+    "confidence": "APPROXIMATION",
+    "eax_holds_slot0_at_ret": null,
+    "hypothesis_confidence": null,
+    "present": false,
+    "slot": null,
+    "this_interaction": null
+  },
+  "stack_arguments": {
+    "confidence": "APPROXIMATION",
+    "derived_slots": 0,
+    "gaps": 0,
+    "not_complete": false,
+    "observed_slots": 0,
+    "slots": [],
+    "total_bytes": 0,
+    "widths_ambiguous": false
+  },
+  "tail_call": {
+    "after_frame_setup": false,
+    "form": null,
+    "present": false,
+    "target": null
+  },
+  "target": {
+    "address_available": true,
+    "image_base": "0x00400000",
+    "instructions": 9,
+    "syntax":
+[TRUNCATED]
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "0af8314106fbafa8d3b56011bc54f657bf8e1ea2c797c4cf7f3abe80fc00996c",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          3716,
+          4620
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0005"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00c0c0e0",
+      "count": 1,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ECX + 0xe84]",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c0c0e0",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ECX + 0xe84]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00c0c0ea",
+      "count": 2,
+      "first_use": 3,
+      "first_write_index": 0,
+      "id": "obs-0003",
+      "index": 3,
+      "kind": "REG_READ",
+      "raw": "CMP byte ptr [EAX + 0x388],0x0",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x00c0c0f8",
+      "form": "RET",
+      "id": "obs-0004",
+      "imm": null,
+      "index": 6,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00c0c0fb",
+      "form": "RET",
+      "id": "obs-0005",
+      "imm": null,
+      "index": 8,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 9,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "INFERRED",
+    "distinct_offsets": 2,
+    "max_offset": 4620,
+    "offsets": [
+      3716,
+      4620
+    ],
+    "present": true,
+    "register": "ECX",
+    "shape": "R-DIRECT",
+    "written_through": 0
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "integral",
+    "type": null,
+    "void_possible": false
+  },
+  "schema": "openspore-abi-inference-1",
+  "seh_or_cookie_frame": false,
+  "sret": {
+    "ambiguity": null,
+    "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed",
+    "candidates": null,
+    "confidence": "APPROXIMATION",
+    "eax_holds_slot0_at_ret": null,
+    "hypothesis_confidence": null,
+    "present": false,
+    "slot": null,
+    "this_interaction": null
+  },
+  "stack_arguments": {
+    "confidence": "APPROXIMATION",
+    "derived_slots": 0,
+    "gaps": 0,
+    "not_complete": false,
+    "observed_slots": 0,
+    "slots": [],
+    "total_bytes": 0,
+    "widths_ambiguous": false
+  },
+  "tail_call": {
+    "after_frame_setup": false,
+    "form": null,
+    "present": false,
+    "target": null
+  },
+  "target": {
+    "address_available": true,
+    "image_base": "0x00400000",
+    "instructions": 9,
+    "syntax":
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00acc390"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ace5a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae4fd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae73e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b18760"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b6b4c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba48b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba5e10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c042e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c045f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c05a80"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c06f70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c07480"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c099e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c09fa0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c1d640"
+  }
+]
+```
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
+
+```json
+"\nundefined4 __fastcall FUN_00c0c0e0(int param_1)\n\n{\n  if ((*(int *)(param_1 + 0xe84) != 0) && (*(char *)(*(int *)(param_1 + 0xe84) + 0x388) != '\\0')) {\n    return 1;\n  }\n  return 0;\n}\n\n"
+```
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 9,
+  "instructions": [
+    {
+      "address": "00c0c0e0",
+      "instruction": "MOV EAX,dword ptr [ECX + 0xe84]"
+    },
+    {
+      "address": "00c0c0e6",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "00c0c0e8",
+      "instruction": "JZ 0x00c0c0f9"
+    },
+    {
+      "address": "00c0c0ea",
+      "instruction": "CMP byte ptr [EAX + 0x388],0x0"
+    },
+    {
+      "address": "00c0c0f1",
+      "instruction": "JZ 0x00c0c0f9"
+    },
+    {
+      "address": "00c0c0f3",
+      "instruction": "MOV EAX,0x1"
+    },
+    {
+      "address": "00c0c0f8",
+      "instruction": "RET"
+    },
+    {
+      "address": "00c0c0f9",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "00c0c0fb",
+      "instruction": "RET"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13229,
+  "preview": "{\n  \"abi\": {},\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-11-H4-HELPER-WAVE3\",\n      \"score\": 6,\n      \"symbol\": \"address_window_offset_005c65e0\",\n      \"va\": \"0x005c65e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 6,\n      \"symbol\": \"dispatch_key_00628450\",\n      \"va\": \"0x00628450\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 6,\n      \"symbol\": \"cycle_key_006286a0\",\n      \"va\": \"0x006286a0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 6,\n      \"symbol\": \"release_child_0062c910\",\n      \"va\": \"0x0062c910\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 6,\n      \"symbol\": \"FUN_00b3d2a0\",\n      \"va\": \"0x00b3d2a0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 6,\n      \"symbol\": \"FUN_00b3d300\",\n      \"va\": \"0x00b3d300\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 6,\n      \"symbol\": \"Simulator_GetUIMissionLogManager\",\n      \"va\": \"0x00b3d4f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-13-E4-EMPIRE-WAVE3\",\n      \"score\": 6,\n      \"symbol\": \"EmpirePoliticalColor_00c32cd0\",\n      \"va\": \"0x00c32cd0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"unknown-fun-mass\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00acc390\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ace5a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae4fd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae73e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b18760\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b6b4c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba48b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba5e10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c042e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c045f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c05a80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c06f70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c07480\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c099e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c09fa0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c1d640\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c20230\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c23e90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c28870\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c28b40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c36ae0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cacf40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ccefb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ce1c90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d1f650\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2ffd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d38150\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d56870\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d66e70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d679e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d7f790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d85c00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d8c850\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\
+[TRUNCATED]
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00c0c0fb",
+  "body_span_bytes": 28,
+  "body_start": "00c0c0e0",
+  "callees": [],
+  "callers": [
+    "FUN_00d8e8d0",
+    "FUN_00ba48b0",
+    "FUN_00eeccb0",
+    "FUN_00c20230",
+    "FUN_00d38150",
+    "FUN_00d66e70",
+    "FUN_00d679e0",
+    "FUN_00da8c40",
+    "FUN_00dceca0",
+    "FUN_00c042e0",
+    "FUN_00ae4fd0",
+    "FUN_00c28870",
+    "FUN_00d1f650",
+    "FUN_00c099e0",
+    "FUN_00c23e90",
+    "FUN_00acc390",
+    "FUN_00d85c00",
+    "FUN_00dc67d0",
+    "FUN_00f20620",
+    "FUN_00ba5e10",
+    "FUN_00c045f0",
+    "FUN_00d56870",
+    "FUN_00daa9b0",
+    "FUN_00ebfd50",
+    "FUN_00ccefb0",
+    "FUN_00c1d640",
+    "FUN_00d8c850",
+    "FUN_00c06f70",
+    "FUN_00d7f790",
+    "FUN_00f3ecb0",
+    "FUN_00f3e6d0",
+    "FUN_00ae73e0",
+    "FUN_00f1a120",
+    "PTRREF_00C2B170",
+    "FUN_00ce1c90",
+    "FUN_00c05a80",
+    "FUN_00c07480",
+    "FUN_00ace5a0",
+    "FUN_00d90640",
+    "FUN_00c28b40",
+    "PTRREF_00CB1270",
+    "FUN_00db7190",
+    "FUN_00c36ae0",
+    "FUN_00c09fa0",
+    "FUN_00d8cde0",
+    "PTRREF_00B498D0",
+    "FUN_00b6b4c0",
+    "FUN_00e8bca0",
+    "FUN_0105a110",
+    "FUN_00d2ffd0",
+    "FUN_00cacf40",
+    "FUN_00b18760",
+    "FUN_00d90320"
+  ],
+  "classification": "leaf",
+  "dispatch": null,
+  "entry_point": "00c0c0e0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [
+    {
+      "name": "param_1",
+      "storage": "register:00000004:4",
+      "type": "int"
+    }
+  ],
+  "locals_count": 1,
+  "mode": "live",
+  "name": "FUN_00c0c0e0",
+  "namespace": null,
+  "namespace_source": null,
+  "parameter_count": 0,
+  "parameters": [],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "undefined",
+  "return_type_resolved": false,
+  "rva": "0x80c0e0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "undefined FUN_00c0c0e0(void)",
+  "size_bytes": 28,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x00c0c0e0",
+  "vtables": {
+    "referenced_by_vtables": [],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 73,
+  "xrefs": [
+    {
+      "from": "00ebfd57"
+    },
+    {
+      "from": "00acc4cc"
+    },
+    {
+      "from": "00ace8c5"
+    },
+    {
+      "from": "00c0aa5e"
+    },
+    {
+      "from": "00c04460"
+    },
+    {
+      "from": "00c09b39"
+    },
+    {
+      "from": "00ae528f"
+    },
+    {
+      "from": "00ae799d"
+    },
+    {
+      "from": "00b6b64d"
+    },
+    {
+      "from": "00ba5e54"
+    },
+    {
+      "from": "00c04636"
+    },
+    {
+      "from": "00c04651"
+    },
+    {
+      "from": "00c05ac6"
+    },
+    {
+      "from": "00c07052"
+    },
+    {
+      "from": "00c07137"
+    },
+    {
+      "from": "00c0755e"
+    },
+    {
+      "from": "00c075d0"
+    },
+    {
+      "from": "00c07b24"
+    },
+    {
+      "from": "00c07d22"
+    },
+    {
+      "from": "00c07dba"
+    },
+    {
+      "from": "00d303fe"
+    },
+    {
+      "from": "00c23f1d"
+    },
+    {
+      "from": "00c28ba7"
+    },
+    {
+      "from": "00c28c97"
+    },
+    {
+      "from": "00c36d8c"
+    },
+    {
+      "from": "00dced03"
+    },
+    {
+      "from": "00cad752"
+    },
+    {
+      "from": "00ccf910"
+    },
+    {
+      "from": "00c1dad0"
+    },
+    {
+      "from": "00ce1e12"
+    },
+    {
+      "from": "00f1a2c1"
+    },
+    {
+      "from": "00d3822f"
+    },
+    {
+      "from": "00d56a7e"
+    },
+    {
+      "from": "00d67c49"
+    },
+    {
+      "from": "00d66f3e"
+    },
+    {
+      "from": "00d66f63"
+    },
+    {
+      "from": "00d7f87d"
+    },
+    {
+      "from": "00d7fadc"
+    },
+    {
+      "from": "00d85dd1"
+    },
+    {
+      "from": "00d85e18"
+    },
+    {
+      "from": "00d8c8d2"
+    },
+    {
+      "from": "00d8cecf"
+    },
+    {
+      "from": "00d8ea91"
+    },
+    {
+      "from": "00d8ec93"
+    },
+    {
+      "from": "00d905cf"
+    },
+    {
+      "from": "00d9069c"
+    },
+    {
+      "from": "00da8cfd"
+    },
+    {
+      "from": "00daaa4f"
+    },
+    {
+      "from": "00db7780"
+    },
+    {
+      "from": "00dc6972"
+    },
+    {
+      "from": "00f3e7d7"
+    },
+    {
+      "from": "00eecd41"
+    },
+    {
+      "from": "00f3ed8c"
+    },
+    {
+      "from": "00f2080a"
+    },
+    {
+      "from": "0105a20d"
+    },
+    {
+      "from": "00b1877d"
+    },
+    {
+      "from": "00d1f833"
+    },
+    {
+      "from": "00ba4a77"
+    },
+    {
+      "from": "00c20b16"
+    },
+    {
+      "from": "00b49939"
+    },
+    {
+      "from": "00c2b30b"
+    },
+    {
+      "from": "00c2b6e6"
+    },
+    {
+      "from": "00c2c0ef"
+    },
+    {
+      "from": "00cb1f2d"
+    },
+    {
+      "from": "00c28888"
+    },
+    {
+      "from": "00e8bcf4"
+    },
+    {
+      "from": "00e8ca63"
+    },
+    {
+      "from": "00e8ca79"
+    },
+    {
+      "from": "00c920d7"
+    },
+    {
+      "from": "00c921f2"
+    },
+    {
+      "from": "00d6c3a3"
+    },
+    {
+      "from": "00db9608"
+    },
+    {
+      "from": "00dc2bca"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [],
+  "handoffs": [],
+  "metadata": []
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "candidate"
+}
+```
+
+## types
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## vtables
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## Conflicts
+
+```json
+[]
+```

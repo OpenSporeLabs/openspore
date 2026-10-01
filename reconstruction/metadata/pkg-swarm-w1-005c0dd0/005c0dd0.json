@@ -1,0 +1,459 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W1-005C0DD0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x005c0dd0",
+  "address": "0x005c0dd0",
+  "symbol": "re_005c0dd0",
+  "normalized_symbol": "re_005c0dd0",
+  "ghidra_name": "FUN_005c0dd0",
+  "subsystem": "Sporepedia",
+  "target_state": "IMPLEMENTED. The complete body is two instructions and four bytes and all of it is reconstructed: 005c0dd0 `8A 41 24` MOV AL, byte ptr [ECX+0x24] and 005c0dd3 `C3` RET. The four bytes were re-read out of the image for this package rather than taken from the committed listing, because at this length the listing has nothing to cross-check against. There is no callee, no global, no branch, no dispatch, no stack frame and no write, and none of those is modelled. What stays open is the identity of the byte, the C++ spelling of the one-byte return, the value domain, and the upper three bytes of EAX; all four are named in unresolved_questions and none of them is guessed.",
+  "captured_on": "2026-09-28",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0.cpp",
+    "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_types.hpp",
+    "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_model_test.cpp"
+  ],
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0.cpp",
+      "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_types.hpp",
+      "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed, src/ was not touched, and no other package's files were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_005c0dd0",
+    "declaration": "extern \"C\" std::uint8_t PKG_SWARM_W1_005C0DD0_THISCALL re_005c0dd0(SporepediaByteRecord *receiver);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX and nothing else. There are zero ordinary stack arguments, which is not an omission: the terminator at 0x005c0dd3 is a bare RET with no immediate, the body contains no read of ESP and no read of any [EBP+k] frame slot, and abi_derived.stack_arguments records observed_slots 0, derived_slots 0, gaps 0, total_bytes 0 with cleanup {bytes 0, side caller, evidence 'ret with no immediate, no stack reads'}. The model test MEASURES this rather than asserting the convention: it pushes a decoy word, calls through a trampoline, and requires ESP after the return to sit exactly four bytes below where it was, which is what a zero-byte callee cleanup looks like and is not what a `RET 4` reconstruction produces.",
+    "return_type": "std::uint8_t",
+    "return_type_rationale": "The machine fixes a WIDTH of one byte and nothing more. The destination operand of 8A is AL, so exactly one byte is written into the return register, and that is the whole width claim. The C++ spelling is a source-side choice among bool, unsigned char and std::uint8_t, all of which compile to these same three bytes; std::uint8_t is declared because it is the least committal of the three. bool is specifically NOT claimed: a bool return would assert the value is {0, 1}, and nothing in these two instructions masks anything -- the byte at 0x24 is returned verbatim, and the model test requires 0x80 and 0xff to survive unchanged. A four-byte type is not claimed either, because the machine writes AL and not EAX.",
+    "source": "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0.cpp",
+    "header": "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_types.hpp",
+    "model_test": "reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0_model_test.cpp",
+    "receiver_model": "a 0x25-byte opaque run with NO member declared at 0x24. The machine-derived receiver record is bounds_only ({register ECX, shape R-DIRECT, offsets [36], distinct_offsets 1, max_offset 36, written_through 0, bounds_only true}), so it states where the body was seen reaching and identifies nothing; naming that byte a flag, an enabled-bit, a mode or a predicate would be a member story this evidence does not carry. 0x25 is the OBSERVED extent (the displacement plus the one byte read) and is explicitly not a claimed object size -- it is not even 4-aligned. The body's own span declares the displacement 0x24 and no member, which is the only shape the receiver record can corroborate.",
+    "dispatch_model": "none, and none declared. abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0; the two instructions contain no register- or memory-operand transfer; the xref export records no outgoing edge. The xref export DOES carry nine data references to this address from twelve tables, at SIX different slot indices (4, 14, 15, 26, 29, 33), which is recorded in the package header and asserted by the model test -- and is precisely why no slot boundary is declared anywhere: a single slot number cannot be right for six different ones, and the body reads no dispatch word to begin with. The model test's case G plants a dispatch-shaped table at the receiver's +0x00 whose six occupied slots would each return a different byte and count their own entry, and requires that nothing changes and nothing is entered.",
+    "callee_declarations": "NONE, deliberately. The complete listing is two instructions and neither is a transfer, `callees` is empty, `external_callees` is unavailable, and the model test therefore has no callee observer. The reference package for a nearby VA declares four extern callees because its body makes four calls; declaring even one here would be inventing a transfer the bytes do not contain. What stands in for the observer is a byte-level receiver snapshot taken on both sides of every call, and the decoy dispatch table's invocation counter.",
+    "dependency_note": "this package has no dependency on any other package: it includes only its own header by quoted name, and it asserts nothing about any other VA. The two caller addresses cited below were read for this package (0x00adfd60's call site and 0x00de5260's call site) and are used only as evidence about how the result is CONSUMED; neither caller is declared, defined or reconstructed here.",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w1-005c0dd0 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. swarm_w1_005c0dd0.cpp swarm_w1_005c0dd0_model_test.cpp -o /tmp/w_005c0dd0 && /tmp/w_005c0dd0 -> clean build, zero warnings, test exit 0. The header additionally compiles clean as its own translation unit under the same flags, the .cpp compiles clean as its own translation unit, and the .cpp compiles clean under clang++ -m32 with the same flags. The package is NOT -Wpedantic-clean on GCC, for the reason the reference package records: GCC 16.2.1 rejects `__attribute__((thiscall))` on a non-class free function under -Wattributes, which -Wpedantic promotes, so the prescribed #define block alone fails. The mandated gate does not enable -Wpedantic and passes clean."
+  },
+  "function_extent": {
+    "entry": "0x005c0dd0",
+    "body_end_inclusive": "0x005c0dd3",
+    "instruction_count": 2,
+    "return_site": "0x005c0dd3: RET (byte C3, no immediate)",
+    "span_bytes": 4,
+    "listing_reexported": "re-derived from the image bytes for this package, not taken from the committed listing. GhidraMCP /read_memory at 0x005c0dd0 returns `138 65 36 195 204 204 204 204` = 8A 41 24 C3 CC CC CC CC, and /disassemble_bytes over 0x005c0da0..0x005c0def gives the same two instructions at the same addresses, a twelve-byte 0xCC run from 0x005c0dd4 to 0x005c0ddf, and the preceding function ending at 0x005c0dc1 with `C2 08 00` (RET 0x8) plus its own padding from 0x005c0dc4. So the span really is 0x005c0dd0..0x005c0dd3 inclusive (4 bytes), the terminator really is a bare RET, and 0x005c0dd0 is an isolated four-byte leaf rather than a slice of something longer. This agrees with ghidra_function (body_start 0x005c0dd0, body_end 0x005c0dd3, body_span_bytes 4, size_bytes 4) and with abi_derived.parse (declared_count 2, unparsed 0, degraded false, flow_complete true, local_extent 0)."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "none -- the body has no prologue, so ECX stays in ECX and the base register of the load IS the receiver register. This is the R-DIRECT shape in the receiver record, and it is worth stating because a body that copied its receiver into a scratch register would be invisible to a register scan and would be recorded as an alias.",
+    "receiver_displacement_observed": "0x24 (decimal 36), the instruction's own disp8",
+    "receiver_writes": 0,
+    "ordinary_stack_argument_slots": 0,
+    "stack_argument_1": "none -- there is no stack argument. No [EBP+k] operand and no ESP read exists in the body, and stack_arguments reports observed_slots 0 / derived_slots 0 / total_bytes 0 / gaps 0.",
+    "saved_registers": [],
+    "frame": "none. The body executes no push, no sub esp and no mov ebp,esp, so the frame is exactly the entry frame.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "return_register": "EAX",
+    "return_type": "1 byte, delivered in AL",
+    "exception_frame": false,
+    "ghidra_prototype": "undefined FUN_005c0dd0(void)",
+    "ghidra_convention_note": "Ghidra reports return_type 'undefined' with ghidra_calling_convention null and ghidra_calling_convention_signal no_information, and it does not model the hidden receiver (the prototype reads `(void)`). The `(void)` is not evidence of a receiver-free function: the listing's only memory operand is based on ECX, and both records (persisted and derived) independently resolve to __thiscall with hidden_this true. No decompilation exists for this VA at all (decompilation category availability 'unavailable', missing_sections lists DECOMPILATION), so nothing here is adjudicated by a decompiler.",
+    "dispatch": "abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0, which agrees with a two-instruction listing in which neither instruction is a transfer. The model therefore declares no slot boundary anywhere.",
+    "evidence_level": "ABI_INFERRED (abi_derived.verdict = ABI_INFERRED, conventions.confidence = INFERRED, completeness = CORE_RESOLVED, conflicts [])"
+  },
+  "mechanics": {
+    "body_shape": "Two instructions, four bytes, no frame, no branch, no call, no store. The entire effect of the body is one byte load out of the receiver.",
+    "instruction_1": {
+      "address": "0x005c0dd0",
+      "bytes": "8A 41 24",
+      "text": "MOV AL, byte ptr [ECX + 0x24]",
+      "length_bytes": 3,
+      "reading": "opcode 0x8A is MOV r8, r/m8. ModRM 0x41 is mod=01, reg=000 (AL), rm=001 (ECX+disp8), so the base register is ECX and the disp8 that follows is 0x24. It is a LOAD: there is no store instruction anywhere in the body, and abi_derived.receiver records written_through 0."
+    },
+    "instruction_2": {
+      "address": "0x005c0dd3",
+      "bytes": "C3",
+      "text": "RET",
+      "length_bytes": 1,
+      "reading": "A bare RET with no immediate. `C2 nn nn` would be 3 bytes and could not fit beside a 3-byte load in a 4-byte body, and the byte at this address is C3, so the terminator form is settled by the image rather than by a length argument. 0 bytes of callee cleanup and zero stack arguments go with it."
+    },
+    "receiver_displacement": {
+      "value": "0x24",
+      "witness_1": "the instruction's own encoding: 8A 41 24 carries displacement 0x24 in its third byte",
+      "witness_2": "abi_derived.receiver = {register ECX, shape R-DIRECT, offsets [36], distinct_offsets 1, max_offset 36, written_through 0, bounds_only true, present true, confidence INFERRED}; 36 decimal is 0x24",
+      "agreement": "the two witnesses are the same byte of the same instruction, which is the strongest form this claim can take at this length"
+    },
+    "return_width": {
+      "value": 1,
+      "witness": "the DESTINATION OPERAND of the only EAX definition is AL, so one byte is written. This is read off the operand, not inferred from the fact that accessors like this one tend to return flags.",
+      "not_a_zero_extension": "8A 41 24 is not 0F B6 41 24 (MOVZX EAX, byte ptr [ECX+0x24], four bytes). The compiler chose the three-byte partial-register form, so bits 8..31 of EAX are left exactly as the caller left them. Asserting a zero-extension would assert an instruction the image does not contain."
+    },
+    "control_flow": "none. There is no conditional branch, no jump and no call, so the CFG is a single node with one successor, and there is no branch condition, polarity or signedness for a test to drive.",
+    "constants": "one. 0x24, the displacement. No mask, no immediate, no threshold, no count and no size appears in the body, and none is modelled.",
+    "globals": "none. Neither instruction has an absolute operand.",
+    "callees": "none. `callees` is empty, the xref export records no outgoing edge, and no callee is declared in the package header.",
+    "receiver_writes": "none. The one memory operand is a load (0x8A), and the model test diffs the whole receiver fixture before and after every call and requires it byte-identical.",
+    "vtable_associations_recorded_not_modelled": {
+      "reference_count": 12,
+      "slot_indices": [
+        4,
+        14,
+        15,
+        26,
+        29,
+        33
+      ],
+      "tables": [
+        "0x013f7cc0",
+        "0x013f7de0",
+        "0x013ff648",
+        "0x013ff6ac",
+        "0x0147c9e8",
+        "0x0147ca30",
+        "0x0147cbbc",
+        "0x0147cc14",
+        "0x01489090",
+        "0x014890f4",
+        "0x014893b0",
+        "0x01489414"
+      ],
+      "source": ".spore-analysis/ghidra-exports/vtables.json",
+      "why_not_modelled": "Six different slot indices across twelve tables means no single slot number can be correct, so declaring one would be wrong for at least six of the twelve; and the body reads no dispatch word, so there is nothing to declare. The neighbouring slots of those tables are exported with sdk=true and Sporepedia::cSPAssetDataOTDB:: names (IsEditable, HasName, GetAssetID, GetAuthorName, GetAuthorID, GetTags, GetTimeCreated, func3Ch, func7Ch); THIS entry is exported with sdk=false and carries no name, so no class and no method name is claimed for it. The target record's subsystem is 'Sporepedia' and its cluster is 'sporepedia-online', which is why the receiver type is spelled SporepediaByteRecord -- a shape, not a class identity.",
+      "recorded_for": "the integrator, and asserted by the model test so a transcription slip cannot pass silently"
+    },
+    "call_sites_read_as_evidence": [
+      {
+        "caller": "0x00adfd60",
+        "callsite": "0x00adfeaa",
+        "receiver_setup": "0x00adfea3 CALL 0x00b3d3e0 then 0x00adfea8 MOV ECX,EAX -- the receiver is whatever that call returned",
+        "result_consumed_at": "0x00adfeb2 `MOV byte ptr [ESI + 0x170], AL`",
+        "what_it_fixes": "the caller consumes AL alone and stores it into a byte field. The upper three bytes of EAX are never read, so the machine's partial register write is observationally the byte.",
+        "what_it_does_not_fix": "nothing. A store of a raw byte does not establish that the value is {0, 1}."
+      },
+      {
+        "caller": "0x00de5260",
+        "callsite": "0x00de5273",
+        "receiver_setup": "0x00de526c CALL 0x00675250 then 0x00de5271 MOV ECX,EAX",
+        "result_consumed_at": "0x00de5278 `TEST AL, AL` / 0x00de527a `JNZ 0x00de52c4`",
+        "what_it_fixes": "the caller zero-tests AL alone, a second independent confirmation that bits 8..31 of EAX are unobserved at every known call site.",
+        "what_it_does_not_fix": "a zero test is not a domain claim either: 0x02, 0x80 and 0xff all take the same branch as 1, so no boolean domain is established by this caller either."
+      }
+    ],
+    "neighbourhood": "0x005c0dc1 is a `C2 08 00` (RET 0x8) preceded by `8D 4E F4` / `E8 12 FF FF FF` and `B0 01` / `5E`, and 0x005c0de0 is a this-adjusting thunk `83 E9 0C` / `E9 18 00 00 00` that jumps into 0x005c0e00. Between them, at 0x005c0dd0, sits this isolated four-byte leaf, bracketed by 0xCC padding on both sides (0x005c0dc4..0x005c0dcf and 0x005c0dd4..0x005c0ddf). The surrounding functions are NOT reconstructed here and nothing is claimed about them; they are recorded because the padding is what fixes this body's exact extent from both ends.",
+    "not_modelled": [
+      "the identity of the byte at 0x24 (no member name, no type beyond 'one byte')",
+      "the receiver's total size and its class",
+      "the slot this body occupies in any table (six candidates, none declared)",
+      "bits 8..31 of EAX at a real call site",
+      "the value domain of the returned byte"
+    ]
+  },
+  "return_semantics": {
+    "kind": "value (1 byte)",
+    "value": "the byte at the receiver's displacement 0x24, verbatim, delivered in AL. No masking, no normalisation and no comparison: every one of 0x00..0xff survives the body unchanged.",
+    "register": "EAX, low byte only (AL)",
+    "width": 1,
+    "width_witness": "the destination operand of the only EAX definition is AL (0x8A form). The validator's own width oracle reads the same operand and yields WIDTH_1_IN_EAX.",
+    "upper_bytes": "NOT SET by the body and NOT claimed. 8A 41 24 is a partial register write; 0F B6 41 24 (MOVZX EAX, ...) would be four bytes and is absent. Both direct callers read AL alone (see mechanics.call_sites_read_as_evidence), and a one-byte return has unspecified upper bits in the i386 convention too, so the model and the machine agree that those three bytes carry no information.",
+    "contradiction_in_the_machine_record": "the persisted ABI envelope and the derived return sub-record both classify the value as 'pointer_like_in_EAX' / register_class 'pointer_like', and neither carries a return_type. That classification is an artifact of the SHAPE of the memory operand (a base-register operand read out of a pointer) and the listing refutes it: the only definition of EAX is a ONE-BYTE load from the receiver, which is not a pointer load and has pointer width nowhere in it. The record is reported as contradicted and NOT adopted -- adopting it would have made the reconstruction return a pointer this body does not return. This is the one place where the machine record and the listing disagree for this target, and the listing wins.",
+    "ownership": "none. The body performs no reference acquisition or release, allocates nothing, and stores nothing.",
+    "lifetime": "nothing is produced that outlives the call. The returned byte is a copy of a byte already in the receiver's own storage."
+  },
+  "evidence": {
+    "classification": "live, re-derived from the image for this package",
+    "runtime_validated": 0,
+    "persisted_pack": "reconstruction/evidence/005c0dd0/evidence.json (content_sha256 4e7ee0927d37c1e0c53d177f3827f92f67a426061d74439e74414143130793ca)",
+    "assembly": "GhidraMCP /read_memory at 0x005c0dd0 -> 8A 41 24 C3 CC CC CC CC; GhidraMCP /disassemble_bytes over 0x005c0da0..0x005c0def -> the two instructions at their addresses plus both padding runs",
+    "decompiler": "ABSENT. The pack's decompilation category is unavailable and missing_sections lists DECOMPILATION, so no decompilation of this VA exists, live or persisted. Nothing in this package is adjudicated by a decompiler, and where Ghidra's own record is wrong (return_type 'undefined', prototype '(void)', return_semantics 'pointer_like_in_EAX') the listing is followed and the disagreement is recorded.",
+    "decompiler_disagreements": [
+      "ghidra_function.signature is `undefined FUN_005c0dd0(void)`, which omits the hidden receiver. The listing's only memory operand is based on ECX and both ABI records say hidden_this true, so the receiver is real and the prototype is an artifact of Ghidra not modelling it.",
+      "return_semantics 'pointer_like_in_EAX' is refuted by the listing; see return_semantics.contradiction_in_the_machine_record.",
+      "return_type 'undefined' with return_type_resolved false is not a claim that nothing is returned: the listing writes AL."
+    ],
+    "direct_callees": [],
+    "indirect_transfers": 0,
+    "direct_callers": [
+      {
+        "va": "0x00adfd60",
+        "callsite": "0x00adfeaa",
+        "reference_type": "direct-call",
+        "reconstructed": false
+      },
+      {
+        "va": "0x00de5260",
+        "callsite": "0x00de5273",
+        "reference_type": "direct-call",
+        "reconstructed": false
+      }
+    ],
+    "xref_export_edges": "9 data references into this address from the twelve tables listed in mechanics.vtable_associations_recorded_not_modelled, plus the 2 direct-call in-edges above. No outgoing edge of any type.",
+    "machine_abi_record": {
+      "receiver": {
+        "register": "ECX",
+        "shape": "R-DIRECT",
+        "offsets": [
+          36
+        ],
+        "distinct_offsets": 1,
+        "max_offset": 36,
+        "written_through": 0,
+        "bounds_only": true,
+        "present": true,
+        "confidence": "INFERRED"
+      },
+      "parse": {
+        "declared_count": 2,
+        "unparsed": 0,
+        "degraded": false,
+        "flow_complete": true,
+        "local_extent": 0,
+        "layout": "json_instruction_list"
+      },
+      "dispatch": {
+        "indirect_calls": 0,
+        "call_offsets": [],
+        "vtable_shaped_loads": 0
+      },
+      "return": {
+        "register": "EAX",
+        "register_class": "pointer_like",
+        "type": null,
+        "void_possible": false,
+        "confidence": "INFERRED"
+      },
+      "stack_arguments": {
+        "observed_slots": 0,
+        "derived_slots": 0,
+        "gaps": 0,
+        "total_bytes": 0,
+        "widths_ambiguous": false
+      },
+      "cleanup": {
+        "bytes": 0,
+        "side": "caller",
+        "evidence": "ret with no immediate, no stack reads",
+        "confidence": "INFERRED"
+      },
+      "sret": {
+        "present": false,
+        "confidence": "APPROXIMATION",
+        "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed"
+      },
+      "conventions": {
+        "calling_convention": "__thiscall",
+        "candidate_conventions": [
+          "__thiscall",
+          "__fastcall"
+        ],
+        "confidence": "INFERRED",
+        "corroboration": "not_available",
+        "ambiguities": []
+      },
+      "verdict": "ABI_INFERRED",
+      "completeness": "CORE_RESOLVED",
+      "conflicts": []
+    },
+    "vtable_associations_not_used_as_evidence": "The twelve table references are recorded and asserted but used as evidence for NOTHING in the model. They are listed in the package header as constants, which is why the twelve data-segment addresses live in the header and not inside the function's own comment: validate._data_addresses is fed the target span WITH its comments, so a data address written there would read as a global reference this body does not have.",
+    "vtable_note": "the same shared-vtable neighbourhood is what the analogue search matched (IsEditable 0x00641400, func7Ch 0x00641460, HasName 0x00641770, func3Ch 0x006417b0, GetAssetID 0x006417c0, GetAuthorName 0x00641810, GetAuthorID 0x00641820, GetTags 0x00641850). Sharing a table is NOT sharing a slot, and it is certainly not sharing a name: this body sits at a different index from all of those."
+  },
+  "provenance": [
+    "reconstruction/evidence/005c0dd0/evidence.json -- the committed pack for this VA (disassembly, abi, abi_derived, ghidra_function, vtables, record; decompilation unavailable)",
+    "GhidraMCP /read_memory at 0x005c0dd0, 8 bytes -- the 8A 41 24 C3 CC CC CC CC re-read that fixes the exact byte length and the terminator form",
+    "GhidraMCP /disassemble_bytes over 0x005c0da0..0x005c0def -- the two instructions at their addresses, both 0xCC padding runs, the preceding RET 0x8 at 0x005c0dc1 and the adjusting thunk at 0x005c0de0",
+    "GhidraMCP /disassemble_bytes over 0x00adfe80..0x00adfec7 -- caller 0x00adfd60's call site, its receiver setup and the `MOV byte ptr [ESI+0x170], AL]` that consumes AL",
+    "GhidraMCP /disassemble_bytes over 0x00de5260..0x00de528f -- caller 0x00de5260's call site, its receiver setup and the `TEST AL, AL` that consumes AL",
+    ".spore-analysis/ghidra-exports/vtables.json -- the twelve tables, their slot indices, and the sdk true/false flag on each entry",
+    "knowledgegraph/spore.db, node label VTable name vt:013f7cc0 -- the same table recorded as INFERRED with 40 slots and namespace 'unattributed'",
+    "tools/reconstruction_tooling/abi_infer.py -- the derivation behind the persisted envelope (cited by the pack's own provenance)",
+    "/tmp/opencode/factory/w1/tasks/005c0dd0.json -- the assembled briefing this package was written against"
+  ],
+  "unresolved_questions": [
+    "What is the byte at 0x24? The receiver record is bounds_only, so nothing here identifies it. Calling it a flag, an enabled-bit, a mode, an is-editable bit or a validity bit would be a member story the evidence does not carry, and the model deliberately names no member. Settling it needs either an SDK declaration for this slot (the SDK tree is not present in this environment; the committed vtables export carries sdk=false for this entry) or a runtime trace that shows what sets the byte.",
+    "What is the C++ spelling of the one-byte return -- bool, unsigned char or std::uint8_t? The three compile to the same three bytes and the machine cannot choose between them. std::uint8_t is declared as the least committal option; this is a source-side choice and not a verified type. The validator agrees on the WIDTH (WIDTH_1_IN_EAX) and explicitly not on the spelling.",
+    "Is the value's domain {0, 1} or 0..255? Nothing in these two instructions masks anything, and both direct callers are domain-agnostic: 0x00adfeb2 stores the raw byte, and 0x00de5278's TEST AL,AL takes the same branch for 2, 0x80 and 0xff as for 1. The model therefore returns the byte verbatim and the model test REQUIRES 0x80 and 0xff to survive, which is the opposite of asserting a boolean. A bool declaration would be an invented domain.",
+    "What do bits 8..31 of EAX hold at a real call site? The body does not set them (8A is a partial register write) and no value is claimed. Both known call sites read AL alone, so they are unobservable in this build; a third-party caller that read the full EAX would see whatever it had left there. Settling this needs either an assertion that the upper bytes are dead (not present in this build) or a caller that reads them.",
+    "Which slot, in which table, is this body's interface position? Twelve tables reference it at six different indices (4, 14, 15, 26, 29, 33), so no single index is right for all of them and none is declared. Settling it needs the class hierarchy these tables belong to; the committed export records the 0x013f7cc0 family as namespace 'unattributed' with sdkCount 0.",
+    "What class is this receiver? The target record carries subsystem 'Sporepedia' and cluster 'sporepedia-online', and the tables this body sits in have SDK-named Sporepedia::cSPAssetDataOTDB neighbours -- but THIS entry is sdk=false and unnamed, so the class is not claimed and the type is spelled SporepediaByteRecord as a shape only.",
+    "The persisted ABI record's calling convention lists __fastcall as a candidate alongside __thiscall and reports corroboration 'not_available'. __thiscall is the one both the persisted and derived records resolve to, and it is the one the listing supports (a base-register receiver, a bare RET, zero stack slots), but the corroboration field is empty and this package does not upgrade that to a claim beyond what the two records already say."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The original process is driven to an object of this class with the byte at 0x24 set to 0 and then to a non-zero value, and the full 32-bit EAX is captured at the return each time, to confirm that the upper three bytes are dead in practice rather than merely unobserved at the two known call sites.",
+      "A trace captures AL at 0x00adfeaa's return and at 0x00de5273's return against the receiver's byte at 0x24, to confirm the two call sites really do read AL alone and that no intervening code widens it.",
+      "A trace writes a value other than 0 or 1 to the byte at 0x24 and follows where it is read, which is the only way to settle the {0, 1} versus 0..255 domain question that neither instruction nor either caller can.",
+      "A trace identifies the object type reaching either call site, to settle the class identity and therefore the byte's name, and to resolve the six-way slot ambiguity across the twelve tables."
+    ]
+  },
+  "validation": {
+    "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x005c0dd0', write=False)\"",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w1-005c0dd0 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. swarm_w1_005c0dd0.cpp swarm_w1_005c0dd0_model_test.cpp -o /tmp/w_005c0dd0 && /tmp/w_005c0dd0 -> clean build with zero warnings, test exit 0. g++ 16.2.1. The header and the .cpp each also compile clean as their own translation unit under the same flags, and the .cpp compiles clean under clang++ -m32 with the same flags.",
+    "model_test": "plain int main() with explicit checks, no framework and no external dependency. There is NO callee observer and the test says why: the body makes no transfer, so what stands in for an observer is a byte-level receiver snapshot taken on both sides of every call plus a decoy dispatch table whose six slots count their own invocations. Cases: A six byte values (0x00 0x01 0x7f 0x80 0xfe 0xff) round-trip verbatim, with 0x00 and 0x80 called out separately; B twelve candidate displacements are checked to be real decoys and then the result is required to be none of them, plus a mirror that moves only the byte at 0x24; C a four-byte EF BE AD DE pattern at 0x24..0x27 with the declared width, the machine instruction length, and a full-32-bit-register probe measurement that is DIFFERENTIAL: the probe is run twice with the receiver's address and its byte at +0x24 held fixed and only the three bytes at +0x25..+0x27 moved, and the whole return register must come back bit-identical; D the whole receiver fixture compared byte for byte before and after; E a receiver whose first word is a pointer to a second object with a different byte at 0x24; F two objects called through a trampoline so the result must follow ECX; G a dispatch-shaped table at the receiver's +0x00; H a pushed decoy word with ESP sampled either side of the return; I the full 32-bit return register with bits 0..7 asserted; J the recorded evidence constants checked against themselves.",
+    "mutation_checking": {
+      "method": "the package was copied to a scratch directory, one deliberate defect was injected into swarm_w1_005c0dd0.cpp (or into the header's recorded constants), then rebuilt and rerun with the mandated command. This run (2026-09-28, repair worker rp14) was repeated under BOTH g++ 16.2 and clang++ 22.1 at -O0, because the previous run used g++ only and a g++-only run cannot see a clang-only codegen defect. All 18 mutations plus the 2 documented equivalent mutants now return the SAME verdict under both compilers, at all three optimisation levels, and in both the single-command and the static-library link shapes. The unmutated baseline is exit 0 under all 12 of those combinations.",
+      "results": [
+        {
+          "mutation": "displacement 0x24 -> 0x20",
+          "outcome": "KILLED: 21 failing checks, exit 1"
+        },
+        {
+          "mutation": "displacement 0x24 -> 0x25 (off-by-one high)",
+          "outcome": "KILLED: 22 failing checks, exit 1"
+        },
+        {
+          "mutation": "displacement 0x24 -> 0x28",
+          "outcome": "KILLED: 21 failing checks, exit 1"
+        },
+        {
+          "mutation": "displacement 0x24 -> 0x2c",
+          "outcome": "KILLED: 21 failing checks, exit 1"
+        },
+        {
+          "mutation": "displacement 0x24 -> 0x00 (read the dispatch word's low byte)",
+          "outcome": "KILLED: 21 failing checks, exit 1"
+        },
+        {
+          "mutation": "two-level dereference: read +0x24 of the object the receiver's first word points at",
+          "outcome": "KILLED: SIGSEGV, exit 139"
+        },
+        {
+          "mutation": "constant stub: return 1 regardless of the receiver",
+          "outcome": "KILLED: 20 failing checks, exit 1"
+        },
+        {
+          "mutation": "constant stub: return 0 regardless of the receiver",
+          "outcome": "KILLED: 20 failing checks, exit 1"
+        },
+        {
+          "mutation": "boolean normalisation: return (value != 0)",
+          "outcome": "KILLED: 18 failing checks, exit 1"
+        },
+        {
+          "mutation": "dispatch: call through the receiver's +0x00 at slot 4",
+          "outcome": "KILLED: SIGSEGV, exit 139"
+        },
+        {
+          "mutation": "the value comes from a file-scope word; the receiver is not read",
+          "outcome": "KILLED: 20 failing checks, exit 1"
+        },
+        {
+          "mutation": "the receiver is ignored; a local stands in for it",
+          "outcome": "KILLED: 20 failing checks, exit 1"
+        },
+        {
+          "mutation": "declared return type widened to std::uint32_t (header and .cpp together)",
+          "outcome": "KILLED: 1 failing check (case C4, the declared width), exit 1"
+        },
+        {
+          "mutation": "a write to the receiver's +0x25 on the way out",
+          "outcome": "KILLED: 1 failing check (case D, the byte-for-byte comparison), exit 1"
+        },
+        {
+          "mutation": "a write of the SAME byte back to +0x24 on the way out",
+          "outcome": "SURVIVED: exit 0 -- and this verdict is CORRECT; see survivors. The previously recorded 7-failure kill was an artifact of the defective inline-asm probe, not a property of the suite."
+        },
+        {
+          "mutation": "recorded constant kReferencedSlotIndices: 33 -> 29 (a duplicated slot index)",
+          "outcome": "KILLED: 2 failing checks (cases J7 and J9), exit 1"
+        },
+        {
+          "mutation": "recorded constant kSpanBytes: 4 -> 5",
+          "outcome": "KILLED: 3 failing checks (cases J2, C5 and H4), exit 1"
+        },
+        {
+          "mutation": "recorded constant kReceiverFlagByteDisplacement: 0x24 -> 0x28",
+          "outcome": "KILLED: 23 failing checks, exit 1"
+        }
+      ],
+      "survivors": "Three injected defects survived this run, and all three are EQUIVALENT mutants or invisible-by-construction rather than test gaps. (1) and (2): reading a 16-bit or a 32-bit value at 0x24 and then narrowing it back to the declared one-byte return type ('word read', 'dword read'). Because the reconstruction's return type is one byte, the compiler emits the same code for both, so no assertion about the compiled program can separate them; the differential full-register measurement in C6 does not separate them either, because a narrowed read leaves nothing of the wider value in the return register. The width claim is therefore still anchored on the two things that CAN fail: the declared return type (case C4, which kills a wider declaration) and the machine instruction length (case C5, the 3-byte 0x8A form versus the 4-byte 0F 0xB6 form). (3) a write of the SAME byte value back to +0x24, which case D cannot see because D compares bytes and the bytes are identical. This third one was previously recorded as KILLED with 7 failing checks (F1, F2, F3, H1, H5, I1, I3) -- every one of them a probe-fed check and none of them a byte comparison. That kill was an artifact of the old inline-asm probe, and it is reproducible as such: the same mutant, in the same package, under the same g++ -O0 command, reports those 7 bogus failures with the probe left as it was and SEGFAULTS as soon as one unrelated fprintf is added inside call_probe. The old probe's verdict therefore depended on its own register allocation rather than on the machine. The current trampoline returns the same verdict with and without that perturbation.",
+      "known_limits": "A write of the same byte value back to +0x24 would be invisible to case D, which compares bytes; only a write of a different value is refutable, and that is what the mutation run exercised. Case E's two-level refutation depends on the receiver's first word being a decoy, so in a case where that word happened to be a valid pointer to an object with the same byte, only the invocation would differ. Nothing asserts the class, the slot, the field's name or the value domain, because no evidence for any of them exists for this target. PROBE STABILITY, now measured rather than assumed: the old inline-asm probe was unsound and the recorded mutation run could not have detected it, because every recorded mutation was injected and rebuilt at -O0 only. Re-running the UNMUTATED test with the old probe at other optimisation levels shows it segfaults under g++ at -O2 and -O3 and under clang++ at -O0, -O2 and -O3 -- the gate only ever exercised -O0, which is why only the clang++ -O0 segfault was ever seen. The replacement is a hand-written top-level assembly trampoline with no operand constraints for a compiler to disagree about, and a perturbation sweep of 10 semantically neutral perturbations of call_probe (extra volatile counter, unrelated fprintf, extra unused locals, re-reading the result through a volatile, re-reading the receiver through a local, an extra trampoline call) across 2 compilers x 3 optimisation levels returns exit 0 in 54 of 54 runs, with the verdict unchanged by the perturbation.",
+      "rerun_2026_09_28": "18 injected mutations: 17 KILLED, 1 SURVIVED (the same-byte write-back, which is genuinely undetectable by byte comparison and is already listed under known_limits). Both the kill and the survival verdicts are now identical under g++ and clang++ at -O0, -O2 and -O3. 2 further injected defects (word read, dword read, both narrowed to the declared one-byte return) SURVIVED under both compilers, as documented. The previously recorded 18/18 kill therefore becomes 17/18: the one lost kill is not a weakening of the suite, it is the removal of a FALSE POSITIVE -- see survivors and known_limits."
+    },
+    "wpedantic_note": "This package is NOT -Wpedantic-clean on GCC, and the cause is the prescribed calling-convention macro pattern itself rather than anything written here: GCC 16.2.1 rejects `__attribute__((thiscall))` on a non-class free function under -Wattributes, which -Wpedantic promotes, so even a two-line file containing only the prescribed #define block and a free function declaration fails. The mandated gate does not enable -Wpedantic and passes clean. The reference package records the same note.",
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "WARN",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "expected_reasons": {
+      "ABI": "PASS. The target span names PKG_SWARM_W1_005C0DD0_THISCALL, _convention_defines resolves that macro through the header the .cpp includes by quoted name, and the macro body carries the thiscall token; the persisted and derived records both resolve to __thiscall, so source_conventions contains thiscall and no oracle is contradicted. abi_derived.verdict is ABI_INFERRED (not ABI_UNKNOWN) and conventions.confidence is INFERRED (not unknown/approximation), so neither WARN arm is reached.",
+      "CALLS": "PASS. Both machine oracles are searched and both are empty: the xref export records no outgoing edge and the complete 2-instruction listing contains no CALL and no JMP. The machine-vs-machine arm has an explicit shape for exactly this -- two independent machine sources that both record no outgoing transfer -- and it is the evidence for the absence of a call. The source span names no address-suffixed callee other than its own symbol, which _callee_addresses excludes as the target's own address. edges_truncated and callees_truncated are both false.",
+      "GLOBALS": "PASS. The complete 2-instruction listing names no data-segment address and the source span names none either. This was checked deliberately, because validate._data_addresses is fed the span WITH its comments, so every hexadecimal literal written in a comment inside the function counts. The span was audited and contains no literal in [0x01300000, 0x02000000); the twelve data-segment table addresses are named only in the package header, which is outside the target span, and in this sidecar.",
+      "FIELDS/OFFSETS": "PASS, the grounded arm. The machine-derived receiver record enumerates exactly one displacement (0x24) with bounds_only true, and the source span declares exactly that one displacement and NO named field -- the body reads self[0x24] and never writes `->field`, so the `named_fields` WARN arm is not reached and there is no ungrounded declaration. bounds_only means the record can neither confirm nor refute a field NAME, which is precisely why no name is used; the check reports that the offsets are grounded and identifies no field by name, which is what the reconstruction claims.",
+      "CONSTANTS": "PASS. abi_derived.parse is {declared_count 2, unparsed 0, degraded false}, so the listing counts as fully consumed and declared_count matches the listing's own length. validate._hex_tokens strips comments before matching, so the target span presents exactly one distinct hexadecimal literal -- the 0x24 displacement -- and the listing contains it. On the stricter raw-text reading the same is true: the only other literals in the span are 0x8A, 0xC3, 0x24 and code addresses, and every one of them is either in the encoding or in the listing.",
+      "CONTROL FLOW": "PASS. The listing contains no conditional branch at all (branch count 0), so the branch graph is vacuously closed inside the recovered span and there is no target to fall outside it. The source span declares no `if`, which is correct: the body makes no decision.",
+      "VIRTUAL DISPATCH": "PASS. The complete body names no indirect transfer through a register or a memory operand, and abi_derived.dispatch agrees at 0. The span was audited for the slot-boundary tokens the check looks for (load_slot, object_slot, shell_slot, vtable, slot[) and contains none. This is the check that most needed auditing for this target, because the body IS present in twelve tables -- so the word 'vtable' was kept out of the function span entirely and the table fact lives in the file header and in this sidecar instead, with the reason recorded in evidence.vtable_associations_not_used_as_evidence.",
+      "RETURN SEMANTICS": "WARN, and the WARN is the persisted record being wrong rather than the source. evidence_returns.decide DEFERS to the pre-existing string-agreement arm whenever any ABI source carries a canonical return_type/return_semantics claim, and the persisted envelope carries return_semantics 'pointer_like_in_EAX' (with no return_type at all). So the arm compares the literal string 'pointer_like_in_EAX' against the source's declared 'std::uint8_t' and warns that the type 'differs or is semantically renamed'. Had the deferral not been in force, the machine oracle would have read the AL destination operand, derived WIDTH_1_IN_EAX, computed the declared width as 1, and passed. The listing refutes 'pointer_like': the only definition of EAX is a one-byte load from the receiver, which is not a pointer load. So the warning is a known-bad machine claim being reported verbatim, and the disagreement is recorded in return_semantics.contradiction_in_the_machine_record and in known_blockers. It is reported, not chased: a source that returned a pointer to match the string would be a worse reconstruction, not a better one.",
+      "EVIDENCE COVERAGE": "WARN, and it is not fixable from this package. It is derived purely from the pack's categories[*].availability over the static categories: this pack reports unavailable for callees_dependencies, contradictions, decompilation, external_callees, globals, semantic_hypotheses and types, giving 10 of 17 available. Several of those are unavailable BECAUSE the target is a four-byte leaf -- there are no callees, no globals and no types to report -- so the coverage number is measuring the emptiness of the body rather than a defect in the reconstruction. No source file, sidecar field or metadata edit can move it. The runtime axis is separate and is GATED at 0."
+    },
+    "not_verified": [
+      "The predicted verdicts above are a reading of the validator's own arms against this pack and this source, made before the run. The run recorded in validation.observed below is what the validator actually reported; where the two differ, the observed value is the one that counts and the difference is reported there.",
+      "Nothing about the RUNTIME axis is verified: no original-process trace exists in this repository and none was attempted."
+    ],
+    "observed": {
+      "captured_on": "2026-09-28",
+      "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x005c0dd0', write=False)\"",
+      "write": false,
+      "static": "WARN",
+      "runtime": "GATED",
+      "runtime_validated": 0,
+      "coverage": "0.875 (7 PASS, 1 WARN of 8 static checks that were adjudicable; the WARN is RETURN SEMANTICS)",
+      "aggregate_note": "the STATIC aggregate is WARN for exactly one reason: RETURN SEMANTICS. The seven structural checks that judge this reconstruction against the machine all PASS, and the eighth warns because the persisted ABI envelope's own return_semantics string is a classifier artifact that the listing refutes. The evidence-coverage dimension is separately WARN at 10 of 17 categories.",
+      "evidence_coverage": {
+        "status": "WARN",
+        "detail": "10 of 17 static evidence categories are available"
+      },
+      "checks": {
+        "ABI": "PASS",
+        "CALLS": "PASS",
+        "GLOBALS": "PASS",
+        "FIELDS/OFFSETS": "PASS",
+        "CONSTANTS": "PASS",
+        "CONTROL FLOW": "PASS",
+        "VIRTUAL DISPATCH": "PASS",
+        "RETURN SEMANTICS": "WARN"
+      },
+      "check_details_as_reported": {
+        "ABI": "calling convention is present in the target source span and canonical metadata",
+        "CALLS": "the machine-vs-machine rule: the xref export and the complete 2-instruction listing each record no outgoing transfer, which is evidence that this target makes no call; the source span names none either; the xref export at knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 0 outgoing call edge row(s) over 0 distinct address(es) for 0x005c0dd0; 2 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees",
+        "GLOBALS": "the complete 2-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no global; the xref export carries no data-reference edge type to corroborate against, and none is needed for an absence",
+        "FIELDS/OFFSETS": "the 1 displacement(s) the source span declares (0x24) and the 1 the complete 2-instruction listing names through ECX (0x24) are all within the machine-derived receiver bounds (0x24), so the offsets are grounded within the machine-derived receiver bounds; the record states where the body was seen reaching and not which member is which, so it identifies no field by name",
+        "CONSTANTS": "the machine listing is fully parsed (2 of 2 instruction(s), 0 unparsed) and all 1 source constant(s) appear in it",
+        "CONTROL FLOW": "the complete 2-instruction listing contains no conditional branch, which is itself the evidence that the body is straight-line; the source span declares no branch keyword, and keyword shape is a source-side signal that is not part of this verdict",
+        "VIRTUAL DISPATCH": "the complete 2-instruction body names no indirect transfer through a register or a memory operand and the machine dispatch record agrees at 0, so neither the body nor the source span claims virtual dispatch",
+        "RETURN SEMANTICS": "return type differs or is semantically renamed; review required"
+      },
+      "predictions_that_were_wrong": "none. All nine predicted verdicts (the eight static checks plus evidence coverage) matched the run, including the two that depend on the source's SHAPE rather than on its content: FIELDS/OFFSETS reached the grounded PASS arm only because the body declares the displacement 0x24 and names no field, and VIRTUAL DISPATCH passed only because the word 'vtable' was kept out of the function span entirely. Had either been written the obvious other way (a `field_24` member, or a comment about the twelve tables inside the function), both would have warned or failed.",
+      "source_resolution_caveat": "This run resolved reconstruction/staging/pkg-swarm-w1-005c0dd0/swarm_w1_005c0dd0.cpp for 0x005c0dd0, which is the correct file: the sidecar's top-level source_files array and its intended_paths both name the three staging files, reconstruction_knowledge.extract_metadata merges them into the record, and validate._source prefers src/ (absent for this VA) over reconstruction/staging/. The three paths sort so that the .cpp precedes the _model_test.cpp and the _types.hpp, and only the .cpp is a function definition, so the target span is the reconstruction body."
+    }
+  },
+  "known_blockers": [
+    "RETURN SEMANTICS (WARN, real and not fixable from this package): the persisted ABI envelope's return_semantics is 'pointer_like_in_EAX', the string-agreement arm compares that literal against the source's declared 'std::uint8_t', and the two do not match. The listing refutes the persisted claim -- the only definition of EAX is a one-byte load from the receiver, so the machine oracle is WIDTH_1_IN_EAX and the declared width is 1 -- but the deferral in evidence_returns.decide means the better oracle is never consulted when a canonical string claim exists. Deliberately declaring a pointer return to turn this into a PASS would produce a reconstruction that returns something the four bytes do not produce, so the WARN stands.",
+    "EVIDENCE COVERAGE (WARN, structural): 10 of 17 static categories are available. The unavailable ones include three (callees_dependencies, globals, external_callees) that are empty BECAUSE the body is a four-byte leaf, and one (decompilation) that was never collected for this VA. No edit to this package can move the number.",
+    "The SDK tree (~/apps/Spore-ModAPI) is not present in this environment, so the SDK cannot be consulted to name the byte at 0x24 or the class. The committed vtables export already records sdk=false for this entry, so the SDK would probably not have named it either, but that is an inference and is recorded as one.",
+    "RESOLVED (2026-09-28, repair worker rp14) -- THE PROMOTION GATE SEGFAULTED AND THE BLOCKER IS GONE. The gate's model test died with SIGSEGV under clang++ -m32 while g++ -m32 exited 0. Root cause, diagnosed rather than guessed: the inline-asm probe in call_probe took four register operands, and clang's -m32 operand allocator mishandles that shape. With the \"=&r\" early-clobbered probe pointer clang allocates EDX, spills the pointer to -0x24(%ebp) and then NEVER RELOADS it, so the block's first \"movl %%esp, 0(%[probe])\" executed with whatever EDX the enclosing frame last held -- under the gate's PIE link, an address inside .text -- and the store faulted. Dropping the '&' is no better: clang then assigns the probe pointer and the call target the SAME register. It was NOT the early-clobber constraint itself, NOT the register chosen for the call target, and NOT PIE/EBX. FIX, in the model test only: the inline-asm block was replaced by a hand-written TOP-LEVEL ASSEMBLY trampoline emitted from the test TU (a file-scope __asm__ block, since the gate compiles only the .cpp and the model test), taking (target, receiver, decoy, samples) as ordinary cdecl arguments and writing ESP-before-push, ESP-after-return and the full 32-bit EAX into a caller-owned three-word block. The reconstruction (swarm_w1_005c0dd0.cpp) and the recorded constants (swarm_w1_005c0dd0_types.hpp) are BYTE-IDENTICAL to before this repair -- md5 fc19580f0412b5c1fc37bd749fdaf846 and 13f8673be358947bddaf2a400be79eb0 -- so every claim the reconstruction makes about the machine is unchanged, and no assertion was removed. The trampoline is position-independent by construction (it names no symbol; the target arrives as an argument), so it is correct under the gate's PIE link without needing a GOT base in EBX, and it keeps the samples pointer in the callee-saved EBX rather than a caller-saved register, because it makes an indirect call to a function it knows nothing about. Two further fragilities were removed on the way: the block uses NO \"m\" operand at all (the pushl moves ESP, so an ESP-relative memory operand would be read against the wrong ESP -- the defect another package in this corpus shipped until it fired only at -O2), and case C6's control no longer assumes the probe's entry state survives into the return. That second one was a second, latent bug the segfault was hiding: the old C6 zeroed EAX in the probe and asserted bits 8..31 == 0 afterwards, but clang -O0 compiles re_005c0dd0 as 'movl -4(%ebp),%eax; movl %eax,-8(%ebp); movl -8(%ebp),%eax; movb 36(%eax),%al' -- the receiver POINTER lands in EAX and only AL is written, so the upper bytes carried the receiver's own address (measured: 0xfffaacef for a planted 0xef) rather than the probe's zero. g++ emits 'movzbl (%eax),%eax', which zero-extends, so the old check passed there by accident and was a statement about one compiler's codegen, not about the width. C6 is now differential and needs no assumption at all about what the upper bytes contain: hold the receiver's address and its byte at +0x24 fixed, move only +0x25..+0x27, and require the entire 32-bit return register to be bit-identical. That is STRICTLY STRONGER -- it kills a word read (which the old zeroing form provably could not distinguish, as the file's own comment admits) as well as a dword read. VERIFICATION: the section-5 reproduction (clang++ -std=c++17 -Wall -Wextra -Werror -m32, static-library link via ar/ranlib, /tmp/g_test) exits 0; g++ -m32 single-command exits 0; all 12 combinations of {g++, clang++} x {-O0, -O2, -O3} x {single-command, static-library} exit 0; and the link was also checked with -no-pie, -pie, -fPIE and -fPIC -no-pie, all exit 0. A perturbation sweep of 10 semantically neutral changes to call_probe returns exit 0 in 54 of 54 runs, which the old probe could not do: the old probe reports 7 bogus probe-fed failures for one mutant with no extra code and SEGFAULTS for the same mutant with one unrelated fprintf added. The 18-mutation suite was re-run under both compilers: 17 KILLED, 1 SURVIVED (the same-byte write-back, which case D cannot see by construction and which known_limits already documented), plus the 2 documented equivalent width mutants, which still survive under both compilers as recorded."
+  ]
+}

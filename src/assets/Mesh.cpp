@@ -78,8 +78,14 @@ bool meshFromGmdl(const GmdlModel& model, uint32_t meshIndex, Mesh& out,
   if ((ib.indexCount % 3u) != 0u) {
     return fail(error, "mesh: triangle-list index count is not divisible by 3");
   }
-  if (ib.indexCount > std::numeric_limits<size_t>::max() / 2u ||
-      ib.bytes.size() < static_cast<size_t>(ib.indexCount) * 2u) {
+  // The index buffer must hold ib.indexCount 16-bit indices. Written as a
+  // division rather than as `ib.bytes.size() < indexCount * 2u` guarded by
+  // `indexCount > size_t::max() / 2u`: that guard compares a uint32_t against
+  // SIZE_MAX/2, so on any platform whose size_t is 64 bits it is a
+  // tautologically-false comparison that clang++'s -Wtautological-constant-
+  // out-of-range (inside the -Werror promotion gate) rejects. The division form
+  // is the same predicate without the dead disjunct and is overflow-free.
+  if (ib.bytes.size() / 2u < static_cast<std::size_t>(ib.indexCount)) {
     return fail(error, "mesh: index buffer truncated");
   }
   if (vb.descIndex >= model.descriptors.size()) {

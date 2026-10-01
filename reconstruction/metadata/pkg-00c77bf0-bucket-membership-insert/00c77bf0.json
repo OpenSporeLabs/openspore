@@ -1,0 +1,316 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00C77BF0-BUCKET-MEMBERSHIP-INSERT",
+  "subsystem": "Simulator",
+  "cluster": "sim-core-hash-table-probe",
+  "queue_id": "",
+  "implementer_id": "w10/0x00c77bf0",
+  "va": "0x00c77bf0",
+  "address": "0x00c77bf0",
+  "function_address": "0x00c77bf0",
+  "entry_address": "0x00c77bf0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "ghidra_name": "FUN_00c77bf0",
+  "normalized_symbol": "bucket_membership_insert_00c77bf0",
+  "reconstructed_symbol": "bucket_membership_insert_00c77bf0",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0.hpp",
+    "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0.cpp",
+    "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0_model_test.cpp",
+    "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/mutation_test.sh"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0.hpp",
+    "source": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0.cpp",
+    "model_test": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0_model_test.cpp",
+    "mutation_harness": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/mutation_test.sh"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (receiver in ECX), one ordinary stack argument, callee stack cleanup",
+    "calling_convention_observation": "The derived ABI record (categories.abi_derived) abstains from naming a convention: its receiver inference is 'ecx_reassigned_before_deref' and it lists __stdcall and __thiscall as candidates with confidence UNKNOWN. The body settles it. 0x00c77bfa is ADD ECX,0x111c and the two reads that follow are MOV EAX,[ECX+0x4] and DIV [ECX+0x8], so ECX on entry is a pointer to a large object and the two fields are read relative to it, biased by 0x111c. The terminal at 0x00c77c4c is C2 04 00, a RET with an immediate of four, so the entry removes one word of its own. One receiver in ECX, one word on the stack, callee cleanup: that is __thiscall. __stdcall would put the first argument on the stack, and the body reads the argument from entry ESP+0x4 into EDI before it touches ECX, so the argument is unambiguously a stack argument and not the receiver. The abi_infer abstention is disclosed rather than relied upon.",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "machine_type": "uint32",
+        "normalized_name": "key",
+        "read_at": "0x00c77bf6, MOV EDI,dword ptr [ESP+0x20] (the same slot after SUB ESP,0x10 and three pushes)"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4 (0x00c77c4c, bytes C2 04 00)",
+    "termination": "single RET at 0x00c77c4c; the body is 95 bytes and ends there",
+    "receiver": true,
+    "hidden_receiver": "ECX",
+    "return_type": "bool",
+    "return_semantics": "one byte. 0x00c77c21 is SETNZ BL over the match counter, 0x00c77c24/0x00c77c26 branch on it, and 0x00c77c46 is MOV AL,BL. Only AL is written, so the contract is 'AL is 0 or 1'. The upper three bytes of EAX are not part of it: at that point EAX still holds the array pointer the DIV sequence loaded at 0x00c77c07, and nothing in the body overwrites them. No caller in this package reads them.",
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "saved_registers": [
+      "EBX",
+      "ESI",
+      "EDI"
+    ],
+    "frame": "SUB ESP,0x10 and PUSH EBX/ESI/EDI. The frame is what puts the incoming argument at ESP+0x20, the displacement both the load at 0x00c77bf6 and the store at 0x00c77c28 use.",
+    "callee_side_stack_accounting": "Three words enter immediately in front of CALL 0x00de5df0 (0x00c77c30, 0x00c77c35, 0x00c77c3a) and the body removes none of them: the instruction after the call is POP EDI. The only reading under which the epilogue is coherent -- three POPs, ADD ESP,0x10, then RET 0x4 returning the caller exactly where it started -- is that 0x00de5df0 removes all twelve. The modelled callee is therefore declared callee-cleanup with three arguments. NOTE ON WHAT IS AND IS NOT MEASURED: an earlier revision of this package's model test measured the entry's net stack effect through a hand-written trampoline with five calibration rungs; it was removed. Measuring it requires a stack the caller owns and a callee whose cleanup is the thing under test, and every arrangement of that either trusts what it measures or reintroduces the frame discipline it needs. The fact is instead asserted three ways that a mutation breaks: the transcribed terminator bytes, the entry's declared prototype (a std::is_same static_assert in the test), and the modelled callee's three-argument callee-cleanup declaration."
+  },
+  "observed_mechanics": {
+    "note": "worker-authored transcript of the same read that produced the source. It is agreement-in-transcript and is never promoted to a verdict by the validator.",
+    "listing_source": "GhidraMCP /disassemble_function (39 instructions, categories.disassembly.value.instructions) cross-checked against GhidraMCP /read_memory over 95 bytes at 0x00c77bf0; the two agree instruction for instruction and byte for byte",
+    "parse_record": "categories.abi_derived.value.parse: declared_count 39, degraded false, unparsed 0 -- the machine parse consumed the listing in full, so the listing is the whole body and not a slice. The committed validation record independently reports 'all 4 conditional branch target(s) in the complete 39-instruction listing lie inside the recovered body span 0x00c77bf0..0x00c77c4c'",
+    "body_bytes": "83 ec 10 | 53 | 56 | 57 | 8b 7c 24 20 | 81 c1 1c 11 00 00 | 33 d2 | 8b f8 | f7 71 08 | 8b 41 04 | 33 f6 | 8b 14 90 | 85 d2 | 74 0c | 3b 3a | 75 01 | 46 | 8b 52 04 | 85 d2 | 75 f4 | 85 f6 | 0f 95 c3 | 84 db | 75 1c | 88 5c 24 20 | 8b 54 24 20 | 52 | 8d 44 24 10 | 50 | 8d 54 24 18 | 52 | 89 7c 24 18 | e8 ac e1 16 00 | 5f | 5e | 8a c3 | 5b | 83 c4 10 | c2 04 00",
+    "instructions": [
+      "0x00c77bf0  83 ec 10              SUB ESP,0x10",
+      "0x00c77bf3  53                    PUSH EBX",
+      "0x00c77bf4  56                    PUSH ESI",
+      "0x00c77bf5  57                    PUSH EDI",
+      "0x00c77bf6  8b 7c 24 20           MOV EDI,dword ptr [ESP+0x20]",
+      "0x00c77bfa  81 c1 1c 11 00 00     ADD ECX,0x111c",
+      "0x00c77c00  33 d2                 XOR EDX,EDX",
+      "0x00c77c02  8b f8                 MOV EAX,EDI",
+      "0x00c77c04  f7 71 08              DIV dword ptr [ECX+0x8]",
+      "0x00c77c07  8b 41 04              MOV EAX,dword ptr [ECX+0x4]",
+      "0x00c77c0a  33 f6                 XOR ESI,ESI",
+      "0x00c77c0c  8b 14 90              MOV EDX,dword ptr [EAX+EDX*0x4]",
+      "0x00c77c0f  85 d2                 TEST EDX,EDX",
+      "0x00c77c11  74 0c                 JZ 0x00c77c1f",
+      "0x00c77c13  3b 3a                 CMP EDI,dword ptr [EDX]",
+      "0x00c77c15  75 01                 JNZ 0x00c77c18",
+      "0x00c77c17  46                    INC ESI",
+      "0x00c77c18  8b 52 04              MOV EDX,dword ptr [EDX+0x4]",
+      "0x00c77c1b  85 d2                 TEST EDX,EDX",
+      "0x00c77c1d  75 f4                 JNZ 0x00c77c13",
+      "0x00c77c1f  85 f6                 TEST ESI,ESI",
+      "0x00c77c21  0f 95 c3              SETNZ BL",
+      "0x00c77c24  84 db                 TEST BL,BL",
+      "0x00c77c26  75 1c                 JNZ 0x00c77c44",
+      "0x00c77c28  88 5c 24 20           MOV byte ptr [ESP+0x20],BL",
+      "0x00c77c2c  8b 54 24 20           MOV EDX,dword ptr [ESP+0x20]",
+      "0x00c77c30  52                    PUSH EDX",
+      "0x00c77c31  8d 44 24 10           LEA EAX,[ESP+0x10]",
+      "0x00c77c35  50                    PUSH EAX",
+      "0x00c77c36  8d 54 24 18           LEA EDX,[ESP+0x18]",
+      "0x00c77c3a  52                    PUSH EDX",
+      "0x00c77c3b  89 7c 24 18           MOV dword ptr [ESP+0x18],EDI",
+      "0x00c77c3f  e8 ac e1 16 00        CALL 0x00de5df0",
+      "0x00c77c44  5f                    POP EDI",
+      "0x00c77c45  5e                    POP ESI",
+      "0x00c77c46  8a c3                 MOV AL,BL",
+      "0x00c77c48  5b                    POP EBX",
+      "0x00c77c49  83 c4 10              ADD ESP,0x10",
+      "0x00c77c4c  c2 04 00              RET 0x4"
+    ],
+    "stores": "ONE, and it is not a store into the receiver: 0x00c77c28 is opcode 88, a ONE-BYTE move, of BL into dword ptr [ESP+0x20]. With the frame accounted for, [ESP+0x20] is entry ESP+0x4 -- the caller's own argument slot, the very word EDI was loaded from at 0x00c77bf6. 0x00c77c2c reads that dword back and pushes it. Nothing else in the body writes memory: the complete listing's other memory operands are all reads, and the committed validation record confirms the listing names no data-segment address.",
+    "constants": "the hexadecimal literals the body states are the ECX bias 0x111c (0x00c77bfa), the two disp8 operands 0x04 and 0x08 (0x00c77c07, 0x00c77c04), the SIB scale and the two stack displacements 0x20, 0x18 and 0x10, and the call's rel32. Every one of them is decoded out of the transcribed bytes in the source rather than restated beside them.",
+    "control_flow": "four conditional branches, all short and all inside the body: JZ 0x00c77c1f and JNZ 0x00c77c18/JNZ 0x00c77c13 forming the chain walk, and JNZ 0x00c77c44 skipping the insert on a hit. No JMP, no loop instruction, no switch table.",
+    "indirect_transfers": "none: the body's only transfer out is the direct CALL 0x00de5df0, and the committed validation record's VIRTUAL DISPATCH check resolves PASS with the dispatch record at zero indirect calls and no vtable-shaped loads."
+  },
+  "field_offsets": [
+    {
+      "displacement": "0x1120",
+      "decimal": 4384,
+      "access": "read, 4 bytes (MOV EAX,dword ptr [ECX+0x4] at 0x00c77c07, over a base biased by 0x111c)",
+      "at": "0x00c77c07",
+      "base": "ECX (the receiver), biased by 0x111c",
+      "named": false,
+      "meaning_claimed": "a pointer to an array of 4-byte bucket slots, indexed by the hashed key and scaled by four (SIB 0x90). That is what the instruction does; what the array IS is not claimed.",
+      "grounding": "categories.abi_derived.value.receiver names the base register and the offsets the body was SEEN reaching, at confidence INFERRED, and is bounds_only -- its own statement that the enumeration is open. The displacement and the width are declared; no member name, no class, no offsetof of a real struct, no vtable."
+    },
+    {
+      "displacement": "0x1124",
+      "decimal": 4388,
+      "access": "read, 4 bytes (DIV dword ptr [ECX+0x8] at 0x00c77c04, over a base biased by 0x111c)",
+      "at": "0x00c77c04",
+      "base": "ECX (the receiver), biased by 0x111c",
+      "named": false,
+      "meaning_claimed": "the divisor of an unsigned long division, so the number of buckets. A ZERO there faults the machine with #DE; no test arms a zero divisor, and the reconstruction's comment says so.",
+      "grounding": "as above"
+    },
+    {
+      "displacement": "0x111c",
+      "decimal": 4380,
+      "access": "ADD ECX,0x111c -- an immediate, not a field access",
+      "at": "0x00c77bfa",
+      "base": "ECX (the receiver)",
+      "named": false,
+      "meaning_claimed": "the bias the receiver base is moved by before the two field reads. Both displacements above are stated post-bias, and the source decodes them as bias + disp8 rather than restating 0x1120 and 0x1124.",
+      "grounding": "the four operand bytes 1C 11 00 00 at indices 12..15 of the transcription, pinned by a static_assert"
+    },
+    {
+      "displacement": "0x0 (node) and 0x4 (node)",
+      "decimal": "0 and 4",
+      "access": "read, 4 bytes each (CMP EDI,[EDX] at 0x00c77c13; MOV EDX,[EDX+0x4] at 0x00c77c18)",
+      "at": "0x00c77c13, 0x00c77c18",
+      "base": "EDX, a chain node address loaded from a bucket slot",
+      "named": false,
+      "meaning_claimed": "the node's key word at displacement 0 and its link word at displacement 4. These are two DIFFERENT words and the walk uses each in its own role; the model test corrupts neither but does read the node through raw dword loads at these displacements, so a body that confused them is caught.",
+      "grounding": "the two disp8/ModRM operand bytes in the transcription, pinned by static_asserts and re-checked at run time"
+    }
+  ],
+  "layout": {
+    "entry_address": "0x00c77bf0",
+    "body_start": "0x00c77bf0",
+    "body_end": "0x00c77c4c",
+    "body_span_bytes": 95,
+    "instruction_count": 39,
+    "callee_set": [
+      {
+        "va": "0x00de5df0",
+        "callsites": [
+          "0x00c77c3f"
+        ],
+        "count": 1,
+        "role": "reached on a miss only; receives the address of a twelve-byte stack local, the address of a four-byte slot holding the key, and the argument word with its low byte cleared; removes its own three words (the body removes none)",
+        "own_semantics_reconstructed_here": false
+      }
+    ],
+    "callee_set_source": "the complete 39-instruction listing, whose only E8 is at 0x00c77c3f with rel32 AC E1 16 00, decoding to 0x00de5df0 from kEntryVa + 79 + 5. The committed index record's callee_dependencies is MISSING, so the listing rather than that projection is the callee oracle here.",
+    "argument_slot_reuse": "The single most easily misread thing in this body. The store at 0x00c77c28 writes ONE byte into the caller's own argument slot, and the dword read back at 0x00c77c2c is the value handed to the callee as its third argument. Because the only path that reaches 0x00c77c28 is the fall-through of TEST BL,BL / JNZ at 0x00c77c24, BL is provably 0 there, so the third argument is the key with its low byte CLEARED. It is not the key unchanged, and it is not a literal zero."
+  },
+  "the_substantive_finding": {
+    "claim": "the third argument to 0x00de5df0 is `key & 0xffffff00`, not the literal 0 that the decompilation prints",
+    "decompilation_says": "FUN_00de5df0(local_c, &local_10, 0)",
+    "listing_says": "MOV byte ptr [ESP+0x20],BL at 0x00c77c28 followed by MOV EDX,dword ptr [ESP+0x20] at 0x00c77c2c and PUSH EDX at 0x00c77c30. With SUB ESP,0x10 and three pushes, [ESP+0x20] is entry ESP+0x4 -- the argument slot -- so the word pushed is the argument with its low byte replaced by BL, and BL is 0 on the only path that gets here.",
+    "how_the_disagreement_is_decided": "by a test, not by preference. Three scenes and three in-file mutants separate the three readings: `key`, `0`, and `key & 0xffffff00` are three different numbers for any key whose low byte is set, and the model test asserts the third while carrying the other two as mutants (`insert_third_argument_is_the_key`, `insert_third_argument_is_zero`). Both are refuted.",
+    "not_claimed": "the original source expression. `key & ~0xffu`, a stale stack slot the compiler reused, and a boolean-or-flag argument that happens to share a slot are indistinguishable at this boundary; only the value the callee observes is recoverable, and only that is claimed.",
+    "consequence_if_wrong_either_way": "a reconstruction passing a literal 0 is wrong for every key whose low byte is set, and one passing the key unchanged is wrong for every key whose low byte is clear. Neither error is visible on a key like 0x100, which is why the scene set includes 0x1234abcd explicitly."
+  },
+  "globals": [],
+  "globals_note": "None, and the body really has none. Every memory operand is register-relative or stack-relative; the complete listing names no data-segment address. The committed validation record's GLOBALS check resolves PASS on coverage complete, reading the data-reference artifact knowledgegraph/triage/datarefs-2540f2ca.tsv whole and recording no data reference out of 0x00c77bf0.",
+  "vtables": [],
+  "types": [],
+  "type_scope": "none asserted. The receiver is an incomplete `struct BucketTable`, the node is a two-word record used as the test's storage, and the model test's image is a flat dword run with a guard band. No class, no vtable identity, no field name, no SDK symbol. sdk_symbol is null and the SDK was not consulted for this target.",
+  "semantic_findings": [
+    "The body is a chained-hash-table membership probe with insert-on-miss: hash the key into one bucket, count every matching node in that chain, hand the key to 0x00de5df0 only when the count is zero, and answer 'was it already there'.",
+    "The bucket index is the UNSIGNED REMAINDER of the key modulo the dword at +0x1124, and the bucket is a FOUR-BYTE slot (SIB 0x90). The quotient, a power-of-two mask, and a byte stride are three different answers, and the scene set uses a bucket count of 3 with the key 5, for which 5%3==2, 5/3==1 and 5&2==0.",
+    "The chain node's key is at +0 and its link at +4: two different words, used in two different roles. A body that compares the link or follows the key is a different program.",
+    "The count, not the last comparison, is what the return reports. The walk counts EVERY match. NOT CLAIMED as a testable property: that the walk must continue past the first match -- stopping at the first match and counting every match answer 'was it there at least once' identically, so no case pretends to distinguish them.",
+    "The insert is skipped entirely on a hit, and the return value is NOT the callee's result: the body's epilogue is POP EDI / POP ESI / MOV AL,BL, and BL is the pre-call flag.",
+    "The body's one store is a single byte into its own incoming argument slot, not into the receiver, and it is load-bearing rather than dead -- see the_substantive_finding.",
+    "Three words go in front of the single call and the body removes none of them, so the callee must remove all twelve for the epilogue to be coherent. The modelled callee is therefore declared callee-cleanup."
+  ],
+  "not_claimed": [
+    "The identity of the receiver, of the two fields at +0x1120 and +0x1124, and of the chain nodes. The machine gives displacements and access widths and nothing more; the receiver record is bounds_only.",
+    "What the table is FOR. A mission log, a visited set, a name index -- the body is consistent with all of them and the evidence here distinguishes none of them.",
+    "The semantics of 0x00de5df0. Only the three values this body hands it are modelled, plus the fact that it removes its own three words.",
+    "That the walk must continue past the first match, which is not distinguishable from early exit at this boundary.",
+    "The original source expression behind the third argument, and the direction in which the two locals are stacked -- both are stated as facts about the machine and neither is asserted of the reconstruction.",
+    "The upper three bytes of EAX. The body writes only AL.",
+    "Any SDK method name, and any runtime behaviour."
+  ],
+  "callers": {
+    "count": 16,
+    "source": "categories.callers_dependencies and the index record's dependencies block",
+    "note": "A fan-in count is not a semantic classification and nothing in this package is inferred from who calls it. The record names one of them, PoliticalOwnershipS..., and that name was NOT adopted: a caller-side name is not evidence about this body, and the 16 callers are mostly in a 0x00ae9c90-0x00aecf90 window whose relationship to this body is not established here."
+  },
+  "confidence": "high for the body shape, the two receiver displacements, the remainder/stride, the node layout, the insert-on-miss condition, the argument set and the one-byte store -- the listing is complete (39 of 39 instructions, 0 unparsed), corroborated byte for byte by an independent memory read, and every constant in the source is decoded out of the transcribed bytes rather than restated; deliberately unclaimed for the receiver's identity, the table's purpose, the callee's semantics, the original source expression behind the third argument, and anything at run time",
+  "unresolved_questions": [
+    "The original source expression behind the third argument. The value the callee observes is `key & 0xffffff00` and that is what is claimed and tested, but a flag argument sharing a reused stack slot is indistinguishable from a mask at this boundary.",
+    "What the table is and what the key identifies. Sixteen callers are recorded, one carries a name, and none of that evidence licenses a purpose for the body.",
+    "Whether 0x00de5df0's own semantics make it an insert, a notification, or a registration. The body discards its return value and only the miss path reaches it; the name used here ('insert') describes the ROLE this body gives it, not what it does.",
+    "Why the index record's callee_dependencies is MISSING while callers_dependencies is populated. The complete listing's single E8 is the callee oracle used here, and it agrees with the decompilation's FUN_00de5df0.",
+    "Whether the three words the callee removes are twelve bytes of arguments or a mix of arguments and something else. The body pushes three words and pops none, so the total is twelve; nothing here says what the callee does with them internally.",
+    "Runtime behaviour. No original-process trace exists in this repository for this target; nothing was run and nothing failed."
+  ],
+  "evidence_provenance": [
+    "reconstruction/evidence/00c77bf0/evidence.json (categories.disassembly, categories.decompilation, categories.abi_derived, categories.abi, categories.function_identity; content_sha256 33129ca39c05c71b0ee68e0c19ab56f19cc1ed5ab9872ec289850908347655db, integrity verified, evidence_state LIVE)",
+    "GhidraMCP /read_memory over 95 bytes at 0x00c77bf0, used to confirm the transcription byte for byte",
+    "reconstruction/evidence/00c77bf0/validation.md (the pre-existing record: CONTROL FLOW, CONSTANTS, GLOBALS and VIRTUAL DISPATCH already PASS on coverage complete; ABI, CALLS, FIELDS/OFFSETS and RETURN SEMANTICS were NOT_AVAILABLE for want of a source span, which is what this package supplies)"
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert/bucket_membership_insert_00c77bf0_model_test.cpp",
+    "entry": "int main()",
+    "cases": [
+      "test_the_whole_battery_over_every_scene",
+      "test_index_is_the_remainder_not_the_quotient_or_a_mask",
+      "test_the_two_receiver_words_are_not_swapped_or_shifted",
+      "test_walks_the_chain_to_its_end_following_the_link_word",
+      "test_inserts_exactly_once_on_a_miss_and_never_on_a_hit",
+      "test_the_value_slot_carries_the_key",
+      "test_third_argument_is_the_key_with_its_low_byte_cleared",
+      "test_the_two_pointers_are_the_two_adjacent_locals",
+      "test_stack_effect_is_pinned_by_the_bytes_and_the_prototype",
+      "test_machine_facts",
+      "test_writes_nothing_into_the_receiver",
+      "test_every_mutant_is_refuted"
+    ],
+    "scenes": 12,
+    "mutants": 16,
+    "mutants_refuted": 16,
+    "mutants_refuted_by_value": 10,
+    "mutants_refuted_by_fault": 6,
+    "fault_refutations_explained": "Six mutants are refuted by faulting rather than by answering wrongly, and that is a property of what they do, not of the harness: reading the array pointer out of the divisor's slot dereferences an address that is really the small integer 4, byte-stride indexing walks off the slot array, following the chain through the key word jumps to whatever the key is, and the three terminator mutants return with the wrong amount of stack. Each is driven in a FORKED CHILD so that one fault cannot stop the battery from judging the other thirteen, and the harness prints which mechanism caught each.",
+    "gate": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Werror, each TU compiled separately, archived with `ar rc` (archive deleted before every link), then linked and run. Unperturbed: PASS (exit 0) at both -O0 and -O2.",
+    "external_perturbation": "mutation_test.sh applies 24 single-token edits to COPIES of the .cpp and the .hpp and rebuilds BOTH translation units from the mutated copy: 14 of the reconstruction's own body and 10 of the stated encoding or constants. All 24 are refuted -- 10 on a value, 10 by a compile-time static_assert in the package, 4 by fault. The committed sources are never modified; every mutant is built in its own self-contained directory under /tmp, and the archive is deleted and recreated with `ar rc` before every link so no stale object can win a link.",
+    "external_perturbations": 24,
+    "external_refuted": 24,
+    "external_refuted_by_value": 10,
+    "external_refuted_at_compile_time": 10,
+    "external_refuted_by_fault": 4,
+    "optimisation_levels_checked": [
+      "-O0",
+      "-O2"
+    ]
+  },
+  "runtime_validation": "not run -- no original-process trace exists in this repository for this target. Nothing was attempted and nothing failed. The runtime axis is an open capability gate, not a pass and not a failure.",
+  "runtime_validation_status": "not_run",
+  "runtime_gates": [
+    "gate-simulator-receiver-identity",
+    "gate-simulator-table-purpose",
+    "gate-simulator-callee-00de5df0-semantics"
+  ],
+  "review_status": "pending integrator review",
+  "integration_status": "staging only; not promoted to src/ and not committed",
+  "worker_ownership": {
+    "implementer_id": "w10/0x00c77bf0",
+    "staging_package": "reconstruction/staging/pkg-00c77bf0-bucket-membership-insert",
+    "note": "0x00c772c0 is owned by another worker; this package makes no claim about it and did not touch its staging directory. No tool under tools/** was modified."
+  },
+  "validation": {
+    "command": "python3 tools/openspore.py --json validate 0x00c77bf0",
+    "aggregate_static": "WARN",
+    "runtime": {
+      "status": "GATED",
+      "validated": 0,
+      "gated": true,
+      "reason": "no original-process trace exists in this repository for this target; the gate is open, nothing was attempted, and nothing failed"
+    },
+    "checks": {
+      "ABI": "WARN",
+      "CALLS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "FIELDS/OFFSETS": "WARN",
+      "GLOBALS": "PASS",
+      "RETURN SEMANTICS": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "coverage_detail": {
+      "CALLS": "complete",
+      "CONSTANTS": "complete",
+      "CONTROL FLOW": "complete",
+      "GLOBALS": "complete",
+      "VIRTUAL DISPATCH": "complete",
+      "ABI": "partial",
+      "FIELDS/OFFSETS": "partial",
+      "RETURN SEMANTICS": "partial"
+    },
+    "warn_causes": [
+      "ABI WARN: the derived ABI record abstained (ABI_UNKNOWN) with 'flow_not_modelled: the linear ESP walk ends at +12, so the listing is not one path'. That is abi_infer's model of the body, not a defect in the reconstruction; the same record separately lists 'receiver_not_determinable: ecx_reassigned_before_deref', which the ADD ECX,0x111c at 0x00c77bfa trips, and lists __stdcall and __thiscall as candidate conventions without choosing.",
+      "FIELDS/OFFSETS WARN: the entry's body declares the three receiver-relative literals the instructions state (+0x111c, +0x4, +0x8), and the validator reports them as reconstruction-declared with no machine-derived struct layout to corroborate them, because the ABI record names no receiver register. The displacements are OBSERVED; the corroborating receiver record does not exist. Both WARNs therefore trace to the same upstream abstention in the derived ABI record, and neither is a disagreement between this reconstruction and the machine.",
+      "Deliberately NOT declared in the entry's body: the post-bias addresses 0x1120 and 0x1124. They are where the two field reads land, and the header derives them as bias + disp8, but no instruction states them -- they are a sum -- and an earlier revision that declared them in the body turned CONSTANTS FAIL on exactly that ground ('3 source constant(s) are absent from the machine listing'). The header carries them; the body declares only what the listing states."
+    ],
+    "return_semantics_disclosure": "RETURN SEMANTICS is PASS at coverage partial, detail 'return type agrees with the bounded ABI record'. Read that as source-vs-record agreement and not as a machine witness: the committed ABI record classifies this body's EAX state as return_semantics 'unclassified_in_EAX' with inference RT2 register_class 'aggregate_unknown', because the record's own must-analysis could not width the result. The reconstruction declares bool because 0x00c77c21 is SETNZ BL and 0x00c77c46 is MOV AL,BL, so the body's own contract is one byte -- and the upper three bytes of EAX, which nothing here reads, still hold the array pointer the DIV sequence loaded. Disclosed, not relied upon."
+  }
+}

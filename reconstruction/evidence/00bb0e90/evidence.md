@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `8a539d2d4e60a67d1cd07a57cfe7c0c12b08bd19575720daddcfd032e018c523`
+- Content SHA-256: `d83006c71c27fd7265183b968a54df36b5125320a3cf1c781d61a7e816d0a96f`
 
 ## abi
 
@@ -58,7 +58,6 @@
   },
   "abstained_because": [
     "flow_not_modelled: the linear ESP walk ends at +36, so the listing is not one path",
-    "unparsed_lines_present: 3 line(s) matched no grammar rule",
     "receiver_not_determinable: ecx_reassigned_before_deref",
     "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_reassigned_before_deref), and the convention rule that would apply discriminates on receiver absence"
   ],
@@ -71,7 +70,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "6071d91dc6457e2d0903e183c83ad0d3f9fb7e1347cad429fe70f39db83cb46d",
+  "content_sha256": "a2c0d58ba577692f4ca8e6f36925538859b45aa1029eaa8b03279993f104d3e2",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -100,7 +99,7 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0086"
+        "obs-0083"
       ],
       "claim": "the callee pops 8 byte(s) of stack arguments",
       "confidence": "OBSERVED",
@@ -130,10 +129,10 @@
         "obs-0019",
         "obs-0020",
         "obs-0021",
-        "obs-0065",
+        "obs-0064",
+        "obs-0068",
         "obs-0069",
-        "obs-0070",
-        "obs-0077"
+        "obs-0075"
       ],
       "claim": "the register receiver is undetermined: ecx_reassigned_before_deref",
       "confidence": "UNKNOWN",
@@ -150,10 +149,10 @@
         "obs-0019",
         "obs-0020",
         "obs-0021",
-        "obs-0065",
+        "obs-0064",
+        "obs-0068",
         "obs-0069",
-        "obs-0070",
-        "obs-0077"
+        "obs-0075"
       ],
       "claim": "the calling convention is unknown: the receiver is undetermined (ecx_reassigned_before_deref) and every remaining discriminator needs receiver absence",
       "confidence": "UNKNOWN",
@@ -161,7 +160,7 @@
     },
     {
       "based_on": [
-        "obs-0086"
+        "obs-0083"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -335,7 +334,353 @@
       "id": "obs-0051"
     },
     {
-      "id
+      "id": "obs-0052"
+    },
+    {
+      "id": "obs-0053"
+    },
+    {
+  
+[TRUNCATED]
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "ret_form": "RET 0x8",
+    "return_register": "ST0",
+    "return_semantics": "float_or_x87_in_ST0",
+    "saved_registers": [
+      "EBP",
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x8"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at +36, so the listing is not one path",
+    "receiver_not_determinable: ecx_reassigned_before_deref",
+    "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_reassigned_before_deref), and the convention rule that would apply discriminates on receiver absence"
+  ],
+  "cleanup": {
+    "bytes": 8,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x8",
+    "side": "callee"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "a2c0d58ba577692f4ca8e6f36925538859b45aa1029eaa8b03279993f104d3e2",
+  "conventions": {
+    "ambiguities": [
+      "receiver_undetermined"
+    ],
+    "calling_convention": null,
+    "candidate_conventions": [
+      "__stdcall",
+      "__thiscall"
+    ],
+    "confidence": "UNKNOWN",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 1,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0083"
+      ],
+      "claim": "the callee pops 8 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 8,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0005"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0013",
+        "obs-0014",
+        "obs-0019",
+        "obs-0020",
+        "obs-0021",
+        "obs-0064",
+        "obs-0068",
+        "obs-0069",
+        "obs-0075"
+      ],
+      "claim": "the register receiver is undetermined: ecx_reassigned_before_deref",
+      "confidence": "UNKNOWN",
+      "id": "R0",
+      "value": {
+        "reason": "ecx_reassigned_before_deref",
+        "register": null
+      }
+    },
+    {
+      "based_on": [
+        "obs-0013",
+        "obs-0014",
+        "obs-0019",
+        "obs-0020",
+        "obs-0021",
+        "obs-0064",
+        "obs-0068",
+        "obs-0069",
+        "obs-0075"
+      ],
+      "claim": "the calling convention is unknown: the receiver is undetermined (ecx_reassigned_before_deref) and every remaining discriminator needs receiver absence",
+      "confidence": "UNKNOWN",
+      "id": "C10"
+    },
+    {
+      "based_on": [
+        "obs-0083"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001"
+      ],
+      "claim": "the return value is carried in ST0: an x87 or SSE instruction appears in the body",
+      "confidence": "APPROXIMATION",
+      "id": "RT1",
+      "value": "ST0"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-0001"
+    },
+    {
+      "id": "obs-0002"
+    },
+    {
+      "id": "obs-0003"
+    },
+    {
+      "id": "obs-0004"
+    },
+    {
+      "id": "obs-0005"
+    },
+    {
+      "id": "obs-0006"
+    },
+    {
+      "id": "obs-0007"
+    },
+    {
+      "id": "obs-0008"
+    },
+    {
+      "id": "obs-0009"
+    },
+    {
+      "id": "obs-0010"
+    },
+    {
+      "id": "obs-0011"
+    },
+    {
+      "id": "obs-0012"
+    },
+    {
+      "id": "obs-0013"
+    },
+    {
+      "id": "obs-0014"
+    },
+    {
+      "id": "obs-0015"
+    },
+    {
+      "id": "obs-0016"
+    },
+    {
+      "id": "obs-0017"
+    },
+    {
+      "id": "obs-0018"
+    },
+    {
+      "id": "obs-0019"
+    },
+    {
+      "id": "obs-0020"
+    },
+    {
+      "id": "obs-0021"
+    },
+    {
+      "id": "obs-0022"
+    },
+    {
+      "id": "obs-0023"
+    },
+    {
+      "id": "obs-0024"
+    },
+    {
+      "id": "obs-0025"
+    },
+    {
+      "id": "obs-0026"
+    },
+    {
+      "id": "obs-0027"
+    },
+    {
+      "id": "obs-0028"
+    },
+    {
+      "id": "obs-0029"
+    },
+    {
+      "id": "obs-0030"
+    },
+    {
+      "id": "obs-0031"
+    },
+    {
+      "id": "obs-0032"
+    },
+    {
+      "id": "obs-0033"
+    },
+    {
+      "id": "obs-0034"
+    },
+    {
+      "id": "obs-0035"
+    },
+    {
+      "id": "obs-0036"
+    },
+    {
+      "id": "obs-0037"
+    },
+    {
+      "id": "obs-0038"
+    },
+    {
+      "id": "obs-0039"
+    },
+    {
+      "id": "obs-0040"
+    },
+    {
+      "id": "obs-0041"
+    },
+    {
+      "id": "obs-0042"
+    },
+    {
+      "id": "obs-0043"
+    },
+    {
+      "id": "obs-0044"
+    },
+    {
+      "id": "obs-0045"
+    },
+    {
+      "id": "obs-0046"
+    },
+    {
+      "id": "obs-0047"
+    },
+    {
+      "id": "obs-0048"
+    },
+    {
+      "id": "obs-0049"
+    },
+    {
+      "id": "obs-0050"
+    },
+    {
+      "id": "obs-0051"
+    },
+    {
+      "id": "obs-0052"
+    },
+    {
+      "id": "obs-0053"
+    },
+    {
+  
 [TRUNCATED]
 ```
 
@@ -359,13 +704,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint FUN_00bb0e90(undefined4 param_1,int param_2)\n\n{\n  float fVar1;\n  int iVar2;\n  int *piVar3;\n  bool bVar4;\n  int *piVar5;\n  int *piVar6;\n  char cVar7;\n  float *pfVar8;\n  int *piVar9;\n  float local_38;\n  float local_34;\n  int local_30;\n  float local_2c;\n  float local_28;\n  float local_24;\n  float local_20;\n  float local_1c [2];\n  int *local_14;\n  int *local_10;\n  undefined4 local_c;\n  \n  local_14 = (int *)0x0;\n  local_10 = (int *)0x0;\n  local_c = 0;\n  FUN_00bb0ca0(param_1,1,0,&local_14);\n  fVar1 = *(float *)(param_2 + 0x10);\n  local_34 = fVar1;\n  if (fVar1 <= 0.0) {\n    local_34 = DAT_0156c638 * 1.1;\n  }\n  local_38 = DAT_0156c638 * 0.015625;\n  bVar4 = true;\n  local_24 = DAT_0156c638 * 0.0234375;\n  local_28 = 3.4028235e+38;\n  local_30 = 0;\n  do {\n    piVar6 = local_10;\n    piVar9 = local_14;\n    if (local_14 != local_10) {\n      do {\n        iVar2 = *piVar9;\n        local_2c = 3.4028235e+38;\n        cVar7 = FUN_00ba6bb0(param_1,iVar2,param_2,&local_2c);\n        if ((cVar7 != '\\0') && (local_2c < local_28)) {\n          local_28 = local_2c;\n          local_30 = iVar2;\n        }\n        piVar9 = piVar9 + 1;\n      } while (piVar9 != piVar6);\n      piVar9 = local_14;\n      piVar3 = local_14;\n      if (local_30 != 0) {\njoined_r0x00bb103d:\n        for (; piVar5 = local_14, piVar9 < piVar6; piVar9 = piVar9 + 1) {\n          local_14 = piVar3;\n          if ((int *)*piVar9 != (int *)0x0) {\n            (**(code **)(*(int *)*piVar9 + 4))();\n          }\n          piVar3 = local_14;\n          local_14 = piVar5;\n        }\n        if ((local_14 != (int *)0x0) && (local_14[-1] != 0)) {\n          local_14 = piVar3;\n          FUN_00f47380(piVar5);\n        }\n        return local_30;\n      }\n    }\n    piVar9 = local_14;\n    piVar3 = local_14;\n    if ((fVar1 == 0.0) || (local_34 <= local_38)) goto joined_r0x00bb103d;\n    if (bVar4) {\n      local_38 = local_24 * 2.0;\n      bVar4 = false;\n      local_20 = local_38;\n      pfVar8 = &local_20;\n    }\n    else {\n      local_38 = local_38 + local_24;\n      local_1c[0] = local_38;\n      pfVar8 = local_1c;\n    }\n    if (local_34 <= local_38) {\n      pfVar8 = &local_34;\n    }\n    local_38 = *pfVar8;\n    FUN_00e25bd0(local_14,piVar6);\n    FUN_00bb0d80(param_1,local_38,&local_14);\n  } while( true );\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -684,20 +1025,20 @@
   "body_span_bytes": 485,
   "body_start": "00bb0e90",
   "callees": [
-    "FUN_00bb0d80",
     "FUN_00bb0ca0",
-    "FUN_00e25bd0",
     "FUN_00f47380",
+    "FUN_00e25bd0",
+    "FUN_00bb0d80",
     "FUN_00ba6bb0"
   ],
   "callers": [
-    "FUN_00bb8b20",
     "FUN_00bb28c0",
-    "FUN_00bb80f0",
-    "FUN_00bb2610",
-    "FUN_00c5c470",
+    "FUN_00bb4f30",
     "FUN_00bb2a50",
-    "FUN_00bb4f30"
+    "FUN_00c5c470",
+    "FUN_00bb8b20",
+    "FUN_00bb80f0",
+    "FUN_00bb2610"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -710,117 +1051,77 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_20",
-      "storage": "Stack[-0x20]:4",
-      "type": "float"
-    },
-    {
-      "name": "local_1c",
-      "storage": "Stack[-0x1c]:4",
-      "type": "float[2]"
-    },
-    {
-      "name": "local_28",
-      "storage": "Stack[-0x28]:4",
-      "type": "float"
-    },
-    {
-      "name": "local_24",
-      "storage": "Stack[-0x24]:4",
-      "type": "float"
-    },
-    {
-      "name": "local_10",
-      "storage": "Stack[-0x10]:4",
-      "type": "int *"
-    },
-    {
       "name": "local_c",
       "storage": "Stack[-0xc]:4",
       "type": "undefined4"
     },
     {
-      "name": "local_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "int *"
-    },
-    {
-      "name": "pfVar8",
-      "storage": "register:00000000:4",
-      "type": "float *"
-    },
-    {
-      "name": "cVar7",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "piVar9",
-      "storage": "register:00000018:4",
-      "type": "int *"
-    },
-    {
-      "name": "bVar4",
-      "storage": "unique:100000fc:1",
-      "type": "bool"
-    },
-    {
-      "name": "piVar3",
-      "storage": "unique:100000ec:4",
-      "type": "int *"
-    },
-    {
-      "name": "piVar6",
-      "storage": "unique:10000129:4",
-      "type": "int *"
-    },
-    {
-      "name": "piVar5",
-      "storage": "unique:10000125:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x8]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
       "type": "undefined4"
     },
     {
-      "name": "iVar2",
-      "storage": "unique:00017200:4",
-      "type": "int"
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
     },
     {
-      "name": "fVar1",
-      "storage": "unique:0000a300:4",
-      "type": "float"
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "undefined4"
     },
     {
-      "name": "local_30",
-      "storage": "Stack[-0x30]:4",
-      "type": "int"
+      "name": "local_1c",
+      "storage": "Stack[-0x1c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_24",
+      "storage": "Stack[-0x24]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_28",
+      "storage": "Stack[-0x28]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_2c",
       "storage": "Stack[-0x2c]:4",
-      "type": "float"
+      "type": "undefined4"
     },
     {
-      "name": "local_38",
-      "storage": "Stack[-0x38]:4",
-      "type": "float"
+      "name": "local_30",
+      "storage": "Stack[-0x30]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_34",
       "storage": "Stack[-0x34]:4",
-      "type": "float"
+      "type": "undefined4"
+    },
+    {
+      "name": "local_38",
+      "storage": "Stack[-0x38]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_39",
+      "storage": "Stack[-0x39]:1",
+      "type": "undefined1"
+    },
+    {
+      "name": "local_54",
+      "storage": "Stack[-0x54]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 22,
+  "locals_count": 14,
   "mode": "live",
   "name": "FUN_00bb0e90",
   "namespace": null,

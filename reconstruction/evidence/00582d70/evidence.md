@@ -2,9 +2,58 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `f48bef9e9818cd48fac8e106128e0a31e93ca3446cfc26bb3daafd42397b2f3b`
+- Content SHA-256: `c80e2c0326a5e625b8a626ee065852c25de312a311a990335db2a9dac5f2c5a1`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is copied to ESI at 0x00582d74 and read only as [ESI + disp]; the function passes it on to 0x0057ef50 and 0x009c69f0 as ECX after loading LEA EBP,[ESI + 0x36c] at 0x00582e5b and 0x00582ef6, so the vector helpers take the address of the begin field as their receiver",
+  "ordinary_stack_argument_slots": 3,
+  "receiver": true,
+  "ret_form": "RET 0xc",
+  "return_observation": "EAX is used only as scratch: the divide-by-0x30 sign correction at 0x00582db7 and the element-address computation at 0x00582df0 overwrite it before every call, and the last write before the epilogue is 0x00582ea1 LEA EDI,... / 0x00582ea8 SHL EDI,0x4",
+  "return_register": "none",
+  "return_semantics": "no value; the body never writes EAX on any exit path and all six exits share the same four-instruction epilogue",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI"
+  ],
+  "stack_arguments": [
+    {
+      "frame_offset": "[ESP + 0x18] at 0x00582d87",
+      "index": 1,
+      "meaning": "mode selector; compared against 1 at 0x00582d8b, against 0 at 0x00582f72 and against 2 at 0x00582fb3",
+      "width": 4
+    },
+    {
+      "frame_offset": "[ESP + 0x1c] at 0x00582d94",
+      "index": 2,
+      "meaning": "remove_last, read as a BYTE; any non-zero byte selects the remove-last path, so only bit 0 of the pushed dword matters",
+      "width": 1
+    },
+    {
+      "frame_offset": "[ESP + 0x28] at 0x00582e61 after PUSH EBX; PUSH EBP",
+      "index": 3,
+      "meaning": "handle, compared against element dword 0 in the linear search at 0x00582e88 and tested against zero at 0x00582e61 to choose between clear-all and remove-by-handle",
+      "width": 4
+    }
+  ],
+  "stack_cleanup_bytes": 12,
+  "stack_cleanup_owner": "callee",
+  "termination": "six exits, all through the same epilogue: 0x00582e96 (null anim world, empty array, or an unrecognised mode), 0x00582e56 (mode 1 remove-last), 0x00582e9b (mode 1 not found), 0x00582ef3 (mode 1 remove-by-handle), 0x00582f6f (mode 1 clear-all), 0x00582fb0 (mode 0), 0x00582fdb (mode 2)"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -126,23 +175,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "2f138dbcaa97455aebb2da6d23318b56ac5ac5815187816abb512cb812e8f9cb",
+  "content_sha256": "368dccfeac9229847d13938e6a82bed8892d408c305da594747e3dfdec2a13ec",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -269,21 +318,51 @@
     },
     {
       "based_on": [
-        "obs-00
+        "obs
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0059d110"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062ba10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062c340"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062c990"
+  }
+]
+```
 
 ## contradictions
 
@@ -293,13 +372,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n\nvoid __thiscall FUN_00582d70(int param_1,int param_2,char param_3,int param_4)\n\n{\n  int *piVar1;\n  int iVar2;\n  int *piVar3;\n  int unaff_EBP;\n  int unaff_EDI;\n  int iVar4;\n  undefined4 uVar5;\n  undefined1 *puVar6;\n  undefined4 uVar7;\n  undefined1 local_c [12];\n  \n  iVar4 = 0;\n  if (*(int *)(param_1 + 0x360) != 0) {\n    if (param_2 == 1) {\n      if (param_3 == '\\0') {\n        piVar1 = (int *)(param_1 + 0x36c);\n        if (param_4 == 0) {\n          iVar4 = (*(int *)(param_1 + 0x370) - *piVar1) / 0x30;\n          if (0 < iVar4) {\n            iVar2 = 0;\n            do {\n              FUN_0059d110(*(undefined4 *)(iVar2 + *piVar1),local_c);\n              puVar6 = local_c;\n              uVar7 = 0;\n              uVar5 = 0x3f1bf57;\n              FUN_00401050(0x3f1bf57,0,puVar6);\n              FUN_0045af60(uVar5,uVar7,puVar6);\n              Editors__cEditorAnimWorld__DestroyCreature\n                        (*(cEditorAnimWorld **)(iVar2 + *piVar1),unaff_EBP);\n              iVar2 = iVar2 + 0x30;\n              iVar4 = iVar4 + -1;\n            } while (iVar4 != 0);\n          }\n          FUN_009c69f0(*piVar1,*(undefined4 *)(param_1 + 0x370));\n          return;\n        }\n        iVar2 = (*(int *)(param_1 + 0x370) - *piVar1) / 0x30;\n        if (0 < iVar2) {\n          piVar3 = (int *)*piVar1;\n          do {\n            if (*piVar3 == param_4) {\n              iVar4 = iVar4 * 0x30;\n              FUN_0059d110(*(undefined4 *)(iVar4 + *piVar1),local_c);\n              puVar6 = local_c;\n              uVar7 = 0;\n              uVar5 = 0x3f1bf57;\n              FUN_00401050(0x3f1bf57,0,puVar6);\n              FUN_0045af60(uVar5,uVar7,puVar6);\n              Editors__cEditorAnimWorld__DestroyCreature\n                        (*(cEditorAnimWorld **)(*piVar1 + iVar4),unaff_EBP);\n              FUN_0057ef50(*piVar1 + iVar4);\n              return;\n            }\n            iVar4 = iVar4 + 1;\n            piVar3 = piVar3 + 0xc;\n          } while (iVar4 < iVar2);\n        }\n      }\n      else {\n        iVar2 = *(int *)(param_1 + 0x370) - *(int *)(param_1 + 0x36c);\n        iVar4 = iVar2 >> 0x1f;\n        if (iVar2 / 0x30 + iVar4 != iVar4) {\n          FUN_0059d110(*(undefined4 *)\n                        (((*(int *)(param_1 + 0x370) - *(int *)(param_1 + 0x36c)) / 0x30) * 0x30 +\n                         -0x30 + *(int *)(param_1 + 0x36c)),local_c);\n          puVar6 = local_c;\n          uVar7 = 0;\n          uVar5 = 0x3f1bf57;\n          FUN_00401050(0x3f1bf57,0,puVar6);\n          FUN_0045af60(uVar5,uVar7,puVar6);\n          Editors__cEditorAnimWorld__DestroyCreature\n                    (*(cEditorAnimWorld **)\n                      (((*(int *)(param_1 + 0x370) - *(int *)(param_1 + 0x36c)) / 0x30) * 0x30 +\n                       -0x30 + *(int *)(param_1 + 0x36c)),unaff_EDI);\n          *(int *)(param_1 + 0x370) = *(int *)(param_1 + 0x370) + -0x30;\n          return;\n        }\n      }\n    }\n    else if (param_2 == 0) {\n      if (*(int *)(param_1 + 0x364) != 0) {\n        if (*(char *)(param_1 + 0x385) != '\\0') {\n          FUN_0057e340(0);\n        }\n        Editors__cEditorAnimWorld__DestroyCreature\n                  (*(cEditorAnimWorld **)(param_1 + 0x364),unaff_EDI);\n        *(undefined4 *)(param_1 + 0x364) = 0;\n        return;\n      }\n    }\n    else if ((param_2 == 2) && (*(cEditorAnimWorld **)(param_1 + 0x368) != (cEditorAnimWorld *)0x0))\n    {\n      Editors__cEditorAnimWorld__DestroyCreature(*(cEditorAnimWorld **)(param_1 + 0x368),unaff_EDI);\n      *(undefined4 *)(param_1 + 0x368) = 0;\n      return;\n    }\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -309,8 +384,296 @@
 
 ```json
 {
-  "original_bytes": 16233,
-  "preview": "{\n  \"count\": 199,\n  \"instructions\": [\n    {\n      \"address\": \"00582d70\",\n      \"instruction\": \"SUB ESP,0xc\"\n    },\n    {\n      \"address\": \"00582d73\",\n      \"instruction\": \"PUSH ESI\"\n    },\n    {\n      \"address\": \"00582d74\",\n      \"instruction\": \"MOV ESI,ECX\"\n    },\n    {\n      \"address\": \"00582d76\",\n      \"instruction\": \"MOV ECX,dword ptr [ESI + 0x360]\"\n    },\n    {\n      \"address\": \"00582d7c\",\n      \"instruction\": \"PUSH EDI\"\n    },\n    {\n      \"address\": \"00582d7d\",\n      \"instruction\": \"XOR EDI,EDI\"\n    },\n    {\n      \"address\": \"00582d7f\",\n      \"instruction\": \"CMP ECX,EDI\"\n    },\n    {\n      \"address\": \"00582d81\",\n      \"instruction\": \"JZ 0x00582e96\"\n    },\n    {\n      \"address\": \"00582d87\",\n      \"instruction\": \"MOV EAX,dword ptr [ESP + 0x18]\"\n    },\n    {\n      \"address\": \"00582d8b\",\n      \"instruction\": \"CMP EAX,0x1\"\n    },\n    {\n      \"address\": \"00582d8e\",\n      \"instruction\": \"JNZ 0x00582f72\"\n    },\n    {\n      \"address\": \"00582d94\",\n      \"instruction\": \"CMP byte ptr [ESP + 0x1c],0x0\"\n    },\n    {\n      \"address\": \"00582d99\",\n      \"instruction\": \"MOV EAX,0x2aaaaaab\"\n    },\n    {\n      \"address\": \"00582d9e\",\n      \"instruction\": \"JZ 0x00582e59\"\n    },\n    {\n      \"address\": \"00582da4\",\n      \"instruction\": \"MOV EDX,dword ptr [ESI + 0x370]\"\n    },\n    {\n      \"address\": \"00582daa\",\n      \"instruction\": \"SUB EDX,dword ptr [ESI + 0x36c]\"\n    },\n    {\n      \"address\": \"00582db0\",\n      \"instruction\": \"IMUL EDX\"\n    },\n    {\n      \"address\": \"00582db2\",\n      \"instruction\": \"SAR EDX,0x3\"\n    },\n    {\n      \"address\": \"00582db5\",\n      \"instruction\": \"MOV EAX,EDX\"\n    },\n    {\n      \"address\": \"00582db7\",\n      \"instruction\": \"SHR EAX,0x1f\"\n    },\n    {\n      \"address\": \"00582dba\",\n      \"instruction\": \"ADD EAX,EDX\"\n    },\n    {\n      \"address\": \"00582dbc\",\n      \"instruction\": \"JZ 0x00582e96\"\n    },\n    {\n      \"address\": \"00582dc2\",\n      \"instruction\": \"LEA EDX,[ESP + 0x8]\"\n    },\n    {\n      \"address\": \"00582dc6\",\n      \"instruction\": \"PUSH EDX\"\n    },\n    {\n      \"address\": \"00582dc7\",\n      \"instruction\": \"MOV EDX,dword ptr [ESI + 0x370]\"\n    },\n    {\n      \"address\": \"00582dcd\",\n      \"instruction\": \"SUB EDX,dword ptr [ESI + 0x36c]\"\n    },\n    {\n      \"address\": \"00582dd3\",\n      \"instruction\": \"MOV EAX,0x2aaaaaab\"\n    },\n    {\n      \"address\": \"00582dd8\",\n      \"instruction\": \"IMUL EDX\"\n    },\n    {\n      \"address\": \"00582dda\",\n      \"instruction\": \"SAR EDX,0x3\"\n    },\n    {\n      \"address\": \"00582ddd\",\n      \"instruction\": \"MOV EAX,EDX\"\n    },\n    {\n      \"address\": \"00582ddf\",\n      \"instruction\": \"SHR EAX,0x1f\"\n    },\n    {\n      \"address\": \"00582de2\",\n      \"instruction\": \"ADD EAX,EDX\"\n    },\n    {\n      \"address\": \"00582de4\",\n      \"instruction\": \"MOV EDX,dword ptr [ESI + 0x36c]\"\n    },\n    {\n      \"address\": \"00582dea\",\n      \"instruction\": \"LEA EAX,[EAX + EAX*0x2]\"\n    },\n    {\n      \"address\": \"00582ded\",\n      \"instruction\": \"SHL EAX,0x4\"\n    },\n    {\n      \"address\": \"00582df0\",\n      \"instruction\": \"MOV EAX,dword ptr [EAX + EDX*0x1 + -0x30]\"\n    },\n    {\n      \"address\": \"00582df4\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"00582df5\",\n      \"instruction\": \"CALL 0x0059d110\"\n    },\n    {\n      \"address\": \"00582dfa\",\n      \"instruction\": \"LEA ECX,[ESP + 0x8]\"\n    },\n    {\n      \"address\": \"00582dfe\",\n      \"instruction\": \"PUSH ECX\"\n    },\n    {\n      \"address\": \"00582dff\",\n      \"instruction\": \"PUSH EDI\"\n    },\n    {\n      \"address\": \"00582e00\",\n      \"instruction\": \"PUSH 0x3f1bf57\"\n    },\n    {\n      \"address\": \"00582e05\",\n      \"instruction\": \"CALL 0x00401050\"\n    },\n    {\n      \"address\": \"00582e0a\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"00582e0c\",\n      \"instruction\": \"CALL 0x0045af60\"\n    },\n    {\n      \"address\": \"00582e11\",\n      \"instruction\": \"MOV ECX,dword ptr [ESI + 0x370]\"\n    },\n    {\n      \"address\": \"00582e17\",\n      \"instruction\": \"SUB ECX,dword ptr [ESI + 0x36c]\"\n    },\n    {\n      \"address\": \"00582e1d\",\n      \"instruction\": \"MOV EAX,0x2aaaaaab\"\n    },\n    {\n      \"address\": \"00582e22\",\n      \"instruction\": \"IMUL ECX\"\n    },\n    {\n      \"address\": \"00582e24\",\n      \"instruction\": \"SAR EDX,0x3\"\n    },\n    {\n      \"address\": \"00582e27\",\n      \"instruction\": \"MOV EAX,EDX\"\n    },\n    {\n      \"address\": \"00582e29\",\n      \"instruction\": \"SHR EAX,0x1f\"\n    },\n    {\n      \"address\": \"00582e2c\",\n      \"instruction\": \"ADD EAX,EDX\"\n    },\n    {\n      \"address\": \"00582e2e\",\n      \"instruction\": \"LEA EDX,[EAX + EAX*0x2]\"\n    },\n    {\n      \"address\": \"00582e31\",\n      \"instruction\": \"MOV EAX,dword ptr [ESI + 0x36c]\"\n    },\n    {\n      \"address\": \"00582e37\",\n      \"instruction\": \"SHL EDX,0x4\"\n    },\n    {\n      \"address\": \"00582e3a\",\n      \"instruction\": \"MOV ECX,dword ptr [EDX + EAX*0x1 + -0x30]\"\n    },\n    {\n      \"address\": \"00582e3e\",\n      \"instruction\": \"PUSH ECX\"\n    },\n    {\n      \"address\": \"00582e3f\",\n      \"instruction\": \"MOV ECX,dword ptr [ESI + 0x360]\"\n    },\n    {\n      \"address\": \"00582e45\",\n      \"instruction\": \"CALL 0x0059c6e0\"\n    },\n    {\n      \"address\": \"00582e4a\",\n      \"instruction\": \"ADD dword ptr [ESI + 0x370],-0x30\"\n    },\n    {\n      \"address\": \"00582e51\",\n      \"instruction\": \"POP EDI\"\n    },\n    {\n      \"ad
+  "count": 199,
+  "instructions": [
+    {
+      "address": "00582d70",
+      "instruction": "SUB ESP,0xc"
+    },
+    {
+      "address": "00582d73",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00582d74",
+      "instruction": "MOV ESI,ECX"
+    },
+    {
+      "address": "00582d76",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x360]"
+    },
+    {
+      "address": "00582d7c",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "00582d7d",
+      "instruction": "XOR EDI,EDI"
+    },
+    {
+      "address": "00582d7f",
+      "instruction": "CMP ECX,EDI"
+    },
+    {
+      "address": "00582d81",
+      "instruction": "JZ 0x00582e96"
+    },
+    {
+      "address": "00582d87",
+      "instruction": "MOV EAX,dword ptr [ESP + 0x18]"
+    },
+    {
+      "address": "00582d8b",
+      "instruction": "CMP EAX,0x1"
+    },
+    {
+      "address": "00582d8e",
+      "instruction": "JNZ 0x00582f72"
+    },
+    {
+      "address": "00582d94",
+      "instruction": "CMP byte ptr [ESP + 0x1c],0x0"
+    },
+    {
+      "address": "00582d99",
+      "instruction": "MOV EAX,0x2aaaaaab"
+    },
+    {
+      "address": "00582d9e",
+      "instruction": "JZ 0x00582e59"
+    },
+    {
+      "address": "00582da4",
+      "instruction": "MOV EDX,dword ptr [ESI + 0x370]"
+    },
+    {
+      "address": "00582daa",
+      "instruction": "SUB EDX,dword ptr [ESI + 0x36c]"
+    },
+    {
+      "address": "00582db0",
+      "instruction": "IMUL EDX"
+    },
+    {
+      "address": "00582db2",
+      "instruction": "SAR EDX,0x3"
+    },
+    {
+      "address": "00582db5",
+      "instruction": "MOV EAX,EDX"
+    },
+    {
+      "address": "00582db7",
+      "instruction": "SHR EAX,0x1f"
+    },
+    {
+      "address": "00582dba",
+      "instruction": "ADD EAX,EDX"
+    },
+    {
+      "address": "00582dbc",
+      "instruction": "JZ 0x00582e96"
+    },
+    {
+      "address": "00582dc2",
+      "instruction": "LEA EDX,[ESP + 0x8]"
+    },
+    {
+      "address": "00582dc6",
+      "instruction": "PUSH EDX"
+    },
+    {
+      "address": "00582dc7",
+      "instruction": "MOV EDX,dword ptr [ESI + 0x370]"
+    },
+    {
+      "address": "00582dcd",
+      "instruction": "SUB EDX,dword ptr [ESI + 0x36c]"
+    },
+    {
+      "address": "00582dd3",
+      "instruction": "MOV EAX,0x2aaaaaab"
+    },
+    {
+      "address": "00582dd8",
+      "instruction": "IMUL EDX"
+    },
+    {
+      "address": "00582dda",
+      "instruction": "SAR EDX,0x3"
+    },
+    {
+      "address": "00582ddd",
+      "instruction": "MOV EAX,EDX"
+    },
+    {
+      "address": "00582ddf",
+      "instruction": "SHR EAX,0x1f"
+    },
+    {
+      "address": "00582de2",
+      "instruction": "ADD EAX,EDX"
+    },
+    {
+      "address": "00582de4",
+      "instruction": "MOV EDX,dword ptr [ESI + 0x36c]"
+    },
+    {
+      "address": "00582dea",
+      "instruction": "LEA EAX,[EAX + EAX*0x2]"
+    },
+    {
+      "address": "00582ded",
+      "instruction": "SHL EAX,0x4"
+    },
+    {
+      "address": "00582df0",
+      "instruction": "MOV EAX,dword ptr [EAX + EDX*0x1 + -0x30]"
+    },
+    {
+      "address": "00582df4",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00582df5",
+      "instruction": "CALL 0x0059d110"
+    },
+    {
+      "address": "00582dfa",
+      "instruction": "LEA ECX,[ESP + 0x8]"
+    },
+    {
+      "address": "00582dfe",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00582dff",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "00582e00",
+      "instruction": "PUSH 0x3f1bf57"
+    },
+    {
+      "address": "00582e05",
+      "instruction": "CALL 0x00401050"
+    },
+    {
+      "address": "00582e0a",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00582e0c",
+      "instruction": "CALL 0x0045af60"
+    },
+    {
+      "address": "00582e11",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x370]"
+    },
+    {
+      "address": "00582e17",
+      "instruction": "SUB ECX,dword ptr [ESI + 0x36c]"
+    },
+    {
+      "address": "00582e1d",
+      "instruction": "MOV EAX,0x2aaaaaab"
+    },
+    {
+      "address": "00582e22",
+      "instruction": "IMUL ECX"
+    },
+    {
+      "address": "00582e24",
+      "instruction": "SAR EDX,0x3"
+    },
+    {
+      "address": "00582e27",
+      "instruction": "MOV EAX,EDX"
+    },
+    {
+      "address": "00582e29",
+      "instruction": "SHR EAX,0x1f"
+    },
+    {
+      "address": "00582e2c",
+      "instruction": "ADD EAX,EDX"
+    },
+    {
+      "address": "00582e2e",
+      "instruction": "LEA EDX,[EAX + EAX*0x2]"
+    },
+    {
+      "address": "00582e31",
+      "instruction": "MOV EAX,dword ptr [ESI + 0x36c]"
+    },
+    {
+      "address": "00582e37",
+      "instruction": "SHL EDX,0x4"
+    },
+    {
+      "address": "00582e3a",
+      "instruction": "MOV ECX,dword ptr [EDX + EAX*0x1 + -0x30]"
+    },
+    {
+      "address": "00582e3e",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00582e3f",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x360]"
+    },
+    {
+      "address": "00582e45",
+      "instruction": "CALL 0x0059c6e0"
+    },
+    {
+      "address": "00582e4a",
+      "instruction": "ADD dword ptr [ESI + 0x370],-0x30"
+    },
+    {
+      "address": "00582e51",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "00582e52",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "00582e53",
+      "instruction": "ADD ESP,0xc"
+    },
+    {
+      "address": "00582e56",
+      "instruction": "RET 0xc"
+    },
+    {
+      "address": "00582e59",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "00582e5a",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00582e5b",
+      "instruction": "LEA EBP,[ESI + 0x36c]"
+    },
+    {
+      "address": "00582e61",
+      "instruction": "CMP dword ptr [ESP + 0x28],EDI"
+    },
+    {
+      "address": "00582e65",
+      "instruction": "JZ 0x00582ef6"
+    },
+    {
+      "address": "00582e6b",
+      "instruction": "MOV EDX,dword ptr [EBP + 0x4]"
+    },
+    {
+      "address": "00582e6e",
+      "instruction": "SUB EDX,dword ptr [EBP]"
+ 
 [TRUNCATED]
 ```
 
@@ -322,9 +685,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12085,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is copied to ESI at 0x00582d74 and read only as [ESI + disp]; the function passes it on to 0x0057ef50 and 0x009c69f0 as ECX after loading LEA EBP,[ESI + 0x36c] at 0x00582e5b and 0x00582ef6, so the vector helpers take the address of the begin field as their receiver\",\n    \"ordinary_stack_argument_slots\": 3,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0xc\",\n    \"return_observation\": \"EAX is used only as scratch: the divide-by-0x30 sign correction at 0x00582db7 and the element-address computation at 0x00582df0 overwrite it before every call, and the last write before the epilogue is 0x00582ea1 LEA EDI,... / 0x00582ea8 SHL EDI,0x4\",\n    \"return_register\": \"none\",\n    \"return_semantics\": \"no value; the body never writes EAX on any exit path and all six exits share the same four-instruction epilogue\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"frame_offset\": \"[ESP + 0x18] at 0x00582d87\",\n        \"index\": 1,\n        \"meaning\": \"mode selector; compared against 1 at 0x00582d8b, against 0 at 0x00582f72 and against 2 at 0x00582fb3\",\n        \"width\": 4\n      },\n      {\n        \"frame_offset\": \"[ESP + 0x1c] at 0x00582d94\",\n        \"index\": 2,\n        \"meaning\": \"remove_last, read as a BYTE; any non-zero byte selects the remove-last path, so only bit 0 of the pushed dword matters\",\n        \"width\": 1\n      },\n      {\n        \"frame_offset\": \"[ESP + 0x28] at 0x00582e61 after PUSH EBX; PUSH EBP\",\n        \"index\": 3,\n        \"meaning\": \"handle, compared against element dword 0 in the linear search at 0x00582e88 and tested against zero at 0x00582e61 to choose between clear-all and remove-by-handle\",\n        \"width\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 12,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"six exits, all through the same epilogue: 0x00582e96 (null anim world, empty array, or an unrecognised mode), 0x00582e56 (mode 1 remove-last), 0x00582e9b (mode 1 not found), 0x00582ef3 (mode 1 remove-by-handle), 0x00582f6f (mode 1 clear-all), 0x00582fb0 (mode 0), 0x00582fdb (mode 2)\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d110\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062ba10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062c340\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062c990\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0062ba5e\",\n        \"direction\": \"in\",\n        \"other\": \"0x0062ba10\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0062ba7f\",\n        \"direction\": \"in\",\n        \"other\": \"0x0062ba10\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0062c3de\",\n        \"direction\": \"in\",\n        \"other\": \"0x0062c340\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0062ca18\",\n        \"direction\": \"in\",\n        \"other\": \"0x0062c990\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"call
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -340,18 +710,18 @@
   "body_span_bytes": 622,
   "body_start": "00582d70",
   "callees": [
-    "FUN_0059d110",
     "FUN_0057e340",
+    "Editors::cEditorAnimWorld::DestroyCreature",
     "FUN_00401050",
+    "FUN_0059d110",
     "FUN_0045af60",
-    "FUN_0057ef50",
     "FUN_009c69f0",
-    "Editors::cEditorAnimWorld::DestroyCreature"
+    "FUN_0057ef50"
   ],
   "callers": [
+    "FUN_0062ba10",
     "FUN_0062c340",
-    "FUN_0062c990",
-    "FUN_0062ba10"
+    "FUN_0062c990"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -364,77 +734,12 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "int"
-    },
-    {
       "name": "local_c",
-      "storage": "",
-      "type": "undefined1[12]"
-    },
-    {
-      "name": "uVar5",
-      "storage": "Stack[-0x20]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "puVar6",
-      "storage": "Stack[-0x20]:4",
-      "type": "undefined1 *"
-    },
-    {
-      "name": "uVar7",
-      "storage": "Stack[-0x1c]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "piVar3",
-      "storage": "register:00000008:4",
-      "type": "int *"
-    },
-    {
-      "name": "unaff_EBP",
-      "storage": "register:00000014:4",
-      "type": "int"
-    },
-    {
-      "name": "unaff_EDI",
-      "storage": "register:0000001c:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar4",
-      "storage": "register:0000001c:4",
-      "type": "int"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0x8]:1",
-      "type": "char"
-    },
-    {
-      "name": "param_4",
-      "storage": "Stack[0xc]:4",
-      "type": "int"
-    },
-    {
-      "name": "piVar1",
-      "storage": "unique:00006800:4",
-      "type": "int *"
-    },
-    {
-      "name": "iVar2",
-      "storage": "register:00000008:4",
-      "type": "int"
+      "storage": "Stack[-0xc]:1",
+      "type": "undefined"
     }
   ],
-  "locals_count": 14,
+  "locals_count": 1,
   "mode": "live",
   "name": "FUN_00582d70",
   "namespace": null,
@@ -485,9 +790,22 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b02/b582d70_editor_remove_creature.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b02/00582d70.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -497,9 +815,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime trace is required to confirm modes 0 and 2 are never taken, since no static reference to them exists.",
+    "A runtime trace is required to confirm no entry destructor is needed, i.e. that the removed 0x30-byte entries leak or are owned elsewhere by design.",
+    "A runtime trace is required to observe the 0x03f1bf57 notification reaching a listener, which is the only way to learn what the detach protocol announces.",
+    "No original-process trace has ever been captured for 0x00582d70; every claim here is static. The original Cell stage has never been entered in any recorded run."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -509,15 +840,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

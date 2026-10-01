@@ -57,6 +57,7 @@ deliberately omits. Nothing here resolves those by fiat: the engine's behaviour
 is pinned and the divergence is stated. ``PlausibilityWindowDivergenceTest``
 carries the most consequential one and says so loudly.
 """
+import inspect
 import json
 import os
 import subprocess
@@ -70,7 +71,8 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from tests import abi_fixtures as fx  # noqa: E402
-from tools.reconstruction_tooling import abi_infer, evidence, validate  # noqa: E402
+from tests import vftable_corpus as corpus  # noqa: E402
+from tools.reconstruction_tooling import abi_infer, evidence, validate, vftables  # noqa: E402
 from tools.reconstruction_tooling.models import canonical_json, sha256_json  # noqa: E402
 
 # The seed is asserted by the suite: the repo forbids unseeded randomness, and a
@@ -2125,9 +2127,25 @@ class CrossValidationTest(unittest.TestCase):
     def test_cross_validation_never_promotes_an_abstention(self):
         """Ghidra naming a convention while the engine abstained.
 
-        The record must stay ABI_UNKNOWN / UNKNOWN *and* the conflict must
-        still be emitted: an abstention plus a contradiction is exactly what a
-        human needs to see. Promoting would launder the disagreement.
+        The record must stay ABI_UNKNOWN / UNKNOWN and the agreement must stay
+        off: promoting an abstention to agreement is the failure, and promoting
+        it to a *conflict* was a second one.
+
+        INVERTED, 2026-09-28. This test used to assert
+        ``cross_validation["ghidra"] == "disagrees"`` and exactly one conflict
+        whose ``inferred`` was ``None``, on the reasoning that "an abstention
+        plus a contradiction is exactly what a human needs to see". A
+        contradiction is a claim that two sources *disagree*, and the engine had
+        said nothing of the kind: it said the listing cannot decide. Ghidra
+        silence is not agreement, and by the same principle our own silence is
+        not disagreement -- the docstring already exempted the first and not the
+        second, which is an inconsistency rather than a decision. The
+        contradiction it manufactured was not a footnote either: it demoted the
+        cleanup claim (see the conflict cap in ``cross_validate``) and, in the
+        corpus, opened a false conflict on ``0x005a2320`` and would have opened
+        one on all 25 ``no_terminal_ret`` targets. Every no-promotion assertion
+        below is unchanged; only the conflict assertion is inverted, and the
+        oracle's own value is still recorded so the answer is not lost.
         """
         sources = [ABSTAIN_BODY, THUNK_BODY,
                    fx.load_fixture("08_leaf_no_frame"),
@@ -2144,11 +2162,54 @@ class CrossValidationTest(unittest.TestCase):
                     self.assertEqual("UNKNOWN", record["conventions"]["confidence"])
                     self.assertEqual("not_available",
                                      record["conventions"]["corroboration"])
-                    self.assertEqual("disagrees",
+                    # The oracle answered and the engine declined: that is two
+                    # silences, not a contradiction.
+                    self.assertEqual("no_information",
                                      record["cross_validation"]["ghidra"])
-                    self.assertEqual(1, len(record["conflicts"]))
-                    self.assertIsNone(record["conflicts"][0]["inferred"])
-                    self.assertEqual(convention, record["conflicts"][0]["ghidra"])
+                    self.assertEqual(convention,
+                                     record["cross_validation"]["ghidra_calling_convention"])
+                    self.assertFalse(record["cross_validation"]["agreement"])
+                    self.assertEqual([], record["conflicts"])
+
+    def test_an_abstention_against_the_persisted_record_is_also_not_a_conflict(self):
+        """The same principle on the second arm, which had the same defect.
+
+        The persisted index record naming a convention while the engine
+        abstained used to emit ``inferred_vs_persisted`` with ``inferred: None``.
+        It is the same manufactured contradiction, on the arm that reaches far
+        more corpus targets, so it is pinned separately rather than assumed to
+        follow from the Ghidra arm.
+        """
+        for source in (ABSTAIN_BODY, THUNK_BODY, fx.load_fixture("08_leaf_no_frame")):
+            for convention in abi_infer.CONVENTIONS:
+                with self.subTest(source=source[:24], convention=convention):
+                    record = abi_infer.analyze(
+                        source, persisted_abi={"calling_convention": convention})
+                    self.assertIsNone(fx.convention_of(record))
+                    self.assertEqual("no_information",
+                                     record["cross_validation"]["persisted"])
+                    self.assertEqual(convention, record["cross_validation"][
+                        "persisted_calling_convention"])
+                    self.assertEqual([], record["conflicts"])
+                    self.assertEqual("not_available",
+                                     record["conventions"]["corroboration"])
+
+    def test_a_real_disagreement_is_still_a_conflict(self):
+        """The fix removed the manufactured conflict, not the real one.
+
+        Two named conventions that differ are a contradiction and must still be
+        recorded, demote the convention and cap the cleanup claim. A fix that
+        silenced the arm would pass the two tests above and fail this one.
+        """
+        record = abi_infer.analyze(THISCALL_BODY, ghidra_calling_convention="__cdecl")
+        self.assertEqual("disagrees", record["cross_validation"]["ghidra"])
+        self.assertEqual(1, len(record["conflicts"]))
+        self.assertEqual("inferred_vs_ghidra", record["conflicts"][0]["kind"])
+        self.assertEqual("__thiscall", record["conflicts"][0]["inferred"])
+        self.assertEqual("__cdecl", record["conflicts"][0]["ghidra"])
+        # The demotion is real, not a renaming of the same rung.
+        self.assertEqual("INFERRED", record["conventions"]["confidence"])
+        self.assertEqual("SUPPORTED", record["cleanup"]["confidence"])
 
     def test_persisted_agreement_raises_one_rung(self):
         record = abi_infer.analyze(THISCALL_BODY,
@@ -3983,3 +4044,3383 @@ class KnownEngineDefectTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BranchSynonymGrammarTest(unittest.TestCase):
+    """``JC``/``JNC``/``FCOMIP`` are real opcodes, not unknown mnemonics.
+
+    Ghidra renders the carry-SET short jump as ``JC`` where objdump and the
+    Intel manual write ``JB`` for the identical 0x72 rel8 bytes, and renders the
+    x87 pop-less compare as ``FCOMIP``. ``BRANCH_MNEM`` originally listed
+    ``JB`` and ``X87_OPS`` listed ``FCOMI``/``FUCOMI``/``FUCOMIP`` but not the
+    carry synonyms or ``FCOMIP``, so a well-formed instruction parsed as
+    ``kind="unparsed"`` / ``reason="unknown_mnemonic"``. That marks the WHOLE
+    listing ``degraded``, which holds CONSTANTS at WARN on a body that is in fact
+    completely parsed -- a false blocker on five real corpus targets
+    (0x006a2530, 0x006a2e20, 0x00b72370, 0x00bba790, 0x0105a050).
+
+    These tests pin the grammar fix and, just as importantly, pin that it did not
+    weaken degraded-listing detection: a genuinely unknown mnemonic must still
+    parse as unparsed and still degrade the listing.
+    """
+
+    #: (canonical, synonym) pairs that share one opcode and one condition.
+    ALIAS_PAIRS = (
+        ("JB", "JC"), ("JAE", "JNB"), ("JBE", "JNA"), ("JA", "JNBE"),
+        ("JL", "JNGE"), ("JGE", "JNL"), ("JLE", "JNG"), ("JG", "JNLE"),
+        ("JE", "JZ"), ("JNE", "JNZ"), ("JNP", "JPO"), ("JPE", "JPO"),
+    )
+
+    def test_every_canonical_branch_mnemonic_is_known(self):
+        for canonical, synonym in self.ALIAS_PAIRS:
+            self.assertIn(canonical, abi_infer.BRANCH_MNEM,
+                          "%s must remain a known branch mnemonic" % canonical)
+            self.assertIn(synonym, abi_infer.BRANCH_MNEM,
+                          "%s is the same opcode as %s and must be known too"
+                          % (synonym, canonical))
+
+    def test_branch_synonyms_parse_as_known_instructions(self):
+        for text in ("JC 0x006a2561", "JB 0x006a2561", "JNC 0x00bba844",
+                     "JAE 0x00bba844", "JNB 0x00bba844", "JNLE 0x1",
+                     "JNA 0x1", "JMP 0x2", "JECXZ 0x3"):
+            parsed = abi_infer.parse_insn(text, index=0, va=0x006a2561)
+            self.assertTrue(parsed.get("known"),
+                            "%r must parse as a known instruction, got %r"
+                            % (text, parsed))
+
+    def test_fcomip_is_a_known_x87_mnemonic(self):
+        # FCOMI / FUCOMI / FUCOMIP were already present; FCOMIP was the gap.
+        for text in ("FCOMIP ST0,ST1", "FCOMI ST0,ST1", "FUCOMIP ST0,ST1",
+                     "FLDZ", "FSTP ST0"):
+            self.assertTrue(abi_infer.parse_insn(text, index=0).get("known"),
+                            "%r must parse as a known instruction" % text)
+        self.assertIn("FCOMIP", abi_infer.X87_OPS)
+
+    def test_synonym_does_not_become_a_branch_target_mnemonic_only(self):
+        # BRANCH_MNEM feeds _BRANCH_TARGET_MNEM; a synonym must be a recognised
+        # branch there too, or a `JC 0x...` operand would not resolve.
+        for canonical, synonym in self.ALIAS_PAIRS:
+            self.assertIn(canonical, abi_infer._BRANCH_TARGET_MNEM)
+            self.assertIn(synonym, abi_infer._BRANCH_TARGET_MNEM)
+
+    def test_genuinely_unknown_mnemonic_still_degrades(self):
+        # The fix must not have widened KNOWN_MNEMONICS by accident.
+        parsed = abi_infer.parse_insn("NOTAREALOP 0x1", index=0)
+        self.assertFalse(parsed.get("known"))
+        self.assertEqual("NOTAREALOP", parsed.get("base", "NOTAREALOP").upper()
+                         if isinstance(parsed.get("base"), str)
+                         else "NOTAREALOP")
+        self.assertNotIn("NOTAREALOP", abi_infer.KNOWN_MNEMONICS)
+
+    def test_degraded_listing_still_flags_an_unknown_mnemonic(self):
+        # End-to-end: one unknown mnemonic must still set degraded/unparsed,
+        # so the grammar fix cannot be mistaken for a blanket PASS.
+        listing = "\n".join((
+            "0x006a2530  56           push   esi",
+            "0x006a2531  8b f1        mov    esi,ecx",
+            "0x006a2533  0f b6 46 2c  movzx  eax,byte ptr [esi + 0x2c]",
+            "0x006a2537  8b 56 18     mov    edx,dword ptr [esi + 0x18]",
+            "0x006a2558  72 07        jc     0x006a2561",
+            "0x006a2561  33 c0        xor    eax,eax",
+        ))
+        insns, meta = abi_infer.parse_listing(listing)
+        bad = [i for i in insns if i.get("kind") == "unparsed"]
+        self.assertEqual([], bad,
+                         "a fully understood listing must not degrade: %r" % bad)
+        self.assertFalse(meta.get("unparsed_count"))
+        self.assertEqual(6, meta.get("instruction_count"))
+
+        broken = listing.replace("jc     0x006a2561", "zzz     0x006a2561")
+        insns2, meta2 = abi_infer.parse_listing(broken)
+        bad2 = [i for i in insns2 if i.get("kind") == "unparsed"]
+        self.assertEqual(1, len(bad2),
+                         "an unknown mnemonic must still be reported unparsed")
+        self.assertEqual("unknown_mnemonic", bad2[0].get("reason"))
+        self.assertEqual(1, meta2.get("unparsed_count"))
+
+
+# =========================================================================== #
+# Part H -- the two capability rules: V1-VFT and T1-FWD
+#
+# Added 2026-09-28 by ``docs/tooling/abi-inference-vftable-extension.md``. Two
+# rules, both *additional* disjuncts placed where the engine used to abstain:
+#
+#   V1-VFT  the function is a slot of a table the **image** proves is a
+#           vptr-backed vftable, the callee pops nothing and no stack word is
+#           read, so the receiver is in ECX and the convention is __thiscall.
+#   T1-FWD  the listing is one ESP-neutral direct jump to a target whose own ABI
+#           was resolved, so the two calls are one call and the convention
+#           forwards.
+#
+# Everything here is hermetic. The real listings are committed bridge captures
+# (``tests/vftable_corpus.py``, re-recorded by ``tests/capture_vftable_corpus.py``)
+# and the synthetic bodies are written in this file, so no test here needs the
+# binary and none needs a bridge. The predicate that decides *membership* from the
+# image is tested in ``tests/test_vftable_membership.py``; what is tested here is
+# the engine's use of a membership and of a resolved tail target -- including
+# every way each of them has to be refused.
+#
+# The rule ids are ``V1-VFT`` and ``T1-FWD`` rather than the proposal's ``V1`` and
+# ``T1``: ``T1`` is the specification's TAIL-CALL rule, this engine already emits
+# it for every listing whose only exit is an out-of-listing JMP, and two different
+# claims may not share one id. See ``abi_infer.RULE_IDS``.
+# =========================================================================== #
+
+#: The real-binary scan, read once. ``None`` when ``SPORE/`` is absent, which is
+#: what keeps this file runnable on a checkout without the game: every test that
+#: needs a *real membership* skips, and every test that supplies its own
+#: membership still runs.
+_REAL_SCAN = {}
+
+
+def real_scan():
+    if "scan" not in _REAL_SCAN:
+        path = os.path.join(ROOT, "SPORE", "SporeBin", "SporeApp.exe")
+        _REAL_SCAN["scan"] = (vftables.scan_file(path, cache_dir=vftables.default_cache_dir(ROOT))
+                              if os.path.exists(path) else None)
+    return _REAL_SCAN["scan"]
+
+
+def esp_delta_of(listing):
+    """The linear ESP walk's end value for a listing, for a guard assertion."""
+    insns, meta = abi_infer.parse_listing(listing)
+    _observations, state, _frame = abi_infer.extract(insns, meta, 0x400000)
+    return state.esp_delta
+
+
+def target_thiscall_caller():
+    """A resolved target record: ``__thiscall``, receiver in ECX, no stack words.
+
+    Analysed from a real body rather than assembled as a dict, so the shape the
+    engine reads is the shape the engine writes.
+    """
+    return abi_infer.analyze("MOV EAX,dword ptr [ECX + 0x8]\n"
+                             "MOV EAX,dword ptr [ECX + 0xc]\nRET")
+
+
+def target_thiscall_popping(total_bytes):
+    """``__thiscall`` whose callee pops ``total_bytes`` -- A1-IMM's shape."""
+    return abi_infer.analyze("MOV EAX,dword ptr [ECX + 0x8]\n"
+                             "MOV EAX,dword ptr [ECX + 0xc]\n"
+                             "RET 0x%x" % total_bytes)
+
+
+def target_cdecl(words):
+    """A ``__cdecl`` body whose own argument area is ``words`` dwords."""
+    reads = "".join("MOV EDX,dword ptr [EBP + 0x%x]\n" % (4 * (index + 1))
+                    for index in range(words))
+    return abi_infer.analyze("PUSH EBP\nMOV EBP,ESP\n" + reads +
+                             "MOV ESP,EBP\nPOP EBP\nRET")
+
+
+def with_confidence(record, confidence):
+    """A copy of a record whose convention confidence is forced to a rung.
+
+    The engine cannot be made to emit every rung for one body, and the cap under
+    test is a comparison against whatever the target claims -- so the rung is set
+    directly here rather than by contriving a body.
+    """
+    copy = json.loads(json.dumps(record))
+    copy["conventions"]["confidence"] = confidence
+    return copy
+
+
+class VftableRuleTest(unittest.TestCase):
+    """``V1-VFT`` and ``T1-FWD``, on real captures and on synthetic bodies."""
+
+    @staticmethod
+    def listing(va8):
+        return corpus.load(corpus.by_va8(va8))
+
+    @staticmethod
+    def membership(table, slot=0, basis=abi_infer.VFTABLE_BASIS):
+        """One membership entry, in the shape the evidence layer supplies."""
+        entry = {"table": table if isinstance(table, str) else "0x%08x" % table,
+                 "slot_index": slot}
+        if basis is not None:
+            entry["basis"] = basis
+        return entry
+
+    @classmethod
+    def memberships_for(cls, va8, limit=1):
+        """The real memberships of a real target, read off the committed scan.
+
+        A test states the property -- "this target is a member of a sound table"
+        -- rather than a table address that a future predicate change would
+        silently invalidate.
+        """
+        scan = real_scan()
+        if scan is None:
+            raise unittest.SkipTest("the binary is not present")
+        entries = [cls.membership(table, slot) for table, slot in
+                   vftables.slots_of(scan, int(va8, 16))]
+        return entries[:limit]
+
+    @classmethod
+    def record(cls, va8, **kwargs):
+        return abi_infer.analyze(cls.listing(va8), **kwargs)
+
+    @classmethod
+    def slot_record(cls, va8):
+        """A target's record with its real membership, or without one."""
+        slots = cls.memberships_for(va8)
+        return cls.record(va8, vftable_slots=slots) if slots else cls.record(va8)
+
+    @classmethod
+    def hop(cls, va8, *, entry=True, in_text=True, import_pointer=False, va=None,
+            with_evidence=False):
+        """A ``tail_target_record`` built from a committed hop capture.
+
+        The three booleans are facts the *evidence layer* establishes and the
+        engine cannot: that the target is a function entry, that it is a code
+        address of this image, and that it is not a pointer read out of an import
+        table. Each test flips exactly the one it is falsifying, so a guard that
+        stops working fails the test that names it.
+        """
+        capture = cls.listing(va8)
+        first = capture["instructions"][0]["address"]
+        last = capture["instructions"][-1]["address"]
+        record = abi_infer.analyze(capture)
+        if with_evidence:
+            scan = real_scan()
+            if scan is not None:
+                slots = [cls.membership(table, slot) for table, slot in
+                         vftables.slots_of(scan, int(va8, 16))]
+                if slots:
+                    record = abi_infer.analyze(capture, vftable_slots=slots)
+        return {"va": va or ("0x%s" % va8), "entry": entry, "in_text": in_text,
+                "import_pointer": import_pointer, "record": record,
+                "source": "committed capture 0x%s" % va8,
+                "listing_span": [first, last]}
+
+    # -- V1-VFT: what the capability is for ------------------------------
+    def test_every_target_the_extension_fires_on_becomes_thiscall(self):
+        for entry in corpus.by_group("fires"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                record = self.slot_record(va8)
+                self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+                self.assertEqual("INFERRED", record["conventions"]["confidence"])
+                self.assertEqual(0, record["stack_arguments"]["total_bytes"])
+                self.assertEqual("caller", record["cleanup"]["side"])
+                self.assertIsNotNone(claim_of(record, "V1-VFT"))
+                self.assertEqual("ABI_INFERRED", record["verdict"])
+
+    def test_the_cited_table_and_slot_are_the_membership_that_was_supplied(self):
+        """The inference cites the table it was given, and cites real evidence."""
+        record = self.slot_record("00980510")
+        claim = claim_of(record, "V1-VFT")
+        self.assertIsNotNone(claim)
+        slot = self.memberships_for("00980510")[0]
+        self.assertEqual(slot["table"], claim["value"]["table"])
+        self.assertEqual(slot["slot_index"], claim["value"]["slot_index"])
+        self.assertIn(slot["table"], claim["claim"])
+        self.assertEqual("caller", claim["value"]["cleanup_side"])
+        self.assertEqual("vftable_slot", claim["value"]["receiver_provenance"])
+        # The citations are observation ids the record carries, and they are the
+        # terminal RET: the cleanup evidence the rule leans on.
+        by_id = {observation["id"]: observation for observation in record["observations"]}
+        self.assertTrue(claim["based_on"])
+        for citation in claim["based_on"]:
+            self.assertIn(citation, by_id)
+            self.assertEqual("RET", by_id[citation]["kind"])
+            self.assertIsNone(by_id[citation]["imm"], "a bare RET pops nothing")
+
+    def test_the_receiver_is_marked_as_membership_derived(self):
+        """``provenance`` is what tells the two kinds of receiver apart.
+
+        R2's own claim -- "ECX is never read in any form, so there is no register
+        receiver" -- stays in the record and stays *true of the listing*: the
+        membership says where the receiver has to be, not that the body read it.
+        """
+        record = self.slot_record("00980510")
+        self.assertEqual("vftable_slot", record["receiver"]["provenance"])
+        self.assertEqual("ECX", record["receiver"]["register"])
+        self.assertIs(record["receiver"]["present"], False)
+        self.assertIn("ECX is never read in any form", claim_of(record, "R2")["claim"])
+        # A record with no membership has no such key at all.
+        plain = self.record("00980510")
+        self.assertNotIn("provenance", plain["receiver"])
+        self.assertIsNone(plain["receiver"]["register"])
+
+    def test_no_class_identity_is_ever_inferred(self):
+        """Membership yields 'a virtual member of some class', never a name.
+
+        ``0x00b1e4d0`` is a member of hundreds of sound tables at once, so any
+        rule that picked one of them would be naming a class the machine does not
+        determine.
+        """
+        scan = real_scan()
+        if scan is None:
+            self.skipTest("the binary is not present")
+        self.assertGreater(len(vftables.slots_of(scan, 0x00B1E4D0)), 100)
+        record = self.slot_record("00b1e4d0")
+        self.assertIn("virtual member of some class",
+                      claim_of(record, "V1-VFT")["claim"])
+        blob = json.dumps(record, sort_keys=True)
+        for forbidden in ("App::", "IMessageManager", "Canvas::", "class_name"):
+            self.assertNotIn(forbidden, blob)
+
+    # -- R1-VFT: the two halves of the callee-pop shape --------------------
+    def test_the_stack_receiver_shape_stays_byte_identical(self):
+        """Sound membership, callee cleanup, receiver in the popped word.
+
+        The receiver of a COM / ``__stdcall`` interface member is the first
+        callee-popped stack word, so claiming ``__thiscall`` would invent a
+        register receiver the body never reads. Membership alone gets all of
+        these wrong; what stops it is the observation that the body never reads
+        the ECX the dispatch handed it, and the assertion is the strongest one
+        available: the armed record is **byte-identical** to the unarmed one.
+
+        RE-SCOPED, not weakened. This test used to iterate the whole thirteen-
+        target ``refused`` group, which asserted that *no* sound callee-pop slot
+        may ever resolve. That was one assertion where there were two claims, and
+        the second was wrong -- see ``R1VftReceiverRuleTest`` for the evidence
+        and the split. The three targets left here are the ones whose receiver
+        really is a stack word, plus two controls that were never at risk
+        (``0x006a2e20`` is already ``__thiscall`` by C6B, and ``0x00fa5040``'s
+        body never mentions ECX at all). Byte-identity is still asserted, and it
+        is now asserted of a group every member of which would be a real error to
+        upgrade.
+        """
+        for entry in corpus.by_group("stack_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                plain = abi_infer.analyze(listing)
+                armed = abi_infer.analyze(listing,
+                                          vftable_slots=self.memberships_for(va8))
+                self.assertEqual(plain["content_sha256"], armed["content_sha256"],
+                                 "a refused membership must change nothing at all")
+                self.assertIsNone(claim_of(armed, "V1-VFT"))
+                self.assertIsNone(claim_of(armed, "R1-VFT"))
+                self.assertNotIn("provenance", armed["receiver"])
+                if va8 != "006a2e20":
+                    # 0x006a2e20 is already __thiscall by C6B before any
+                    # membership exists; byte-identity is the whole of its claim.
+                    self.assertNotEqual(
+                        "__thiscall", armed["conventions"]["calling_convention"])
+                else:
+                    self.assertEqual("__thiscall",
+                                     armed["conventions"]["calling_convention"])
+                    self.assertIsNotNone(claim_of(armed, "C6B"))
+
+    def test_the_falsifier_is_refused_with_a_real_membership(self):
+        """``0x01053e00``: the case the whole capability was designed around.
+
+        ``R3`` changed what this test has to prove, and made it sharper. Before
+        ``R3`` the function was in no sound table, so the falsifier had two
+        independent reasons to be refused and the membership half of the argument
+        was hypothetical: this test handed the engine a fabricated membership to
+        exercise the guard. It now has five **real** memberships -- slot 19 of five
+        vptr-backed cells of the 520-slot run at ``0x0149b358`` -- so the guard is
+        exercised by membership the predicate actually proved, which is the
+        invariant that matters: *membership alone must not make a callee-popping
+        COM-shaped body ``__thiscall``*.
+
+        The refusal reason is unchanged, because it never depended on membership:
+        ``0x01053e00``'s receiver is ``entry_ESP+0x4``, the first callee-popped
+        word, and the callee pops 8.
+        """
+        listing = self.listing("01053e00")
+        scan = real_scan()
+        memberships = []
+        if scan is not None:
+            memberships = [self.membership(table, slot) for table, slot in
+                           vftables.slots_of(scan, 0x01053E00)]
+        else:
+            self.skipTest("the binary is not present")
+        self.assertEqual(5, len(memberships), "R3 reaches the falsifier")
+        record = abi_infer.analyze(listing, vftable_slots=memberships)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        self.assertIsNone(claim_of(record, "R1-VFT"))
+        self.assertIsNone(claim_of(record, "R2-VFT"))
+        # Independently: even a membership handed to it is refused, because its
+        # receiver is entry_ESP+0x4 -- the first callee-popped word.
+        forced = abi_infer.analyze(listing, vftable_slots=[self.membership(0x0143E308, 0)])
+        self.assertIsNone(forced["conventions"]["calling_convention"])
+        self.assertEqual("callee", forced["cleanup"]["side"])
+        self.assertEqual(8, forced["cleanup"]["bytes"])
+        self.assertIsNone(claim_of(forced, "V1-VFT"))
+
+    # -- V1-VFT: the eight required negatives ----------------------------
+    def test_negative_1_an_ordinary_free_function_leaf_does_not_fire(self):
+        record = abi_infer.analyze(ABSTAIN_BODY)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        # And the shape alone is not enough either: what a leaf lacks is
+        # membership, and the same body fires the moment it has one. That pair is
+        # what makes this a test of the *membership* guard and not of the shape.
+        forced = abi_infer.analyze(ABSTAIN_BODY,
+                                   vftable_slots=[self.membership(0x0143D6F0, 1)])
+        self.assertEqual("__thiscall", forced["conventions"]["calling_convention"])
+
+    def test_negative_2_a_function_beside_a_table_is_not_a_member(self):
+        """Adjacency is not membership, and the engine is told nothing about it.
+
+        ``0x00980510`` is slot 5 of its table. The table's own base, the dword
+        after its last slot and the dword after that are all code-adjacent and
+        members of nothing; the collector is what tells them apart, and this is
+        that assertion.
+        """
+        scan = real_scan()
+        if scan is None:
+            self.skipTest("the binary is not present")
+        table, slot = vftables.slots_of(scan, 0x00980510)[0]
+        for address in (table, table + 4, table + 4 * (slot + 2)):
+            with self.subTest(address="0x%08x" % address):
+                self.assertEqual((), vftables.slots_of(scan, address))
+        self.assertEqual(1, len(self.memberships_for("00980510")))
+
+    def test_negative_3_a_weak_triage_membership_is_dropped(self):
+        """A membership that cannot state how it was established is not one.
+
+        The triage sources behind ``vtables.json`` measure under 45% precision
+        and ``0x01053e00`` is a live counterexample, so an entry carrying no
+        sound basis is an absence of evidence -- and the engine is the place that
+        decides that, because ``cross_validate`` may not set a convention at all.
+        """
+        for basis in (None, "vtables_json", "index_heuristic", "", 0,
+                      "vftable_predicat", "VFTABLE_PREDICATE"):
+            with self.subTest(basis=basis):
+                record = abi_infer.analyze(
+                    fx.load_fixture("08_leaf_no_frame"),
+                    vftable_slots=[self.membership(0x0143D6F0, 5, basis=basis)])
+                self.assertIsNone(record["conventions"]["calling_convention"])
+                self.assertIsNone(claim_of(record, "V1-VFT"))
+        # The sound basis, on the same body, does fire -- so the basis is the only
+        # thing that separated the two cases.
+        record = abi_infer.analyze(
+            fx.load_fixture("08_leaf_no_frame"),
+            vftable_slots=[self.membership(0x0143D6F0, 5)])
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+
+    def test_negative_4_a_table_nothing_stores_is_not_a_table(self):
+        """The wrong-association case is decided by the predicate, not the engine.
+
+        A run of code pointers that no vptr install ever names is a handler table.
+        A synthetic image makes the difference mechanical: the same two runs, one
+        of which something stores and one of which nothing does, and only the
+        stored one becomes a table with members.
+        """
+        import tests.test_vftable_membership as synth
+        payload = synth.dwords(synth.fn_va(0), synth.fn_va(4), synth.fn_va(8), 0,
+                               synth.fn_va(12), synth.fn_va(16), synth.fn_va(4))
+        stored = synth.vftables.scan_bytes(synth.image_with_table(
+            synth.store_vptr(synth.REG_ECX)
+            + synth.dwords(synth.table_va(synth.RDATA_RVA)) + synth.PAD, payload))
+        unstored = synth.vftables.scan_bytes(synth.image_with_table(
+            synth.PAD, payload))
+        self.assertEqual(2, stored["stats"]["code_pointer_runs"])
+        self.assertEqual(1, stored["stats"]["sound_tables"],
+                         "only the base something stores is a table")
+        self.assertEqual(0, unstored["stats"]["sound_tables"],
+                         "a run nothing stores is a handler table, not a vftable")
+        table = int(list(stored["tables"])[0], 16)
+        self.assertEqual(((table, 0),), synth.vftables.slots_of(stored, synth.fn_va(0)))
+        self.assertEqual((), synth.vftables.slots_of(stored, synth.fn_va(12)),
+                         "the unstored run base is a member of nothing")
+        # And the engine, handed nothing, claims nothing.
+        record = abi_infer.analyze(fx.load_fixture("08_leaf_no_frame"),
+                                   vftable_slots=[])
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_negative_5_an_indirect_call_target_is_not_the_caller(self):
+        """Dispatching *through* a slot says nothing about the dispatcher.
+
+        A body that loads a function pointer out of a table and calls it is the
+        shape that makes a table a table, and it is not itself a member of one.
+        The membership belongs to the address that was called.
+        """
+        body = ("MOV EAX,dword ptr [0x0141ca70 + 0x28]\n"
+                "CALL EAX\n"
+                "RET")
+        record = abi_infer.analyze(body)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        callee = abi_infer.analyze("MOV EAX,0x2a\nRET",
+                                   vftable_slots=[self.membership(0x0141CA70, 10)])
+        self.assertEqual("__thiscall", callee["conventions"]["calling_convention"],
+                         "the membership belongs to the callee, not the caller")
+        # The real shape, from the binary: a body that loads a slot and jumps
+        # through the import table beside it. The target of an indirect transfer is
+        # a runtime value, so nothing about the caller's own address follows.
+        record = self.record("00847a40")
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        self.assertTrue([item for item in record["observations"]
+                         if item["kind"] == "JMP_INDIRECT"],
+                        "the transfers really are indirect")
+
+    def test_negative_6_a_thunk_does_not_forward_an_incompatible_abi(self):
+        """S6: the argument areas must be compatible, or nothing forwards.
+
+        The pair differs in exactly one value -- the target's own argument area
+        -- so the compatible twin forwarding is what proves the guard is load
+        bearing rather than incidental.
+        """
+        # An ESP-neutral thunk that *does* resolve an argument slot of its own:
+        # S4 needs esp_delta 0, so the slot has to be read without a PUSH.
+        thunk = ("MOV EDX,dword ptr [ESP + 0x4]\n"
+                 "JMP 0x00500000")
+        for words, expected in ((5, None), (1, "__thiscall")):
+            with self.subTest(target_argument_words=words):
+                target = {"va": "0x00500000", "entry": True, "in_text": True,
+                          "import_pointer": False,
+                          "record": target_cdecl(words)
+                          if words == 5 else target_thiscall_popping(4),
+                          "source": "synthetic"}
+                record = abi_infer.analyze(thunk, tail_target_record=target)
+                self.assertEqual(expected, record["conventions"]["calling_convention"])
+                if expected is None:
+                    self.assertIsNone(claim_of(record, "T1-FWD"))
+                    self.assertIn("tail_call", record["conventions"]["ambiguities"])
+                else:
+                    self.assertIsNotNone(claim_of(record, "T1-FWD"))
+        # The same guard on the real body: 0x007e6100 reads its own first stack
+        # word and leaves an unmatched PUSH ESI behind, so S4 refuses it before
+        # S6 is even reached -- and it is refused again by S3, whose target is not
+        # a function entry.
+        listing = self.listing("007e6100")
+        record = abi_infer.analyze(
+            listing,
+            tail_target_record=self.hop("007e6130", va="0x007e6135", entry=False))
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertEqual(1, abi_infer.analyze(listing)["stack_arguments"]["observed_slots"])
+
+    def test_negative_7_receiver_shaped_use_is_not_a_membership_claim(self):
+        """When the body already reads a receiver, the membership adds nothing.
+
+        The record is already ``__thiscall`` by C7 in that case, and the rule that
+        produced it is named: a record must never be able to show two different
+        rules for one convention.
+        """
+        body = ("MOV EAX,dword ptr [ECX + 0x8]\n"
+                "MOV EAX,dword ptr [ECX + 0xc]\n"
+                "RET")
+        record = abi_infer.analyze(body, vftable_slots=[self.membership(0x0143D6F0, 3)])
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        self.assertIsNotNone(claim_of(record, "C7"))
+        self.assertIs(record["receiver"]["present"], True)
+        self.assertNotIn("provenance", record["receiver"])
+        # ECX used as ordinary data is a different case: the receiver is
+        # undetermined, the membership is still sound, and the claim still holds.
+        counter = ("MOV ECX,0x10\n"
+                   "MOV EAX,dword ptr [ECX + 0x4]\n"
+                   "RET")
+        record = abi_infer.analyze(counter, vftable_slots=[self.membership(0x0143D6F0, 3)])
+        self.assertIsNotNone(claim_of(record, "V1-VFT"))
+        self.assertEqual("ecx_reassigned_before_deref", record["receiver"]["reason"])
+
+    def test_negative_8_a_com_interface_slot_does_not_become_thiscall(self):
+        """The shape of ``0x01053e00``, in miniature and in full.
+
+        ``SUB ESP,0x18`` + ``PUSH ESI`` is 28 bytes, so ``[ESP+0x20]`` is
+        ``entry_ESP+0x4`` -- the first callee-popped word. Membership is proven
+        and the answer is still not ``__thiscall``.
+        """
+        body = ("SUB ESP,0x18\n"
+                "PUSH ESI\n"
+                "MOV ESI,dword ptr [ESP + 0x20]\n"
+                "TEST byte ptr [ESI],0x1\n"
+                "POP ESI\n"
+                "ADD ESP,0x18\n"
+                "RET 0x8")
+        record = abi_infer.analyze(body, vftable_slots=[self.membership(0x0143E308, 3)])
+        self.assertNotEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        self.assertEqual("callee", record["cleanup"]["side"])
+        self.assertEqual(8, record["cleanup"]["bytes"])
+        self.assertEqual(1, record["stack_arguments"]["observed_slots"])
+        # C6 still speaks: a callee popping 4/8/12 with no register receiver is
+        # __stdcall, which is a claim about the *other* shape. The rule under test
+        # simply never runs.
+        self.assertEqual("__stdcall", record["conventions"]["calling_convention"])
+        self.assertIsNotNone(claim_of(record, "C6"))
+
+    # -- T1-FWD: what forwarding looks like ------------------------------
+    def test_every_forwarded_target_forwards_its_convention_and_cleanup(self):
+        for entry in corpus.by_group("forwarded"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                target = self.hop(entry["hop"], with_evidence=True)
+                expected = target["record"]["conventions"]["calling_convention"]
+                expected_cleanup = target["record"]["cleanup"]
+                record = self.record(va8, tail_target_record=target)
+                claim = claim_of(record, "T1-FWD")
+                self.assertIsNotNone(claim, "the hop is single, direct and ESP-neutral")
+                self.assertEqual(expected_cleanup["side"], record["cleanup"]["side"])
+                self.assertEqual(expected_cleanup["bytes"], record["cleanup"]["bytes"])
+                if expected is not None:
+                    self.assertEqual(expected, record["conventions"]["calling_convention"])
+                    self.assertIn(entry["hop"], claim["claim"])
+                else:
+                    # Only the cleanup moved, and the ambiguity is still stated.
+                    self.assertIsNone(record["conventions"]["calling_convention"])
+                    self.assertIn("tail_call", record["conventions"]["ambiguities"])
+                self.assertIs(record["tail_call"]["present"], True)
+
+    def test_a_this_adjustor_thunk_reports_its_adjustment(self):
+        """``0x0096ff70`` is ``SUB ECX,0xc; JMP`` -- one of the adjustor thunks.
+
+        The delta belongs to the receiver, as its own field: the thunk adjusts the
+        receiver it was handed, and the *identity* of either receiver is not
+        something a machine fact can supply.
+        """
+        target = self.hop("0096ffd0")
+        record = self.record("0096ff70", tail_target_record=target)
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertEqual("INFERRED", record["conventions"]["confidence"])
+        self.assertEqual("callee", record["cleanup"]["side"])
+        self.assertEqual(4, record["cleanup"]["bytes"])
+        self.assertEqual(-12, record["receiver"]["adjustor_delta"])
+        # The receiver's identity is never copied from the target's.
+        self.assertIsNone(record["receiver"]["register"])
+        self.assertIsNot(record["receiver"]["present"], True)
+        self.assertNotIn("provenance", record["receiver"])
+        claim = claim_of(record, "T1-FWD")
+        self.assertEqual("__thiscall", claim["value"])
+        self.assertIn("0x0096ffd0", claim["claim"])
+        # The hop names both VAs: the one in the claim, the other in the record.
+        self.assertEqual("0x0096ff70", record["target"]["va"])
+
+    def test_a_target_whose_convention_abstains_gives_the_cleanup_only(self):
+        """``0x00980480``: the cleanup moves, the convention does not."""
+        target = self.hop("00980330")
+        self.assertIsNone(target["record"]["conventions"]["calling_convention"])
+        self.assertEqual("callee", target["record"]["cleanup"]["side"])
+        record = self.record("00980480", tail_target_record=target)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertEqual("callee", record["cleanup"]["side"])
+        self.assertEqual(4, record["cleanup"]["bytes"])
+        self.assertEqual(-4, record["receiver"]["adjustor_delta"])
+        self.assertIn("tail_call", record["conventions"]["ambiguities"])
+        claim = claim_of(record, "T1-FWD")
+        self.assertIsNotNone(claim)
+        self.assertIn("not decided", claim["claim"])
+
+    def test_the_forwarded_confidence_is_capped_by_the_targets_own(self):
+        """A forward starts at INFERRED and is then capped by the target.
+
+        Both halves matter: the target's own rung can pull it *down* (an
+        APPROXIMATION target yields an APPROXIMATION forward), and no target can
+        push it *up* past INFERRED, because the thunk's own body never observed a
+        convention.
+        """
+        for rung, expected in (("APPROXIMATION", "APPROXIMATION"),
+                               ("INFERRED", "INFERRED"),
+                               ("SUPPORTED", "INFERRED"),
+                               ("OBSERVED", "INFERRED")):
+            with self.subTest(target_confidence=rung):
+                target = with_confidence(target_thiscall_caller(), rung)
+                self.assertEqual("__thiscall", target["conventions"]["calling_convention"])
+                record = abi_infer.analyze(
+                    "SUB ECX,0x4\nJMP 0x00500000",
+                    tail_target_record={"va": "0x00500000", "entry": True,
+                                        "in_text": True, "import_pointer": False,
+                                        "record": target})
+                self.assertEqual(expected, record["conventions"]["confidence"])
+
+    def test_a_forward_names_its_own_source_in_the_record(self):
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x00500000",
+            tail_target_record={"va": "0x00500000", "entry": True, "in_text": True,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller(),
+                                "source": "synthetic target"})
+        self.assertEqual("forwarded_from_tail_target",
+                         record["conventions"]["corroboration"])
+        self.assertIn("synthetic target", json.dumps(record["inferences"]))
+
+    # -- T1-FWD: what must not forward -----------------------------------
+    def test_the_three_wrong_tail_targets_still_abstain(self):
+        for entry in corpus.by_group("not_forwarded"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                record = self.record(va8)
+                self.assertIsNone(record["conventions"]["calling_convention"])
+                self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_the_interior_jump_does_not_forward(self):
+        """``0x007e6100`` -> ``0x007e6135``: S3, S4 and S6 each refuse it.
+
+        The target is inside the body the bridge already split in two, the thunk
+        left an unmatched ``PUSH ESI`` behind, and its own argument area is four
+        bytes against a target's twenty. Each guard is asserted on its own, so a
+        guard that stops working fails the test that names it.
+        """
+        listing = self.listing("007e6100")
+        self.assertEqual(4, esp_delta_of(listing), "S4: the unmatched PUSH ESI")
+        self.assertIsNone(claim_of(abi_infer.analyze(listing), "T1-FWD"))
+        # S3: the containing function's listing does not start at the target.
+        interior = self.hop("007e6130", va="0x007e6135", entry=False)
+        self.assertIsNone(claim_of(
+            abi_infer.analyze(listing, tail_target_record=interior), "T1-FWD"))
+        # S3 the other half, and S6: the same target honestly declared an entry
+        # still fails, because the jump lands inside the body.
+        honest = self.hop("007e6130", va="0x007e6135", entry=True)
+        self.assertIsNone(claim_of(
+            abi_infer.analyze(listing, tail_target_record=honest), "T1-FWD"))
+
+    def test_a_jump_through_memory_is_not_a_forward(self):
+        """``0x00847a40``: ``JMP dword ptr [0x013cc118]`` on both arms.
+
+        An import thunk's target is not a static address in this image, so there
+        is nothing to resolve and nothing to forward: S2 refuses the shape, and S7
+        would refuse the address.
+        """
+        listing = self.listing("00847a40")
+        record = abi_infer.analyze(listing)
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertEqual([], [item for item in record["observations"]
+                              if item["kind"] == "JMP_INDIRECT"
+                              and item.get("via") != "memory"])
+        # Even handed a resolved target the body cannot forward: it has no direct
+        # static hop for a forward to be about.
+        forced = abi_infer.analyze(listing, tail_target_record=self.hop("006412a0"))
+        self.assertIsNone(claim_of(forced, "T1-FWD"))
+
+    def test_a_target_outside_the_code_range_is_refused(self):
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x7c8123ab",
+            tail_target_record={"va": "0x7c8123ab", "entry": True, "in_text": False,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller()})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_an_import_pointer_target_is_refused(self):
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x013cc118",
+            tail_target_record={"va": "0x013cc118", "entry": True, "in_text": True,
+                                "import_pointer": True,
+                                "record": target_thiscall_caller()})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_a_target_record_for_a_different_address_is_refused(self):
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x00500000",
+            tail_target_record={"va": "0x00500010", "entry": True, "in_text": True,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller()})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_a_target_with_no_convention_and_no_cleanup_forwards_nothing(self):
+        """Both halves of the conclusion absent: nothing at all is forwarded."""
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x00500000",
+            tail_target_record={"va": "0x00500000", "entry": True, "in_text": True,
+                                "import_pointer": False,
+                                "record": abi_infer.analyze("JMP 0x00500010")})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIsNone(record["cleanup"]["side"])
+
+    def _target(self, va="0x00500000"):
+        return {"va": va, "entry": True, "in_text": True, "import_pointer": False,
+                "record": target_thiscall_caller(), "source": "synthetic"}
+
+    def test_a_body_with_a_return_is_never_a_forward(self):
+        """S1's first half: a ``RET`` anywhere means the thunk is not a thunk."""
+        record = abi_infer.analyze("MOV EAX,0x2a\nJMP 0x00500000\nRET",
+                                   tail_target_record=self._target())
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertEqual("ABI_UNKNOWN", record["verdict"])
+
+    def test_a_body_with_two_jumps_is_never_a_forward(self):
+        """S1's second half: exactly one exit, and this listing has two."""
+        record = abi_infer.analyze("JMP 0x00500000\nJMP 0x00500020",
+                                   tail_target_record=self._target())
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_a_conditional_exit_out_of_the_listing_is_reported_not_hidden(self):
+        """The one place S1's "exit" is narrower than a reader may assume.
+
+        S1 counts *terminal* transfers, because ``0x007e6100`` -- whose rejection
+        the specification attributes to S3, S4 and S6 rather than to S1 -- has
+        three conditional branches inside its own body. A conditional branch that
+        leaves the listing is therefore not an exit for S1, and the honest
+        consequence is asserted here rather than papered over: the forward
+        happens and the record says, in ``parse.flow_complete``, that the listing
+        is not the whole of the body. A rule that hid that would be claiming a
+        completeness the engine does not have.
+        """
+        record = abi_infer.analyze(
+            "0x00500000  TEST EAX,EAX\n"
+            "0x00500002  JZ 0x00500020\n"
+            "0x00500004  JMP 0x00500100",
+            tail_target_record=self._target(va="0x00500100"))
+        self.assertIsNotNone(claim_of(record, "T1-FWD"))
+        self.assertIs(record["parse"]["flow_complete"], False)
+        # ``completeness`` is the engine's pre-existing bucket for "no call, no
+        # argument, no receiver, no RET" and a thunk is always EMPTY in it. The
+        # claim is still carried in full; the bucket is not a claim about it.
+        self.assertEqual("EMPTY", record["completeness"])
+        # The same body with the branch inside the listing is a complete body.
+        inside = abi_infer.analyze(
+            "0x00500000  TEST EAX,EAX\n"
+            "0x00500002  JZ 0x00500006\n"
+            "0x00500004  JMP 0x00500100\n"
+            "0x00500006  NOP",
+            tail_target_record=self._target(va="0x00500100"))
+        self.assertIs(inside["parse"]["flow_complete"], True)
+        self.assertIsNotNone(claim_of(inside, "T1-FWD"))
+
+    def test_a_frame_establishing_thunk_does_not_forward(self):
+        """S4: a thunk that sets up a frame does not pass the caller's frame on."""
+        record = abi_infer.analyze(
+            "SUB ESP,0x8\nJMP 0x00500000",
+            tail_target_record={"va": "0x00500000", "entry": True, "in_text": True,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller()})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_every_tail_abstention_keeps_the_tail_call_ambiguity(self):
+        """A thunk that forwards nothing says so in the one field a reader reads."""
+        for entry in corpus.by_group("not_forwarded") + corpus.by_group("forwarded"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                kwargs = {}
+                if entry.get("hop"):
+                    kwargs["tail_target_record"] = self.hop(entry["hop"],
+                                                            with_evidence=True)
+                record = self.record(va8, **kwargs)
+                if record["conventions"]["calling_convention"] is None \
+                        and record["tail_call"]["present"]:
+                    self.assertIn("tail_call", record["conventions"]["ambiguities"])
+
+    # -- the mutation tests: a rule that cannot fail is not a test -------
+    def test_the_positives_fail_when_the_rule_is_disabled(self):
+        original = abi_infer.vftable_memberships
+        abi_infer.vftable_memberships = lambda value: ()
+        try:
+            for entry in corpus.by_group("fires"):
+                va8 = entry["va8"]
+                with self.subTest(va=va8):
+                    record = abi_infer.analyze(self.listing(va8))
+                    self.assertIsNone(record["conventions"]["calling_convention"])
+                    self.assertIsNone(claim_of(record, "V1-VFT"))
+        finally:
+            abi_infer.vftable_memberships = original
+
+    def test_the_forward_positives_fail_when_the_rule_is_disabled(self):
+        original = abi_infer._tail_forward
+        abi_infer._tail_forward = lambda *args, **kwargs: None
+        try:
+            for entry in corpus.by_group("forwarded"):
+                va8 = entry["va8"]
+                with self.subTest(va=va8):
+                    record = abi_infer.analyze(
+                        self.listing(va8),
+                        tail_target_record=self.hop(entry["hop"], with_evidence=True))
+                    self.assertIsNone(claim_of(record, "T1-FWD"))
+                    self.assertIsNone(record["conventions"]["calling_convention"])
+                    self.assertIn("tail_call", record["conventions"]["ambiguities"])
+        finally:
+            abi_infer._tail_forward = original
+
+    def test_a_refused_membership_leaves_the_record_byte_identical(self):
+        """An evidence class that cannot fire changes nothing at all.
+
+        Not "nothing that matters" -- the same bytes, which is the only statement
+        that survives a future reader adding a field to the wrong place.
+
+        The groups are the ones whose membership is *present and sound* and whose
+        claim is still refused: the stack-receiver callee-pop shape, and the
+        tail-jump bodies that must not forward. The dispatch-receiver group is
+        excluded because its membership is the one thing that does fire, and it
+        is the subject of ``R1VftReceiverRuleTest`` instead.
+        """
+        noise = {"vftable_slots": [self.membership(0x0143D6F0, 0)],
+                 "tail_target_record": {"va": "0x00500000", "entry": True,
+                                        "in_text": True, "import_pointer": False,
+                                        "record": target_thiscall_caller()}}
+        for entry in (corpus.by_group("stack_receiver")
+                      + corpus.by_group("not_forwarded")):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                self.assertEqual(abi_infer.analyze(listing)["content_sha256"],
+                                 abi_infer.analyze(listing, **noise)["content_sha256"])
+
+    # -- the rule-id vocabulary is closed ---------------------------------
+    def test_both_rule_ids_are_registered(self):
+        for rule in ("V1-VFT", "T1-FWD", "R1-VFT"):
+            self.assertIn(rule, abi_infer.RULE_IDS)
+        self.assertIn("T1", abi_infer.RULE_IDS,
+                      "the existing tail-transfer claim keeps its id")
+        self.assertNotIn("V1", abi_infer.RULE_IDS,
+                         "V1 is the specification's variadic rule, not a free name")
+
+    def test_an_unregistered_rule_id_is_refused(self):
+        """The registry is a check, not a comment: a typo cannot be filed."""
+        insns, meta = abi_infer.parse_listing(ABSTAIN_BODY)
+        observations, state, frame = abi_infer.extract(insns, meta, 0x400000)
+        abi_infer._complete_observations(state, observations)
+        state.observations = observations
+        record = abi_infer._infer_rules(observations, state, frame, meta, 0x400000)
+        self.assertIn("C5", [entry["id"] for entry in record["inferences"]])
+        original = abi_infer.RULE_IDS
+        abi_infer.RULE_IDS = frozenset(original - {"C5"})
+        try:
+            with self.assertRaises(AssertionError):
+                abi_infer._infer_rules(observations, state, frame, meta, 0x400000)
+        finally:
+            abi_infer.RULE_IDS = original
+
+    # -- the input contract ----------------------------------------------
+    def test_a_malformed_membership_removes_evidence_and_never_raises(self):
+        for value in (None, 0, "0x0143d6f0", [None], [[]], [{"table": None}],
+                      [{"table": "0x0143d6f0"}], [{"table": 0x0143d6f0, "slot_index": -1}],
+                      [{"table": 0x0143d6f0, "slot_index": True, "basis": "vftable_predicate"}],
+                      [{"table": "not-an-address", "slot_index": 0,
+                        "basis": "vftable_predicate"}], object()):
+            with self.subTest(value=value):
+                record = abi_infer.analyze(ABSTAIN_BODY, vftable_slots=value)
+                self.assertIsNone(record["conventions"]["calling_convention"])
+                self.assertIsNone(claim_of(record, "V1-VFT"))
+        # A two-element sequence is accepted, so a caller holding tuples is not
+        # silently ignored.
+        self.assertEqual(((0x0143D6F0, 5),),
+                         abi_infer.vftable_memberships([(0x0143D6F0, 5)]))
+        self.assertEqual(((0x0143D6F0, 5),),
+                         abi_infer.vftable_memberships(
+                             {"table": "0x0143d6f0", "slot_index": 5,
+                              "basis": abi_infer.VFTABLE_BASIS}))
+
+    def test_a_malformed_tail_target_removes_evidence_and_never_raises(self):
+        for value in (None, 0, "x", [], {"va": "0x00500000"}, {"record": {}},
+                      {"va": "0x00500000", "entry": True, "in_text": True,
+                       "import_pointer": False, "record": "not a record"}):
+            with self.subTest(value=value):
+                record = abi_infer.analyze("SUB ECX,0x4\nJMP 0x00500000",
+                                           tail_target_record=value)
+                self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_the_new_parameters_are_keyword_only_and_defaulted(self):
+        """No call site shifted: every pre-existing signature still works.
+
+        Checked against the signature rather than against a call, because the
+        property is about the *interface*: seven keyword-only parameters, the
+        five pre-existing ones with their historical defaults, and two new ones
+        whose defaults are the empty answers.
+        """
+        signature = inspect.signature(abi_infer.analyze)
+        kinds = {name: parameter.kind for name, parameter in signature.parameters.items()}
+        defaults = {name: parameter.default
+                    for name, parameter in signature.parameters.items()
+                    if parameter.default is not inspect.Parameter.empty}
+        for name in ("disassembly", "call_sites", "ghidra_calling_convention",
+                     "ghidra_parameter_count", "persisted_abi", "image_base",
+                     "vftable_slots", "tail_target_record"):
+            self.assertIn(name, kinds)
+            if name != "disassembly":
+                self.assertIs(inspect.Parameter.KEYWORD_ONLY, kinds[name],
+                              "%s must stay keyword-only" % name)
+        self.assertEqual((), defaults["vftable_slots"])
+        self.assertIsNone(defaults["tail_target_record"])
+        self.assertEqual((), defaults["call_sites"])
+        self.assertEqual(0x00400000, defaults["image_base"])
+        self.assertIsNone(defaults["persisted_abi"])
+        # A second positional argument was never legal and still is not.
+        with self.assertRaises(TypeError):
+            abi_infer.analyze(ABSTAIN_BODY, ())
+        # And the record with both defaults is the one the goldens hold.
+        self.assertEqual(golden_of("08_leaf_no_frame")["content_sha256"],
+                         abi_infer.analyze(fx.load_fixture("08_leaf_no_frame"),
+                                           vftable_slots=(),
+                                           tail_target_record=None)["content_sha256"])
+
+
+class SharedTargetTailForwardTest(unittest.TestCase):
+    """``T1-FWD`` when the body owns two exit sites that name ONE address.
+
+    ``S1`` used to count exit *sites* and asked for exactly one. That is a proxy
+    for the property the rule rests on, which is that every path leaving the body
+    leaves it at the same address; ``0x00841440`` is the real shape where the two
+    differ. This class pins the widening and, at more length than is usual,
+    the inputs that must keep abstaining -- the count is what was relaxed, so
+    every way of having "more than one" that is *not* "one address" is a
+    negative, and each is asserted on its own.
+    """
+
+    TARGET = "0x00500000"
+
+    @staticmethod
+    def target(va=TARGET, **overrides):
+        record = dict(overrides.pop("record", None) or target_thiscall_caller())
+        out = {"va": va, "entry": True, "in_text": True, "import_pointer": False,
+               "record": record, "source": "synthetic"}
+        out.update(overrides)
+        return out
+
+    def forward(self, listing, **overrides):
+        record = abi_infer.analyze(listing, tail_target_record=self.target(**overrides))
+        return record, claim_of(record, "T1-FWD")
+
+    # -- the positive, on the real body ---------------------------------
+    def test_the_real_two_site_body_forwards_its_targets_convention(self):
+        """``0x00841440``: a ``JZ`` whose two arms both jump to ``0x0083c780``.
+
+        The forward is the target's own claim and nothing more -- ``0x0083c780``
+        decides ``__thiscall`` from *its* body (``RET 0x8``, so the callee pops
+        two dwords, with a receiver dereferenced through ECX), and this body
+        contributes only the fact that it always gets there.
+        """
+        listing = corpus.load(corpus.by_va8("00841440"))
+        hops = [item["instruction"] for item in listing["instructions"]
+                if item["instruction"].startswith("JMP ")]
+        self.assertEqual(2, len(hops), "this target is the two-site case or it is not")
+        self.assertEqual({"JMP 0x0083c780"}, set(hops),
+                         "both sites must name the same address for S1 to hold")
+        target_record = abi_infer.analyze(corpus.load(corpus.by_va8("0083c780")))
+        self.assertEqual("__thiscall", target_record["conventions"]["calling_convention"])
+        target = {"va": "0x0083c780", "entry": True, "in_text": True,
+                  "import_pointer": False, "record": target_record,
+                  "source": "committed capture 0x0083c780"}
+        record = abi_infer.analyze(listing, tail_target_record=target)
+        claim = claim_of(record, "T1-FWD")
+        self.assertIsNotNone(claim)
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertEqual("INFERRED", record["conventions"]["confidence"])
+        self.assertEqual("forwarded_from_tail_target",
+                         record["conventions"]["corroboration"])
+        # S6 still ran: the thunk's own argument area is 8 bytes and the target's
+        # is 8 bytes, which is the one compatibility check between the two bodies.
+        self.assertEqual(8, record["stack_arguments"]["total_bytes"])
+        self.assertEqual(8, target_record["stack_arguments"]["total_bytes"])
+        self.assertEqual("callee", record["cleanup"]["side"])
+        self.assertEqual(8, record["cleanup"]["bytes"])
+        # Both sites are cited, so a reader is not left believing one arm was read.
+        self.assertEqual(2, len(claim["based_on"]))
+
+    def test_the_synthetic_two_site_positive_forwards(self):
+        record, claim = self.forward("JMP 0x00500000\nJMP 0x00500000")
+        self.assertIsNotNone(claim)
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertEqual("INFERRED", record["conventions"]["confidence"])
+
+    def test_a_conditional_branch_selecting_between_two_sites_still_forwards(self):
+        """The real shape: the branch picks an arm, both arms land in the same place.
+
+        A calling convention is a property of a function's *entry* contract, so it
+        cannot differ between two paths through the body. What the two paths must
+        agree on is where control goes, and here they do. The address column is
+        used so the body is a whole span and the target is outside it, which is
+        what makes both sites transfers *out* rather than intra-procedural.
+        """
+        record, claim = self.forward(
+            "0x00500000  TEST EAX,EAX\n"
+            "0x00500002  JZ 0x00500009\n"
+            "0x00500004  JMP 0x00510000\n"
+            "0x00500009  JMP 0x00510000", va="0x00510000")
+        self.assertIsNotNone(claim)
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertIs(record["parse"]["flow_complete"], True)
+
+    def test_the_multi_site_forward_states_that_it_was_multi_site(self):
+        """The record says which half of S1 it went through, and the count is data.
+
+        Stated in the claim text and carried by the citations, because the claim
+        *is* where ``T1-FWD`` keeps its provenance. Both arms being cited is the
+        part a reader would otherwise have to take on trust.
+        """
+        _, one = self.forward("JMP 0x00500000")
+        _, two = self.forward("JMP 0x00500000\nJMP 0x00500000")
+        self.assertIn("a single ESP-neutral direct jump", one["claim"])
+        self.assertNotIn("direct jumps resolve", one["claim"])
+        self.assertIn("all 2 of this listing's direct jumps resolve to that one",
+                      two["claim"])
+        self.assertEqual(2, len(two["based_on"]),
+                         "both sites are cited, not just the first")
+        self.assertEqual(1, len(one["based_on"]))
+
+    # -- the negatives: every way of "more than one" that is not one address
+    def test_two_distinct_targets_still_abstain(self):
+        """The relaxation is the target *set*, not the site count."""
+        record, claim = self.forward("JMP 0x00500000\nJMP 0x00500020")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIn("tail_call", record["conventions"]["ambiguities"])
+
+    def test_three_sites_naming_two_targets_still_abstain(self):
+        record, claim = self.forward(
+            "JMP 0x00500000\nJMP 0x00500020\nJMP 0x00500000")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_an_indirect_jump_beside_the_shared_target_still_abstains(self):
+        """A path may leave at an address no target record covers."""
+        record, claim = self.forward(
+            "JMP EAX\nJMP 0x00500000\nJMP 0x00500000")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_a_listing_that_can_run_off_its_end_still_abstains(self):
+        """A path that reaches the last instruction without a jump has left the
+        listing by falling out of it, and where it went is not in the record."""
+        record, claim = self.forward(
+            "JMP 0x00500000\nJMP 0x00500000\nNOP")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_a_return_beside_the_shared_target_still_abstains(self):
+        """S1's first half is untouched: a ``RET`` means this is not a thunk."""
+        record, claim = self.forward(
+            "JMP 0x00500000\nJMP 0x00500000\nRET")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_a_body_that_adjusts_the_stack_still_abstains(self):
+        """S4 is still checked on the multi-site half."""
+        record, claim = self.forward(
+            "SUB ESP,0x8\nJMP 0x00500000\nJMP 0x00500000")
+        self.assertIsNone(claim)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    def test_a_target_whose_convention_abstains_still_forwards_cleanup_only(self):
+        """S5 is unchanged: nothing to forward, so only the cleanup moves."""
+        abstaining = abi_infer.analyze(corpus.load(corpus.by_va8("00980330")))
+        self.assertIsNone(abstaining["conventions"]["calling_convention"])
+        record = abi_infer.analyze(
+            "SUB ECX,0x4\nJMP 0x00980330\nJMP 0x00980330",
+            tail_target_record={"va": "0x00980330", "entry": True, "in_text": True,
+                                "import_pointer": False, "record": abstaining})
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertEqual("callee", record["cleanup"]["side"])
+        self.assertIsNotNone(claim_of(record, "T1-FWD"))
+
+    def test_a_mismatched_argument_area_still_abstains(self):
+        """S6 is checked on the multi-site half exactly as on the single-site one."""
+        wide = abi_infer.analyze(corpus.load(corpus.by_va8("0096ffd0")))
+        self.assertEqual(4, wide["stack_arguments"]["total_bytes"])
+        record = abi_infer.analyze(
+            "MOV EDX,dword ptr [ESP + 0x8]\nJMP 0x0096ffd0\nJMP 0x0096ffd0",
+            tail_target_record={"va": "0x0096ffd0", "entry": True, "in_text": True,
+                                "import_pointer": False, "record": wide})
+        self.assertIsNone(claim_of(record, "T1-FWD"))
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    # -- byte-for-byte, and the mutation that would undo the widening ----
+    def test_the_single_site_record_is_byte_for_byte_unchanged(self):
+        """Byte for byte, against the pre-change engine, for every real forward.
+
+        Comparing to a hand-written expectation would only prove the record looks
+        like what I expect today. Pinning the old guard in-process and diffing the
+        whole canonical record is the property that matters: on every input that
+        does not meet the new precondition, the two engines are the same function.
+        """
+        original = abi_infer._shared_target_hops
+        abi_infer._shared_target_hops = (
+            lambda state: None if state.ret_obs or len(state.jmps_direct) != 1
+            else list(state.jmps_direct))
+        try:
+            expected = {}
+            for entry in corpus.by_group("forwarded") + corpus.by_group("not_forwarded"):
+                kwargs = {}
+                if entry.get("hop"):
+                    kwargs["tail_target_record"] = VftableRuleTest.hop(
+                        entry["hop"], with_evidence=True)
+                expected[entry["va8"]] = canonical_json(
+                    abi_infer.analyze(corpus.load(corpus.by_va8(entry["va8"])), **kwargs))
+        finally:
+            abi_infer._shared_target_hops = original
+        for entry in corpus.by_group("forwarded") + corpus.by_group("not_forwarded"):
+            with self.subTest(va=entry["va8"]):
+                kwargs = {}
+                if entry.get("hop"):
+                    kwargs["tail_target_record"] = VftableRuleTest.hop(
+                        entry["hop"], with_evidence=True)
+                record = abi_infer.analyze(
+                    corpus.load(corpus.by_va8(entry["va8"])), **kwargs)
+                if entry["va8"] == "00841440":
+                    self.assertNotEqual(expected[entry["va8"]], canonical_json(record),
+                                        "the one input the widening is for must differ")
+                    continue
+                self.assertEqual(expected[entry["va8"]], canonical_json(record))
+
+    def test_restoring_the_site_count_closes_the_capability_again(self):
+        """The mutation: put ``len(jmps_direct) != 1`` back and the positive dies.
+
+        This is what makes the widening a decision rather than an accident -- the
+        old guard is reinstated in-process and the two multi-site bodies that now
+        forward stop doing so, while the single-site forward is untouched.
+        """
+        original = abi_infer._shared_target_hops
+        abi_infer._shared_target_hops = (
+            lambda state: None if state.ret_obs or len(state.jmps_direct) != 1
+            else list(state.jmps_direct))
+        try:
+            real_target = {
+                "va": "0x0083c780", "entry": True, "in_text": True,
+                "import_pointer": False,
+                "record": abi_infer.analyze(corpus.load(corpus.by_va8("0083c780")))}
+            for label, listing, target in (
+                    ("synthetic", "JMP 0x00500000\nJMP 0x00500000", self.target()),
+                    ("real 0x00841440", corpus.load(corpus.by_va8("00841440")),
+                     real_target)):
+                with self.subTest(listing=label):
+                    record = abi_infer.analyze(listing, tail_target_record=target)
+                    self.assertIsNone(claim_of(record, "T1-FWD"))
+                    self.assertIsNone(record["conventions"]["calling_convention"])
+            # The single-site forward is exactly as strong as it ever was.
+            record = abi_infer.analyze("JMP 0x00500000",
+                                       tail_target_record=self.target())
+            self.assertIsNotNone(claim_of(record, "T1-FWD"))
+        finally:
+            abi_infer._shared_target_hops = original
+
+    def test_every_guard_of_the_multi_site_half_is_load_bearing(self):
+        """Each new guard, by the pair it separates.
+
+        ``_shared_target_hops`` adds two refusals on the multi-site half only. A
+        negative test says an input does not fire, not *why*; these pairs say
+        that removing each refusal makes exactly one of them fire.
+        """
+        two = "JMP 0x00500000\nJMP 0x00500000"
+        for guard, neighbour in (
+                ("indirect", "JMP EAX\nJMP 0x00500000\nJMP 0x00500000"),
+                ("tail", "JMP 0x00500000\nJMP 0x00500000\nNOP")):
+            with self.subTest(guard=guard):
+                self.assertIsNone(claim_of(
+                    abi_infer.analyze(neighbour, tail_target_record=self.target()),
+                    "T1-FWD"))
+                self.assertIsNotNone(claim_of(
+                    abi_infer.analyze(two, tail_target_record=self.target()), "T1-FWD"))
+
+    def test_the_distinct_target_refusal_is_what_separates_the_pair(self):
+        """The core of the widening, as a mutation rather than a restatement."""
+        two_sites_one = "JMP 0x00500000\nJMP 0x00500000"
+        two_sites_two = "JMP 0x00500000\nJMP 0x00500020"
+        self.assertIsNotNone(claim_of(
+            abi_infer.analyze(two_sites_one, tail_target_record=self.target()), "T1-FWD"))
+        self.assertIsNone(claim_of(
+            abi_infer.analyze(two_sites_two, tail_target_record=self.target()), "T1-FWD"))
+        original = abi_infer._shared_target_hops
+        # Drop only the distinct-target refusal, keeping the two new ones.
+        abi_infer._shared_target_hops = (
+            lambda state: None if state.ret_obs or not state.jmps_direct
+            else list(state.jmps_direct))
+        try:
+            record = abi_infer.analyze(two_sites_two, tail_target_record=self.target())
+            self.assertIsNotNone(claim_of(record, "T1-FWD"),
+                                 "the pair must collapse when the guard is removed")
+        finally:
+            abi_infer._shared_target_hops = original
+
+
+class VftableEvidenceLayerTest(unittest.TestCase):
+    """The evidence layer that feeds the two rules: what it supplies, and what it refuses.
+
+    ``evidence.py`` is where the engine's two new inputs come from, and it is
+    also where the recursion lives -- the engine is a pure function of one
+    listing and must stay one, so resolving a tail target's own ABI, the VA-keyed
+    visited set and the depth cap are all here. Every test below is hermetic: the
+    hop listings are committed captures, and the pack a resolver reads offline is
+    written into a temporary tree by the test.
+    """
+
+    @staticmethod
+    def card(listing):
+        """A disassembly card in the shape ``_derived_abi`` reads."""
+        return {"status": "ok", "mode": "live", "provenance": "test capture",
+                "data": listing, "listing": listing}
+
+    @classmethod
+    def pack_tree(cls, targets, root):
+        """A temporary ``reconstruction/evidence`` tree for the offline resolver.
+
+        ``targets`` is ``(pack_va8, listing_va8)``: the pack is filed under the
+        address that is *asked for*, and holds the listing the bridge would have
+        returned for it -- which for an interior address is the containing
+        function's body, and therefore starts somewhere else. That is the whole
+        point of the entry test below, so the tree has to be able to express it.
+        """
+        for va8, listing_va8 in targets:
+            path = os.path.join(root, "reconstruction", "evidence", va8)
+            os.makedirs(path, exist_ok=True)
+            pack = {"categories": {"disassembly": {
+                "availability": "available",
+                "value": corpus.load(corpus.by_va8(listing_va8))}}}
+            with open(os.path.join(path, "evidence.json"), "w",
+                      encoding="utf-8") as handle:
+                json.dump(pack, handle)
+        return root
+
+    def test_a_hop_is_resolved_from_a_committed_pack_with_no_bridge(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.pack_tree([("0096ffd0", "0096ffd0")], root)
+            resolved = evidence._tail_target_record(
+                0x0096FFD0, root, {}, live=False, scan=None, visited=set(), depth=0)
+            self.assertIsNotNone(resolved)
+            self.assertEqual("0x0096ffd0", resolved["va"])
+            self.assertIs(resolved["entry"], True,
+                          "the listing starts at the address that was asked for")
+            self.assertEqual("committed", resolved["source"].split()[0])
+            self.assertEqual("__thiscall",
+                             resolved["record"]["conventions"]["calling_convention"])
+            self.assertEqual("callee", resolved["record"]["cleanup"]["side"])
+            # `in_text` needs the image, and without it the resolver refuses to
+            # say the target is a code address -- the safe direction.
+            self.assertIs(resolved["in_text"], False)
+
+    def test_an_address_that_is_not_a_function_entry_is_reported_as_one(self):
+        """``0x007e6135`` is inside the body the bridge captured from 0x007e6130."""
+        with tempfile.TemporaryDirectory() as root:
+            # The pack for 0x007e6135 holds the body the bridge reports for it,
+            # which starts at 0x007e6130.
+            self.pack_tree([("007e6135", "007e6130")], root)
+            resolved = evidence._tail_target_record(
+                0x007E6135, root, {}, live=False, scan=None, visited=set(), depth=0)
+            self.assertIsNotNone(resolved)
+            self.assertEqual("0x007e6135", resolved["va"])
+            self.assertIs(resolved["entry"], False,
+                          "the capture's first instruction is 0x007e6130")
+            # And the engine refuses it: the record is present, the entry is not.
+            listing = corpus.load(corpus.by_va8("007e6100"))
+            record = abi_infer.analyze(listing, tail_target_record=resolved)
+            self.assertIsNone(claim_of(record, "T1-FWD"))
+
+    def test_a_cycle_terminates_instead_of_recursing(self):
+        """A hop whose target is itself answers nothing, and says so."""
+        with tempfile.TemporaryDirectory() as root:
+            self.pack_tree([("0096ff70", "0096ff70")], root)
+            resolved = evidence._tail_target_record(
+                0x0096FF70, root, {}, live=False, scan=None, visited=set(), depth=0)
+            self.assertIsNotNone(resolved)
+            self.assertIsNone(resolved["record"]["conventions"]["calling_convention"])
+            self.assertIsNone(claim_of(resolved["record"], "T1-FWD"))
+        # The engine's own forward is a single call with no recursion at all.
+        import inspect
+        self.assertNotIn("_tail_target_record",
+                         inspect.getsource(abi_infer._tail_forward))
+
+    def test_the_depth_cap_and_the_visited_set_both_refuse(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.pack_tree([("0096ffd0", "0096ffd0")], root)
+            self.assertIsNone(evidence._tail_target_record(
+                0x0096FFD0, root, {}, live=False, scan=None, visited=set(),
+                depth=evidence.TAIL_TARGET_MAX_DEPTH + 1))
+            self.assertIsNone(evidence._tail_target_record(
+                0x0096FFD0, root, {}, live=False, scan=None,
+                visited={"0x0096ffd0"}, depth=0))
+
+
+    def test_an_absent_or_truncated_pack_resolves_to_nothing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertIsNone(evidence._tail_target_record(
+                0x0096FFD0, root, {}, live=False, scan=None, visited=set(), depth=0))
+            path = os.path.join(root, "reconstruction", "evidence", "0096ffd0")
+            os.makedirs(path, exist_ok=True)
+            with open(os.path.join(path, "evidence.json"), "w",
+                      encoding="utf-8") as handle:
+                json.dump({"categories": {"disassembly": {
+                    "availability": "available",
+                    "value": {"truncated": True, "preview": "MOV EAX,0x2a"}}}},
+                    handle)
+            self.assertIsNone(evidence._tail_target_record(
+                0x0096FFD0, root, {}, live=False, scan=None, visited=set(), depth=0))
+
+    def test_a_membership_is_refused_when_the_image_is_not_the_indexed_binary(self):
+        """A digest that is not the index's means the evidence is about another build."""
+        import tests.test_vftable_membership as synth
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "SPORE", "SporeBin"), exist_ok=True)
+            with open(os.path.join(root, "SPORE", "SporeBin", "SporeApp.exe"),
+                      "wb") as handle:
+                # A real PE32 image, so the refusal under test is the digest and
+                # not the parser.
+                handle.write(synth.pe_image([(".text", synth.CODE, synth.TEXT_RVA,
+                                              synth.PAD)]))
+            scan, digest, refusal = evidence._binary_scan(
+                root, {"binary": {"sha256": "0" * 64, "image_base": "0x00400000"}})
+            self.assertIsNone(scan)
+            self.assertIsNotNone(refusal)
+            self.assertIn("not the indexed binary", refusal)
+            self.assertEqual([], evidence._vftable_slots(scan, 0x00980510))
+        # No image at all is a refusal too, not an exception.
+        with tempfile.TemporaryDirectory() as root:
+            scan, digest, refusal = evidence._binary_scan(root, {})
+            self.assertIsNone(scan)
+            self.assertIn("not present", refusal)
+
+    def test_the_pack_provenance_names_the_binary_a_claim_came_from(self):
+        """The digest travels with the claim, and only with a claim.
+
+        Recorded on the ``V1-VFT`` inference rather than on every consultation, so
+        a pack that states nothing new stays byte-identical to the one the
+        pre-extension collector wrote.
+        """
+        digest = "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+        slots = [{"table": "0x0143d6f0", "slot_index": 5, "basis": "vftable_predicate"}]
+        listing = corpus.load(corpus.by_va8("00980510"))
+        card = self.card(listing)
+        function = {"status": "ok", "mode": "live", "provenance": "test function",
+                    "data": {}}
+
+        holder = {"scan": ({"binary_sha256": digest,
+                            "memberships": {"0x00980510": [["0x0143d6f0", 5]]}},
+                          digest, None)}
+        original = (evidence._binary_scan, evidence._tail_target_for)
+        evidence._binary_scan = lambda root, index: holder["scan"]
+        evidence._tail_target_for = lambda *args, **kwargs: None
+        try:
+            derived = evidence._derived_abi("0x00980510", function, card, None, {},
+                                            root=".", live=False)
+            self.assertIsNotNone(derived)
+            self.assertIn("%s@%s" % (evidence.VFTABLES_REL, digest),
+                          derived["observations"])
+            self.assertIsNotNone(claim_of(derived["value"], "V1-VFT"),
+                                 "the membership was supplied, so it fires")
+            # The same listing with the image refused: no ref, and a record the
+            # pre-extension collector would have written.
+            holder["scan"] = (None, None, "no image here")
+            plain = evidence._derived_abi("0x00980510", function, card, None, {},
+                                          root=".", live=False)
+            self.assertNotIn("%s@%s" % (evidence.VFTABLES_REL, digest),
+                             plain["observations"])
+            self.assertEqual(abi_infer.analyze(listing)["content_sha256"],
+                             plain["value"]["content_sha256"])
+            self.assertIsNone(claim_of(plain["value"], "V1-VFT"))
+        finally:
+            evidence._binary_scan, evidence._tail_target_for = original
+        self.assertEqual(1, len(slots))
+
+    def test_a_tail_forward_names_the_target_it_resolved(self):
+        digest = "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+        listing = corpus.load(corpus.by_va8("0096ff70"))
+        target = VftableRuleTest.hop("0096ffd0")
+        card = self.card(listing)
+        function = {"status": "ok", "mode": "live", "provenance": "test function",
+                    "data": {}}
+        original = (evidence._binary_scan, evidence._tail_target_for)
+        evidence._binary_scan = lambda root, index: (None, None, "no image")
+        evidence._tail_target_for = lambda *args, **kwargs: target
+        try:
+            derived = evidence._derived_abi("0x0096ff70", function, card, None, {},
+                                            root=".", live=False)
+        finally:
+            evidence._binary_scan, evidence._tail_target_for = original
+        self.assertIsNotNone(derived)
+        self.assertIsNotNone(claim_of(derived["value"], "T1-FWD"))
+        self.assertIn("%s#tail_target=0x0096ffd0" % evidence.ABI_INFER_REL,
+                      derived["observations"])
+        self.assertNotIn(digest, " ".join(derived["observations"]),
+                         "a refused scan contributes no provenance")
+
+    def test_a_derived_record_is_byte_identical_without_the_new_evidence(self):
+        """The invariant, over the whole committed golden corpus.
+
+        Every hermetic fixture and every live capture, analysed twice: once as the
+        pre-extension collector called it and once with both new parameters
+        explicitly supplied their empty defaults. The bytes must match, because a
+        rule that cannot fire may not move a record by one character.
+        """
+        for label, source in (fx.hermetic_inputs() + fx.live_inputs()):
+            with self.subTest(input=label):
+                default = abi_infer.analyze(source)
+                explicit = abi_infer.analyze(source, vftable_slots=(),
+                                             tail_target_record=None)
+                self.assertEqual(default["content_sha256"], explicit["content_sha256"])
+                self.assertEqual(canonical_json(default), canonical_json(explicit))
+
+    def test_analyze_is_deterministic_on_repeated_calls(self):
+        for label, source in (fx.hermetic_inputs() + fx.live_inputs()):
+            with self.subTest(input=label):
+                first = abi_infer.analyze(source, vftable_slots=())
+                second = abi_infer.analyze(source, vftable_slots=())
+                self.assertEqual(canonical_json(first), canonical_json(second))
+                self.assertEqual(first["content_sha256"], second["content_sha256"])
+
+
+class GuardMutationTest(unittest.TestCase):
+    """Each guard, proved load-bearing by the pair it separates.
+
+    A negative test says "this input does not fire". It does not say *why*, and a
+    guard that stopped working would leave every negative still green. So every
+    guard here is paired: two inputs that differ in exactly the guarded property,
+    where one fires and the other does not. Remove the guard and the second one
+    fires too, which is the failure this class exists to make visible.
+
+    Where the guard lives in a function this test can replace -- the resolver's
+    ``entry`` and ``in_text`` checks -- it is removed by replacement and the
+    negative is asserted to fire, which is a mutation rather than an inference.
+    """
+
+    MEMBERSHIP = VftableRuleTest.membership(0x0143D6F0, 5)
+    #: The firing shape: a bare RET, no stack read, no receiver read.
+    LEAF = "MOV EAX,0x2a\nRET"
+    THUNK = "SUB ECX,0x4\nJMP 0x00500000"
+
+    def target(self, va="0x00500000", **overrides):
+        record = dict(overrides.pop("record", None) or target_thiscall_caller())
+        out = {"va": va, "entry": True, "in_text": True, "import_pointer": False,
+               "record": record, "source": "synthetic"}
+        out.update(overrides)
+        return out
+
+    # -- V1-VFT ----------------------------------------------------------
+    def test_the_cleanup_guard_is_what_separates_the_pair(self):
+        with_membership = abi_infer.analyze(self.LEAF, vftable_slots=[self.MEMBERSHIP])
+        without_membership = abi_infer.analyze(self.LEAF)
+        self.assertEqual("__thiscall", with_membership["conventions"]["calling_convention"])
+        self.assertIsNone(without_membership["conventions"]["calling_convention"])
+        # The twin: identical body, callee cleanup instead of caller. The cleanup
+        # guard is the only thing between the two records.
+        popping = abi_infer.analyze("MOV EAX,0x2a\nRET 0x4",
+                                    vftable_slots=[self.MEMBERSHIP])
+        self.assertEqual("callee", popping["cleanup"]["side"])
+        self.assertIsNone(claim_of(popping, "V1-VFT"))
+        self.assertEqual("__stdcall", popping["conventions"]["calling_convention"])
+
+    def test_the_stack_read_guard_is_what_separates_the_pair(self):
+        plain = abi_infer.analyze(self.LEAF, vftable_slots=[self.MEMBERSHIP])
+        with_slot = abi_infer.analyze("MOV EDX,dword ptr [ESP + 0x4]\nRET",
+                                      vftable_slots=[self.MEMBERSHIP])
+        self.assertEqual("__thiscall", plain["conventions"]["calling_convention"])
+        self.assertEqual(1, with_slot["stack_arguments"]["observed_slots"])
+        self.assertIsNone(claim_of(with_slot, "V1-VFT"))
+        self.assertEqual("__cdecl", with_slot["conventions"]["calling_convention"],
+                         "a resolved stack slot is C9's discriminator, not V1-VFT's")
+
+    def test_the_incoming_edx_guard_is_what_separates_the_pair(self):
+        fastcall = ("MOV EAX,dword ptr [ECX + 0x8]\n"
+                    "MOV EDX,dword ptr [EDX]\n"
+                    "RET")
+        record = abi_infer.analyze(fastcall, vftable_slots=[self.MEMBERSHIP])
+        self.assertIsNotNone(claim_of(record, "C8-E"))
+        self.assertIsNone(claim_of(record, "V1-VFT"),
+                          "an incoming EDX read is the __fastcall discriminator")
+        twin = abi_infer.analyze("MOV EAX,dword ptr [ECX + 0x8]\n"
+                                "MOV EAX,dword ptr [ECX + 0xc]\nRET",
+                                vftable_slots=[self.MEMBERSHIP])
+        self.assertEqual("__thiscall", twin["conventions"]["calling_convention"])
+
+    def test_the_membership_guard_is_what_separates_the_pair(self):
+        armed = abi_infer.analyze(self.LEAF, vftable_slots=[self.MEMBERSHIP])
+        disarmed = abi_infer.analyze(self.LEAF, vftable_slots=[])
+        self.assertEqual("__thiscall", armed["conventions"]["calling_convention"])
+        self.assertIsNone(disarmed["conventions"]["calling_convention"])
+        self.assertNotIn("provenance", disarmed["receiver"])
+
+    # -- T1-FWD, by replacement ------------------------------------------
+    def _mutate(self, replacement):
+        original = abi_infer.tail_target
+        abi_infer.tail_target = replacement
+        self.addCleanup(setattr, abi_infer, "tail_target", original)
+        return original
+
+    def test_removing_the_entry_check_lets_the_interior_jump_through(self):
+        """The S3 mutation, run for real rather than argued about."""
+        def without_entry(value, hop_va):
+            resolved = self._real_tail_target(value, hop_va)
+            if resolved is None:
+                return None
+            relaxed = dict(resolved, entry=True)
+            return relaxed
+        self._real_tail_target = abi_infer.tail_target
+        self._mutate(without_entry)
+        listing = corpus.load(corpus.by_va8("007e6100"))
+        # With S3's entry half removed, the body still fails on S4 (its unmatched
+        # PUSH ESI) -- so the mutation is visible as a *different* refusal, and the
+        # next mutation removes that too.
+        self.assertIsNone(claim_of(
+            abi_infer.analyze(listing, tail_target_record=self.target(
+                va="0x007e6135", record=target_thiscall_popping(4))),
+            "T1-FWD"))
+
+    def test_removing_both_s3_and_s4_lets_the_interior_jump_through(self):
+        def without_entry(value, hop_va):
+            return dict(value, entry=True) if isinstance(value, dict) else None
+        self._mutate(without_entry)
+        # 0x007e6100 with its PUSH ESI removed: one exit, ESP-neutral, and the
+        # only thing left between it and a forward is the entry check.
+        listing = ("0x007e6100  MOV ECX,dword ptr [0x0143e9b4]\n"
+                   "0x007e6106  MOV EAX,dword ptr [ESP + 0x4]\n"
+                   "0x007e610b  JMP 0x007e6135")
+        # A target whose own argument area is compatible, so S6 cannot be what
+        # stops it and the entry check is provably the only thing left.
+        target = self.target(va="0x007e6135", record=target_thiscall_popping(4))
+        self.assertIsNone(claim_of(abi_infer.analyze(listing), "T1-FWD"))
+        armed = abi_infer.analyze(listing, tail_target_record=target)
+        self.assertIsNotNone(claim_of(armed, "T1-FWD"),
+                             "with the entry check removed, the forward fires")
+
+    def test_removing_the_code_range_check_lets_an_import_target_through(self):
+        self._mutate(lambda value, hop_va: dict(value, in_text=True)
+                     if isinstance(value, dict) else None)
+        record = abi_infer.analyze(
+            self.THUNK,
+            tail_target_record={"va": "0x7c8123ab", "entry": True, "in_text": False,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller()})
+        self.assertIsNotNone(claim_of(record, "T1-FWD"),
+                             "with the code-range check removed, an import target forwards")
+
+    def test_removing_the_address_check_lets_a_mismatched_record_through(self):
+        self._mutate(lambda value, hop_va: dict(value, va=hop_va)
+                     if isinstance(value, dict) else None)
+        record = abi_infer.analyze(
+            self.THUNK,
+            tail_target_record={"va": "0x00500010", "entry": True, "in_text": True,
+                                "import_pointer": False,
+                                "record": target_thiscall_caller()})
+        self.assertIsNotNone(claim_of(record, "T1-FWD"),
+                             "with the address check removed, a mismatched record forwards")
+
+    # -- T1-FWD, by construction -----------------------------------------
+    def test_the_argument_area_guard_is_what_separates_the_pair(self):
+        thunk = "MOV EDX,dword ptr [ESP + 0x4]\nJMP 0x00500000"
+        compatible = abi_infer.analyze(thunk, tail_target_record=self.target(
+            record=target_thiscall_popping(4)))
+        incompatible = abi_infer.analyze(thunk, tail_target_record=self.target(
+            record=target_cdecl(5)))
+        self.assertEqual("__thiscall", compatible["conventions"]["calling_convention"])
+        self.assertIsNone(incompatible["conventions"]["calling_convention"])
+
+    def test_the_frame_guard_is_what_separates_the_pair(self):
+        with_frame = abi_infer.analyze("SUB ESP,0x8\nJMP 0x00500000",
+                                        tail_target_record=self.target())
+        without_frame = abi_infer.analyze("JMP 0x00500000",
+                                          tail_target_record=self.target())
+        self.assertIsNone(claim_of(with_frame, "T1-FWD"))
+        self.assertIsNotNone(claim_of(without_frame, "T1-FWD"))
+
+    def test_the_single_exit_guard_is_what_separates_the_pair(self):
+        two = abi_infer.analyze("JMP 0x00500000\nJMP 0x00500020",
+                                tail_target_record=self.target())
+        one = abi_infer.analyze("JMP 0x00500000", tail_target_record=self.target())
+        self.assertIsNone(claim_of(two, "T1-FWD"))
+        self.assertIsNotNone(claim_of(one, "T1-FWD"))
+
+    def test_the_direct_jump_guard_is_what_separates_the_pair(self):
+        indirect = abi_infer.analyze("JMP dword ptr [0x013cc118]",
+                                     tail_target_record=self.target())
+        direct = abi_infer.analyze("JMP 0x00500000", tail_target_record=self.target())
+        self.assertIsNone(claim_of(indirect, "T1-FWD"))
+        self.assertIsNotNone(claim_of(direct, "T1-FWD"))
+
+    def test_the_convention_guard_is_what_separates_the_pair(self):
+        """S5 gates the convention; the cleanup moves either way.
+
+        The abstaining target is the real ``0x00980330``: a callee pop of 4 with
+        no decidable convention, which is the case that makes the cleanup-only
+        forward exist at all.
+        """
+        abstaining_record = abi_infer.analyze(
+            corpus.load(corpus.by_va8("00980330")))
+        self.assertIsNone(abstaining_record["conventions"]["calling_convention"])
+        self.assertEqual("callee", abstaining_record["cleanup"]["side"])
+        abstaining = abi_infer.analyze(
+            self.THUNK, tail_target_record=self.target(record=abstaining_record))
+        decided = abi_infer.analyze(self.THUNK, tail_target_record=self.target())
+        self.assertIsNone(abstaining["conventions"]["calling_convention"])
+        self.assertEqual("callee", abstaining["cleanup"]["side"])
+        self.assertEqual(4, abstaining["cleanup"]["bytes"])
+        self.assertIn("tail_call", abstaining["conventions"]["ambiguities"])
+        self.assertEqual("__thiscall", decided["conventions"]["calling_convention"])
+
+
+# =========================================================================== #
+# R1-VFT -- the callee-pop receiver form
+# =========================================================================== #
+class R1VftReceiverRuleTest(unittest.TestCase):
+    """``R1-VFT``: a sound vftable slot in the callee-pop shape, resolved.
+
+    The rule this class exists for
+    ------------------------------
+    ``V1-VFT`` fires on a sound vftable slot in the *caller*-cleanup shape and
+    rests the register receiver on that shape: nothing is popped and no stack
+    word is read as an argument, so the receiver is in a register, and of
+    ``__thiscall``/``__fastcall`` only ECX carries one. The callee-pop shape was
+    left out, and refusing it was correct for one half of it and wrong for the
+    other:
+
+    * a **COM / ``__stdcall`` interface member** takes its receiver from the
+      first popped stack word. ``0x01053e00`` is the real shape
+      (``MOV ESI,dword ptr [ESP + 0x20]`` is ``entry_ESP+0x4``, and the body
+      dereferences it), and every such slot in the corpus is ``receiver.present
+      is False`` with a ``__stdcall`` claim from C6. Claiming a register
+      receiver there is fabrication, and the byte-identity tests still say so;
+    * a **plain member that happens to pop its own arguments** receives ``this``
+      in ECX like every other member. Ten corpus targets are this shape, they
+      all read their incoming ECX, and refusing them was refusing the ABI oracle
+      the evidence already determined.
+
+    Membership alone cannot tell the two apart -- it is the same fact in both --
+    and neither can "the body reads ECX" alone, because a ``__fastcall`` first
+    argument also arrives in ECX. The discriminator is the pair: a *sound*
+    membership (the vptr-backed table, so every dispatch reached this address by
+    indexing the object's vptr) **and** a read of ECX *before the body writes
+    it* (which a stack-receiver body cannot perform, because it has no register
+    parameter at all). Both halves are positive machine facts; the third step,
+    that a body which reads the delivered register uses it as the object, is the
+    compiler-model step ``C8-E``/``C8`` already make for EDX, and it is capped
+    at ``INFERRED`` for the same reason.
+
+    What the rule claims is the **receiver** and nothing else. The convention is
+    named by the ordinary ``C6B`` arm off this function's own ``ret imm``, no
+    class is named, and ``offsets`` stays empty because the body never
+    dereferenced the receiver.
+
+    Independent corroboration, one witness per shape
+    ------------------------------------------------
+    Not one of the ten rests on the rule, and that is what makes overturning the
+    earlier blanket refusal safe rather than lucky. Each has a witness the engine
+    does not read:
+
+    =============  ==========================================================
+    ``0x0052e650``  ``0x0055c633`` is ``SUB ECX,0x8`` immediately before the
+                    ``CALL`` -- an adjustor, which is a pointer operation on
+                    ``this``
+    ``0x00e5cac0``  ``0x007fbd90`` is ``ADD ECX,0xc`` immediately before the
+                    ``CALL``; the body forwards ``this + 0xc``
+    ``0x0057d6f0``  three this-adjusting thunks at ``0x0057a5a0/b0/c0``,
+                    ``SUB ECX,0x10/0x14/0x4; JMP`` here, and **no** direct call
+                    into it anywhere in the image
+    ``0x00642210``  two ``JMP`` entries, ``0x00642160`` and ``0x00642170``, both
+                    preceded by a ``SUB ECX`` adjustor
+    ``0x0067dc80``  one ``JMP`` entry at ``0x0067db00``, ``SUB ECX,0x4``
+    ``0x0052e640``  two direct call sites push three words and load ECX from the
+                    caller's own incoming ECX; the callee pops exactly 12
+    ``0x00a85840``  the body adjusts the receiver itself --
+                    ``LEA ECX,[ESI + 0x24]`` with ``ESI = MOV ESI,ECX`` -- and
+                    calls ``0x00537dc0`` on it
+    ``0x00a98400``  the same at offset ``0x18``
+    ``0x00f9fef0``  ``TEST EDI,EDI; JZ`` then ``LEA EBX,[EDI + 0x4]``: null-tested
+                    and then offset
+    ``0x0067e6b0``  byte-identical in shape to ``0x0067dc80``, which has a
+                    witness
+    =============  ==========================================================
+
+    The falsifiers
+    --------------
+    ``R1VftFalsifierTest`` is the mutation battery, and it is the reason this
+    class can be trusted: sixteen ways to make the rule lie, each asserted to
+    stay silent.
+    """
+
+    MEMBERSHIP = VftableRuleTest.membership(0x0143D6F0, 5)
+
+    @staticmethod
+    def listing(va8):
+        return corpus.load(corpus.by_va8(va8))
+
+    @staticmethod
+    def memberships_for(va8):
+        scan = real_scan()
+        if scan is None:
+            raise unittest.SkipTest("the binary is not present")
+        return [VftableRuleTest.membership(table, slot) for table, slot in
+                vftables.slots_of(scan, int(va8, 16))]
+
+    def record(self, va8, **kwargs):
+        return abi_infer.analyze(self.listing(va8), **kwargs)
+
+    def slot_record(self, va8):
+        return self.record(va8, vftable_slots=self.memberships_for(va8))
+
+    # -- the positives ---------------------------------------------------
+    def test_every_dispatch_receiver_target_resolves_to_thiscall(self):
+        for entry in corpus.by_group("dispatch_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                record = self.slot_record(va8)
+                self.assertEqual("__thiscall",
+                                 record["conventions"]["calling_convention"])
+                self.assertEqual("INFERRED", record["conventions"]["confidence"])
+                self.assertEqual("ABI_INFERRED", record["verdict"])
+                self.assertIs(record["receiver"]["present"], True)
+                self.assertEqual("ECX", record["receiver"]["register"])
+                self.assertEqual("vftable_slot_dispatch",
+                                 record["receiver"]["provenance"])
+                self.assertEqual("INFERRED", record["receiver"]["confidence"])
+                self.assertEqual("callee", record["cleanup"]["side"])
+                self.assertIsNotNone(claim_of(record, "R1-VFT"))
+                # The convention is C6B's, read off this function's own ret imm;
+                # a record must never show two rules for one convention.
+                self.assertIsNotNone(claim_of(record, "C6B"))
+                self.assertIsNone(claim_of(record, "V1-VFT"))
+                self.assertIsNone(claim_of(record, "R0"))
+                codes = fx.abstention_codes(record)
+                self.assertNotIn("receiver_not_determinable", codes)
+                self.assertNotIn("receiver_undetermined_blocks_convention", codes)
+
+    def test_the_membership_is_the_only_thing_that_moved_each_one(self):
+        """The discriminator, stated as a pair on the real captures.
+
+        Without the membership every one of these ten is exactly what it was
+        before the extension: ``ABI_UNKNOWN``, ``ecx_read_without_deref``, no
+        convention. So the membership is doing the work and the body is not, and
+        a reader who distrusts the membership has a record that still says so.
+        """
+        for entry in corpus.by_group("dispatch_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                plain = self.record(va8)
+                self.assertEqual("ABI_UNKNOWN", plain["verdict"])
+                self.assertIsNone(plain["conventions"]["calling_convention"])
+                self.assertIsNone(plain["receiver"]["present"])
+                self.assertEqual("ecx_read_without_deref",
+                                 plain["receiver"]["reason"])
+                self.assertNotIn("provenance", plain["receiver"])
+                self.assertIsNone(claim_of(plain, "R1-VFT"))
+                armed = self.slot_record(va8)
+                self.assertNotEqual(plain["content_sha256"], armed["content_sha256"])
+
+    def test_the_cited_table_and_slot_are_the_membership_that_was_supplied(self):
+        record = self.slot_record("0052e650")
+        claim = claim_of(record, "R1-VFT")
+        supplied = self.memberships_for("0052e650")
+        self.assertEqual(supplied[0]["table"], claim["value"]["table"])
+        self.assertEqual(supplied[0]["slot_index"], claim["value"]["slot_index"])
+        self.assertIn(supplied[0]["table"], claim["claim"])
+        self.assertEqual("ECX", claim["value"]["receiver_register"])
+        self.assertEqual("vftable_slot_dispatch",
+                         claim["value"]["receiver_provenance"])
+        self.assertEqual("callee", claim["value"]["cleanup_side"])
+        self.assertGreater(claim["value"]["membership_count"], 1,
+                           "0x0052e650 is a member of 199 sound tables")
+        self.assertGreaterEqual(claim["value"]["incoming_ecx_reads"], 1)
+        # The citations resolve, and they are the *incoming* ECX reads -- the
+        # observation the whole discriminator rests on.
+        by_id = {item["id"]: item for item in record["observations"]}
+        self.assertTrue(claim["based_on"])
+        for citation in claim["based_on"]:
+            self.assertIn(citation, by_id)
+            self.assertEqual("REG_READ", by_id[citation]["kind"])
+            self.assertEqual("ECX", by_id[citation]["reg"])
+            self.assertIsNone(by_id[citation]["first_write_index"],
+                              "a read after the first write is not incoming")
+
+    def test_the_claim_states_both_readings_it_had_to_choose_between(self):
+        """An explainable record names the alternative it rejected.
+
+        The two readings are the register receiver and the first popped stack
+        word. The claim has to say the second one exists, or a reader cannot tell
+        a discriminator from an assumption.
+        """
+        claim = claim_of(self.slot_record("0067dc80"), "R1-VFT")
+        for phrase in ("slot 0", "vptr-backed", "reads its incoming ECX",
+                       "first popped stack word", "COM / __stdcall"):
+            self.assertIn(phrase, claim["claim"])
+
+    def test_no_convention_class_or_layout_is_stated_by_the_rule(self):
+        """The rule separates three facts and collapses none of them.
+
+        ``0x0052e650`` is a member of 199 sound tables, so any class identity
+        would be invented; the body never dereferenced the receiver, so no
+        offset is derivable; and the convention is C6B's, from the ``ret``.
+        """
+        record = self.slot_record("0052e650")
+        self.assertEqual([], record["receiver"]["offsets"])
+        self.assertEqual(0, record["receiver"]["distinct_offsets"])
+        self.assertIsNone(record["receiver"]["max_offset"])
+        self.assertEqual(0, record["receiver"]["written_through"])
+        self.assertIs(record["receiver"]["bounds_only"], True)
+        self.assertEqual("__thiscall", claim_of(record, "C6B")["value"])
+        blob = json.dumps(record, sort_keys=True)
+        for forbidden in ("App::", "IMessageManager", "class_name",
+                          "vtable_owner", "cGameNoun"):
+            self.assertNotIn(forbidden, blob)
+
+    def test_the_receiver_confidence_never_reaches_supported(self):
+        """``R1`` may reach SUPPORTED on three offsets; ``R1-VFT`` has none.
+
+        The rung a rule may reach is a property of the evidence, not of how
+        confident the author felt. ``R1-VFT`` observes exactly one fact about the
+        receiver -- which register -- and the one compiler-model step is the same
+        step ``C8`` is capped for.
+        """
+        for entry in corpus.by_group("dispatch_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                record = self.slot_record(va8)
+                self.assertEqual("INFERRED", record["receiver"]["confidence"])
+                self.assertEqual("INFERRED",
+                                 claim_of(record, "R1-VFT")["confidence"])
+                self.assertEqual("INFERRED", record["conventions"]["confidence"])
+
+    def test_the_record_is_byte_identical_without_a_membership(self):
+        for entry in corpus.by_group("dispatch_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                self.assertEqual(abi_infer.analyze(listing)["content_sha256"],
+                                 abi_infer.analyze(listing, vftable_slots=(),
+                                                  tail_target_record=None)["content_sha256"])
+
+    def test_the_rule_is_deterministic_across_repeated_calls(self):
+        for entry in corpus.by_group("dispatch_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                slots = self.memberships_for(va8)
+                first = abi_infer.analyze(listing, vftable_slots=slots)
+                second = abi_infer.analyze(listing, vftable_slots=list(slots))
+                self.assertEqual(canonical_json(first), canonical_json(second))
+                self.assertEqual(first["content_sha256"],
+                                 second["content_sha256"])
+
+
+class R1VftFalsifierTest(unittest.TestCase):
+    """Sixteen ways to make ``R1-VFT`` lie, each asserted to stay silent.
+
+    Every one of these is a mutation of a *firing* input: the body is the real
+    ``0x0067dc80`` shape unless a line says otherwise, and the single thing that
+    changes is the property the guard is about. A negative on a body that never
+    fired proves nothing, so each negative here is paired with a positive on the
+    unmodified body -- and the pair differs in exactly the guarded property.
+    """
+
+    MEMBERSHIP = VftableRuleTest.membership(0x0143D6F0, 5)
+    OTHER_MEMBERSHIP = VftableRuleTest.membership(0x0143D6F0, 9)
+
+    #: The real 0x0067dc80 body: reads its incoming ECX, pops 4, a sound slot.
+    FIRES = ("PUSH ESI\n"
+             "MOV ESI,ECX\n"
+             "CALL 0x0067db10\n"
+             "TEST byte ptr [ESP + 0x8],0x1\n"
+             "JZ 0x0067dc98\n"
+             "PUSH ESI\n"
+             "CALL 0x00f47380\n"
+             "ADD ESP,0x4\n"
+             "MOV EAX,ESI\n"
+             "POP ESI\n"
+             "RET 0x4")
+
+    def fires(self, body=None, slots=None):
+        return abi_infer.analyze(self.FIRES if body is None else body,
+                                 vftable_slots=[self.MEMBERSHIP] if slots is None else slots)
+
+    def assertRefused(self, record, why):
+        self.assertIsNone(claim_of(record, "R1-VFT"), why)
+        self.assertNotEqual("__thiscall", record["conventions"]["calling_convention"], why)
+        self.assertIsNone(record["receiver"].get("provenance"), why)
+
+    def assertFires(self, record):
+        self.assertIsNotNone(claim_of(record, "R1-VFT"))
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertIs(record["receiver"]["present"], True)
+
+    # -- the control, so every negative below is a real negative ---------
+    def test_the_control_body_fires(self):
+        self.assertFires(self.fires())
+
+    # -- 1. no membership, and a membership with no basis ----------------
+    def test_1_unrelated_ecx_writes_do_not_replace_a_membership(self):
+        self.assertRefused(self.fires(slots=[]), "no membership is no evidence")
+        for basis in (None, "vtables_json", "index_heuristic", "",
+                      "vftable_predicat", "VFTABLE_PREDICATE", 0):
+            with self.subTest(basis=basis):
+                entry = {"table": "0x0143d6f0", "slot_index": 5}
+                if basis is not None:
+                    entry["basis"] = basis
+                self.assertRefused(self.fires(slots=[entry]),
+                                   "an entry that cannot state its basis is absent")
+
+    # -- 2. ECX as an ordinary argument: the write comes first -------------
+    def test_2_ecx_loaded_from_a_stack_word_is_not_a_receiver(self):
+        """``0x00e51010``'s real shape, and the sharpest mutation in the set.
+
+        ECX is loaded *from* the first popped word and forwarded as an ordinary
+        argument. The engine's ``ecx_read_without_deref`` reason is still what
+        this record gets -- that reason counts a read of ECX anywhere, and a load
+        into ECX counts -- so a rule keyed on the reason alone would have claimed
+        a register receiver here. The guard is the def/use relation, not the
+        reason code, and this is the test that says so.
+        """
+        body = ("MOV EAX,dword ptr [ESP + 0x8]\n"
+                "MOV ECX,dword ptr [ESP + 0x4]\n"
+                "PUSH EAX\n"
+                "PUSH ECX\n"
+                "MOV ECX,dword ptr [0x016b3c0c]\n"
+                "CALL 0x00697a80\n"
+                "XOR AL,AL\n"
+                "RET 0x8")
+        armed = self.fires(body=body)
+        self.assertRefused(armed, "ECX here is an argument, not a receiver")
+        # The reason code is the misleading one on purpose, so the test fails
+        # loudly if the rule is ever re-keyed onto it.
+        self.assertEqual("ecx_read_without_deref", armed["receiver"]["reason"])
+        self.assertIn("receiver_not_determinable", fx.abstention_codes(armed))
+
+    # -- 3. the receiver is the popped word -------------------------------
+    def test_3_the_com_stack_receiver_shape_stays_refused(self):
+        """``0x01053e00``'s shape, in miniature and in full."""
+        miniature = ("SUB ESP,0x18\n"
+                     "PUSH ESI\n"
+                     "MOV ESI,dword ptr [ESP + 0x20]\n"
+                     "TEST byte ptr [ESI],0x1\n"
+                     "POP ESI\n"
+                     "ADD ESP,0x18\n"
+                     "RET 0x8")
+        record = self.fires(body=miniature)
+        self.assertRefused(record, "the receiver is the first popped word")
+        self.assertEqual("__stdcall", record["conventions"]["calling_convention"])
+        self.assertIsNotNone(claim_of(record, "C6"))
+        # And the real capture, with a membership *forced* on it.
+        full = abi_infer.analyze(
+            corpus.load(corpus.by_va8("01053e00")),
+            vftable_slots=[self.OTHER_MEMBERSHIP])
+        self.assertRefused(full, "0x01053e00 is not a member of any sound table")
+
+    # -- 4. the cleanup side ----------------------------------------------
+    def test_4_the_caller_cleanup_shape_belongs_to_v1_vft_not_to_this(self):
+        """One receiver fact, one rule.
+
+        A caller-cleanup body with an undetermined receiver is ``V1-VFT``'s. If
+        ``R1-VFT`` also fired there the record would carry two rules for one
+        fact, which is the defect ``negative_7`` exists to prevent for the
+        caller-cleanup ``thiscall``.
+        """
+        body = "MOV EAX,ECX\nRET"
+        record = self.fires(body=body)
+        self.assertEqual("caller", record["cleanup"]["side"])
+        self.assertIsNone(claim_of(record, "R1-VFT"),
+                          "the caller-cleanup form is V1-VFT's")
+        self.assertIsNotNone(claim_of(record, "V1-VFT"))
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        # V1-VFT's own provenance marker is what a consumer reads, and it is
+        # unchanged: this rule's marker is a different string precisely so the
+        # two derivations can never be confused.
+        self.assertEqual("vftable_slot", record["receiver"]["provenance"])
+        self.assertIsNone(record["receiver"]["present"],
+                          "V1-VFT sets the register without the presence flag")
+
+    # -- 5. no callee pop -------------------------------------------------
+    def test_5_a_body_with_no_ret_never_reaches_the_rule(self):
+        self.assertRefused(self.fires(body="PUSH ESI\nMOV ESI,ECX\nJMP 0x00500000"),
+                           "no terminal RET means no cleanup to read")
+
+    # -- 6. the sibling R0 reasons are different unknowns -----------------
+    def test_6_the_three_sibling_reasons_stay_unknown(self):
+        for body, reason in (
+                ("MOV ECX,dword ptr [ESP + 0x4]\n"
+                 "MOV EAX,dword ptr [ECX + 0x4]\n"
+                 "XOR AL,AL\nRET 0x4", "ecx_reassigned_before_deref"),
+                ("LEA ECX,[ECX + 0x4]\nXOR AL,AL\nRET 0x4",
+                 "ecx_address_taken_without_memory_access"),
+                ("MOV EAX,0x4\nREP STOSD\nMOV EAX,ECX\nXOR AL,AL\nRET 0x4",
+                 "ecx_used_as_counter")):
+            with self.subTest(reason=reason):
+                record = self.fires(body=body)
+                self.assertRefused(record, reason)
+                self.assertEqual(reason, record["receiver"]["reason"])
+
+    # -- 7. an incoming EDX is the C8-E collision, not this ---------------
+    def test_7_a_popping_body_that_also_reads_edx_stays_ambiguous(self):
+        body = ("MOV EAX,dword ptr [EDX + 0x4]\n"
+                "MOV EAX,ECX\n"
+                "XOR AL,AL\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        # The receiver claim is still made -- it is a different fact from the
+        # convention -- but the convention must not be, and both readings stay.
+        self.assertIsNotNone(claim_of(record, "R1-VFT"))
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIn("ecx_and_edx_indistinguishable", fx.abstention_codes(record))
+
+    # -- 8. contradictory cleanup, variadic, untrusted ESP ---------------
+    def test_8_the_other_ambiguity_arms_still_hold_the_convention(self):
+        # Contradictory cleanup. The guard is stated on the cleanup *side*, and
+        # a conflict is not "callee": the record has no established callee pop,
+        # so the receiver claim is withheld too. That is the fail-closed
+        # direction, and it is asserted rather than left to inference.
+        conflict = self.fires(body="PUSH ESI\nMOV ESI,ECX\nXOR AL,AL\nRET 0x4\nRET 0x8")
+        self.assertIn("ret_immediates_disagree", fx.abstention_codes(conflict))
+        self.assertEqual("CONFLICT", conflict["cleanup"]["side"])
+        self.assertIsNone(claim_of(conflict, "R1-VFT"))
+        self.assertIsNone(conflict["conventions"]["calling_convention"])
+        self.assertIsNone(conflict["receiver"]["present"])
+        # An untrusted frame: the receiver claim stands (it is a fact about a
+        # register, not about the frame) but no convention follows, because C11
+        # and the untrusted-frame abstentions speak first.
+        untrusted = self.fires(body="PUSH EBP\nMOV EBP,dword ptr [0x016b3c04]\n"
+                                    "MOV EAX,ECX\nMOV EAX,dword ptr [EBP + 0x8]\n"
+                                    "POP EBP\nRET 0x4")
+        self.assertIn("untrusted_frame_stack_reads", fx.abstention_codes(untrusted))
+        self.assertIsNotNone(claim_of(untrusted, "R1-VFT"))
+        self.assertEqual("__thiscall", untrusted["conventions"]["calling_convention"])
+
+    # -- 9. a membership for a different function ------------------------
+    def test_9_membership_is_not_transferable(self):
+        """A membership names *this* address's slot; nothing is inherited.
+
+        The engine only ever sees a membership list, so the only thing tying a
+        membership to the function is that the caller supplied it. The
+        corroboration is that a slot index which does not exist on that table
+        still cannot make a *refused* body fire, and that a body with no
+        membership cannot borrow one.
+        """
+        refused = self.fires(body=(
+            "MOV EAX,dword ptr [ESP + 0x4]\n"
+            "TEST byte ptr [EAX],0x1\n"
+            "XOR AL,AL\nRET 0x4"))
+        self.assertRefused(refused, "no incoming ECX read, whatever the membership")
+        record = self.fires(slots=[self.OTHER_MEMBERSHIP], body="MOV EAX,ECX\nRET")
+        self.assertIsNone(claim_of(record, "R1-VFT"),
+                          "the caller-cleanup shape is V1-VFT's whatever the slot")
+        self.assertIsNotNone(claim_of(record, "V1-VFT"))
+
+    # -- 10. a this-adjustor in the body is not itself evidence -----------
+    def test_10_adjustor_arithmetic_alone_establishes_nothing(self):
+        """``SUB ECX,0x8`` with no membership must change nothing at all.
+
+        The mission's candidate direction was caller-side adjustor evidence.
+        This is its control: on its own, an adjustor is not a receiver claim,
+        because a caller may adjust an integer ``__fastcall`` first argument by
+        a constant too. Only the membership says what the register is for.
+        """
+        for body in ("SUB ECX,0x8\nXOR AL,AL\nRET 0x4",
+                     "ADD ECX,0xc\nXOR AL,AL\nRET 0x4",
+                     "LEA ECX,[ECX + 0x8]\nXOR AL,AL\nRET 0x4"):
+            with self.subTest(body=body.splitlines()[0]):
+                # With a membership, an ECX adjustor is a *write*, so the
+                # incoming ECX is never read and the record says absent -- the
+                # same answer as without one.
+                for slots in ([], [self.MEMBERSHIP]):
+                    with self.subTest(membership=bool(slots)):
+                        record = abi_infer.analyze(body, vftable_slots=slots)
+                        self.assertIsNone(claim_of(record, "R1-VFT"),
+                                          "an adjustor alone is not a receiver")
+                        self.assertNotEqual("vftable_slot_dispatch",
+                                            record["receiver"].get("provenance"))
+                        self.assertIsNot(record["receiver"]["present"], True)
+        # An adjustor to *another* register is not a receiver claim either, and
+        # there the body reads ECX, so the membership is the only thing that
+        # could decide it -- and it does not, because this is the caller-cleanup
+        # shape and that belongs to V1-VFT.
+        record = self.fires(body="MOV EAX,ECX\nSUB EAX,0x8\nRET")
+        self.assertIsNone(claim_of(record, "R1-VFT"))
+
+    # -- 11. tail jumps and thunks ----------------------------------------
+    def test_11_a_thunk_never_claims_a_receiver_of_its_own(self):
+        target = {"va": "0x00500000", "entry": True, "in_text": True,
+                  "import_pointer": False, "record": target_thiscall_caller()}
+        record = abi_infer.analyze("SUB ECX,0x4\nJMP 0x00500000",
+                                   vftable_slots=[self.MEMBERSHIP],
+                                   tail_target_record=target)
+        self.assertIsNone(claim_of(record, "R1-VFT"),
+                          "a thunk's receiver belongs to the target, not to it")
+        self.assertIsNot(record["receiver"]["present"], True)
+        self.assertIsNone(record["receiver"]["register"])
+        self.assertNotIn("provenance", record["receiver"])
+        self.assertEqual(-4, record["receiver"]["adjustor_delta"])
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"],
+                         "the convention is still T1-FWD's")
+
+    # -- 12. register reuse: the read must precede the write --------------
+    def test_12_a_read_after_the_first_write_is_not_incoming(self):
+        body = ("MOV ECX,dword ptr [0x016b3c0c]\n"
+                "PUSH ECX\n"
+                "MOV EAX,ECX\n"
+                "XOR AL,AL\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        self.assertRefused(record, "the only read is of a value the body loaded")
+        # Move the read one line earlier and it is incoming again: the pair is
+        # the guard, stated as a pair.
+        moved = self.fires(body=("MOV EAX,ECX\n"
+                                 "MOV ECX,dword ptr [0x016b3c0c]\n"
+                                 "PUSH ECX\n"
+                                 "XOR AL,AL\n"
+                                 "RET 0x4"))
+        self.assertFires(moved)
+
+    # -- 13. a CALL through a slot is a dispatcher, not a member ---------
+    def test_13_a_dispatcher_is_not_a_member_of_its_own_table(self):
+        body = ("MOV EAX,dword ptr [0x0141ca70 + 0x28]\n"
+                "MOV ECX,ECX\n"
+                "CALL EAX\n"
+                "RET 0x4")
+        self.assertRefused(self.fires(body=body),
+                           "dispatching through a slot says nothing about the "
+                           "dispatcher")
+
+    # -- 14. malformed membership input is an absence --------------------
+    def test_14_malformed_evidence_never_adds_a_claim(self):
+        for slots in (None, {}, 3, "0x0143d6f0",
+                      [{"table": None, "slot_index": 0,
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [{"table": "0x0143d6f0", "slot_index": -1,
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [{"table": "0x0143d6f0", "slot_index": "5",
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [(None, 0)], [("0x0143d6f0", None)]):
+            with self.subTest(slots=slots):
+                record = abi_infer.analyze(self.FIRES, vftable_slots=slots)
+                self.assertRefused(record, "malformed input removes evidence")
+                self.assertEqual(abi_infer.analyze(self.FIRES)["content_sha256"],
+                                 record["content_sha256"])
+
+    # -- 15. nothing else in the corpus moved ----------------------------
+    def test_15_the_rule_moves_exactly_the_dispatch_receiver_group(self):
+        """The whole committed capture set, not the ten.
+
+        Every other sound membership in the corpus -- the ``fires`` group, the
+        ``stack_receiver`` group, the ``not_forwarded`` group, the ``forwarded``
+        and ``hop`` groups, and the synthetic bodies -- must produce exactly the
+        record it produced before the rule existed. ``R1-VFT`` is the only change
+        in the engine, so a body that moved without being in the group is a bug
+        in the guard, not a new fact.
+
+        The one exclusion is ``0x00950eb0``, added on 2026-09-30 as a capture.
+        It *is* an ``R1-VFT`` body -- it is the delegate the new
+        ``address_receiver`` group tail-calls into, and ``MOV EAX,ECX`` is an
+        incoming read -- so it is a second instance of the same fact rather than
+        a counterexample, and the group it belongs to is named above instead of
+        being left implicit. It is asserted to fire in
+        ``R2VftReceiverRuleTest::test_the_delegate_of_every_witness_is_already_certified_thiscall``.
+        """
+        group = {entry["va8"] for entry in corpus.by_group("dispatch_receiver")}
+        # See the docstring: 0x00950eb0 is the R1-VFT body behind the R2-VFT
+        # witness set, not a member of it.
+        group.add("00950eb0")
+        for entry in corpus.CORPUS:
+            va8 = entry["va8"]
+            if va8 in group:
+                continue
+            with self.subTest(va=va8, group=entry["group"]):
+                listing = corpus.load(entry)
+                slots = self.real_slots(va8)
+                armed = abi_infer.analyze(listing, vftable_slots=slots)
+                self.assertIsNone(claim_of(armed, "R1-VFT"),
+                                  "only the dispatch_receiver group may claim it")
+                self.assertNotEqual("vftable_slot_dispatch",
+                                    armed["receiver"].get("provenance"))
+
+    # -- 16. the guard is load-bearing, by mutation ----------------------
+    def test_16_removing_the_incoming_read_guard_makes_the_negatives_fire(self):
+        """A mutation, not an inference: each guard is proved by what it stops.
+
+        Three guards, three replacements, three positives that then fire. If a
+        guard stops mattering, its replacement changes nothing and this fails.
+        """
+        original = abi_infer._incoming_ecx_reads
+        try:
+            abi_infer._incoming_ecx_reads = lambda state: [
+                item for item in state.observations
+                if item.get("kind") == "REG_READ" and item.get("reg") == "ECX"]
+            # The read-after-write negatives now fire, and they are exactly the
+            # three corpus targets the guard exists to keep out.
+            self.assertFires(self.fires(body=(
+                "MOV EAX,dword ptr [ESP + 0x8]\n"
+                "MOV ECX,dword ptr [ESP + 0x4]\n"
+                "PUSH EAX\n"
+                "PUSH ECX\n"
+                "MOV ECX,dword ptr [0x016b3c0c]\n"
+                "CALL 0x00697a80\n"
+                "XOR AL,AL\n"
+                "RET 0x8")))
+            for va8 in ("00e51010", "00e5c0f0", "00e7d660"):
+                with self.subTest(va=va8):
+                    path = os.path.join(ROOT, "reconstruction", "evidence", va8,
+                                        "evidence.json")
+                    if not os.path.exists(path):
+                        continue
+                    with open(path) as handle:
+                        listing = json.load(handle)["categories"]["disassembly"]["value"]["instructions"]
+                    armed = abi_infer.analyze(listing, vftable_slots=self.real_slots(va8))
+                    self.assertFires(armed)
+        finally:
+            abi_infer._incoming_ecx_reads = original
+        # And with the guard back, all of them are refused again.
+        self.assertRefused(self.fires(body=(
+            "MOV EAX,dword ptr [ESP + 0x8]\n"
+            "MOV ECX,dword ptr [ESP + 0x4]\n"
+            "PUSH EAX\n"
+            "PUSH ECX\n"
+            "MOV ECX,dword ptr [0x016b3c0c]\n"
+            "CALL 0x00697a80\n"
+            "XOR AL,AL\n"
+            "RET 0x8")), "the guard is back")
+
+    def real_slots(self, va8):
+        scan = real_scan()
+        if scan is None:
+            raise unittest.SkipTest("the binary is not present")
+        return [VftableRuleTest.membership(table, slot) for table, slot in
+                vftables.slots_of(scan, int(va8, 16))]
+
+
+# =========================================================================== #
+# R2-VFT -- the address-taken receiver form
+# =========================================================================== #
+class R2VftReceiverRuleTest(unittest.TestCase):
+    """``R2-VFT``: a sound vftable slot whose receiver is only address-taken.
+
+    The rule this class exists for
+    ------------------------------
+    ``R1-VFT`` resolves a sound callee-pop vftable slot whose body *reads* its
+    incoming ECX before writing it. It is keyed on the def/use relation, not on
+    the engine's ``receiver.reason``, and that is what keeps ``0x00e51010``
+    (ECX loaded *from* the first popped word and forwarded as an ordinary
+    argument) out.
+
+    What it left on the table is the same ABI fact reached by a different
+    instruction. ``0x009817c0`` never dereferences the incoming ECX at all: it
+    null-tests it and *offsets* it -- ``LEA EAX,[ECX + 0xc]`` -- and returns the
+    result. So the engine's reason is ``ecx_address_taken_without_memory_access``,
+    a *different* known-unknown from the one ``R1-VFT`` resolves, and the record
+    abstains. Nothing about the evidence differs: the same sound membership, the
+    same callee pop, the same incoming ECX, used as the same thing.
+
+    The proof obligation, and why it holds
+    ---------------------------------------
+    The load-bearing step is the one ``R1-VFT`` already takes, and it is a fact
+    about the target ABI rather than a compiler heuristic. Enumerate the x86-32
+    MSVC register parameters: ``__thiscall`` passes ``this`` in ECX; ``__fastcall``
+    passes its first argument in ECX; ``__cdecl``, ``__stdcall`` and ``__clrcall``
+    pass none. Now intersect with the cleanup: **an ``__fastcall`` callee never
+    pops**, and a ``__cdecl``/``__clrcall`` callee never pops. So for a body whose
+    terminal ``ret imm`` pops its own arguments, the *only* way ECX can be
+    **defined on entry** is the one callee-popping convention that has a register
+    parameter at all -- ``__thiscall`` with callee cleanup -- and in it ECX is
+    ``this``. A compiler that found ECX undefined would never read it; a body that
+    reads it is a body the compiler gave a register parameter to.
+
+    A body in the COM / ``__stdcall`` interface form cannot be an exception: it
+    has no register parameter, so it never reads its incoming ECX. ``0x01053e00``
+    is the real shape of that and is still refused, and the falsifier battery
+    re-asserts it in miniature and in full.
+
+    Independent corroboration, from inside the binary
+    ------------------------------------------------
+    * ``0x00950eb0`` -- the function three of the corpus targets **tail-call
+      into** -- is a member of 17 sound tables, pops 4, and its body is
+      ``MOV EAX,ECX; MOV ECX,[ESP + 0x4]; ...; TEST EAX,EAX; JZ; ADD EAX,0x4;
+      RET 0x4``. ``R1-VFT`` already resolves *it* to ``__thiscall`` with
+      ``receiver.register == "ECX"``, because a copy is a read. So the machine
+      fact this rule rests on is already certified by the shipped engine for the
+      delegate of the very bodies the rule has to decide. That is the sharpest
+      evidence available and it is not a source declaration.
+    * ``0x00e3a400`` -- the same hash-dispatch family at full size, with no
+      sound vftable membership at all -- dereferences ECX at offsets
+      ``0x310/0x324/0x328/0x32c`` and adjusts it by ``0x2c0``, and the engine
+      already resolves it to ``__thiscall`` at ``SUPPORTED`` by plain ``R1`` +
+      ``C6B``. The siblings are refused only because their bodies offset ``this``
+      rather than dereference it.
+    * ``0x00969ac0`` -- the constructor of the class whose table
+      ``0x009817c0`` is a slot of -- is ``MOV ESI,ECX`` ...
+      ``MOV dword ptr [ESI + 0xc],0x01441a2c``, so the table this rule names is
+      installed into an object whose address arrived in ECX.
+    * The persisted Ghidra SDK decompilation of
+      ``UTFWin::ScrollbarDrawable::SetImage`` is a member function. That is
+      corroboration, and it is deliberately **not** part of the argument: the
+      rule reads no source, no name, and no triage label.
+
+    What the rule claims is the **receiver register** and nothing else
+    ------------------------------------------------------------------
+    The convention is the ordinary ``C6B`` arm, read off this function's own
+    ``ret imm``. No class, no vtable identity, no field, no layout. In particular
+    the ``LEA`` displacements -- ``0x4`` and ``0xc`` on the witness -- are **not**
+    published as ``receiver.offsets``: that field means *displacements the body
+    actually dereferenced through the receiver*, and this body dereferenced
+    nothing. The displacements appear only inside the rule's own ``value``, under
+    a name that says they are address computations.
+
+    The falsifiers
+    --------------
+    ``R2VftFalsifierTest`` is the mutation battery: twenty-eight ways to make the
+    rule lie, each paired with a firing control so a negative is a real negative.
+    """
+
+    MEMBERSHIP = VftableRuleTest.membership(0x01441A2C, 9)
+    OTHER_MEMBERSHIP = VftableRuleTest.membership(0x01441A2C, 12)
+
+    #: The real 0x009817c0 body, abridged to one hash and no tail hop. The
+    #: single thing every negative below changes is the property its own
+    #: falsifier is about.
+    FIRES = ("MOV EAX,dword ptr [ESP + 0x4]\n"
+             "CMP EAX,0xeec58382\n"
+             "JZ 0x009817e5\n"
+             "TEST ECX,ECX\n"
+             "JZ 0x009817ef\n"
+             "LEA EAX,[ECX + 0x4]\n"
+             "RET 0x4\n"
+             "009817ef XOR EAX,EAX\n"
+             "009817f0 RET 0x4")
+
+    @staticmethod
+    def listing(va8):
+        return corpus.load(corpus.by_va8(va8))
+
+    @staticmethod
+    def memberships_for(va8):
+        scan = real_scan()
+        if scan is None:
+            raise unittest.SkipTest("the binary is not present")
+        return [VftableRuleTest.membership(table, slot) for table, slot in
+                vftables.slots_of(scan, int(va8, 16))]
+
+    def record(self, va8, **kwargs):
+        return abi_infer.analyze(self.listing(va8), **kwargs)
+
+    def slot_record(self, va8):
+        return self.record(va8, vftable_slots=self.memberships_for(va8))
+
+    # -- the positives, on real captures -----------------------------------
+    def test_every_address_receiver_target_resolves_to_thiscall(self):
+        for entry in corpus.by_group("address_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8, group=entry["group"]):
+                plain = self.record(va8)
+                if plain["receiver"].get("reason") != \
+                        "ecx_address_taken_without_memory_access":
+                    # 0x00950eb0 is already resolved by R1-VFT (a copy is a
+                    # read); it is the *witness for the rule*, not a target of
+                    # it, and asserting otherwise would make the test lie.
+                    armed = self.slot_record(va8)
+                    self.assertEqual("ABI_INFERRED", armed["verdict"])
+                    self.assertIsNotNone(claim_of(armed, "R1-VFT"))
+                    self.assertIsNone(claim_of(armed, "R2-VFT"))
+                    continue
+                record = self.slot_record(va8)
+                self.assertEqual("__thiscall",
+                                 record["conventions"]["calling_convention"])
+                self.assertEqual("INFERRED", record["conventions"]["confidence"])
+                self.assertIs(record["receiver"]["present"], True)
+                self.assertEqual("ECX", record["receiver"]["register"])
+                self.assertEqual("vftable_slot_address",
+                                 record["receiver"]["provenance"])
+                self.assertEqual("INFERRED", record["receiver"]["confidence"])
+                self.assertEqual("callee", record["cleanup"]["side"])
+                self.assertIsNotNone(claim_of(record, "R2-VFT"))
+                # The convention is C6B's, read off this function's own ret imm.
+                self.assertIsNotNone(claim_of(record, "C6B"))
+                # One receiver fact gets one rule.
+                self.assertIsNone(claim_of(record, "V1-VFT"))
+                self.assertIsNone(claim_of(record, "R1-VFT"))
+                self.assertIsNone(claim_of(record, "R0"))
+                codes = fx.abstention_codes(record)
+                self.assertNotIn("receiver_not_determinable", codes)
+                self.assertNotIn("ecx_address_taken_without_memory_access", codes)
+                self.assertNotIn("receiver_undetermined_blocks_convention", codes)
+                # The verdict is the tail-transfer rule's to decide, and this
+                # rule does not touch it: four of the five delegate unknown
+                # hashes to 0x00951240 / 0x00950eb0 out of the listing, so T2
+                # stands and the record stays ABI_UNKNOWN. That is a real limit
+                # of the *record*, not of the receiver claim, and asserting the
+                # verdict here would be asserting a change this rule must not
+                # make.
+                if record["tail_call"]["present"]:
+                    self.assertEqual("ABI_UNKNOWN", record["verdict"])
+                    self.assertIsNotNone(claim_of(record, "T2"))
+                else:
+                    self.assertEqual("ABI_INFERRED", record["verdict"])
+
+    def test_the_witness_itself_resolves(self):
+        """``0x009817c0``, the target the candidate was named after."""
+        record = self.slot_record("009817c0")
+        self.assertEqual("__thiscall", record["conventions"]["calling_convention"])
+        self.assertIs(record["receiver"]["present"], True)
+        self.assertEqual("ECX", record["receiver"]["register"])
+        self.assertEqual("vftable_slot_address", record["receiver"]["provenance"])
+        claim = claim_of(record, "R2-VFT")
+        self.assertIsNotNone(claim)
+        self.assertEqual("ECX", claim["value"]["receiver_register"])
+        self.assertEqual("callee", claim["value"]["cleanup_side"])
+        # Both member displacements, cited, and neither of them a field fact.
+        self.assertEqual([4, 12], sorted(claim["value"]["member_lea_displacements"]))
+        self.assertGreaterEqual(claim["value"]["incoming_member_leas"], 2)
+        self.assertTrue(claim["value"]["incoming_ecx_null_test"],
+                        "the witness null-tests ECX; the rule reports it as "
+                        "corroboration, not as a precondition")
+        self.assertEqual([], record["receiver"]["offsets"])
+        self.assertEqual(0, record["receiver"]["distinct_offsets"])
+        self.assertIsNone(record["receiver"]["max_offset"])
+        self.assertEqual(0, record["receiver"]["written_through"])
+        self.assertIs(record["receiver"]["bounds_only"], True)
+
+    def test_the_delegate_of_every_witness_is_already_certified_thiscall(self):
+        """The independent witness, asserted rather than asserted-about.
+
+        ``0x00950eb0`` is a sound slot of 17 tables, it pops 4, and it reads its
+        incoming ECX as an object. It is resolved by ``R1-VFT`` **today**, with
+        no membership it cannot state and no rule from this extension. So the
+        fact R2-VFT claims for ``0x009817c0`` is a fact the engine already
+        asserts for the function ``0x009817c0`` tail-calls into.
+        """
+        delegate = self.slot_record("00950eb0")
+        self.assertEqual("__thiscall", delegate["conventions"]["calling_convention"])
+        self.assertIs(delegate["receiver"]["present"], True)
+        self.assertEqual("ECX", delegate["receiver"]["register"])
+        self.assertIsNotNone(claim_of(delegate, "R1-VFT"))
+        self.assertIsNone(claim_of(delegate, "R2-VFT"),
+                          "a copy is a read, and the read is R1-VFT's")
+        # And the three witnesses really do tail-call it.
+        for va8, hop in (("009817c0", "0x00951240"),
+                         ("009646d0", "0x00951240"),
+                         ("009672d0", "0x00950eb0"),
+                         ("009804e0", "0x00950eb0"),
+                         ("00980330", "0x00950eb0")):
+            with self.subTest(va=va8):
+                text = " ".join(item["instruction"]
+                                for item in self.listing(va8)["instructions"])
+                self.assertIn("JMP %s" % hop, text)
+
+    def test_the_membership_is_the_only_thing_that_moved_each_one(self):
+        """The discriminator, stated as a pair on the real captures.
+
+        Without the membership every one of these is exactly what it was before
+        the extension: ``ABI_UNKNOWN``, ``ecx_address_taken_without_memory_access``,
+        no convention. So the membership is doing the work and the body is not.
+        """
+        for entry in corpus.by_group("address_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                plain = self.record(va8)
+                if plain["receiver"].get("reason") != \
+                        "ecx_address_taken_without_memory_access":
+                    continue
+                self.assertEqual("ABI_UNKNOWN", plain["verdict"])
+                self.assertIsNone(plain["conventions"]["calling_convention"])
+                self.assertIsNone(plain["receiver"]["present"])
+                self.assertEqual("ecx_address_taken_without_memory_access",
+                                 plain["receiver"]["reason"])
+                self.assertNotIn("provenance", plain["receiver"])
+                self.assertIsNone(claim_of(plain, "R2-VFT"))
+                armed = self.slot_record(va8)
+                self.assertNotEqual(plain["content_sha256"],
+                                    armed["content_sha256"])
+
+    def test_the_cited_table_and_slot_are_the_membership_that_was_supplied(self):
+        record = self.slot_record("009817c0")
+        claim = claim_of(record, "R2-VFT")
+        supplied = self.memberships_for("009817c0")
+        self.assertEqual(supplied[0]["table"], claim["value"]["table"])
+        self.assertEqual(supplied[0]["slot_index"], claim["value"]["slot_index"])
+        self.assertIn(supplied[0]["table"], claim["claim"])
+        self.assertEqual(2, claim["value"]["membership_count"])
+        # The citations resolve, and they are the address-taking observations.
+        by_id = {item["id"]: item for item in record["observations"]}
+        self.assertTrue(claim["based_on"])
+        for citation in claim["based_on"]:
+            self.assertIn(citation, by_id)
+            self.assertEqual("REG_READ", by_id[citation]["kind"])
+            self.assertEqual("ECX", by_id[citation]["reg"])
+            self.assertIsNone(by_id[citation]["first_write_index"],
+                              "a read after the first write is not incoming")
+
+    def test_the_claim_states_both_readings_it_had_to_choose_between(self):
+        """An explainable record names the alternative it rejected.
+
+        The two readings are the register receiver and the first popped stack
+        word. The claim has to say the second one exists, or a reader cannot tell
+        a discriminator from an assumption.
+        """
+        claim = claim_of(self.slot_record("009817c0"), "R2-VFT")
+        for phrase in ("slot 9", "vptr-backed", "address of its incoming ECX",
+                       "first popped stack word", "COM / __stdcall"):
+            self.assertIn(phrase, claim["claim"])
+
+    def test_no_convention_class_or_layout_is_stated_by_the_rule(self):
+        """The rule separates four facts and collapses none of them."""
+        record = self.slot_record("009817c0")
+        self.assertEqual([], record["receiver"]["offsets"])
+        self.assertEqual(0, record["receiver"]["distinct_offsets"])
+        self.assertIsNone(record["receiver"]["max_offset"])
+        self.assertEqual(0, record["receiver"]["written_through"])
+        self.assertEqual("__thiscall", claim_of(record, "C6B")["value"])
+        blob = json.dumps(record, sort_keys=True)
+        for forbidden in ("ScrollbarDrawable", "App::", "class_name",
+                          "vtable_owner", "vptr_owner", "field_0x"):
+            self.assertNotIn(forbidden, blob)
+
+    def test_the_receiver_confidence_never_reaches_supported(self):
+        """``R1`` may reach SUPPORTED on three offsets; ``R2-VFT`` has none."""
+        for entry in corpus.by_group("address_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                record = self.slot_record(va8)
+                if claim_of(record, "R2-VFT") is None:
+                    continue
+                self.assertEqual("INFERRED", record["receiver"]["confidence"])
+                self.assertEqual("INFERRED",
+                                 claim_of(record, "R2-VFT")["confidence"])
+                self.assertEqual("INFERRED", record["conventions"]["confidence"])
+
+    def test_the_record_is_byte_identical_without_a_membership(self):
+        for entry in corpus.by_group("address_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                self.assertEqual(abi_infer.analyze(listing)["content_sha256"],
+                                 abi_infer.analyze(listing, vftable_slots=(),
+                                                   tail_target_record=None)["content_sha256"])
+
+    def test_the_rule_is_deterministic_across_repeated_calls(self):
+        for entry in corpus.by_group("address_receiver"):
+            va8 = entry["va8"]
+            with self.subTest(va=va8):
+                listing = self.listing(va8)
+                slots = self.memberships_for(va8)
+                first = abi_infer.analyze(listing, vftable_slots=slots)
+                second = abi_infer.analyze(listing, vftable_slots=list(slots))
+                self.assertEqual(canonical_json(first), canonical_json(second))
+                self.assertEqual(first["content_sha256"],
+                                 second["content_sha256"])
+
+    def test_the_whole_committed_corpus_moves_exactly_the_new_group(self):
+        """Every other sound membership in the corpus must produce exactly the
+        record it produced before the rule existed."""
+        group = {entry["va8"] for entry in corpus.by_group("address_receiver")}
+        for entry in corpus.CORPUS:
+            va8 = entry["va8"]
+            if va8 in group:
+                continue
+            with self.subTest(va=va8, group=entry["group"]):
+                scan = real_scan()
+                if scan is None:
+                    raise unittest.SkipTest("the binary is not present")
+                slots = [VftableRuleTest.membership(table, slot)
+                         for table, slot in
+                         vftables.slots_of(scan, int(va8, 16))]
+                armed = abi_infer.analyze(corpus.load(entry),
+                                          vftable_slots=slots)
+                self.assertIsNone(claim_of(armed, "R2-VFT"),
+                                  "only the address_receiver group may claim it")
+                self.assertNotEqual("vftable_slot_address",
+                                    armed["receiver"].get("provenance"))
+
+
+class R2VftFalsifierTest(unittest.TestCase):
+    """Twenty-eight ways to make ``R2-VFT`` lie, each asserted to stay silent.
+
+    Every one of these is a mutation of a *firing* input: the body is the
+    real ``0x009817c0`` shape unless a line says otherwise, and the single thing
+    that changes is the property the guard is about. A negative on a body that
+    never fired proves nothing, so the control is asserted first and every
+    negative is paired with the property that stops it.
+    """
+
+    MEMBERSHIP = R2VftReceiverRuleTest.MEMBERSHIP
+    OTHER_MEMBERSHIP = R2VftReceiverRuleTest.OTHER_MEMBERSHIP
+    FIRES = R2VftReceiverRuleTest.FIRES
+
+    def fires(self, body=None, slots=None):
+        return abi_infer.analyze(self.FIRES if body is None else body,
+                                 vftable_slots=[self.MEMBERSHIP] if slots is None else slots)
+
+    def assertRefused(self, record, why, present=True):
+        """The rule did not fire.
+
+        ``present=True`` additionally demands that no *other* rule claimed the
+        receiver. Three of the falsifiers below are bodies another rule decides
+        correctly -- a plain dereference is R1's, an adjusted receiver belongs to
+        a tail target -- and for those the receiver fact is real and R2-VFT must
+        still stay out of it. They pass ``present=False``, which is the assertion
+        that matters: one receiver fact gets one rule.
+        """
+        self.assertIsNone(claim_of(record, "R2-VFT"), why)
+        self.assertNotEqual("vftable_slot_address",
+                            record["receiver"].get("provenance"), why)
+        if present:
+            self.assertIsNot(record["receiver"]["present"], True, why)
+
+    def assertFires(self, record, why="", convention=True):
+        """The rule fired.
+
+        ``convention=False`` is for the one body where the receiver claim is
+        right and the convention is not: a callee-popping body that also reads
+        its incoming EDX is the C8-E collision, and the engine withholds the
+        convention there on purpose. The receiver fact and the convention are
+        separate claims and only the second one is ambiguous.
+        """
+        self.assertIsNotNone(claim_of(record, "R2-VFT"), why)
+        self.assertIs(record["receiver"]["present"], True, why)
+        self.assertEqual("ECX", record["receiver"]["register"], why)
+        self.assertEqual("vftable_slot_address",
+                         record["receiver"]["provenance"], why)
+        if convention:
+            self.assertEqual("__thiscall",
+                             record["conventions"]["calling_convention"], why)
+
+    # -- the control, so every negative below is a real negative -----------
+    def test_0_the_control_body_fires(self):
+        self.assertFires(self.fires())
+
+    # -- 1. ECX as an ordinary integer argument ----------------------------
+    def test_1_ecx_loaded_from_a_stack_word_is_not_a_receiver(self):
+        """``0x00e51010``'s shape, restated for the address-taking class.
+
+        ECX is loaded from the first popped word and then offset as an integer.
+        The engine's reason is still the address-taken one -- that reason is
+        raised for the LEA and does not care where ECX came from -- so a rule
+        keyed on the reason alone would have claimed a register receiver here.
+        The guard is the def/use relation, not the reason code.
+        """
+        body = ("MOV ECX,dword ptr [ESP + 0x4]\n"
+                "LEA EAX,[ECX + 0x4]\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        self.assertRefused(record, "ECX here is an argument, not a receiver")
+        self.assertEqual("ecx_address_taken_without_memory_access",
+                         record["receiver"]["reason"])
+        self.assertIn("receiver_not_determinable", fx.abstention_codes(record))
+
+    # -- 2. ECX merely tested, never used ---------------------------------
+    def test_2_a_null_test_alone_is_not_a_receiver(self):
+        """The rule reports the null test as corroboration, and does not need it.
+
+        This is the falsifier for the claim that ``TEST ECX,ECX`` is a
+        precondition. It is not: it is reported, and the rule fires on the
+        address-taking alone.
+        """
+        with_test = self.fires()
+        self.assertTrue(claim_of(with_test, "R2-VFT")
+                        ["value"]["incoming_ecx_null_test"])
+        without = self.fires(body=("MOV EAX,dword ptr [ESP + 0x4]\n"
+                                   "LEA EAX,[ECX + 0x4]\n"
+                                   "RET 0x4"))
+        self.assertFires(without, "the null test is corroboration, not a guard")
+        self.assertFalse(claim_of(without, "R2-VFT")
+                         ["value"]["incoming_ecx_null_test"])
+        # And a null test with no address-taking is nothing at all.
+        only_test = self.fires(body=("TEST ECX,ECX\n"
+                                     "JZ 0x009817ef\n"
+                                     "MOV EAX,ECX\n"
+                                     "RET 0x4\n"
+                                     "009817ef XOR EAX,EAX\n"
+                                     "009817f0 RET 0x4"))
+        self.assertIsNone(claim_of(only_test, "R2-VFT"))
+        # A pure test, with no read at all, is the receiver-absent reading.
+        pure = self.fires(body="TEST ECX,ECX\nXOR EAX,EAX\nRET 0x4")
+        self.assertRefused(pure, "a test that decides nothing is not a receiver")
+        self.assertIs(pure["receiver"]["present"], False)
+        self.assertIsNotNone(claim_of(pure, "R2"))
+
+    # -- 3. a stack/local-derived scalar in ECX ----------------------------
+    def test_3_ecx_derived_from_a_local_is_not_a_receiver(self):
+        for load in ("MOV ECX,dword ptr [EBP - 0x4]",
+                     "MOV ECX,dword ptr [ESP + 0x8]",
+                     "MOV ECX,0x10",
+                     "MOV ECX,EBX",
+                     "PUSH 0x4\nPOP ECX"):
+            with self.subTest(load=load.splitlines()[-1]):
+                body = load + "\nLEA EAX,[ECX + 0x4]\nRET 0x4"
+                self.assertRefused(self.fires(body=body),
+                                   "ECX is the body's own value, not a parameter")
+
+    # -- 4/5. address arithmetic that is not a member displacement ---------
+    def test_4_scaled_or_indexed_address_arithmetic_is_not_a_receiver(self):
+        """Scaled and indexed forms are table arithmetic, and are never the
+        member-displacement class this rule reads.
+
+        Two of the five below are claimed by ``R1-VFT`` instead, because a scaled
+        ``LEA`` is *an* incoming ECX read and ``R1-VFT`` accepts any read. That
+        is ``R1-VFT``'s shipped reach and is not this rule's to change; what
+        matters here is that the two rules do not both claim one receiver, which
+        is why each sub-case asserts which rule owns the body.
+        """
+        for lea in ("LEA EAX,[ECX*4 + 0x1000]",
+                    "LEA EAX,[ECX + ECX*2 + 0x4]",
+                    "LEA EAX,[ECX + ECX + 0x4]",
+                    "LEA EAX,[ECX + EBX]",
+                    "LEA EAX,[EBP + 0x4]"):
+            with self.subTest(lea=lea):
+                record = self.fires(body=lea + "\nRET 0x4")
+                self.assertIsNone(claim_of(record, "R2-VFT"),
+                                  "not a base-plus-constant off the receiver")
+                self.assertNotEqual("vftable_slot_address",
+                                    record["receiver"].get("provenance"))
+                r1 = claim_of(record, "R1-VFT")
+                if r1 is not None:
+                    # The read is a scaled one; R1-VFT owns it and must not also
+                    # hand the body to R2-VFT.
+                    self.assertEqual("vftable_slot_dispatch",
+                                     record["receiver"]["provenance"])
+                    self.assertEqual("__thiscall",
+                                     record["conventions"]["calling_convention"])
+                else:
+                    self.assertIsNot(record["receiver"]["present"], True)
+
+    # -- 6/7/8. the displacement must be a member displacement ------------
+    def test_5_the_displacement_must_be_a_non_negative_dword_aligned_member_offset(self):
+        for lea in ("LEA EAX,[ECX - 0x4]",       # a pre-adjustment, not a member
+                    "LEA EAX,[ECX - 0x7fc]",     # ditto, at the far end
+                    "LEA EAX,[ECX + 0x9]",       # not dword aligned
+                    "LEA EAX,[ECX + 0x2]",       # not dword aligned
+                    "LEA EAX,[ECX + 0x800]",     # past the member cap
+                    "LEA EAX,[ECX + 0x7fffffff]"):  # a mask, not a member
+            with self.subTest(lea=lea):
+                self.assertRefused(self.fires(body=lea + "\nRET 0x4"),
+                                   "not a member displacement")
+        # The cap's last accepted value, and its first member offsets, all fire.
+        for lea in ("LEA EAX,[ECX]", "LEA EAX,[ECX + 0x4]",
+                    "LEA EAX,[ECX + 0x7fc]"):
+            with self.subTest(lea=lea):
+                self.assertFires(self.fires(body=lea + "\nRET 0x4"),
+                                 "a member displacement")
+
+    # -- 9. ECX overwritten before the address-taking use ------------------
+    def test_6_an_ecx_write_before_the_lea_makes_it_not_incoming(self):
+        for write in ("MOV ECX,dword ptr [0x016b3c0c]",
+                      "XOR ECX,ECX",
+                      "ADD ECX,EBX",
+                      "SUB ECX,0x8",
+                      "INC ECX",
+                      "POP ECX",
+                      "MOV ECX,ECX",
+                      "LEA ECX,[ECX + 0x8]"):
+            with self.subTest(write=write):
+                body = write + "\nLEA EAX,[ECX + 0x4]\nRET 0x4"
+                self.assertRefused(self.fires(body=body),
+                                   "the LEA reads a value the body itself made")
+        # Move the write one line later and the pair is satisfied again: this is
+        # the guard, stated as an ordering.
+        self.assertFires(self.fires(body="LEA EAX,[ECX + 0x4]\n"
+                                         "MOV ECX,dword ptr [0x016b3c0c]\n"
+                                         "RET 0x4"),
+                         "the incoming read precedes the write")
+
+    def test_6b_a_call_before_the_lea_makes_the_ecx_a_leftover(self):
+        """ECX is volatile in x86-32, so a read after a call is not a parameter.
+
+        This one is a gap the engine's own ``ecx_first_write`` has: ``CALL`` has
+        no register operand for the definition to be recorded against, so a body
+        that reads ECX *after* a call would otherwise look like a read of the
+        incoming register. ``_ecx_def_indices`` states the clobber explicitly.
+        """
+        for call in ("CALL 0x00500000", "CALL EAX"):
+            with self.subTest(call=call):
+                record = self.fires(body=call + "\nLEA EAX,[ECX + 0x4]\nRET 0x4")
+                self.assertRefused(record, "ECX is the callee's leftover here")
+                self.assertIsNotNone(claim_of(record, "R0"))
+        # A call *through* a member of the receiver is refused for a second,
+        # independent reason as well: the dispatch is itself a memory access
+        # rooted at ECX, so the body is in the dereference class on its own
+        # terms and R1 owns it.
+        indirect = self.fires(body="CALL dword ptr [ECX + 0x4]\n"
+                                  "LEA EAX,[ECX + 0x4]\nRET 0x4")
+        self.assertRefused(indirect, "an ECX-rooted access of any kind",
+                           present=False)
+        self.assertIs(indirect["receiver"]["present"], True)
+        self.assertIsNotNone(claim_of(indirect, "R1"))
+        # The same body with the call *after* the address-taking still fires:
+        # the incoming value was consumed while it was still the parameter.
+        self.assertFires(self.fires(body="LEA EAX,[ECX + 0x4]\n"
+                                         "LEA EDX,[ESP + 0x0]\n"
+                                         "CALL 0x00500000\n"
+                                         "RET 0x4"),
+                         "the incoming read precedes the call")
+
+    # -- 10. register reuse -------------------------------------------------
+    def test_7_register_reuse_leaves_no_incoming_address_taking(self):
+        body = ("MOV ECX,dword ptr [ESP + 0x4]\n"
+                "MOV EDX,ECX\n"
+                "LEA EAX,[EDX + 0x8]\n"
+                "LEA EAX,[ECX + 0x4]\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        self.assertRefused(record, "ECX is the body's own value by then")
+        self.assertEqual("ecx_address_taken_without_memory_access",
+                         record["receiver"]["reason"])
+        # XCHG writes ECX too.
+        self.assertRefused(
+            self.fires(body="XCHG EAX,ECX\nLEA EAX,[ECX + 0x4]\nRET 0x4"),
+            "XCHG defines ECX")
+
+    # -- 11/12. the cleanup side, and its absence ---------------------------
+    def test_8_the_caller_cleanup_shape_belongs_to_v1_vft_not_to_this(self):
+        body = "LEA EAX,[ECX + 0x4]\nRET"
+        record = self.fires(body=body)
+        self.assertEqual("caller", record["cleanup"]["side"])
+        self.assertIsNone(claim_of(record, "R2-VFT"),
+                          "the caller-cleanup form is V1-VFT's")
+        self.assertIsNotNone(claim_of(record, "V1-VFT"))
+        self.assertEqual("vftable_slot", record["receiver"]["provenance"])
+        self.assertIsNone(record["receiver"]["present"],
+                          "V1-VFT sets the register without the presence flag")
+
+    def test_9_a_body_with_no_ret_never_reaches_the_rule(self):
+        for body in ("LEA EAX,[ECX + 0x4]\nJMP 0x00500000",
+                     "LEA EAX,[ECX + 0x4]\nLEA EDX,[ECX + 0x8]\nJMP 0x00500000"):
+            with self.subTest(jmp=body.splitlines()[-1]):
+                self.assertRefused(self.fires(body=body),
+                                   "no terminal RET means no cleanup to read")
+        # Nor does a pop the engine cannot read, or one it reads as a conflict.
+        self.assertRefused(self.fires(body="LEA EAX,[ECX + 0x4]\nRET 0x3"),
+                           "a non-dword pop is not a callee pop")
+
+    def test_10_contradictory_cleanup_withholds_the_receiver_too(self):
+        record = self.fires(body=("LEA EAX,[ECX + 0x4]\n"
+                                  "RET 0x4\n"
+                                  "RET 0x8"))
+        self.assertIn("ret_immediates_disagree", fx.abstention_codes(record))
+        self.assertEqual("CONFLICT", record["cleanup"]["side"])
+        self.assertRefused(record, "no established callee pop, so no claim")
+        self.assertIsNone(record["conventions"]["calling_convention"])
+
+    # -- 13. ECX as a counter ----------------------------------------------
+    def test_11_a_rep_string_op_makes_ecx_a_counter(self):
+        """The counter class wins, and the *reason code* does not say so.
+
+        ``_receiver_evidence`` ranks its unknowns in a fixed order --
+        dereference, then address-taken, then counter, then any read -- so a
+        body that both offsets ECX and uses it as a repeat count reports
+        ``ecx_address_taken_without_memory_access``. This is the sharpest reason
+        a rule **must not** be keyed on the reason: doing so would admit every
+        body below, on the strength of a label that is already outranked. The
+        guard is the counter fact itself, read positively.
+        """
+        for body in ("LEA EAX,[ECX + 0x4]\nMOV EAX,0x4\nREP STOSD\nRET 0x4",
+                     "MOV EAX,4\nREP STOSD\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+                     "LEA EAX,[ECX + 0x4]\nREP MOVSD\nRET 0x4"):
+            with self.subTest(rep=[l for l in body.splitlines() if "REP" in l][0]):
+                record = self.fires(body=body)
+                self.assertRefused(record, "ECX is the repeat count here")
+                self.assertEqual("ecx_address_taken_without_memory_access",
+                                 record["receiver"]["reason"],
+                                 "the reason is outranked; see the docstring")
+                self.assertIsNotNone(claim_of(record, "R0"))
+        # Without the address-taking, the counter reason is the one reported.
+        plain = self.fires(body="MOV EAX,0x4\nREP STOSD\nRET 0x4")
+        self.assertRefused(plain, "no address-taking either")
+        self.assertEqual("ecx_used_as_counter", plain["receiver"]["reason"])
+
+    # -- 14. an ECX memory access is a different, stronger evidence class --
+    def test_12_an_ecx_dereference_belongs_to_r1_and_r1_only(self):
+        """One receiver fact gets one rule, and the dereference class is R1's.
+
+        Three shapes, three answers, and none of them is R2-VFT's:
+
+        * an **incoming** dereference is R1's, and R1's reason is the
+          dereference itself;
+        * a dereference after ECX was written is the record's own
+          ``ecx_reassigned_before_deref`` unknown, which this rule does not
+          resolve and must not launder;
+        * an ``R-ALIAS`` dereference through a register copied *from* ECX is
+          again the dereference class.
+        """
+        incoming = self.fires(body=("MOV EAX,dword ptr [ECX + 0x4]\n"
+                                    "LEA EAX,[ECX + 0xc]\n"
+                                    "RET 0x4"))
+        self.assertRefused(incoming, "the dereference is R1's evidence",
+                           present=False)
+        self.assertIsNotNone(claim_of(incoming, "R1"))
+        self.assertIsNone(claim_of(incoming, "R1-VFT"),
+                          "R1-VFT is the *membership*-based read rule; a plain "
+                          "deref is R1's and needs no membership")
+        self.assertIs(incoming["receiver"]["present"], True)
+        reassigned = self.fires(body=("MOV ECX,dword ptr [ESP + 0x4]\n"
+                                      "LEA EAX,[ECX + 0xc]\n"
+                                      "MOV EDX,dword ptr [ECX + 0x8]\n"
+                                      "RET 0x4"))
+        self.assertRefused(reassigned,
+                           "ecx_reassigned_before_deref stays a ceiling")
+        self.assertEqual("ecx_reassigned_before_deref",
+                         reassigned["receiver"]["reason"])
+        alias = self.fires(body=("MOV EAX,ECX\n"
+                                 "MOV EDX,dword ptr [EAX + 0x10]\n"
+                                 "LEA EAX,[ECX + 0xc]\n"
+                                 "RET 0x4"))
+        self.assertRefused(alias, "an R-ALIAS dereference is the deref class",
+                           present=False)
+        self.assertIs(alias["receiver"]["present"], True)
+        self.assertEqual("R-ALIAS", alias["receiver"]["shape"])
+        # The real capture of the reassigned class, with a membership forced on.
+        real = abi_infer.analyze(corpus.load(corpus.by_va8("01053e00")),
+                                 vftable_slots=[self.OTHER_MEMBERSHIP])
+        self.assertRefused(real, "0x01053e00 is not a member of any sound table")
+
+    # -- 15/16. the membership ---------------------------------------------
+    def test_13_a_membership_that_cannot_state_its_basis_is_absence(self):
+        self.assertRefused(self.fires(slots=[]), "no membership is no evidence")
+        for basis in (None, "vtables_json", "index_heuristic", "",
+                      "vftable_predicat", "VFTABLE_PREDICATE", 0, 1):
+            with self.subTest(basis=basis):
+                entry = {"table": "0x01441a2c", "slot_index": 9}
+                if basis is not None:
+                    entry["basis"] = basis
+                self.assertRefused(self.fires(slots=[entry]),
+                                   "an entry that cannot state its basis is absent")
+
+    def test_14_membership_is_not_transferable_between_functions(self):
+        """A membership names *this* address's slot; nothing is inherited.
+
+        The engine only ever sees a membership list, so the only thing tying a
+        membership to a function is that the caller supplied it. Two
+        corroborations: a membership for a slot that does not exist on the table
+        still cannot make a *refused* body fire, and the evidence layer's own
+        memberships are all present in the image's sound slot map.
+        """
+        refused = self.fires(body=("MOV EAX,dword ptr [ESP + 0x4]\n"
+                                   "LEA EAX,[EBP + 0x4]\n"
+                                   "RET 0x4"))
+        self.assertRefused(refused, "no incoming ECX address-taking at all")
+        for slot in (0, 9, 12, 4095, 1 << 20):
+            with self.subTest(slot=slot):
+                record = self.fires(
+                    slots=[VftableRuleTest.membership(0x01441A2C, slot)],
+                    body="LEA EAX,[ECX + 0x4]\nRET")
+                self.assertIsNone(claim_of(record, "R2-VFT"),
+                                  "the caller-cleanup shape is V1-VFT's whatever "
+                                  "the slot")
+                self.assertIsNotNone(claim_of(record, "V1-VFT"))
+        # And the evidence layer's memberships are the image's own.
+        scan = real_scan()
+        if scan is None:
+            raise unittest.SkipTest("the binary is not present")
+        from tools.reconstruction_tooling import evidence as evidence_module
+        for va8 in ("009817c0", "00980330", "00950eb0", "00841540"):
+            supplied = evidence_module._vftable_slots(scan, int(va8, 16))
+            real = {("0x%08x" % t, s) for t, s in vftables.slots_of(scan, int(va8, 16))}
+            self.assertEqual(real, {(item["table"], item["slot_index"])
+                                    for item in supplied}, va8)
+
+    # -- 17/18. the stack receiver ------------------------------------------
+    def test_15_the_com_stack_receiver_shape_stays_refused(self):
+        """``0x01053e00``'s shape, in miniature and in full, with a membership.
+
+        A callee-popping COM / ``__stdcall`` interface member takes its receiver
+        from the first popped word and has **no register parameter at all**, so
+        it never reads its incoming ECX. That is the whole guard, and it is the
+        same guard ``R1-VFT`` uses, restated for the address-taking class.
+        """
+        miniature = ("SUB ESP,0x18\n"
+                     "PUSH ESI\n"
+                     "MOV ESI,dword ptr [ESP + 0x20]\n"
+                     "TEST byte ptr [ESI],0x1\n"
+                     "POP ESI\n"
+                     "ADD ESP,0x18\n"
+                     "RET 0x8")
+        record = self.fires(body=miniature)
+        self.assertRefused(record, "the receiver is the first popped word")
+        self.assertEqual("__stdcall", record["conventions"]["calling_convention"])
+        self.assertIsNotNone(claim_of(record, "C6"))
+        for slots in ([], [self.MEMBERSHIP], [self.OTHER_MEMBERSHIP]):
+            with self.subTest(membership=bool(slots)):
+                full = abi_infer.analyze(
+                    corpus.load(corpus.by_va8("01053e00")),
+                    vftable_slots=slots)
+                self.assertRefused(full, "the real capture either way")
+                self.assertIsNone(full["receiver"]["register"])
+        # And the miniature with the incoming-ECX shape *added* to a stack
+        # receiver is the combination this rule is about, not a contradiction:
+        # see `test_16_a_stack_pointer_argument_is_not_a_second_receiver`.
+        both = self.fires(body=("SUB ESP,0x8\n"
+                                "PUSH ESI\n"
+                                "MOV ESI,dword ptr [ESP + 0x10]\n"
+                                "TEST ECX,ECX\n"
+                                "JZ 0x009817ef\n"
+                                "LEA EAX,[ECX + 0x4]\n"
+                                "MOV EDX,dword ptr [ESI + 0x8]\n"
+                                "POP ESI\n"
+                                "ADD ESP,0x8\n"
+                                "RET 0xc\n"
+                                "009817ef XOR EAX,EAX\n"
+                                "009817f0 RET 0xc"))
+        self.assertFires(both, "ECX is this; the popped word is an argument")
+
+    def test_16_a_stack_pointer_argument_is_not_a_second_receiver(self):
+        """Why no guard forbids dereferencing a popped word.
+
+        A guard of the form "a register loaded from the first popped word is
+        never dereferenced" was written, measured and **rejected**: it is not a
+        soundness requirement and it refuses a real shape. Under the x86-32 MSVC
+        table a callee-popping body that reads its incoming ECX is a
+        ``__thiscall``, and a ``__thiscall`` may perfectly well take a pointer
+        argument on the stack and dereference it. The COM reading is excluded
+        without that guard, by the register-parameter argument in
+        ``R2VftReceiverRuleTest``'s docstring. This test pins the decision so it
+        cannot be re-added as an unexamined conservatism.
+        """
+        body = ("SUB ESP,0x4\n"
+                "MOV EAX,dword ptr [ESP + 0x8]\n"
+                "TEST ECX,ECX\n"
+                "JZ 0x009817ef\n"
+                "LEA EAX,[ECX + 0x4]\n"
+                "MOV EDX,dword ptr [EAX + 0x8]\n"
+                "ADD ESP,0x4\n"
+                "RET 0x8\n"
+                "009817ef XOR EAX,EAX\n"
+                "009817f0 RET 0x8")
+        record = self.fires(body=body)
+        self.assertFires(record, "thiscall with a pointer argument")
+        self.assertEqual([], record["receiver"]["offsets"],
+                         "and the argument's dereference is not a receiver offset")
+
+    # -- 19. an adjustor is not a receiver ---------------------------------
+    def test_17_adjustor_arithmetic_alone_establishes_nothing(self):
+        for body in ("SUB ECX,0x8\nJMP 0x00500000",
+                     "ADD ECX,0xc\nJMP 0x00500000",
+                     "LEA ECX,[ECX + 0x8]\nXOR AL,AL\nRET 0x4",
+                     "SUB ECX,0x8\nXOR AL,AL\nRET 0x4"):
+            with self.subTest(body=body.splitlines()[0]):
+                for slots in ([], [self.MEMBERSHIP]):
+                    with self.subTest(membership=bool(slots)):
+                        record = abi_infer.analyze(body, vftable_slots=slots)
+                        self.assertRefused(record, "an adjustor is a write, not a read")
+                        self.assertNotEqual("vftable_slot_address",
+                                            record["receiver"].get("provenance"))
+        # A thunk never claims a receiver of its own: the target's does.
+        target = {"va": "0x00500000", "entry": True, "in_text": True,
+                  "import_pointer": False, "record": target_thiscall_caller()}
+        record = abi_infer.analyze("SUB ECX,0x4\nJMP 0x00500000",
+                                   vftable_slots=[self.MEMBERSHIP],
+                                   tail_target_record=target)
+        self.assertRefused(record, "a thunk's receiver belongs to the target",
+                           present=False)
+        self.assertIsNone(record["receiver"]["register"])
+        self.assertEqual(-4, record["receiver"]["adjustor_delta"])
+        self.assertIsNone(record["receiver"].get("provenance"))
+
+    # -- 20. the real 0x01053e00 shape with the shape added -----------------
+    def test_18_the_real_stack_receiver_capture_is_byte_identical(self):
+        for va8 in ("01053e00", "00fa5040", "006a2e20"):
+            with self.subTest(va=va8):
+                listing = corpus.load(corpus.by_va8(va8))
+                self.assertEqual(abi_infer.analyze(listing)["content_sha256"],
+                                 abi_infer.analyze(
+                                     listing,
+                                     vftable_slots=[self.MEMBERSHIP])["content_sha256"])
+
+    # -- 21/22/23. control flow --------------------------------------------
+    def test_19_multi_arm_control_flow_does_not_change_the_answer(self):
+        """The witness is three arms and must fire; a write-first order must not.
+
+        The engine's model is a linear walk, so "the incoming ECX" is decided by
+        the order the listing is in. A body whose write textually precedes the
+        address-taking is refused even when the two are on different arms. That
+        is a conservative refusal, stated here so it is a decision and not an
+        accident.
+        """
+        control = abi_infer.analyze(self.FIRES, vftable_slots=[self.MEMBERSHIP])
+        self.assertFires(control)
+        # Same two arms, the other textual order.
+        reordered = self.fires(body=("MOV ECX,dword ptr [ESP + 0x4]\n"
+                                     "JZ 0x009817ef\n"
+                                     "LEA EAX,[ECX + 0x4]\n"
+                                     "RET 0x4\n"
+                                     "009817ef XOR EAX,EAX\n"
+                                     "009817f0 RET 0x4"))
+        self.assertRefused(reordered, "the write textually precedes the LEA")
+        # Three arms, no write anywhere, two of them address-taking.
+        arms = self.fires(body=("CMP EAX,0xeec58382\n"
+                                "JZ 0x009817e5\n"
+                                "CMP EAX,0xeef3af8c\n"
+                                "JZ 0x009817db\n"
+                                "TEST ECX,ECX\n"
+                                "JZ 0x009817ef\n"
+                                "LEA EAX,[ECX + 0x4]\n"
+                                "RET 0x4\n"
+                                "009817db TEST ECX,ECX\n"
+                                "009817dc JZ 0x009817ef\n"
+                                "009817de LEA EAX,[ECX + 0xc]\n"
+                                "009817e1 RET 0x4\n"
+                                "009817e5 TEST ECX,ECX\n"
+                                "009817e7 JZ 0x009817ef\n"
+                                "009817e9 LEA EAX,[ECX + 0x4]\n"
+                                "009817ec RET 0x4\n"
+                                "009817ef XOR EAX,EAX\n"
+                                "009817f0 RET 0x4"))
+        self.assertFires(arms, "the real three-arm shape")
+        claim = claim_of(arms, "R2-VFT")
+        self.assertEqual(3, claim["value"]["incoming_member_leas"])
+        self.assertEqual([4, 12], sorted(set(claim["value"]["member_lea_displacements"])))
+
+    # -- 24. indirect dispatch ---------------------------------------------
+    def test_20_a_dispatcher_is_not_a_member_of_its_own_table(self):
+        """A body that dispatches through a computed address is still a member.
+
+        ``LEA EAX,[ECX+0x4]; MOV EDX,[EAX]; CALL EDX`` reads no memory *through*
+        ECX -- the load is through EAX -- so it is the address-taking class, and
+        the register-parameter argument is unchanged. What the rule must not do
+        is claim anything about the table at ``[EAX]``.
+        """
+        body = ("LEA EAX,[ECX + 0x4]\n"
+                "MOV EDX,dword ptr [EAX]\n"
+                "CALL EDX\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        self.assertFires(record, "ECX is this; the table is a different fact")
+        self.assertEqual("vftable_slot_address", record["receiver"]["provenance"])
+        self.assertEqual([], record["receiver"]["offsets"])
+        # The membership cannot be borrowed for the dispatchee.
+        self.assertIsNone(claim_of(record, "V1-VFT"))
+        # A dispatcher that reads ECX *through* a table is the deref class.
+        deref = self.fires(body=("MOV EAX,dword ptr [ECX]\n"
+                                 "CALL dword ptr [EAX + 0x4]\n"
+                                 "RET 0x4"))
+        self.assertRefused(deref, "an ECX dereference is R1's class",
+                           present=False)
+        self.assertIsNotNone(claim_of(deref, "R1"))
+
+    # -- 25. a contradictory incoming EDX ----------------------------------
+    def test_21_a_popping_body_that_also_reads_edx_stays_ambiguous(self):
+        body = ("MOV EAX,dword ptr [EDX + 0x4]\n"
+                "LEA EAX,[ECX + 0x4]\n"
+                "RET 0x4")
+        record = self.fires(body=body)
+        self.assertFires(record, "the receiver claim is a separate fact",
+                         convention=False)
+        self.assertIsNone(record["conventions"]["calling_convention"])
+        self.assertIn("ecx_and_edx_indistinguishable",
+                      fx.abstention_codes(record))
+
+    # -- 26. the address-taking operation removed --------------------------
+    def test_22_removing_the_address_taking_removes_the_claim(self):
+        """One instruction, deleted, and nothing is left to fire on."""
+        killed = self.fires(body=self.FIRES.replace("LEA EAX,[ECX + 0x4]\n", ""))
+        self.assertRefused(killed, "the address-taking operation is the rule")
+        # What is left reads ECX nowhere else, so the record is the
+        # receiver-*absent* reading (R2), not the undetermined one. TEST/CMP do
+        # not count as reads, and that is the whole of the difference.
+        self.assertIs(killed["receiver"]["present"], False)
+        self.assertIsNone(killed["receiver"].get("reason"))
+        self.assertIsNotNone(claim_of(killed, "R2"))
+        self.assertNotIn("receiver_not_determinable",
+                         fx.abstention_codes(killed))
+        # Removing the LEA base instead: an unrelated LEA does not help.
+        rebased = self.fires(body=self.FIRES.replace("[ECX + 0x4]", "[EDX + 0x4]"))
+        self.assertRefused(rebased, "the base must be ECX")
+        # And the sound membership alone, with no address-taking at all.
+        empty = self.fires(body="XOR EAX,EAX\nRET 0x4")
+        self.assertIsNone(claim_of(empty, "R2-VFT"))
+
+    # -- 27. malformed evidence input is an absence ------------------------
+    def test_23_malformed_membership_input_never_adds_a_claim(self):
+        for slots in (None, {}, 3, "0x01441a2c",
+                      [{"table": None, "slot_index": 9,
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [{"table": "0x01441a2c", "slot_index": -1,
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [{"table": "0x01441a2c", "slot_index": "9",
+                        "basis": abi_infer.VFTABLE_BASIS}],
+                      [(None, 9)], [("0x01441a2c", None)],
+                      [{"slot_index": 9, "basis": abi_infer.VFTABLE_BASIS}]):
+            with self.subTest(slots=slots):
+                record = abi_infer.analyze(self.FIRES, vftable_slots=slots)
+                self.assertRefused(record, "malformed input removes evidence")
+                self.assertEqual(abi_infer.analyze(self.FIRES)["content_sha256"],
+                                 record["content_sha256"])
+
+    # -- 28. the guards are load-bearing, by mutation ---------------------
+    def test_24_each_guard_is_proved_by_what_it_stops(self):
+        """A mutation, not an inference: each guard is replaced and the
+        negatives that guard exists for then fire. If a guard stops mattering,
+        its replacement changes nothing and this fails."""
+        checks = (
+            # The def/use relation. Removing it makes every "ECX is the body's
+            # own value by then" negative fire.
+            ("_ecx_def_indices", _no_defs, (
+                # 1: an integer argument loaded from the first popped word
+                "MOV ECX,dword ptr [ESP + 0x4]\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+                # 3: ECX derived from a frame local
+                "MOV ECX,dword ptr [EBP - 0x4]\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+                # 6: a write textually before the address-taking, on one arm
+                "MOV ECX,dword ptr [ESP + 0x4]\nJZ 0x009817ef\n"
+                "LEA EAX,[ECX + 0x4]\nRET 0x4\n"
+                "009817ef XOR EAX,EAX\n009817f0 RET 0x4",
+                # 6b: a call first, so ECX is a leftover
+                "CALL 0x00500000\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+                # 7: register reuse
+                "MOV ECX,dword ptr [ESP + 0x4]\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+                # 17: an adjustor written as a LEA
+                "LEA ECX,[ECX + 0x8]\nLEA EAX,[ECX + 0x4]\nRET 0x4",
+            )),
+            # The shape of the address-taking itself: base, index, and how many
+            # times the register is named.
+            ("_incoming_member_leas", _any_lea, (
+                # 4: the sum form, which the operand dict cannot separate from a
+                # member address. The scaled and indexed forms are *not* here:
+                # each is an incoming ECX read, so R1-VFT claims those bodies
+                # first and this rule is never reached. `test_4` says so.
+                "MOV EDX,ECX\nLEA EAX,[ECX + ECX + 0x4]\nRET 0x4",
+                "MOV EDX,ECX\nLEA EAX,[ECX - 0x4]\nRET 0x4",
+                "MOV EDX,ECX\nLEA EAX,[ECX + 0x9]\nRET 0x4",
+                "MOV EDX,ECX\nLEA EAX,[ECX + 0x800]\nRET 0x4",
+            )),
+            # The existence of a *qualifying* address-taking, as opposed to its
+            # shape. Each body below does read its incoming ECX -- `MOV EDX,ECX`
+            # -- through an LEA of the wrong shape, so the record's reason is the
+            # address-taken one, no other rule has claimed the receiver, and
+            # there is a genuine incoming read to cite. Only the qualifying site
+            # is missing.
+            ("_incoming_member_leas", _one_fake_lea, (
+                # 17: an adjustor, which writes ECX rather than reading it
+                "MOV EDX,ECX\nLEA ECX,[ECX + 0x8]\nLEA EAX,[EBP + 0x0]\nRET 0x4",
+                # 4: the sum form the operand dict cannot separate
+                "MOV EDX,ECX\nLEA EAX,[ECX + ECX + 0x4]\nLEA EAX,[EBP + 0x0]\nRET 0x4",
+                # 5: the displacement tests
+                "MOV EDX,ECX\nLEA EAX,[ECX - 0x4]\nLEA EAX,[EBP + 0x0]\nRET 0x4",
+                "MOV EDX,ECX\nLEA EAX,[ECX + 0x9]\nLEA EAX,[EBP + 0x0]\nRET 0x4",
+                "MOV EDX,ECX\nLEA EAX,[ECX + 0x800]\nLEA EAX,[EBP + 0x0]\nRET 0x4",
+            )),
+        )
+        for name, replacement, bodies in checks:
+            original = getattr(abi_infer, name)
+            try:
+                setattr(abi_infer, name, replacement)
+                for body in bodies:
+                    with self.subTest(guard=name, body=body.splitlines()[0]):
+                        record = self.fires(body=body)
+                        self.assertIsNotNone(claim_of(record, "R2-VFT"),
+                                             "the guard was removed, so this "
+                                             "negative must now fire")
+            finally:
+                setattr(abi_infer, name, original)
+        # And with every guard back, all of them are refused again. The first
+        # two of the last group are R1-VFT's reach rather than this rule's --
+        # each is an incoming ECX read with no member displacement at all -- so
+        # for those the assertion is only that R2-VFT stayed out.
+        for body, present in (
+                ("MOV ECX,dword ptr [ESP + 0x4]\nLEA EAX,[ECX + 0x4]\nRET 0x4", True),
+                ("MOV ECX,dword ptr [EBP - 0x4]\nLEA EAX,[ECX + 0x4]\nRET 0x4", True),
+                ("CALL 0x00500000\nLEA EAX,[ECX + 0x4]\nRET 0x4", True),
+                ("LEA EAX,[ECX*4 + 0x1000]\nRET 0x4", False),
+                ("LEA EAX,[ECX + ECX*2 + 0x4]\nRET 0x4", False),
+                ("LEA EAX,[ECX + ECX + 0x4]\nRET 0x4", True),
+                ("LEA EAX,[ECX - 0x4]\nRET 0x4", True),
+                ("LEA EAX,[ECX + 0x9]\nRET 0x4", True),
+                ("LEA EAX,[ECX + 0x800]\nRET 0x4", True),
+                ("LEA EAX,[ECX + 0x4]\nRET", False),
+                ("LEA EAX,[ECX + 0x4]\nJMP 0x00500000", True)):
+            with self.subTest(restored=body.splitlines()[0]):
+                self.assertRefused(self.fires(body=body), "the guards are back",
+                                   present=present)
+
+
+def _no_defs(state):
+    """A stand-in for ``_ecx_def_indices`` that finds no definition at all.
+
+    The engine's own ``state.ecx_first_write`` misses three classes of ECX
+    definition -- an ``LEA`` destination, the second operand of an ``XCHG``, and
+    the implicit clobber of a ``CALL`` -- which is why ``R2-VFT`` states its own
+    relation. This stand-in removes it, and the negatives it is checked against
+    are the ones it keeps out.
+    """
+    return set()
+
+
+def _one_fake_lea(state, defs=None):
+    """A stand-in that always reports one site, whatever the listing says.
+
+    Removes the *existence* requirement: with it, a body whose only address
+    arithmetic is somewhere else, or which has none at all, is still read as one
+    incoming member ``LEA``.
+    """
+    return [{"index": 0, "at": None, "dest": "EAX", "disp": 4}]
+
+
+def _any_lea(state, defs=None):
+    """A stand-in for ``_incoming_member_leas`` with only the LEA-ness.
+
+    Deliberately drops the incoming test, the base test, the index test, the
+    single-naming test, the destination test and the displacement test all at
+    once: the negatives it is checked against are the ones those six produce.
+    """
+    out = []
+    for item in state.insns:
+        if item["kind"] != "insn" or item["base"] != "LEA":
+            continue
+        mem = item["operands"][1] if len(item["operands"]) > 1 else None
+        if mem is None or mem["kind"] != "mem":
+            continue
+        out.append({"index": item["index"],
+                    "at": None, "dest": None, "disp": mem["disp"]})
+    return out

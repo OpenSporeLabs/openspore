@@ -1,0 +1,524 @@
+# Reconstruction context 0x00641770
+
+- Status: `partial`
+- Content SHA-256: `53aab88abfc20c09555931c1b5b9c2b46573bdcdcba7692e4631912fb4e4fad5`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00641770",
+  "phase": "reconstruction",
+  "target": "0x00641770"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "Pkg16AssetData",
+  "name": "Sporepedia::cSPAssetDataOTDB::HasName",
+  "package": "PKG-16-SPOREPEDIA-ONLINE",
+  "subsystem": "Sporepedia.AssetData",
+  "va": "0x00641770"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "89418867acda358b8d840da89d166dc27a3e2abc43891e7866bf299ab1b24046",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00641770 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "receiver": {
+    "register": "ECX",
+    "type": "Pkg16AssetData *",
+    "width_bytes": 4
+  },
+  "return_observation": "The full 32-bit word at receiver +0x28 is loaded into EAX and returned unchanged. The body performs no bool conversion, masking, or low-byte extraction.",
+  "return_register": "EAX",
+  "return_width_bytes": 4,
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "termination": "RET"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005c7500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005f3930"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00eda2f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ef7600"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ef76a0"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x005c764a",
+      "direction": "in",
+      "other": "0x005c7500",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x005f3999",
+      "direction": "in",
+      "other": "0x005f3930",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00eda607",
+      "direction": "in",
+      "other": "0x00eda2f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00eda65b",
+      "direction": "in",
+      "other": "0x00eda2f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00ef760b",
+      "direction": "in",
+      "other": "0x00ef7600",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00ef76a8",
+      "direction": "in",
+      "other": "0x00ef76a0",
+      "reference_type": "direct-call"
+    }
+  ],
+  "external_callees": []
+}
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "Pkg16AssetData",
+    "Pkg16AssetData *",
+    "Pkg16MetadataWord",
+    "cSPAssetDataOTDB"
+  ],
+  "vtables": [
+    "vtable:0x013fdb18",
+    "vtable:0x013ff648",
+    "vtable:0x01409bec",
+    "vtable:0x01414bc0",
+    "vtable:0x01414ed4",
+    "vtable:0x01415178",
+    "vtable:0x014186c4",
+    "vtable:0x0141873c",
+    "vtable:0x01418c9c",
+    "vtable:0x01419040",
+    "vtable:0x014190d4",
+    "vtable:0x01419278"
+  ]
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "gate-sporepedia-metadata-word-callers"
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005c7500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x005f3930"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00eda2f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ef7600"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ef76a0"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x005c764a",
+      "direction": "in",
+      "other": "0x005c7500",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x005f3999",
+      "direction": "in",
+      "other": "0x005f3930",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00eda607",
+      "direction": "in",
+      "other": "0x00eda2f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00eda65b",
+      "direction": "in",
+      "other": "0x00eda2f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00ef760b",
+      "direction": "in",
+      "other": "0x00ef7600",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00ef76a8",
+      "direction": "in",
+      "other": "0x00ef76a0",
+      "reference_type": "direct-call"
+    }
+  ],
+  "edges_truncated": false,
+  "external_callees": [],
+  "fan_in": 5,
+  "fan_out": 0,
+  "manifest_callees": [],
+  "manifest_callers": [
+    "direct_caller_functions_5",
+    "function_xrefs_57"
+  
+[TRUNCATED]
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:Pkg16AssetData,Pkg16AssetData *,cSPAssetDataOTDB",
+      "shared_vtable:vtable:0x013ff648,vtable:0x01462764"
+    ],
+    "package": "PKG-16-SPOREPEDIA-ONLINE",
+    "score": 32,
+    "symbol": "Sporepedia_cSPAssetDataOTDB_IsEditable_00641400",
+    "va": "0x00641400"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:Pkg16AssetData,Pkg16AssetData *",
+      "shared_vtable:vtable:0x013ff648,vtable:0x01462764"
+    ],
+    "package": "PKG-16-SPOREPEDIA-ONLINE",
+    "score": 29,
+    "symbol": "Sporepedia_cSPAssetDataOTDB_GetAssetID_address_006417c0",
+    "va": "0x006417c0"
+  },
+  {
+    "match_basis": [
+      "shared_vtable:vtable:0x01409bec,vtable:0x014186c4"
+    ],
+    "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+    "score": 4,
+    "symbol": "wave6_reference_00432a50",
+    "va": "0x00432a50"
+  },
+  {
+    "match_basis": [
+      "shared_vtable:vtable:0x013fdb18,vtable:0x01414bc0"
+    ],
+    "package": "PKG-UTFWIN-CORE-WAVE6",
+    "score": 4,
+    "symbol": "re_00575ea0",
+    "va": "0x00575ea0"
+  },
+  {
+    "match_basis": [
+      "shared_vtable:vtable:0x013ff648,vtable:0x0147c9e8"
+    ],
+    "package": "pkg-swarm-w1-005c0dd0",
+    "score": 4,
+    "symbol": "re_005c0dd0",
+    "va": "0x005c0dd0"
+  },
+  {
+    "match_basis": [
+      "shared_vtable:vtable:0x013ff648,vtable:0x01462764"
+    ],
+    "package": "pkg-swarm-w1-006413d0",
+    "score": 4,
+    "symbol": "re_006413d0",
+    "va": "0x006413d0"
+  },
+  {
+    "match_b
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/Sporepedia__cSPAssetDataOTDB__HasName.c",
+  "file": "src/reconstruction/pkg16_sporepedia/sporepedia_access.cpp",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Sporepedia__cSPAssetDataOTDB__HasName.c",
+    "src/reconstruction/pkg16_sporepedia/sporepedia_access.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-source-wave2/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg16-sporepedia/00641770.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `conflicted`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [
+    {
+      "anchors": [
+        "0x00fa2380",
+        "0x00fa23a0",
+        "0x00fa2380",
+        "0x00fa23a0",
+        "0x01490be8",
+        "0x00641770",
+        "0x01490be8",
+        "0x01490be8",
+        "0x01490be8",
+        "0x01490be8",
+        "0x01490be8",
+        "0x00641770",
+        "0x00fa1bc0",
+        "0x00fa1bc0",
+        "0x01490be8",
+        "0x00fa0780"
+      ],
+      "conflict_id": "VT-001",
+      "kind": "conflict_ledger",
+      "rejected": [],
+      "resolution": "RESOLVED_OBSERVED",
+      "resolution_status": "RESOLVED_OBSERVED",
+      "source": "knowledgegraph/research/conflicts/track-a-type-signature.json",
+      "subject": "0x01490BE8 vtable owner",
+      "unresolved_reason": "The full ITerrain interface boundary and individual unknown slot contracts remain unresolved; the unique owner of 0x01490BE8 is resolved."
+    }
+  ],
+  "unresolved_questions": [
+    "SDK bool alias conflict",
+    "What concrete metadata-pointer or raw-word role does the complete +0x28 value have at each caller?",
+    "Why does the SDK HasName declaration point at this full-word return without a visible bool conversion?",
+    "constructor and producer",
+    "field lifetime",
+    "gate-sporepedia-metadata-word-callers",
+    "metadata word role"
+  ]
+}
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Sporepedia__cSPAssetDataOTDB__HasName.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-source-wave2/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg16-sporepedia/00641770.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg16_sporepedia/sporepedia_access.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": ".spore-analysis/ghidra-exports/decompiled_sdk/Sporepedia__cSPAssetDataOTDB__HasName.c",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/integrated/batch-2026-09-25-source-wave2/handoff.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg16-sporepedia/00641770.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg16_sporepedia/sporepedia_access.cpp",
+      "source_class": "committed_artifact"
+    }
+  ],
+  "read_first": [
+    "reconstruction/knowledge/ind
+[TRUNCATED]
+```

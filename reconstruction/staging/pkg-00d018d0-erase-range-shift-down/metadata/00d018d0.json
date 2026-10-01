@@ -1,0 +1,176 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00D018D0-ERASE-RANGE-SHIFT-DOWN",
+  "subsystem": "Simulator",
+  "cluster": "unknown-fun-mass",
+  "queue_id": "",
+  "va": "0x00d018d0",
+  "address": "0x00d018d0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "erase_range_shift_down_00d018d0",
+  "reconstructed_symbol": "erase_range_shift_down_00d018d0",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0.hpp",
+    "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0.cpp",
+    "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0_model_test.cpp",
+    "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/mutation_test.sh"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0.hpp",
+    "source": "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0.cpp",
+    "model_test": "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/erase_range_shift_down_00d018d0_model_test.cpp",
+    "mutation_harness": "reconstruction/staging/pkg-00d018d0-erase-range-shift-down/mutation_test.sh"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall, receiver in ECX, two ordinary stack arguments at entry_ESP+0x4 and entry_ESP+0x8, callee pops 8 bytes",
+    "calling_convention_evidence": "four machine facts, each read from the instruction stream. (1) ECX is the only caller-controlled register the body reads and it is dereferenced immediately (0x00d018d5 `MOV EBX,dword ptr [ECX + 0x4]`), which is a receiver read. (2) Two stack words are read: 0x00d018d0 `MOV EAX,dword ptr [ESP + 0x4]` and 0x00d018da `MOV EDI,dword ptr [ESP + 0x14]`, the latter being entry ESP+0x8 once the three pushes at 0x00d018d4/0x00d018d8/0x00d018d9 are accounted for. (3) The terminator is `RET 0x8` (0x00d0190f), so the callee pops eight bytes -- exactly the two stack arguments -- which excludes __cdecl (caller cleans) and __fastcall (which would place a second argument in EDX rather than on the stack). (4) ECX is read as a receiver base and is written through at 0x00d01909, so the frame is a member function. The derived record reaches the same conclusion independently (inference C6B, verdict ABI_INFERRED, cleanup confidence OBSERVED on the `ret 0x8` form).",
+    "receiver": "ECX, dereferenced at displacement 0x4 exactly twice: read at 0x00d018d5, written at 0x00d01909",
+    "receiver_disposition": "NO receiver identity is claimed. The machine-derived receiver record is bounds_only (shape R-DIRECT, register ECX, offsets [4], max_offset 4, distinct_offsets 1, written_through 1), which states WHERE the body was seen reaching and never WHICH member lives there. The package therefore models the receiver as an opaque incomplete type with no fields, states 0x4 as a computed displacement named kTailDisplacement rather than as an offset of a declared member, and asserts no size for it. docs/tooling/reconstruction-failure-modes.md rule 2 is applied directly: a bounds_only receiver forbids member NAMES, not displacements.",
+    "ordinary_stack_argument_slots": 2,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "read_at": "0x00d018d0",
+        "role": "the destination start of the shift, named `first`; also the value EAX holds at the terminator"
+      },
+      {
+        "ordinal": 2,
+        "entry_offset": "entry_ESP+0x8",
+        "read_at": "0x00d018da",
+        "role": "the source start of the shift, named `last`"
+      }
+    ],
+    "stack_arguments_evidence": "both slots are read exactly once each and neither is ever written, so both are inputs. The derived record reports them as observed_slots 2, total_bytes 8, widths_ambiguous false, gaps 0. The second slot's 0x14 displacement is not a third argument: it is entry ESP+0x8 re-based by the three pushes, which the derived record resolves independently as key 8.",
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x8 (0x00d0190f)",
+    "return_register": "EAX",
+    "return_type": "opaque 32-bit element pointer",
+    "return_semantics": "arg1 verbatim. EAX is written exactly once in the whole body, at 0x00d018d0, by a load from entry_ESP+0x4, and is never written again on any path; the single reachable exit at 0x00d0190f therefore hands back the first stack argument. The derived record's own must-analysis corroborates this rather than merely naming a register: it reports the 31-instruction listing as writing EAX at a determinate 4-byte width before all 1 reachable return(s), state WIDTH_4_IN_EAX, provable true.",
+    "return_type_rationale": "OBSERVED FROM THE LISTING, NOT INFERRED FROM A NAME OR A TYPE. Two independent reads agree: the single EAX write is the arg1 load at 0x00d018d0 with no later write on any path, and evidence_returns.classify computes WIDTH_4_IN_EAX from the complete listing plus the parse record (declared_count 31, unparsed 0, degraded false) and marks it provable. The declared type is therefore a 32-bit pointer, which is width-computable by the validator, and NOT void -- the Ghidra decompiler prints `void` because a return of an unmodified argument is not a value it can name, but the machine plainly defines EAX on every path. Declaring void here would be the FAIL the return arm raises when a source declares no value where the machine provably produces one.",
+    "saved_registers": ["EBP", "EBX", "EDI", "ESI"],
+    "frame": "three pushes (EBX, ESI, EDI at entry) plus a conditional fourth (EBP at 0x00d018e6, inside the loop body and popped at 0x00d018fb on the path that entered it). No MOV EBP,ESP and no SUB ESP, so there is no frame pointer and no stack frame -- the pushes are register saves and the ESP-relative argument reads are relative to the shifted ESP, which the derived record records as push_ebp true, mov_ebp_esp false, sub null."
+  },
+  "observed_mechanics": [
+    "the complete body is 31 instructions spanning 0x00d018d0..0x00d0190f inclusive; the machine parse consumed all 31 with unparsed 0 and degraded false, so the listing is whole and not a slice",
+    "MOV EBX,[ECX+0x4] at 0x00d018d5 loads the receiver word once, and that SAME register is the loop's exit test (CMP EDX,EBX at 0x00d018f7). The loop bound is therefore a snapshot taken before the loop, not a re-read of memory.",
+    "the loop runs from arg2 (`last`) up to that snapshot, stepping both cursors by 8 (0x00d018f1 ADD EDX,0x8 and 0x00d018f4 ADD ESI,0x8), so it copies the half-open range [last, tail) onto [first, ...). The trip count is governed by the TAIL, not by the erased range: a one-element erase in a five-element sequence runs THREE iterations, not one.",
+    "each iteration moves two 32-bit words (0x00d018e7 MOV EBP,[EDX] / MOV [ESI],EBP and 0x00d018eb MOV EBP,[EDX+0x4] / MOV [ESI+0x4],EBP), so the element is 8 bytes and is never interpreted -- both words are opaque.",
+    "the JZ at 0x00d018e4 is the empty-range skip: it jumps to 0x00d018fc, past the loop and past the PUSH EBP at 0x00d018e6, so the frame stays balanced on that path.",
+    "the removal is computed as SUB EDI,EAX (byte length, 0x00d018fc), SAR EDI,3 (0x00d018fe), NEG EDI (0x00d01901), then three ADD EDI,EDI doublings (0x00d01903, 0x00d01905, 0x00d01907), and finally ADD [ECX+0x4],EDI (0x00d01909). Counting in elements and converting back is the compiler's strength reduction, not a different quantity.",
+    "there is no call, no indirect transfer, no global and no data-segment reference anywhere in the 31 instructions; the dispatch record agrees at indirect_calls 0, vtable_shaped_loads 0, and the data-reference artifact knowledgegraph/triage/datarefs-2540f2ca.tsv records no data reference out of this address",
+    "a caller confirms the shape independently: 0x007f2600 reads this receiver's element count as `*(int *)(param_1 + 0x84) - *piVar9 >> 3` -- an 8-byte element -- and calls this function with the begin and end words of that same receiver, which is the erase-a-range idiom this body implements",
+    "the 16 recorded call sites all pass the range in the same order (the call at 0x007f2600 is `FUN_00d018d0(*piVar9, *(undefined4 *)(param_1 + 0x84))`, i.e. first then last), so the argument order is corroborated from the call side and not only by the register order"
+  ],
+  "field_offsets": [
+    {
+      "owner": "the receiver",
+      "displacement": "0x4",
+      "width_bytes": 4,
+      "access": "read then written",
+      "instructions": ["00d018d5", "00d01909"],
+      "note": "This is the machine's own constant, and it is the ONLY displacement the complete 31-instruction listing reaches on ECX. It is stated as kTailDisplacement, a computed displacement, and NOT as offsetof of a declared member: the receiver record is bounds_only with a single enumerated offset, so it says where the body reached and nothing about which member is which. The header's OpaqueReceiver carries no members and no size."
+    }
+  ],
+  "layout": "no layout is claimed beyond the single displacement above. OpaqueReceiver and OpaqueElement are both incomplete types; no static_assert in this package states a size for either. The 8-byte element width is a property of the STRIDE the cursors advance by, not a sizeof of a type this package defines -- which is why OpaqueElement is deliberately left incomplete and every address in the model test is built as base + a byte offset.",
+  "globals": [],
+  "vtables": [],
+  "types": [],
+  "type_scope": "every object involved is opaque. The receiver is never named beyond its one displacement, the element is moved as two uninterpreted words, and no class is attributed.",
+  "analogues": [],
+  "semantic_findings": [
+    "0x00d018d0 is an in-place range removal over a sequence of 8-byte elements: it shifts the elements from `last` up to the receiver's tail word down over the erased range, and then moves that tail word back by the byte length of the range. The result is a shorter sequence in the same storage, which is the erase-a-range idiom rather than an erase-and-shift-into-new-memory one.",
+    "The tail word at receiver+0x4 is read ONCE, before the loop, and the loop exits against that cached register value. This is a snapshot, not a live re-read, and the model test covers the ordering that follows from it.",
+    "The returned value is arg1 verbatim, not a computed result. EAX has exactly one write in the body and it is the arg1 load.",
+    "The 8-byte element width is fixed by three mutually consistent machine facts: the cursor stride is 0x8, two 32-bit words are copied per iteration, and the removal is derived by an arithmetic shift of 0x3 followed by three doublings. That is also corroborated from the call side at 0x007f2600, which computes the element count as `(end - begin) >> 3`.",
+    "The loop's trip count is governed by the tail, so erasing ONE element from the middle of a five-element sequence copies THREE elements. A reader who expects one copy per erased element will mispredict this body, and the model test asserts the real trip count in that exact shape."
+  ],
+  "not_claimed": [
+    "a class name and an owning type: SporeApp.exe has no MSVC RTTI, the machine record is bounds_only with one enumerated offset, and 16 call sites in at least as many distinct functions pass different receiver words, so no single receiver type is determinable",
+    "which member the receiver word at 0x4 is called: `tail` is this package's own name for the value the machine stores there, inferred from the loop bound and the ADD that shrinks it, and it is NOT corroborated by the receiver record, which is bounds_only",
+    "what the 8 bytes of an element contain: the loop moves them as two uninterpreted 32-bit words and no caller-side read of one was traced, so the element type is left opaque",
+    "the size of the receiver, or anything at displacements other than 0x4: the body never reaches one",
+    "the SEMANTICS of the `SAR EDI,3` rounding for a byte length that is not a whole number of elements. The rounding IS reproduced faithfully in the body -- it is arithmetic, so it rounds toward negative infinity -- but it is UNOBSERVABLE on any input the loop can complete: the loop exits on `read_cursor == tail` with a stride of 8, so it terminates only when `last - tail` is a multiple of 8, and with element-aligned `first` and `tail` that forces `last - first` to be a whole number of elements too. The rounding therefore only fires on an input that walks off the end of the sequence, which is why no model test case exercises it. Claiming a behaviour for that input would be claiming something about a hang.",
+    "whether the sequence is a std::vector, a std::deque, or any particular container: the body moves elements within one contiguous storage and adjusts one pointer word, which many container types could do, and nothing here names one",
+    "any runtime behaviour: no original-process observation exists in this repository for this target"
+  ],
+  "confidence": "the body is recovered COMPLETELY from a fully parsed 31-instruction listing whose 31 instructions were consumed by the machine parse with unparsed 0 and degraded false. The loop structure, both cursor strides, the two-word copy, the displacement 0x4, the three-instruction removal arithmetic and the RET 0x8 terminator are all OBSERVED. The 8-byte element width is observed from three agreeing machine facts and corroborated from a call site. INFERRED, and marked as such throughout: the calling convention (which the derived record reaches independently), the NAME `tail` for the receiver word, the `first`/`last` reading of the two stack arguments (corroborated by 16 call sites), and the erase idiom itself. NOT DETERMINED: the receiver type, the element type, and every behaviour on a non-terminating input.",
+  "unresolved_questions": [
+    "THE RECEIVER RECORD IS BOUNDS_ONLY AND THIS PACKAGE DOES NOT OVERRIDE IT. receiver.bounds_only is true with offsets [4] and max_offset 4, so the record fixes where the body reached and never which member is which. The consequence for the validator is that FIELDS/OFFSETS grounds the single declared displacement as a displacement; it does not, and cannot, confirm the NAME `tail`. The package accordingly declares no struct member and no offsetof assertion.",
+    "THE ELEMENT TYPE IS UNKNOWN, ONLY ITS SIZE IS NOT. Three machine facts and one call site fix the width at 8 bytes. What those 8 bytes are -- a pointer, a pair of ints, a small struct -- is not established by anything in this pack, and no member of such a type is named anywhere in the source.",
+    "ARGUMENT NAMES ARE A CORROBORATED INFERENCE, NOT AN OBSERVATION. `first` and `last` describe what the body DOES with the two stack words (destination start and source start), which is observable. That the original author called them that is not, and the decompiler's `param_2`/`param_3` carry no such information either. The order is corroborated from the call side: 0x007f2600 passes the receiver's begin word first and its end word second.",
+    "16 CALL SITES WERE COUNTED BUT NOT ALL READ. The call-side evidence for the argument order and the 8-byte element rests primarily on 0x007f2600, which was decompiled for this package; the other 15 sites are recorded in the edge rows and were not individually read. The 16-site fan-in is corroborated by the xref export, not by 16 separate body reads.",
+    "THE TRIP-COUNT BEHAVIOUR IS COUNTER-INTUITIVE AND WORTH A REVIEWER'S EYE. Erasing one element copies every element after it, so the cost is O(remaining), not O(1). That follows from the machine (the loop bound is the tail) and is asserted by the model test, but it is the single most surprising thing about this body and the thing a reviewer is most likely to want confirmed against a second call site.",
+    "NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game. The model's fidelity rests on the listing being the whole body, which the parse record asserts and which is corroborated by both branch targets landing inside 0x00d018d0..0x00d0190f."
+  ],
+  "evidence_provenance": [
+    "reconstruction/evidence/00d018d0/evidence.json category disassembly (LIVE, 31 instructions, listing_state complete): the full instruction text quoted field by field in the source transcript",
+    "reconstruction/evidence/00d018d0/evidence.json category decompilation (LIVE, GhidraMCP REST /decompile_function): independently reproduced by hand in this session and agreed with on structure; its `void` return was REJECTED in favour of the EAX-write evidence, see observed_original_abi.return_type_rationale",
+    "reconstruction/evidence/00d018d0/evidence.json category abi_derived (openspore-abi-inference-1: declared_count 31, degraded false, unparsed 0; receiver bounds_only offsets [4] max_offset 4 written_through 1; cleanup 8 bytes callee OBSERVED on `ret 0x8`; dispatch indirect_calls 0; conventions __thiscall INFERRED via C6B; verdict ABI_INFERRED)",
+    "GhidraMCP REST /decompile_function @ 0x007f2600, read as CALL-SIDE corroboration: it computes this receiver's element count as `*(int *)(param_1 + 0x84) - *piVar9 >> 3` and calls this function as `FUN_00d018d0(*piVar9, *(undefined4 *)(param_1 + 0x84))`, which is where the 8-byte element width and the first-then-last argument order come from",
+    "reconstruction/evidence/00d018d0/evidence.json category callers_dependencies: 16 call sites with direct-call edge rows",
+    "knowledgegraph/triage/datarefs-2540f2ca.tsv read whole: records no data reference out of 0x00d018d0, which is why GLOBALS is an absence corroborated by the complete listing rather than an unread artifact",
+    "docs/tooling/reconstruction-failure-modes.md rules 2 (a bounds_only receiver forbids member names, not displacements), 3 (return_semantics is a register class, not a C type -- the sidecar's abi.return_type states the C type and the machine phrase is kept in a separate field), 4 (the declared return type must be width-computable, hence a pointer and not an alias), 5 (the gate is clang++ -m32 -Wall -Wextra -Werror linking a static library, reproduced exactly), 7 (exactly one symbol in the package embeds the target VA; the test's helpers carry no address), and 8 (a hex literal in a static_assert message is a live operand, which is why the pinning asserts sit OUTSIDE the function span and carry no hex in their message)",
+    "docs/tooling/validation-dimensions.md section 'Absence is not a pass', applied to the GLOBALS / CONTROL FLOW / VIRTUAL DISPATCH passes: each is corroborated by the complete 31-instruction listing accounting for the absence, not by the source staying silent",
+    "siblings 0x00d00a10 and 0x00d00a70 were decompiled READ-ONLY for consistency and turned out to be unrelated (a clamped-float helper and a clamped-float range classifier); no staging directory, metadata record or file belonging to either was written"
+  ],
+  "focused_test": {
+    "cases": 15,
+    "checks": 503,
+    "mutants": 14,
+    "mutant_catch_counts": [
+      "2 named checks fail",
+      "BUILD-REJECTED (the pinned constant is no longer what the assert states)",
+      "process_abort_SIGABRT rc=134, 57 named checks fail before the abort",
+      "17 named checks fail",
+      "process_abort_SIGSEGV rc=139 (reading the receiver's guard word as the tail walks off the fixture)",
+      "128 named checks fail",
+      "128 named checks fail",
+      "128 named checks fail",
+      "25 named checks fail",
+      "4 named checks fail",
+      "BUILD-REJECTED (the model test assigns the result, so void no longer compiles -- the mutation is caught at compile time rather than at run time, and that is recorded rather than dressed up as a run-time count)",
+      "BUILD-REJECTED (the tail snapshot becomes unused, which -Werror rejects)",
+      "12 named checks fail",
+      "process_abort_SIGSEGV rc=139 (the tail is shrunk before the loop, so the loop runs off the end of the fixture)"
+    ],
+    "perturbations_of_the_reconstruction_itself_tried": [
+      "cursor stride 0x8 -> 0x4, with the pinning static_assert mutated along with it so the catch had to be behavioural: 2 of 503 named checks fail",
+      "loop exit condition compared against `first` instead of the tail snapshot: the pinned tail snapshot becomes unused and -Werror rejects the build",
+      "the two cursors swapped, shifting the surviving block UPWARD: SIGABRT (rc=134) after 57 named checks fail, the guard-band assertions trip and the process aborts",
+      "copy only the low word of each element, stride and trip count unchanged: 17 of 503 named checks fail",
+      "receiver displacement 0x4 -> 0x0, with the pinning assert mutated along with it: SIGSEGV (rc=139), because the tail is then read from the guard word and the loop walks off the fixture",
+      "drop the tail update entirely: 128 of 503 named checks fail",
+      "drop the NEG, so the tail grows instead of shrinking: 128 of 503 named checks fail",
+      "the SAR 0x3 replaced by a divide-by-one, with BOTH pinning static_asserts left untouched: 128 of 503 named checks fail -- this mutant deliberately does not edit the constant declarations, so it shows the test catches the wrong shift behaviourally rather than by refusing to compile",
+      "return `last` instead of arg1: 25 of 503 named checks fail",
+      "return the updated tail instead of arg1: 4 of 503 named checks fail",
+      "declare void where the machine defines EAX on every path: BUILD-REJECTED, the model test assigns the result",
+      "make the loop condition `while (false)`, i.e. take the JZ branch unconditionally: BUILD-REJECTED, the tail snapshot becomes unused",
+      "stop the loop one element early: 12 of 503 named checks fail",
+      "shrink the tail BEFORE the loop and re-read the loop bound from the slot: SIGSEGV (rc=139), the loop runs off the end of the fixture"
+    ],
+    "counting_method": "each mutant is built and run under the real gate from a MUTATED COPY of the sources in its own directory (clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<mutant-dir> -c ... && ar qc <FRESH> && link && run). The archive is rm -f'd before every single mutant because `ar qc` APPENDS: a stale archive silently links the unmutated object and the mutant reports a pass. The harness also A/Bs the mutated copy against the committed source and refuses any mutant that changed nothing, and it runs the unmutated BASELINE first and aborts the whole run if the baseline fails, so a mutant result can never be read against a broken reference. Every mutant terminated under a 60 s timeout, and a timeout is reported as a catch in its own right.",
+    "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<dir> -c <src>.cpp && -c <test>.cpp && rm -f <fresh>.a && ar qc <fresh>.a && ranlib && clang++ -m32 link && run: 503 checks, 0 failures (prints 'checks=503 failures=0'). Byte-identical result under g++ -std=c++17 -Wall -Wextra -Werror -m32, including all 14 mutants (CXX=g++ bash mutation_test.sh -> mutants_caught=14 mutants_survived=0).",
+    "validator": "not yet run for this package; the staging source is not yet referenced by reconstruction/knowledge/index.json, and rebuilding that index is the orchestrator's job, not this worker's"
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not performed",
+  "runtime_gates": [
+    "observe one real caller long enough to record what the 8 bytes of an element are, which nothing in this pack establishes",
+    "identify the class or classes owning the receiver whose word at +0x4 is this tail, which the bounds_only record and the 16-site fan-in both leave open",
+    "confirm the trip count on a second call site: this body copies every element AFTER the erased range, so a one-element erase costs O(remaining), and that is the claim most worth a second witness",
+    "establish whether the input space can ever present a byte length that is not a whole number of elements; the machine's arithmetic shift would round it, but the `!=` loop would not terminate first, so the two behaviours cannot both be reached"
+  ],
+  "review_status": "staged_static_review",
+  "integration_status": "not promoted",
+  "worker_ownership": "w13/0x00d018d0"
+}

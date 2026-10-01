@@ -1,7 +1,7 @@
 # Reconstruction context 0x00aeb160
 
-- Status: `complete`
-- Content SHA-256: `3fc451971fdca292bee1e53c7dfc7eb0992f13b10b25798f7ee359d4d127b015`
+- Status: `partial`
+- Content SHA-256: `dd9cfa6477254252ecd5997cab00f59524066e972600457cc8a1a8de00226370`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "e0296540c0c5b04f30690ce7e2caf1982c8ad4121f60d023a9cadec892858326",
-  "live_attempts": [],
+  "content_sha256": "4c669a4a5458e4d0d1b10af269112b78c3bfb2d5813718513a490ef691e9e241",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00aeb160 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,70 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-int * __thiscall
-FUN_00aeb160(int param_1,int *param_2,int param_3,int param_4,int param_5,int *param_6,int param_7,
-            int param_8)
-
-{
-  undefined4 *puVar1;
-  int *piVar2;
-  int iVar3;
-  int *piVar4;
-  int *piVar5;
-  
-  iVar3 = FUN_00f473a0(0xa0,"Simulator",0,0,0,0);
-  if (iVar3 == 0) {
-    piVar4 = (int *)0x0;
-  }
-  else {
-    piVar4 = (int *)FUN_00aea250();
-  }
-  piVar2 = param_6;
-  piVar4[6] = (int)param_2;
-  piVar4[3] = 0;
-  piVar4[0xd] = param_3;
-  piVar4[0xe] = param_4;
-  piVar4[0xf] = param_5;
-  piVar5 = (int *)piVar4[0x10];
-  if (param_6 != piVar5) {
-    if (param_6 != (int *)0x0) {
-      (**(code **)*param_6)();
-    }
-    piVar4[0x10] = (int)piVar2;
-    if (piVar5 != (int *)0x0) {
-      (**(code **)(*piVar5 + 4))();
-    }
-  }
-  piVar4[0x11] = param_7;
-  piVar4[0x12] = param_8;
-  param_2 = piVar4;
-  (**(code **)*piVar4)();
-  puVar1 = *(undefined4 **)(param_1 + 0x28);
-  if (puVar1 < *(undefined4 **)(param_1 + 0x2c)) {
-    *(undefined4 **)(param_1 + 0x28) = puVar1 + 1;
-    piVar5 = piVar4;
-    if (puVar1 != (undefined4 *)0x0) {
-      *puVar1 = piVar4;
-      (**(code **)*piVar4)();
-    }
-  }
-  else {
-    FUN_00aea5d0(puVar1,&param_2);
-    piVar5 = param_2;
-  }
-  if (piVar5 != (int *)0x0) {
-    (**(code **)(*piVar5 + 4))();
-  }
-  return piVar4;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -572,7 +518,7 @@ FUN_00aeb160(int param_1,int *param_2,int param_3,int param_4,int param_5,int *p
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/integrated/batch-2026-09-25-source-wave3/handoff.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg12-space/00aeb160.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg12_space/space_comm_event_lifecycle.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-source-wave3/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg12-space/00aeb160.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg12_space/space_comm_event_lifecycle.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -590,11 +536,6 @@ FUN_00aeb160(int param_1,int *param_2,int param_3,int param_4,int param_5,int *p
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {
@@ -629,6 +570,11 @@ FUN_00aeb160(int param_1,int *param_2,int param_3,int param_4,int param_5,int *p
     },
     {
       "mode": "persisted",
-      "ref": "reconstruction/staging/pkg12-space/space_comm_eve
+      "ref": "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pk
 [TRUNCATED]
 ```

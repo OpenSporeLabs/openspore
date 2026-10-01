@@ -2,54 +2,77 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `3e7590e77f794b59c3beec4ea5ca2cbcecbc1d4dc5239d40557136ec3b3c862c`
+- Content SHA-256: `004c39062e5e8dd44fcb8ed6fa3e1d0bae1c0f9f4404e83bc4bf5bf2eae62cb9`
 
 ## abi
 
 - Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 0,
+  "receiver_register": "ECX",
+  "ret_form": "RET",
+  "return_register": "AL (one byte)",
+  "return_semantics": "one byte in AL, forwarded from the tail target",
+  "return_type": "std::uint8_t",
+  "saved_registers": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "JMP 0x00feba90"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
 - Evidence state: `DERIVED`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function, tools/reconstruction_tooling/abi_infer.py#tail_target=0x00feba90`
 
 ```json
 {
   "abi": {
     "architecture": "x86-32",
-    "receiver": false
+    "calling_convention": "__thiscall",
+    "receiver": false,
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller"
   },
   "abstained_because": [
     "no_terminal_ret: the only exit observed is a tail jump"
   ],
   "cleanup": {
-    "bytes": null,
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available",
-    "evidence": null,
-    "side": null
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "forwarded_from_tail_target",
+    "evidence": "forwarded from the tail target 0x00feba90: ret with no immediate, no stack reads",
+    "side": "caller"
   },
   "completeness": "EMPTY",
   "conflicts": [],
-  "content_sha256": "0af01679183af4d48cf10776e67fcef2bc82dc77e4dd607561afadb79cbe75c1",
+  "content_sha256": "9283cb5658d568653eb735a9fc362646121cf0f55131bea797d9f8aa5ed62d41",
   "conventions": {
-    "ambiguities": [
-      "tail_call"
-    ],
-    "calling_convention": null,
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
     "candidate_conventions": [
-      "__cdecl",
-      "__stdcall",
-      "__thiscall",
-      "__fastcall"
+      "__thiscall"
     ],
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "forwarded_from_tail_target"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -97,6 +120,15 @@
       "value": {
         "form": "jmp"
       }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "calling convention is __thiscall, forwarded from the tail target 0x00feba90: this listing is a single ESP-neutral direct jump, inherits its caller's frame and never runs its own RET, so the two calls are one call (resolved from live listing for 0x00feba90)",
+      "confidence": "INFERRED",
+      "id": "T1-FWD",
+      "value": "__thiscall"
     }
   ],
   "observations": [
@@ -140,6 +172,7 @@
     "unparsed": 0
   },
   "receiver": {
+    "adjustor_delta": 1976,
     "bounds_only": true,
     "confidence": "OBSERVED",
     "distinct_offsets": 0,
@@ -177,7 +210,7 @@
     "confidence": "APPROXIMATION",
     "derived_slots": 0,
     "gaps": 0,
-    "not_complete": true,
+    "not_complete": false,
     "observed_slots": 0,
     "slots": [],
     "total_bytes": 0,
@@ -209,9 +242,49 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c5d640"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c5da10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ffa2c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ffabc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ffc5b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0102c0c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0102c1a0"
+  }
+]
+```
 
 ## contradictions
 
@@ -221,13 +294,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_00c372b0(void)\n\n{\n  FUN_00feba90();\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -259,9 +328,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 6807,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"AL (one byte)\",\n    \"return_semantics\": \"one byte in AL, forwarded from the tail target\",\n    \"return_type\": \"std::uint8_t\",\n    \"saved_registers\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"JMP 0x00feba90\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c5d640\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c5da10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ffa2c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ffabc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ffc5b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0102c0c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0102c1a0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00c5d6ec\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c5d640\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c5da88\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c5da10\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ffa455\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ffa2c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ffacc1\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ffabc0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ffc5b7\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ffc5b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0102c150\",\n        \"direction\": \"in\",\n        \"other\": \"0x0102c0c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0102c2be\",\n        \"direction\": \"in\",\n        \"other\": \"0x0102c1a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c372b6\",\n        \"direction\": \"out\",\n        \"other\": \"0x00feba90\",\n        \"reference_type\": \"direct-call\"\n      }\n    ],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 7,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0458\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": null,\n  \"globals\": [],\n  \"integration_status\": null,\n  \"name\": null,\n  \"normalized_symbol\": null,\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"queue_candidate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": null\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n 
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -280,13 +356,13 @@
     "FUN_00feba90"
   ],
   "callers": [
-    "FUN_00ffa2c0",
-    "FUN_0102c1a0",
-    "FUN_00ffc5b0",
-    "FUN_0102c0c0",
-    "FUN_00c5d640",
     "FUN_00c5da10",
-    "FUN_00ffabc0"
+    "FUN_00ffa2c0",
+    "FUN_00ffabc0",
+    "FUN_00c5d640",
+    "FUN_0102c1a0",
+    "FUN_0102c0c0",
+    "FUN_00ffc5b0"
   ],
   "classification": "stub",
   "dispatch": null,
@@ -358,9 +434,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/pkg-this-adjustor-fwd/this_adjustor_fwd.cpp",
+    "reconstruction/staging/pkg-this-adjustor-fwd/this_adjustor_fwd.hpp",
+    "reconstruction/staging/pkg-this-adjustor-fwd/this_adjustor_fwd_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/pkg-this-adjustor-fwd/00c372b0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -370,9 +460,17 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -382,15 +480,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint8_t"
+]
+```
 
 ## vtables
 

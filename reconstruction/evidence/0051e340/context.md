@@ -1,0 +1,362 @@
+# Reconstruction context 0x0051e340
+
+- Status: `partial`
+- Content SHA-256: `eec9dc07a9852c9201f7e0c79bf0370c8bd844812e15866f062a959084a797fe`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x0051e340",
+  "phase": "reconstruction",
+  "target": "0x0051e340"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": null,
+  "name": "FUN_0051e340",
+  "package": "pkg-vft-preinc-0051e340",
+  "subsystem": "Editor",
+  "va": "0x0051e340"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "eff915c311abbc1cc79c5dcf03b5993fe777cbaf6e50a05e163b14952c365a6c",
+  "live_attempts": [],
+  "live_requested": false,
+  "overall": "PERSISTED"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 0,
+  "ordinary_stack_arguments": [],
+  "ret_form": "RET (bare, no immediate)",
+  "return_register": "EAX",
+  "return_semantics": "integral_in_EAX at 32-bit width; the engine's own classifier says pointer_like because the last EAX write is a load from memory, which is the conservative reading of the same fact",
+  "return_type": "std::uint32_t",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [],
+  "edge_rows": [],
+  "external_callees": []
+}
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [
+    "global:PASS"
+  ],
+  "types": [
+    "std::uint32_t"
+  ],
+  "vtables": [
+    "vtable:0x0051e380",
+    "vtable:0x013ef110",
+    "vtable:0x013ef1c0",
+    "vtable:0x013ef270",
+    "vtable:0x013ef320",
+    "vtable:0x013ef3c0",
+    "vtable:0x013ef6a4",
+    "vtable:0x013f031c",
+    "vtable:0x013f1a30",
+    "vtable:0x013f1c6c",
+    "vtable:0x013f2194",
+    "vtable:0x013f21d8"
+  ]
+}
+```
+
+## 09_state_event_relationships
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [],
+  "edges_truncated": false,
+  "external_callees": [],
+  "fan_in": 0,
+  "fan_out": 0,
+  "manifest_callees": [],
+  "manifest_callers": [],
+  "nearby_reconstructed": [],
+  "scc": {
+    "id": "scc-0047",
+    "size": 1
+  },
+  "vtable_reference_count": 0
+}
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x0051e380,vtable:0x013ef110",
+      "same_calling_convention"
+    ],
+    "package": "subobject-forward-0051e380",
+    "score": 12,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458024,vtable:0x014599e8",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 12,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458788",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w2-00a980b0",
+    "score": 12,
+    "symbol": "re_00a980b0",
+    "va": "0x00a980b0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458788",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w2-00a98200",
+    "score": 12,
+    "symbol": "re_00a98200",
+    "va": "0x00a98200"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w2-00586700",
+    "score": 8,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 8,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 8,
+    "symbol": "re_005ba0
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.cpp",
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.hpp",
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/pkg-vft-preinc-0051e340/0051e340.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "The class is unknown and unknowable from this evidence: 42 vptr-backed tables hold the body, which is ICF collapse, so 'virtual member of some class' is the strongest true statement.",
+    "The engine's return classifier says pointer_like (the last EAX write is a load from memory) while the source reads the value as an integral dword. The width (4 bytes) is the machine fact both agree on; the classification difference is recorded rather than resolved.",
+    "The machine reads the field dword twice, both reads before the store. The source spells a single-read pre-increment, which is observationally identical because nothing runs between the reads; whether the original source was '++x', 'x = x + 1' or 'return x++ + 1' cannot be decided from the bytes.",
+    "The receiver-relative offset 0x8 is not machine-attested as a single operand: the machine states 0x4 twice. A runtime trace of a constructed object would settle the layout, but no original-process trace exists in this repository.",
+    "Which member sits at receiver+8 is not established. The offset is a composition of two machine displacements; the member's name, type and purpose (a counter? a version? an index?) are not recoverable from a 20-instruction body that only increments it."
+  ]
+}
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-vft-preinc-0051e340/0051e340.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340_model_test.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-vft-preinc-0051e340/0051e340.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340_model_test.cpp",
+      "source_class": "committed_artifact"
+    }
+  ],
+  "read_first": [
+    "reconstruction/knowledge/index.json"
+  ],
+  "required_categories": [
+    "ABI",
+    "CALLS",
+    "GLOBALS",
+    "FIELDS/OFFSETS",
+    "CONSTANTS",
+    "CONTROL FLOW",
+    "VIRTUAL DISPATCH",
+    "RETURN SEMANTICS",
+    "EVIDENCE COVERAGE"
+  ]
+}
+```

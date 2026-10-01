@@ -1,0 +1,100 @@
+{
+ "address": "0x00c0bbd0",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "reconstruction/evidence/00c0bbd0/evidence.json#/categories/disassembly",
+  "reconstruction/evidence/00c0bbd0/evidence.json#/categories/decompilation",
+  "reconstruction/evidence/00c0bbd0/evidence.json#/categories/abi",
+  "reconstruction/evidence/00c0bbd0/evidence.json#/categories/ghidra_function",
+  "reconstruction/evidence/00c0bbd0/context.md",
+  "reconstruction/knowledge/index.json#/records/0x00c0bbd0",
+  "GhidraMCP read_memory @ 0x00c0bbd0 = 8b 81 20 0b 00 00 c3 cc",
+  "GhidraMCP disassemble_function @ 0x00c0bc00 (sibling, corroboration only)",
+  "GhidraMCP decompile_function @ 0x00c4fc00, 0x00aca360, 0x00c02eb0, 0x00c08350 (caller usage)"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0.hpp",
+  "model_test": "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0_model_test.cpp",
+  "source": "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0.cpp"
+ },
+ "normalized_symbol": "FUN_00c0bbd0",
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "body_bytes": "8b 81 20 0b 00 00 c3",
+  "body_span": "0x00c0bbd0..0x00c0bbd6",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "receiver_register": "ECX",
+  "return_register": "EAX",
+  "return_semantics_machine_class": "pointer_like_in_EAX",
+  "return_type_declared": "std::uint32_t",
+  "stack_arguments": 0,
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller"
+ },
+ "package": "PKG-00C0BBD0-WORD-GETTER-0XB20",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "word_getter_0xb20_00c0bbd0",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  {
+   "basis": "OBSERVED disassembly (2 instructions) + DERIVED ABI receiver record (written_through=0)",
+   "claim": "the entry is a pure getter: EAX = the 32-bit word at receiver+0xb20, with no write to the receiver"
+  },
+  {
+   "basis": "OBSERVED opcode 8b (MOV r32,r/m32) versus 8d (LEA); corroborated by the sibling body at 0x00c0bc00",
+   "claim": "the return is a value, not an address; this is a MOV-from-memory body, unlike the LEA-form accessors in the same cluster (0x00c0bc00 loads the same word and then ADDs 0x504 to it)"
+  },
+  {
+   "basis": "receiver record is bounds_only (offsets=[0xb20], max_offset=2848): it fixes where the body reached, not which member is which",
+   "claim": "no member name and no field type may be claimed for the word at 0xb20"
+  },
+  {
+   "basis": "four callers decompiled (0x00c4fc00, 0x00aca360, 0x00c02eb0, 0x00c08350): only equality comparisons against other words or other getters' results, plus one & 0xffffff00 mask",
+   "claim": "the returned word is consumed as an opaque comparable value; no sampled caller dereferences it"
+  },
+  {
+   "basis": "the listing fixes only displacement 0xb20; the same callers index the real object far past it (param_1[0x2c8] = +0xb20, param_1[0x3f4] = +0xfd0, param_1[0x4d4] = +0x1350)",
+   "claim": "the modelled receiver extent (0xb24 bytes) is a modelling bound, not a recovered allocation size"
+  }
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0.cpp",
+  "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0.hpp",
+  "reconstruction/staging/pkg-00c0bbd0-word-getter-0xb20/word_getter_0xb20_00c0bbd0_model_test.cpp"
+ ],
+ "staging_package": "pkg-00c0bbd0-word-getter-0xb20",
+ "subsystem": "Simulator",
+ "summary": "FUN_00c0bbd0 is a 7-byte, 2-instruction non-virtual member getter: MOV EAX,dword ptr [ECX + 0xb20] / RET. It returns the 32-bit VALUE stored at displacement 0xb20 of the ECX receiver (a load, not an LEA), writes nothing, branches nowhere, and ends in a bare RET so the callee pops nothing and the caller owns stack cleanup (__thiscall, 0 stack arguments). The receiver record is bounds_only (offsets=[0xb20], written_through=0), so no member name and no field type is claimed: the receiver is modelled as an opaque 4-byte-aligned extent of 0xb24 bytes (through the reached word, a modelling bound) and is reached only through a displacement accessor. Return type is the width-computable std::uint32_t the load states; the ABI record's pointer_like_in_EAX is a register class, not a C type, and is kept as a separate field. clang++ -m32 -O1/-O2 compiles the reconstruction to exactly the seven observed bytes 8b 81 20 0b 00 00 c3.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "What does the word at receiver+0xb20 mean \u2014 an id, a handle, an index or a pointer? The listing gives width and displacement only; the bounds_only receiver record cannot name the member. A hint exists but is not proof: the sibling 0x00c0bc00 loads the same word, tests it for null and then ADDs 0x504 to it (falling back to LEA EAX,[ECX+0xb28] when it is null), which is consistent with a pointer or table base. That sibling is owned by another worker and its interpretation is not claimed here.",
+  "Is the receiver's true size recoverable? The same callers index it to at least +0x1350, but no evidence in this pack states an extent, so the model stops at the reached word.",
+  "Is the true calling convention __thiscall or __fastcall? The ABI record lists both as candidates and the observed facts (receiver in ECX, 0 stack words, bare RET, caller cleanup) are consistent with either; no caller pushes an argument and no callee pops one, so nothing here separates them.",
+  "The 41 xrefs / 30 callers were sampled, not enumerated: 0x00c4fc00, 0x00aca360, 0x00c02eb0, 0x00c08350 only. A caller that dereferences the result would change the return-type argument, though not the load itself.",
+  "No runtime/traced evidence exists in this repository for this target, so nothing is differentially validated against the original process."
+ ],
+ "va": "0x00c0bbd0",
+ "validation": {
+  "compiled_body_bytes": "8b 81 20 0b 00 00 c3 at -O1 and -O2, byte-identical to the target",
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32, source and test compiled, archived with ar/ranlib, linked, run: PASS",
+  "gxx_equivalent": "PASS",
+  "mutations_detected": [
+   "displacement +4 -> runtime FAIL",
+   "LEA/address form instead of the loaded value -> runtime FAIL",
+   "store through the receiver -> runtime FAIL (guard band)",
+   "byte-wide read instead of 32-bit -> runtime FAIL",
+   "receiver+0 instead of receiver+0xb20 -> runtime FAIL",
+   "constant return -> BUILD FAIL (-Wunused-parameter under -Werror)",
+   "header kWordDisplacement drift -> static_assert FAIL",
+   "modelled extent drift -> static_assert FAIL"
+  ]
+ },
+ "version": "3.1.0.22",
+ "worker_outcome": "IMPLEMENTED"
+}

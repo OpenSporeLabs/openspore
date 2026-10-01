@@ -2,9 +2,41 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `92ea5bb6dbe8c09fba8d836c5842f961c9d7dc2464cf4f4ff86b8c6957c06636`
+- Content SHA-256: `ff0c271096d29e34d933615302582880f358a6937560ee799f9f70045d080790`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read once, forwarded to the callee in ECX",
+  "hidden_this_register": "ECX, never written by this body",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_note": "pointer to a registry element, or null",
+  "return_observation": "0x00b25c86 XOR EAX,EAX is the failure return; 0x00b25c8a MOV ECX,[ESI] followed by 0x00b25c8c MOV EAX,[ECX + EBX*0x4] is the success return, re-loading elements[i]. No caller-visible transformation is applied.",
+  "return_register": "EAX",
+  "return_semantics": "The address of the first array element whose embedded interface at byte offset +0x120 answers true through vtable slot +0x58. If the element count is not positive, or if no element matches, the return is 0. The success path explicitly re-reads the element pointer from the array after restoring the saved registers, so the returned value is the element pointer itself and not the interface sub-object.",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBX",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -28,7 +60,6 @@
   },
   "abstained_because": [
     "flow_not_modelled: the linear ESP walk ends at +8, so the listing is not one path",
-    "unparsed_lines_present: 1 line(s) matched no grammar rule",
     "receiver_not_determinable: ecx_read_without_deref",
     "no_discriminator: no stack-argument read and no positive receiver evidence"
   ],
@@ -41,7 +72,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "0d99ac3ac8a10625885ba12c2088535811e1be67c9e8100f4dd3a55ccd8b647f",
+  "content_sha256": "f470555571e3b396fa747638c78382562b6da10f1043bcfe1846b1c669eb8ac2",
   "conventions": {
     "ambiguities": [],
     "calling_convention": null,
@@ -60,7 +91,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -70,8 +101,8 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0018",
-        "obs-0023"
+        "obs-0017",
+        "obs-0022"
       ],
       "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
       "confidence": "INFERRED",
@@ -84,7 +115,7 @@
     {
       "based_on": [
         "obs-0011",
-        "obs-0019"
+        "obs-0018"
       ],
       "claim": "the register receiver is undetermined: ecx_read_without_deref",
       "confidence": "UNKNOWN",
@@ -96,7 +127,7 @@
     },
     {
       "based_on": [
-        "obs-0023"
+        "obs-0022"
       ],
       "claim": "the function is byte-identical under all four conventions",
       "confidence": "UNKNOWN",
@@ -104,8 +135,8 @@
     },
     {
       "based_on": [
-        "obs-0018",
-        "obs-0023"
+        "obs-0017",
+        "obs-0022"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -116,8 +147,8 @@
     },
     {
       "based_on": [
-        "obs-0018",
-        "obs-0023"
+        "obs-0017",
+        "obs-0022"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -126,8 +157,8 @@
     },
     {
       "based_on": [
-        "obs-0018",
-        "obs-0023"
+        "obs-0017",
+        "obs-0022"
       ],
       "claim": "the last value written to EAX classifies as pointer_like",
       "confidence": "INFERRED",
@@ -270,21 +301,120 @@
       "index": 22,
       "kind": "CALL_INDIRECT",
       "raw": "CALL EAX",
-      "via": "re
+      "via": "register"
+    },
+    {
+      "at": "0x00b25c84",
+      "id"
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "pkg11_sim_core_00b21340",
+    "reconstructed": true,
+    "va": "0x00b21340"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf4fc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bff2d0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c36030"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cea1a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cec7a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cf1000"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cf7150"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cf8160"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cf9ba0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cfbc10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e07e70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e352c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e35370"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fdba50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ff5ee0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ff60d0"
+  }
+]
+```
 
 ## contradictions
 
@@ -294,13 +424,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 FUN_00b25c30(void)\n\n{\n  char cVar1;\n  int iVar2;\n  uint uVar3;\n  uint uVar4;\n  \n  iVar2 = FUN_00b21340(&LAB_00cd7d10,&LAB_00d3d420,&LAB_00acdff0,&LAB_00b1e500,&DAT_018c43e8);\n  uVar4 = *(int *)(iVar2 + 8) - *(int *)(iVar2 + 4) >> 2;\n  uVar3 = 0;\n  if (uVar4 != 0) {\n    do {\n      cVar1 = (**(code **)(*(int *)(*(int *)(*(int *)(iVar2 + 4) + uVar3 * 4) + 0x120) + 0x58))();\n      if (cVar1 != '\\0') {\n        return *(undefined4 *)(*(int *)(iVar2 + 4) + uVar3 * 4);\n      }\n      uVar3 = uVar3 + 1;\n    } while (uVar3 < uVar4);\n  }\n  return 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -480,9 +606,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13793,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read once, forwarded to the callee in ECX\",\n    \"hidden_this_register\": \"ECX, never written by this body\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_note\": \"pointer to a registry element, or null\",\n    \"return_observation\": \"0x00b25c86 XOR EAX,EAX is the failure return; 0x00b25c8a MOV ECX,[ESI] followed by 0x00b25c8c MOV EAX,[ECX + EBX*0x4] is the success return, re-loading elements[i]. No caller-visible transformation is applied.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"The address of the first array element whose embedded interface at byte offset +0x120 answers true through vtable slot +0x58. If the element count is not positive, or if no element matches, the return is 0. The success path explicitly re-reads the element pointer from the array after restoring the saved registers, so the returned value is the element pointer itself and not the interface sub-object.\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBX\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-11-SIM-CORE\",\n      \"score\": 3,\n      \"symbol\": \"pkg11_sim_core_00b21340\",\n      \"va\": \"0x00b21340\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"pkg11_sim_core_00b21340\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b21340\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf4fc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bff2d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c36030\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cea1a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cec7a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf1000\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf7150\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf8160\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf9ba0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cfbc10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e07e70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e352c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e35370\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fdba50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ff5ee0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ff60d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ff74f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01049040\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00bf4fe7\",\n        \"direction
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -501,24 +634,24 @@
     "FUN_00b21340"
   ],
   "callers": [
-    "FUN_00cfbc10",
-    "FUN_00fdba50",
-    "FUN_00cf9ba0",
-    "FUN_01049040",
+    "FUN_00e07e70",
     "FUN_00cf1000",
-    "FUN_00e352c0",
-    "FUN_00cf7150",
     "FUN_00ff74f0",
     "FUN_00ff5ee0",
-    "FUN_00c36030",
-    "FUN_00ff60d0",
-    "FUN_00cea1a0",
-    "FUN_00bf4fc0",
     "FUN_00e35370",
-    "FUN_00e07e70",
+    "FUN_01049040",
+    "FUN_00bf4fc0",
     "FUN_00cec7a0",
     "FUN_00bff2d0",
-    "FUN_00cf8160"
+    "FUN_00c36030",
+    "FUN_00e352c0",
+    "FUN_00cfbc10",
+    "FUN_00cf9ba0",
+    "FUN_00fdba50",
+    "FUN_00cf8160",
+    "FUN_00ff60d0",
+    "FUN_00cea1a0",
+    "FUN_00cf7150"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -529,29 +662,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "cVar1",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "iVar2",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "uVar3",
-      "storage": "register:0000000c:4",
-      "type": "uint"
-    },
-    {
-      "name": "uVar4",
-      "storage": "register:0000001c:4",
-      "type": "uint"
-    }
-  ],
-  "locals_count": 4,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00b25c30",
   "namespace": null,
@@ -668,9 +780,25 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/b09_opaque_ports.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_findfirst_00b25c30.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_findfirst_00b25c30.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_findfirst_00b25c30_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b09/00b25c30.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -680,9 +808,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential fixture would need a real registry populated through the get-or-create helper, which static evidence alone cannot supply.",
+    "No original-process trace exists for this address, so the runtime contents of the registry container, the runtime value of the .bss key 0x018c43e8 and the real distribution of predicate answers are all unverified.",
+    "The Cell stage has never been entered in any recorded run, so nothing here is runtime observed."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -692,15 +832,33 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "dword",
+  "pointer to a registry element, or null",
+  "pointer, element array begin",
+  "pointer, element array end",
+  "vtable pointer of an embedded interface"
+]
+```
 
 ## vtables
 

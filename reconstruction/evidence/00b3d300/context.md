@@ -1,0 +1,563 @@
+# Reconstruction context 0x00b3d300
+
+- Status: `partial`
+- Content SHA-256: `3efd0bdd416dd3abee5834a6ebfcf8a8a5ac38c1a0950e556feca3beb27a6e0c`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00b3d300",
+  "phase": "reconstruction",
+  "target": "0x00b3d300"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "OpaqueNounManager",
+  "name": "FUN_00b3d300",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "subsystem": "Simulator",
+  "va": "0x00b3d300"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "90bf1b40aa8ad0ac2f038d7e867b4f9fce875c4ad767d9dc03f4654998af6573",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00b3d300 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "original_bytes": 5056,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"pointer_like_in_EAX\",\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"no_discriminator: no stack-argument read and no positive receiver evidence\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"PARTIAL\",\n  \"conflicts\": [],\n  \"content_sha256\": \"efaf2644c262f365c8d7e9cf73312558e93ce22424d0734d440a7a579a7c796b\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": null,\n    \"candidate_conventions\": [\n      \"__cdecl\",\n      \"__stdcall\",\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"UNKNOWN\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 0,\n    \"persisted\": \"no_information\",\n    \"persisted_calling_convention\": null\n  },\n  \"dispatch\": {\n    \"call_offsets\": [],\n    \"indirect_calls\": 0,\n    \"vtable_shaped_loads\": 0\n  },\n  \"inferences\": [\n    {\n      \"based_on\": [\n        \"obs-0002\"\n      ],\n      \"claim\": \"the caller 
+[TRUNCATED]
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac1190"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7790"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac79a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac79e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7a40"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7ab0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acd4a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ace4e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ace5a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acf3e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acf4c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad0510"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad08f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad1000"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad12a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad4a10"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00ac119a",
+      "direction": "in",
+      "other": "0x00ac1190",
+      "reference_type": "direct-call"
+    },
+
+[TRUNCATED]
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "32-bit pointer slot",
+    "OpaqueNounManager"
+  ],
+  "vtables": []
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 7622,
+  "preview": "{\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"observe_global_slot_0167eae0\"\n    ],\n    \"validated\": 0\n  },\n  \"semantic\": {\n    \"category\": null,\n    \"classification\": \"NEEDS_RUNTIME\",\n    \"confidence\": {\n      \"mechanics\": 1.0\n    },\n    \"contradictions\": [],\n    \"downstream_unlock_count\": 1097,\n    \"evidence\": [\n      {\n        \"independence\": \"same-binary disassembly corroborates decompilation\",\n        \"source\": \"Ghidra SporeApp.exe 0x00b3d300: MOV EAX,[0x0167eae0]; RET\",\n        \"supports\": \"exact body, no arguments, no branches, no writes\"\n      },\n      {\n        \"independence\": \"independent same-binary receiver-propagation chain\",\n        \"source\": \"Ghidra SporeApp.exe 0x00bff2d0 -> 0x00b3d300 -> ECX -> 0x00b21340\",\n        \"supports\": \"cGameNounManager-compatible receiver identity and field access at +0x78/+0x98/+0x9c\"\n      },\n      {\n        \"independence\": \"independent same-binary field consumer\",\n        \"source\": \"Ghidra SporeApp.exe 0x00b1fdb0 and 0x00d39360\",\n        \"supports\": \"noun-manager-shaped avatar field use in selected consumers\"\n      },\n      {\n        \"independence\": \"independent canonical sibling decompilation\",\n        \"source\": \"Ghidra SporeApp.exe 0x00b3d400 -> DAT_0167eb60\",\n        \"supports\": \"target is an alternate path, not the SDK-named canonical cGameNounManager::Get\"\n      },\n      {\n        \"independence\": \"independent repository static adjudication\",\n   
+[TRUNCATED]
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac1190"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7790"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac79a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac79e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7a40"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ac7ab0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acd4a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ace4e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ace5a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acf3e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00acf4c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad0510"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad08f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad1000"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad12a0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ad4a10"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00ae0700"
+    },
+    {
+      "name": null,
+      "reconst
+[TRUNCATED]
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "shared_types:32-bit pointer slot",
+      "same_semantic_family"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 22,
+    "symbol": "FUN_00b3d2a0",
+    "va": "0x00b3d2a0"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "shared_types:32-bit pointer slot"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 17,
+    "symbol": "Simulator_GetUIMissionLogManager",
+    "va": "0x00b3d4f0"
+  },
+  {
+    "match_basis": [
+      "same_class",
+      "shared_types:OpaqueNounManager"
+    ],
+    "package": "PKG-13-CREATURE-ACCESSOR",
+    "score": 8,
+    "symbol": "pkg13_creature_accessor_00b1fdb0",
+    "va": "0x00b1fdb0"
+  },
+  {
+    "match_basis": [
+      "same_class",
+      "shared_types:OpaqueNounManager"
+    ],
+    "package": "PKG-11-H3-HELPER-WAVE2",
+    "score": 8,
+    "symbol": "noun_manager_logical_destroy_00b225d0",
+    "va": "0x00b225d0"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 8,
+    "symbol": "FUN_00b3d3a0",
+    "va": "0x00b3d3a0"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 8,
+    "symbol": "FUN_00b3d400",
+    "va": "0x00b3d400"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 8,
+    "symbol": "Simulator_cSpaceTrading_Get",
+    "va": "0x00b3d4d0"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-01-SHARED-ST
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "file": "src/reconstruction/pkg01_roots/pkg01_roots.cpp",
+  "files": [
+    "src/reconstruction/pkg01_roots/pkg01_roots.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/pkg01-roots/00b3d300.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "original_bytes": 7053,
+  "preview": "{\n  \"category\": null,\n  \"classification\": \"NEEDS_RUNTIME\",\n  \"confidence\": {\n    \"mechanics\": 1.0\n  },\n  \"contradictions\": [],\n  \"downstream_unlock_count\": 1097,\n  \"evidence\": [\n    {\n      \"independence\": \"same-binary disassembly corroborates decompilation\",\n      \"source\": \"Ghidra SporeApp.exe 0x00b3d300: MOV EAX,[0x0167eae0]; RET\",\n      \"supports\": \"exact body, no arguments, no branches, no writes\"\n    },\n    {\n      \"independence\": \"independent same-binary receiver-propagation chain\",\n      \"source\": \"Ghidra SporeApp.exe 0x00bff2d0 -> 0x00b3d300 -> ECX -> 0x00b21340\",\n      \"supports\": \"cGameNounManager-compatible receiver identity and field access at +0x78/+0x98/+0x9c\"\n    },\n    {\n      \"independence\": \"independent same-binary field consumer\",\n      \"source\": \"Ghidra SporeApp.exe 0x00b1fdb0 and 0x00d39360\",\n      \"supports\": \"noun-manager-shaped avatar field use in selected consumers\"\n    },\n    {\n      \"independence\": \"independent canonical sibling decompilation\",\n      \"source\": \"Ghidra SporeApp.exe 0x00b3d400 -> DAT_0167eb60\",\n      \"supports\": \"target is an alternate path, not the SDK-named canonical cGameNounManager::Get\"\n    },\n    {\n      \"independence\": \"independent repository static adjudication\",\n      \"source\": \"knowledgegraph/research/noun-star-lifecycle/track-a-root-identity.md:9-19,49-74,95-116,128-151\",\n      \"supports\": \"alternate noun-root identity, physical separation, high fan-in, publisher/lifetime ga
+[TRUNCATED]
+```
+
+## 14_conflicts_questions
+
+- State: `conflicted`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [
+    {
+      "anchors": [
+        "0x00b3d300",
+        "0x00b3d400",
+        "0x00b3d2a0",
+        "0x00b3d3a0",
+        "0x00b5b800",
+        "0xffffffff",
+        "0x00b3d300",
+        "0x00b3d2a0",
+        "0x00b3d400",
+        "0x00b3d3a0",
+        "0x00b5b800"
+      ],
+      "conflict_id": "CF-002",
+      "kind": "conflict_ledger",
+      "rejected": [],
+      "resolution": null,
+      "resolution_status": null,
+      "source": "knowledgegraph/research/conflicts/track-f-cross-domain-impact.json",
+      "subject": null,
+      "unresolved_reason": {
+        "missing_evidence": [
+          "Direct or indirect publisher and teardown evidence for both alternate/canonical manager slot pairs.",
+          "Pointer-equality checks across mode and service lifecycle boundaries.",
+          "The concrete receiver class and physical storage type behind DAT_0167eaec and forwarded_object+0x20."
+        ],
+        "status": "blocked"
+      }
+    },
+    {
+      "anchors": [
+        "0x00b3d2a0",
+        "0x00b3d300",
+        "0x00b5b800",
+        "0x01021300",
+        "0x01021300",
+        "0x00ad23c0",
+        "0x00adbca0",
+        "0x00ae73e0",
+        "0x00ae9590",
+        "0x00ae9930",
+        "0x00ae9c90",
+        "0x00ae9f50",
+        "0x00aeb3e0",
+        "0x00aeb3e0",
+        "0x00aebe90",
+        "0x00b25fb0"
+      ],
+      "conflict_id": "global_root_identities",
+      "kind": "conflict_ledger",
+      "rejected": [],
+      "resolution": "The address/layout alternatives are preserved; no owner or exact binary identity is selected without a typed body or const
+[TRUNCATED]
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg01-roots/00b3d300.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg01_roots/pkg01_roots.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "derived"
+    },
+    {
+      "mode": "derived",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "derived"
+    },
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg01-roots/00b3d300.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg01_roots/pkg01_roots.cpp",
+      "source_class": "committed_artifact"
+    }
+  ],
+  "read_first": [
+    "reconstruction/knowledge/index.json",
+    "src/reconstruction/pkg01_roots/pkg01_roots.cpp"
+  ],
+  "r
+[TRUNCATED]
+```

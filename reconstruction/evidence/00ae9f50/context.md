@@ -1,7 +1,7 @@
 # Reconstruction context 0x00ae9f50
 
 - Status: `partial`
-- Content SHA-256: `3451d38db01e1a479c977ece4641978cc8ea6210c8cad44cb47e61176351e0fd`
+- Content SHA-256: `92a901996f3c68a4427b4a2d01695f2308a1f717ed9d0ca261f233aa311a1904`
 
 ## 01_assignment
 
@@ -19,7 +19,7 @@
 
 ## 02_function_identity
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
@@ -34,16 +34,16 @@
 
 ## 03_current_status
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "blocked": null,
-  "reconstructed": null,
-  "runtime_gated": null,
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
-  "status": null
+  "status": "unresolved"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "ccb684b58d611003b5d20a529cac10bd64e3a479c8f6ac74891649fe29fdf8e9",
-  "live_attempts": [],
+  "content_sha256": "0006c655c9e638c8df883f8902001ab4d5ca0f4fa05972cfae7073c91f296299",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00ae9f50 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,139 +71,370 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-/* WARNING: Enum "Names": Some values do not have unique names */
-
-void __fastcall FUN_00ae9f50(int param_1)
-
-{
-  wchar16 *pwVar1;
-  void *pvVar2;
-  IAppSystem *pIVar3;
-  void *pvVar4;
-  int iVar5;
-  int *piVar6;
-  undefined4 uVar7;
-  cToolManager *pcVar8;
-  bool bVar9;
-  undefined4 uVar10;
-  undefined4 uVar11;
-  undefined4 uVar12;
-  undefined4 uVar13;
-  undefined1 local_80 [56];
-  undefined4 local_48;
-  void *pvStack_44;
-  IAppSystem *pIStack_1c;
-  undefined4 uStack_14;
-  
-  FUN_00dd1ca0();
-  FUN_00dd30d0();
-  iVar5 = *(int *)(param_1 + 0x20);
-  if (iVar5 != 0) {
-    bVar9 = *(int *)(iVar5 + 0xc) != 0;
-    if (bVar9) {
-      pvVar2 = (void *)0x0;
-    }
-    else {
-      uVar7 = *(undefined4 *)(iVar5 + 0x18);
-      FUN_00b3d2a0(uVar7);
-      pvVar2 = (void *)FUN_00ba9370(uVar7);
-    }
-    local_80._48_4_ = (IAppSystem *)0x3ac86b5;
-    LOCK();
-    local_80._4_4_ = (string16 *)0x0;
-    UNLOCK();
-    iVar5 = *(int *)(param_1 + 0x20);
-    local_80._0_4_ = &PTR_FUN_013eb844;
-    local_48 = 0;
-    local_80._8_4_ = *(undefined4 *)(iVar5 + 0xc);
-    local_80._16_4_ = pvVar2;
-    if (bVar9) {
-      uVar7 = *(undefined4 *)(iVar5 + 0x18);
-      FUN_00b3d300(uVar7);
-      FUN_00b20750(uVar7);
-      local_80._16_4_ = *(void **)(iVar5 + 0x28);
-      if (*(void **)(iVar5 + 0x28) == (void *)0x0) {
-        local_80._16_4_ = FUN_00bd9bf0();
-      }
-    }
-    pwVar1 = *(wchar16 **)(param_1 + 0x20);
-    if (bVar9) {
-      local_80._24_4_ = *(undefined4 *)(pwVar1 + 0x10);
-      local_80._32_4_ = *(undefined4 *)(pwVar1 + 0x12
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
-
-```json
-{
-  "original_bytes": 22881,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"flow_not_modelled: the linear ESP walk ends at +68, so the listing is not one path\",\n    \"untrusted_frame_stack_reads: push ebp with no mov ebp,esp: EBP is a general register, so every frame-relative offset is uncalibrated\",\n    \"frame_pointer_untrusted: push ebp without mov ebp,esp, and EBP is loaded from a register or used as a memory base, so it is a general register\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"CORE_RESOLVED\",\n  \"conflicts\": [],\n  \"content_sha256\": \"2a9d66fa2f581e93375f884c53094afd305f2916c8a294f713f2cd8f3e8db8d5\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": \"__thiscall\",\n    \"candidate_conventions\": [\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"INFERRED\",\n    
-[TRUNCATED]
-```
-
-## 07_callers_callees
-
-- State: `missing`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "callees": [],
-  "callers": [],
-  "edge_rows": [],
-  "external_callees": []
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, copied to ESI at 0x00ae9f57",
+  "hidden_this_register": "ECX is consumed immediately; ESI carries the receiver for the rest of the body, which is what lets ECX be reused as the receiver for the many __thiscall ports.",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_register": null,
+  "return_semantics": "No return value. EAX is a scratch register throughout.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI",
+    "EBX",
+    "EBP",
+    "EDI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "two exits, both the same bare RET: 0x00aea166 reached by falling off the end, and 0x00aea15f reached by the null-sub-object jump and by the +0x64 / +0x68 skips."
 }
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    },
+    {
+      "name": "FUN_00b3d2a0",
+      "reconstructed": true,
+      "va": "0x00b3d2a0"
+    },
+    {
+      "name": "FUN_00b3d300",
+      "reconstructed": true,
+      "va": "0x00b3d300"
+    },
+    {
+      "name": "FUN_00b3d380",
+      "reconstructed": false,
+      "va": "0x00b3d380"
+    },
+    {
+      "name": "FUN_00b3d400",
+      "reconstructed": true,
+      "va": "0x00b3d400"
+    },
+    {
+      "name": "Simulator_cSpaceTrading_Get",
+      "reconstructed": true,
+      "va": "0x00b3d4d0"
+    },
+    {
+      "name": "Simulator_LookupEmpireByPoliticalId",
+      "reconstructed": true,
+      "va": "0x00ba9370"
+    },
+    {
+      "name": "FUN_01021090",
+      "reconstructed": false,
+      "va": "0x01021090"
+    },
+    {
+      "name": "pkg12_space_01021300",
+      "reconstructed": true,
+      "va": "0x01021300"
+    }
+  ],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aea210"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb090"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb7b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb890"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00aea210",
+      "direction": "in",
+      "other": "0x00aea210",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00aeb099",
+      "direction": "in",
+      "other": "0x00aeb090",
+      "reference_type": "direct-call"
+    },
+    {
+[TRUNCATED]
 ```
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "void"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
-  "runtime": {},
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "No original-process trace exists. A differential run must confirm the two AppSystem submissions, the two publishes and the three memory writes actually occur in the observed order in the shipping build.",
+      "The claim that 0x00421CF0 destroys the stack records must be observed: a run that keeps the record alive after return would refute it.",
+      "The sentinel-free runtime values behind the six-entry table at 0x015D9650 used by the sibling 0x00C0CE80 are irrelevant here, but the two record ids 0x3AC86B5 and 0x43F2590 can only be resolved by observing what the AppSystem slot +0x14 does with them.",
+      "Whether receiver+0x74 can be non-(-1) at entry, and what 0x00BA6D80 returns for it, can only be established at runtime."
+    ],
+    "validated": 0
+  },
   "semantic": {}
 }
 ```
 
 ## 10_dependencies
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    },
+    {
+      "name": "FUN_00b3d2a0",
+      "reconstructed": true,
+      "va": "0x00b3d2a0"
+    },
+    {
+      "name": "FUN_00b3d300",
+      "reconstructed": true,
+      "va": "0x00b3d300"
+    },
+    {
+      "name": "FUN_00b3d380",
+      "reconstructed": false,
+      "va": "0x00b3d380"
+    },
+    {
+      "name": "FUN_00b3d400",
+      "reconstructed": true,
+      "va": "0x00b3d400"
+    },
+    {
+      "name": "Simulator_cSpaceTrading_Get",
+      "reconstructed": true,
+      "va": "0x00b3d4d0"
+    },
+    {
+      "name": "Simulator_LookupEmpireByPoliticalId",
+      "reconstructed": true,
+      "va": "0x00ba9370"
+    },
+    {
+      "name": "FUN_01021090",
+      "reconstructed": false,
+      "va": "0x01021090"
+    },
+    {
+      "name": "pkg12_space_01021300",
+      "reconstructed": true,
+      "va": "0x01021300"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aea210"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb090"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb7b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00aeb890"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00aea210",
+      "direction": "in",
+      "other": "0x00aea210",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00aeb099",
+      "direction": 
+[TRUNCATED]
+```
 
 ## 11_related_functions
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 3,
+    "symbol": "FUN_00b3d2a0",
+    "va": "0x00b3d2a0"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 3,
+    "symbol": "FUN_00b3d300",
+    "va": "0x00b3d300"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 3,
+    "symbol": "FUN_00b3d400",
+    "va": "0x00b3d400"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 3,
+    "symbol": "Simulator_cSpaceTrading_Get",
+    "va": "0x00b3d4d0"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-11-SIM-CORE",
+    "score": 3,
+    "symbol": "Simulator_LookupEmpireByPoliticalId",
+    "va": "0x00ba9370"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-12-SIM-SPACE",
+    "score": 3,
+    "symbol": "pkg12_space_01021300",
+    "va": "0x01021300"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_pair_004279d0",
+    "va": "0x004279d0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_scalar_00428060",
+    "va": "0x00428060"
+  }
+]
+```
 
 ## 12_existing_reconstruction
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c47180_manager_slot_replace.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test2.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b08/00ae9f50.json"
+  ]
+}
+```
 
 ## 13_semantic_hypotheses
 
@@ -267,21 +506,11 @@ void __fastcall FUN_00ae9f50(int param_1)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-core-b08/00ae9f50.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/c47180_manager_slot_replace.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test2.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -299,11 +528,6 @@ void __fastcall FUN_00ae9f50(int param_1)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -316,21 +540,29 @@ void __fastcall FUN_00ae9f50(int param_1)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-core-b08/00ae9f50.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "r
+[TRUNCATED]
 ```

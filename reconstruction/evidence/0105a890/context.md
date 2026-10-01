@@ -1,0 +1,508 @@
+# Reconstruction context 0x0105a890
+
+- Status: `partial`
+- Content SHA-256: `b8e5c9768fc14aad76d8bb6db36469b3cfca48fee283535877a53b1c82c70ffb`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x0105a890",
+  "phase": "reconstruction",
+  "target": "0x0105a890"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": null,
+  "name": "FUN_0105a890",
+  "package": null,
+  "subsystem": "Simulator",
+  "va": "0x0105a890"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "candidate"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "b12d8df2e64dd4dd1a578cfea3062a645edc58fb31569ab9849f8e96dc2aae22",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x0105a890 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": [
+    "entry_ESP+0x4",
+    "entry_ESP+0x8",
+    "entry_ESP+0xc"
+  ],
+  "ordinary_stack_arguments": 3,
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x10",
+  "return_register": "EAX",
+  "return_semantics": "integral_in_EAX",
+  "return_type": "int",
+  "saved_registers": [
+    "EBP",
+    "EBX",
+    "EDI",
+    "ESI"
+  ],
+  "stack_cleanup_bytes": 16,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x10"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    },
+    {
+      "name": "FUN_01021260",
+      "reconstructed": true,
+      "va": "0x01021260"
+    },
+    {
+      "name": "FUN_0105a050",
+      "reconstructed": false,
+      "va": "0x0105a050"
+    }
+  ],
+  "callers": [],
+  "edge_rows": [
+    {
+      "callsite": "0x0105a9b0",
+      "direction": "out",
+      "other": "0x00421c80",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9e1",
+      "direction": "out",
+      "other": "0x00421c80",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa08",
+      "direction": "out",
+      "other": "0x00421cf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa3e",
+      "direction": "out",
+      "other": "0x00435ed0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9b9",
+      "direction": "out",
+      "other": "0x0067dcc0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9ea",
+      "direction": "out",
+      "other": "0x0067dcc0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a8ca",
+      "direction": "out",
+      "other": "0x006e87e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a8e0",
+      "direction": "out",
+      "other": "0x006e87e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa22",
+      "direction": "out",
+      "other": "0x00a206f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsit
+[TRUNCATED]
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "int"
+  ],
+  "vtables": [
+    "vtable:0x0149b8b4"
+  ]
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "no original-process trace exists in this repository; the static reconstruction of 0x0105a890 is unvalidated at runtime",
+      "the committed evidence pack's disassembly is a truncated envelope, so no listing-dependent check could be adjudicated from committed evidence"
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    },
+    {
+      "name": "FUN_01021260",
+      "reconstructed": true,
+      "va": "0x01021260"
+    },
+    {
+      "name": "FUN_0105a050",
+      "reconstructed": false,
+      "va": "0x0105a050"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x0105a9b0",
+      "direction": "out",
+      "other": "0x00421c80",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9e1",
+      "direction": "out",
+      "other": "0x00421c80",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa08",
+      "direction": "out",
+      "other": "0x00421cf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa3e",
+      "direction": "out",
+      "other": "0x00435ed0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9b9",
+      "direction": "out",
+      "other": "0x0067dcc0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a9ea",
+      "direction": "out",
+      "other": "0x0067dcc0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a8ca",
+      "direction": "out",
+      "other": "0x006e87e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105a8e0",
+      "direction": "out",
+      "other": "0x006e87e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0105aa22",
+      "direction": "out",
+      "ot
+[TRUNCATED]
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x0149b8b4"
+    ],
+    "package": "pkg-sim-toolevent-01053d50",
+    "score": 10,
+    "symbol": "sim_toolevent_slot8_fun_01053d50",
+    "va": "0x01053d50"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "PKG-SIMULATOR-SAFE-WAVE11",
+    "score": 8,
+    "symbol": "cycle_key_006286a0",
+    "va": "0x006286a0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "PKG-SIMULATOR-SAFE-WAVE11",
+    "score": 8,
+    "symbol": "release_child_0062c910",
+    "va": "0x0062c910"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-11-H4-HELPER-WAVE3",
+    "score": 6,
+    "symbol": "address_window_offset_005c65e0",
+    "va": "0x005c65e0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-SIMULATOR-SAFE-WAVE11",
+    "score": 6,
+    "symbol": "dispatch_key_00628450",
+    "va": "0x00628450"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 6,
+    "symbol": "FUN_00b3d2a0",
+    "va": "0x00b3d2a0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 6,
+    "symbol": "FUN_00b3d300",
+    "va": "0x00b3d300"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 6,
+    "symbol": "Simulator_GetUIMissionLogManager",
+    "va": "0x00b3d4f0"
+  }
+]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/df2-live-listing/simulator_query_0105a890.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/df2-live-listing/0105a890.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "ECX is not established at the 0x00a206f0 call site, so that callee's receiver is unknown; the reconstruction declares it argumentless and says so.",
+    "The committed pack's disassembly category is a truncated envelope, so every listing-dependent validation check reads NOT_AVAILABLE for this target. The listing used here came from the live bridge; a reader must not mistake it for the pack's own.",
+    "The enumeration compared against the word at displacement 0x88 accepts 0, 1 and 2 but nothing here says what those three states are.",
+    "The identity of 0x0105a050, the gate every path runs through, is not established; nothing in this body says what the three forwarded arguments mean.",
+    "The receiver is forwarded and never dereferenced, so the machine-derived ABI record cannot name a receiver register and this reconstruction cannot say what the receiver is. Whether __stdcall with a register convention is excluded is not settled by this body alone.",
+    "The three keys 0xce9f6639, 0x3ed590d and 0x75c412dd, and the two tags 0xf46092d3 and 0xf46093da, are immediates with no recoverable meaning in this body.",
+    "What the word at displacement 0x124 of the first argument is, and whether 0x006e87e0 and 0x00cb5bb0 form an acquire/release pair on it, is not established.",
+    "Whether the three-word local is a command, an event or a scoped context, and what the word at displacement 0x8 of it means, is not established; only the tag immediates distinguish the two construction paths.",
+    "no original-process trace exists
+[TRUNCATED]
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/df2-live-listing/0105a890.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/df2-live-listing/simulator_query_0105a890.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/df2-live-listing/0105a890.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/df2-live-listing/simulator_query_0105a890.cpp",
+      "source_class": "committed_artifact"
+    }
+  ],
+  "read_first": [
+    "reconstruction/knowledge/index.json"
+  ],
+  "required_categories": [
+    "ABI",
+    "CALLS",
+    "GLOBALS",
+    "FIELDS/OFFSETS",
+    "CONSTANTS",
+    "CONTROL FLOW",
+    "VIRTUAL DISPATCH",
+    "RETURN SEMANTICS",
+    "EVIDENCE COVERAGE"
+  ]
+}
+```

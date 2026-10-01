@@ -1,0 +1,528 @@
+# Reconstruction context 0x0093db80
+
+- Status: `partial`
+- Content SHA-256: `49155b3a8b68ba45f1618e3dfd18d9428f36f23bf658c651c8642af0a89c82dd`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x0093db80",
+  "phase": "reconstruction",
+  "target": "0x0093db80"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "OpaquePreferenceQuery",
+  "name": "editor_query_clear_flags_0093db80",
+  "package": "PKG-10-EDITOR-DISPATCH",
+  "subsystem": "Editors.Query",
+  "va": "0x0093db80"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "9bad94e2b73f1f3c5ca5f6640022cb9119b91c809eef0371149ac9011f98d8de",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x0093db80 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "calling_convention": "__thiscall observed",
+  "hidden_this_register": "ECX",
+  "return_type": "void",
+  "stack_arguments": [
+    {
+      "entry_offset": "ESP+0x04",
+      "observed_use": "Nonzero enables the conditional clear path",
+      "position": 1,
+      "type": "std::uint8_t",
+      "width_bytes": 1
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "termination": "RET 0x4"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00407280"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0040d2d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x004111e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00411e50"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00417600"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0041a0c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422e20"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422eb0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422f40"
+    },
+    {
+      "name": "property_record_assign_pair_004279d0",
+      "reconstructed": true,
+      "va": "0x004279d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00427fd0"
+    },
+    {
+      "name": "property_record_assign_scalar_00428060",
+      "reconstructed": true,
+      "va": "0x00428060"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x004284d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00430e70"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0046aac0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0046b460"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00407862",
+      "direction": "in",
+      
+[TRUNCATED]
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [
+    "global:0x0154eb48"
+  ],
+  "types": [
+    "OpaquePreferenceQuery",
+    "OpaqueQueryCallback",
+    "std::uint8_t",
+    "void"
+  ],
+  "vtables": []
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "gate-editor-query-global-callback"
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00407280"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0040d2d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x004111e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00411e50"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00417600"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0041a0c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422e20"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422eb0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00422f40"
+    },
+    {
+      "name": "property_record_assign_pair_004279d0",
+      "reconstructed": true,
+      "va": "0x004279d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00427fd0"
+    },
+    {
+      "name": "property_record_assign_scalar_00428060",
+      "reconstructed": true,
+      "va": "0x00428060"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x004284d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00430e70"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0046aac0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0046b460"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+    
+[TRUNCATED]
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:OpaquePreferenceQuery",
+      "same_calling_convention"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 24,
+    "symbol": "editor_query_reset_005dd750",
+    "va": "0x005dd750"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 16,
+    "symbol": "editor_query_dispatch_005dfd00",
+    "va": "0x005dfd00"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 14,
+    "symbol": "editor_query_service_005ca960",
+    "va": "0x005ca960"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "shared_types:OpaquePreferenceQuery",
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 14,
+    "symbol": "Editors_EditorUI_HandleMessage_005e0000",
+    "va": "0x005e0000"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 8,
+    "symbol": "Editors_EditorModel_SetColor_raw_004ae250",
+    "va": "0x004ae250"
+  },
+  {
+    "match_basis": [
+      "same_package"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 8,
+    "symbol": "FUN_005dda30",
+    "va": "0x005dda30"
+  },
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 3,
+    "symbol": "property_record_assign_pair_004279d0",
+    "va": "0x004279d0"
+  },
+  {
+   
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "file": "src/reconstruction/pkg10_editor_dispatch/editor_query_helpers.cpp",
+  "files": [
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp",
+    "src/reconstruction/pkg10_editor_dispatch/editor_query_helpers.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-source-wave3/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg10-editor-dispatch/0093db80.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "What concrete service or property owner is installed at 0x0154eb48?",
+    "What do the two flag bits mean beyond their observed callback and clear behavior?",
+    "Which callers depend on callback timing or mutation of the query words?",
+    "caller dependence on callback timing",
+    "flag bit semantics",
+    "gate-editor-query-global-callback",
+    "global callback owner"
+  ]
+}
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-source-wave3/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg10-editor-dispatch/0093db80.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg10_editor_dispatch/editor_query_helpers.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/integrated/batch-2026-09-25-source-wave3/handoff.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg10-editor-dispatch/0093db80.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconst
+[TRUNCATED]
+```

@@ -1,0 +1,522 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W1-006417D0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x006417d0",
+  "address": "0x006417d0",
+  "symbol": "re_006417d0",
+  "normalized_symbol": "re_006417d0",
+  "ghidra_name": "FUN_006417d0",
+  "subsystem": "Sporepedia",
+  "cluster": "sporepedia-online",
+  "target_state": "implemented staging handoff. The complete 23-instruction body was re-derived from the image bytes for this package, the one direct callee 0x005507a0 was read out in full (seventeen bytes, a pure `receiver + 0x18` accessor), and the model test kills 33 of 33 injected defects. What is NOT identified: the meaning of the two dwords the accessor returns, and the fact that the SDK-imported label GetAssetID sits on 0x006417c0 rather than here, even though this body's shape matches that SDK signature. The export name is therefore the canonical VA-embedding form re_006417d0 and no descriptive name is asserted as fact.",
+  "captured_on": "2026-09-28",
+  "worker_id": "w16",
+  "queue_id": "function:006417d0:FUN_006417d0",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_types.hpp",
+    "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0.cpp",
+    "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_model_test.cpp"
+  ],
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_types.hpp",
+      "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0.cpp",
+      "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed and no other package's files were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_006417d0",
+    "declaration": "extern \"C\" std::uint8_t PKG_SWARM_W1_006417D0_THISCALL re_006417d0(AssetData *receiver, WordPair *out)",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX and exactly ONE ordinary stack argument, the out-record pointer at entry+4. The one slot is machine-observed: 0x006417f4 `MOV ECX,[ESP+0x8]` is read with ESP at entry-4, so entry-4+0x8 = entry+4, and it is the word the body then stores through at 0x006417f8 and 0x006417fd. The machine-derived ABI record lists one slot (entry_ESP+0x4) but marks it read:false; that is a walk artefact, and the record's own abstained_because lists \"flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path\". The model reads the slot and the model test confirms the writes land in the caller's buffer.",
+    "return_type": "std::uint8_t",
+    "return_note": "a BYTE, not a word. 0x00641800 is `MOV AL,0x1` (B0 01) and 0x00641806 is `XOR AL,AL` (32 C0); neither writes the upper three bytes of EAX. Those three bytes carry the second copied dword on the true path (0x006417fa), the caller's own EAX on the 0x006417d8 exit and `inner+0x18` on the 0x006417e8 exit, so the three exits leave three different dead values there. All seven references to this body are DATA references from .rdata, so no caller in this image constrains them. The model test records the full EAX at every call site, asserts nothing above the low byte, and pins the declared type with a static_assert so a widening back to uint32_t cannot pass.",
+    "source": "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0.cpp",
+    "header": "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_types.hpp",
+    "model_test": "reconstruction/staging/pkg-swarm-w1-006417d0/swarm_w1_006417d0_model_test.cpp",
+    "receiver_model": "a struct whose only named member is the word at +0x1c, typed as a pointer to the inner object, with an opaque 0x1c run before it and an opaque 8-byte run after it. The body reads that word twice (0x006417d3 and 0x006417ea) and no other displacement, and stores nothing anywhere, so nothing else is named. The dispatch word at +0x00 is deliberately NOT declared even though the body is installed at slot 11 of six tables: the 23 instructions contain no LEA, no ADD and no displacement-free read of the receiver's leading word, so nothing here reads a vptr.",
+    "dispatch_model": "no dispatch at all. abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0, and the body contains no register- or memory-operand transfer. Both transfers are direct CALL rel32 to 0x005507a0, and the model makes them as ordinary C++ calls to a declared extern, so the instruction form is not altered to suit the test.",
+    "dependency_note": "one direct callee, 0x005507a0, declared in the header and defined only by the model test as a five-load assembly trampoline plus a C++ body of the same __thiscall shape. The test also defines a cdecl probe that is never referenced by the model; it exists only so the RET 0x4 measurement can be shown to discriminate.",
+    "compile_gate": "cd reconstruction/staging/pkg-swarm-w1-006417d0 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. swarm_w1_006417d0.cpp swarm_w1_006417d0_model_test.cpp -o /tmp/w_006417d0 && /tmp/w_006417d0  -> clean build, 235 checks, 0 failures, exit 0. The header also compiles standalone (a one-line TU including only it, same flags)."
+  },
+  "function_extent": {
+    "entry": "0x006417d0",
+    "body_end_inclusive": "0x00641809",
+    "instruction_count": 23,
+    "return_sites": [
+      "0x00641803: RET 0x4 (bytes C2 04 00), the true path, after POP ESI at 0x00641802",
+      "0x00641809: RET 0x4 (bytes C2 04 00), the shared false block, after POP ESI at 0x00641808"
+    ],
+    "span_bytes": 60,
+    "padding": "0x0064180a..0x0064180f are INT3 (CC) and are NOT part of the body",
+    "listing_reexported": "objdump -d -M intel --start-address=0x6417c0 --stop-address=0x641810 over SPORE/SporeBin/SporeApp.exe, re-derived for this package. It agrees with the committed Ghidra listing instruction for instruction, including the two `CMP dword ptr [eax+disp],0xffffffff` forms (83 38 ff and 83 78 04 ff) and the two three-byte RET 0x4 terminators."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "ESI (MOV ESI,ECX at 0x006417d1). ECX is not changed by that move, so the first accessor call at 0x006417da still carries the word loaded at 0x006417d3; 0x006417ea reloads the word rather than trusting the register, because a callee is free to destroy ECX and because the instruction is a load.",
+    "ordinary_stack_argument_slots": 1,
+    "stack_argument_1": "entry+4, the out-record pointer. Read once, at 0x006417f4, with ESP at entry-4. The model declares it as a pointer and the test poisons a 24-byte caller-owned buffer before every run and compares it byte for byte afterwards, so \"the writes land in the caller's buffer and touch exactly 8 bytes of it\" is asserted rather than assumed.",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "saved_registers": [
+      "ESI"
+    ],
+    "ret_form": "RET 0x4 (both sites)",
+    "termination": "RET 0x4",
+    "return_register": "EAX",
+    "return_type": "std::uint8_t (literal 1 or literal 0 in the low byte only)",
+    "frame": "the body's only stack effect is `PUSH ESI` at 0x006417d0 and the two matching POP ESI. No argument is ever pushed by the body, no ADD/SUB ESP appears, and both terminators carry the 4-byte immediate, so entry-4 is the parked ESI and entry+4 is the one argument, dropped by the callee. The two direct calls are stack-neutral because 0x005507a0 ends in `MOV ESP,EBP; POP EBP; RET`.",
+    "ghidra_prototype": "uint __thiscall FUN_006417d0(int param_1, undefined4 *param_2)",
+    "ghidra_convention_note": "Ghidra reports no return type resolved (ghidra_function.return_type \"undefined\", return_type_resolved false) and no calling convention. Its decompilation prints `return CONCAT31((int3)((uint)uVar1 >> 8),1)` on the true path and `return (uint)in_EAX & 0xffffff00` on the false ones, which is Ghidra's rendering of an AL-only write into a 32-bit return register; the model follows the listing and returns a byte. Its parameter naming is also shifted: it treats the hidden ECX receiver as `param_1` and the stack slot as `param_2`, which is consistent, but it types the receiver as `int` and the slot as `undefined4 *`.",
+    "dispatch": "none. abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0, and the 23 instructions contain no register- or memory-operand transfer.",
+    "callee_conventions": "0x005507a0 is __thiscall by its own seventeen bytes: the first argument arrives in ECX, it is parked with `PUSH ECX; MOV [EBP-0x4],ECX`, the terminator is the one-byte C3 with no immediate, and EBP is saved and restored. It takes no stack argument and preserves ECX. The model test observes it through a trampoline that reads the callee's own entry stack frame, so the convention is measured at the callee rather than assumed from the caller's side.",
+    "evidence_level": "ABI_INFERRED (abi_derived.verdict ABI_INFERRED, conventions.confidence INFERRED, completeness CORE_RESOLVED). The conventions record is INFERRED; the body listing, the callee's own bytes and the model's own measurement all agree with it.",
+    "types": [
+      "std::uint8_t",
+      "uint32_t",
+      "WordPair",
+      "AssetData",
+      "InnerData"
+    ]
+  },
+  "mechanics": {
+    "body_shape": "alias the receiver into ESI; load the word at receiver+0x1c and require it non-zero; call 0x005507a0 on it and reject the result if BOTH of its two dwords are 0xffffffff; reload the word at receiver+0x1c, call 0x005507a0 a second time, and copy that result's two dwords into the caller's out record; return 1. Otherwise return 0 without writing anything. Two direct calls, no dispatch, no store except the two four-byte out-record stores, no global.",
+    "frame_resolution": {
+      "method": "the body pushes only ESI, never an argument, and never adjusts ESP, so ESP is at entry-4 from 0x006417d1 to the POP. 0x006417f4's `[ESP+0x8]` is therefore entry+4. The two `RET 0x4` terminators then consume the return address plus that one word, which is the machine half of stack_cleanup_bytes 4 / side callee.",
+      "corroboration": "the machine-derived ABI record independently reports ret_form \"RET 0x4\", stack_cleanup_bytes 4, stack_cleanup_owner \"callee\", saved_registers [\"ESI\"], one observed stack slot at entry_ESP+0x4 and ret_form-compatible return_register EAX. The model test measures the cleanup side rather than trusting the record: the caller's ESP must come back LEVEL after re_006417d0 and four bytes LOWER after a cdecl probe called through the same asm block.",
+      "slots": {
+        "entry-4": "the saved ESI, parked by 0x006417d0 PUSH ESI and given back by the POP at 0x00641802 (true path) or 0x00641808 (false block). Not a parameter and not a return value: both terminators are `RET 0x4`.",
+        "entry+4": "the one ordinary stack argument, the out-record pointer, read at 0x006417f4 and written through at 0x006417f8 and 0x006417fd."
+      }
+    },
+    "receiver_displacement": {
+      "0x1c": "read twice, at 0x006417d3 and again at 0x006417ea. It is a LOAD of a word that is then used as a receiver (0x005507a0's first act is `MOV [EBP-0x4],ECX` followed by `ADD EAX,0x18` on it), so it is a pointer, and it is declared as one. The two reads are independent loads with a CALL between them and nothing else, so the second call's receiver is the word as the first callee left it. The model performs two loads; the model test proves the difference by having the first call rewrite the word and requiring the second call to see the new value."
+    },
+    "receiver_writes": "none. The 23 instructions contain no store to memory whose destination is ESI-relative; the only two stores are 0x006417f8 and 0x006417fd, both through the stack argument. The model writes nothing on the receiver and the model test asserts a byte-for-byte match of the receiver block around every run.",
+    "inner_object_writes": "none either. The body reads the two dwords 0x005507a0 returns and stores them somewhere else; the model test snapshots the inner object and compares.",
+    "dereference_depth": "one level for the receiver word, one level below the returned pointer for the record. 0x006417d3 is a single load of a word used as a pointer, and 0x006417df/0x006417e4/0x006417f2/0x006417fa read through the pointer 0x005507a0 returned without ever loading a word out of it and using that as a pointer again. The model test plants a decoy word at the inner object's own +0x00 and live decoy observers at eight other receiver displacements, so a two-level receiver read or a wrong displacement calls something.",
+    "accessor_addend": "0x18, and it belongs to the CALLEE. 0x005507a0's seventeen bytes are `55 8b ec 51 89 4d fc 8b 45 fc 83 c0 18 8b e5 5d c3`, i.e. PUSH EBP; MOV EBP,ESP; PUSH ECX; MOV [EBP-0x4],ECX; MOV EAX,[EBP-0x4]; ADD EAX,0x18; MOV ESP,EBP; POP EBP; RET. The body adds nothing to the returned pointer, and the model test proves it: the observer returns a scripted record that is NOT at inner+0x18 while inner+0x00..+0x1c hold poison, so a model that hand-rolled the addend would copy kDecoy2.",
+    "sentinel": "the exact 32-bit pattern 0xffffffff, compared for equality, in BOTH words, as a conjunction. 0x006417df `CMP DWORD PTR [EAX],0xffffffff` (83 38 ff) branches AROUND 0x006417e4 when the first word is anything else, so the second compare is only reached on the first-word-is-sentinel path, and 0x006417e8 rejects only when the second word is also 0xffffffff. It is 32-bit equality, so there is no signed or unsigned question AT THIS COMPARE; the model test drives (0x80000000, 0xffffffff), (0xdeadbeef, 0xffffffff), (0xfffffffe, 0xffffffff), (0x7fffffff, 0xffffffff) and the 0x0000ffff / 0x0000fffe pair so that a signed compare, an unsigned band test and a 16-bit-truncated compare are each killed.",
+    "short_circuit_is_a_pointer_level_fact": "0x006417e4 reads the probe's second dword ONLY when its first dword is the sentinel, so on every other path those four bytes are never touched. The model test places the probe four bytes before a PROT_NONE guard page, with a non-sentinel first word, and a model that read the second word unconditionally would fault.",
+    "control_flow": "three conditional branches, all Jcc, all with targets inside the recovered span: 0x006417d8 JZ 0x00641806 (the null receiver word), 0x006417e2 JNZ 0x006417ea (the first word is not the sentinel), 0x006417e8 JZ 0x00641806 (both words are). Five basic blocks: 0x006417d0..0x006417d8, 0x006417da..0x006417e2, 0x006417e4..0x006417e8, 0x006417ea..0x00641803 and the shared false block 0x00641806..0x00641809. The two false exits share one block, which is why the model has one false return.",
+    "which_call_is_which": "the FIRST call (0x006417da) produces the pair the sentinel test judges; the SECOND (0x006417ed) produces the pair that is copied. Nothing carries a value from one to the other. The model test makes this unambiguous by scripting a clean first pair and a sentinel second pair and requiring 1 with a sentinel written to the out record.",
+    "not_modelled": "the identity and meaning of the two dwords; the class of the object at receiver+0x1c; whether any real callee ever changes the receiver's +0x1c word; the upper three bytes of EAX; and the order of the two stores to the out record, which nothing in the 23 instructions can make observable.",
+    "globals": "none. No instruction in the body names a data-segment address, and the model names none.",
+    "direct_call_1": {
+      "target": "0x005507a0",
+      "ghidra_name": "FUN_005507a0",
+      "at": "0x006417da",
+      "convention": "__thiscall, receiver in ECX, no stack argument, callee-saved EBP, ECX preserved. Fixed by the callee's own seventeen bytes and its one-byte C3 terminator, and observed by the model test's trampoline as a frame containing only a return address.",
+      "arguments": "ECX, and nothing else. The word loaded at 0x006417d3 is still in ECX because nothing between 0x006417d3 and 0x006417da writes it, so the first accessor call's receiver is exactly that word.",
+      "cleanup": "none; the callee's terminator is the one-byte C3",
+      "return": "a POINTER, in EAX, to the callee's own receiver + 0x18. The model uses it as a pointer and indexes it at +0x00 and +0x04; it never dereferences it twice.",
+      "callee_record": "0x005507a0, nine instructions in seventeen bytes (0x005507a0..0x005507b0), called by 27 sites in this image"
+    },
+    "direct_call_2": {
+      "target": "0x005507a0",
+      "ghidra_name": "FUN_005507a0",
+      "at": "0x006417ed",
+      "convention": "identical to direct_call_1; the same symbol called a second time",
+      "arguments": "ECX, reloaded from receiver+0x1c at 0x006417ea. That reload is the whole content of the instruction: ECX is caller-saved, so the first callee may have destroyed it, and the receiver word itself may have changed.",
+      "cleanup": "none",
+      "return": "a POINTER, in EAX, to the callee's own receiver + 0x18 for the RELOADED receiver. This is the copy source, and it is not the first call's result.",
+      "callee_record": "same as direct_call_1"
+    },
+    "direct_callers": [],
+    "indirect_transfers": [],
+    "vtable_installations": {
+      "note": "The seven data xrefs the record carries, and the table bases in the record's own vtables list that each one is 4-byte aligned against. This is the table the body is INSTALLED in, which is a different fact from the table it will be CALLED through at run time, and the body never reads either. The +0x2c / dword-index-11 reading is the one that holds for five of the seven against the smallest candidate base; the two 0x0147c... entries sit in a dense cluster of seven overlapping candidate tables (0x0147ca30, 0x0147ca70, 0x0147caf8, 0x0147cbbc, 0x0147cc14, all within 0x120 bytes of each other) and this body alone cannot decide which of them each address belongs to. The reconstruction therefore declares no slot constant and reads no dispatch word, and the index is recorded here as an observation only.",
+      "installation_count": 7,
+      "installations": [
+        {
+          "xref_from": "0x013ff6d8",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x90",
+              "slot_index": 36
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x2c",
+              "slot_index": 11
+            }
+          ]
+        },
+        {
+          "xref_from": "0x014627e8",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x631a0",
+              "slot_index": 101480
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x6313c",
+              "slot_index": 101455
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x84",
+              "slot_index": 33
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x2c",
+              "slot_index": 11
+            }
+          ]
+        },
+        {
+          "xref_from": "0x0147ca88",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x7d440",
+              "slot_index": 128272
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x7d3dc",
+              "slot_index": 128247
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x1a324",
+              "slot_index": 26825
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x1a2cc",
+              "slot_index": 26803
+            },
+            {
+              "base": "0x0147ca30",
+              "byte_displacement": "0x58",
+              "slot_index": 22
+            },
+            {
+              "base": "0x0147ca70",
+              "byte_displacement": "0x18",
+              "slot_index": 6
+            }
+          ]
+        },
+        {
+          "xref_from": "0x0147cb50",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x7d508",
+              "slot_index": 128322
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x7d4a4",
+              "slot_index": 128297
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x1a3ec",
+              "slot_index": 26875
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x1a394",
+              "slot_index": 26853
+            },
+            {
+              "base": "0x0147ca30",
+              "byte_displacement": "0x120",
+              "slot_index": 72
+            },
+            {
+              "base": "0x0147ca70",
+              "byte_displacement": "0xe0",
+              "slot_index": 56
+            },
+            {
+              "base": "0x0147caf8",
+              "byte_displacement": "0x58",
+              "slot_index": 22
+            }
+          ]
+        },
+        {
+          "xref_from": "0x0147cc40",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x7d5f8",
+              "slot_index": 128382
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x7d594",
+              "slot_index": 128357
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x1a4dc",
+              "slot_index": 26935
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x1a484",
+              "slot_index": 26913
+            },
+            {
+              "base": "0x0147ca30",
+              "byte_displacement": "0x210",
+              "slot_index": 132
+            },
+            {
+              "base": "0x0147ca70",
+              "byte_displacement": "0x1d0",
+              "slot_index": 116
+            },
+            {
+              "base": "0x0147caf8",
+              "byte_displacement": "0x148",
+              "slot_index": 82
+            },
+            {
+              "base": "0x0147cbbc",
+              "byte_displacement": "0x84",
+              "slot_index": 33
+            },
+            {
+              "base": "0x0147cc14",
+              "byte_displacement": "0x2c",
+              "slot_index": 11
+            }
+          ]
+        },
+        {
+          "xref_from": "0x01489120",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x89ad8",
+              "slot_index": 140982
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x89a74",
+              "slot_index": 140957
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x269bc",
+              "slot_index": 39535
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x26964",
+              "slot_index": 39513
+            },
+            {
+              "base": "0x0147ca30",
+              "byte_displacement": "0xc6f0",
+              "slot_index": 12732
+            },
+            {
+              "base": "0x0147ca70",
+              "byte_displacement": "0xc6b0",
+              "slot_index": 12716
+            },
+            {
+              "base": "0x0147caf8",
+              "byte_displacement": "0xc628",
+              "slot_index": 12682
+            },
+            {
+              "base": "0x0147cbbc",
+              "byte_displacement": "0xc564",
+              "slot_index": 12633
+            },
+            {
+              "base": "0x0147cc14",
+              "byte_displacement": "0xc50c",
+              "slot_index": 12611
+            },
+            {
+              "base": "0x01489090",
+              "byte_displacement": "0x90",
+              "slot_index": 36
+            },
+            {
+              "base": "0x014890f4",
+              "byte_displacement": "0x2c",
+              "slot_index": 11
+            }
+          ]
+        },
+        {
+          "xref_from": "0x01489440",
+          "candidate_bases": [
+            {
+              "base": "0x013ff648",
+              "byte_displacement": "0x89df8",
+              "slot_index": 141182
+            },
+            {
+              "base": "0x013ff6ac",
+              "byte_displacement": "0x89d94",
+              "slot_index": 141157
+            },
+            {
+              "base": "0x01462764",
+              "byte_displacement": "0x26cdc",
+              "slot_index": 39735
+            },
+            {
+              "base": "0x014627bc",
+              "byte_displacement": "0x26c84",
+              "slot_index": 39713
+            },
+            {
+              "base": "0x0147ca30",
+              "byte_displacement": "0xca10",
+              "slot_index": 12932
+            },
+            {
+              "base": "0x0147ca70",
+              "byte_displacement": "0xc9d0",
+              "slot_index": 12916
+            },
+            {
+              "base": "0x0147caf8",
+              "byte_displacement": "0xc948",
+              "slot_index": 12882
+            },
+            {
+              "base": "0x0147cbbc",
+              "byte_displacement": "0xc884",
+              "slot_index": 12833
+            },
+            {
+              "base": "0x0147cc14",
+              "byte_displacement": "0xc82c",
+              "slot_index": 12811
+            },
+            {
+              "base": "0x01489090",
+              "byte_displacement": "0x3b0",
+              "slot_index": 236
+            },
+            {
+              "base": "0x014890f4",
+              "byte_displacement": "0x34c",
+              "slot_index": 211
+            },
+            {
+              "base": "0x014893b0",
+              "byte_displacement": "0x90",
+              "slot_index": 36
+            },
+            {
+              "base": "0x01489414",
+              "byte_displacement": "0x2c",
+              "slot_index": 11
+            }
+          ]
+        }
+      ],
+      "verified_by": "an exhaustive search of .rdata and .data for the little-endian dword 0x006417d0, which returns exactly these seven addresses and no others"
+    },
+    "neighbouring_bodies_in_the_same_table": {
+      "note": "recorded because they are the only context the image offers for the +0x1c member, and none of it is used as evidence for this reconstruction.",
+      "0x00641810": "`MOV ECX,[ECX+0x1c]; TEST ECX,ECX; JZ 0x64181c; JMP 0x00414e10` -- slot 3, SDK label GetAuthorName",
+      "0x00641820": "`MOV ECX,[ECX+0x1c]; TEST ECX,ECX; JZ 0x64182c; JMP 0x00550880` -- slot 4, SDK label GetAuthorID",
+      "0x00641830": "`MOV ECX,[ECX+0x1c]; TEST ECX,ECX; JZ 0x64183c; JMP 0x005508a0` -- clears EAX and EDX on the null path",
+      "0x00641850": "`MOV ECX,[ECX+0x1c]; TEST ECX,ECX; JZ 0x64185c; JMP 0x005508c0` -- slot 5, SDK label GetTags",
+      "0x00641860": "`MOV ECX,[ECX+0x1c]; TEST ECX,ECX; JZ 0x64186c; JMP 0x00550cf0` -- slot 8, SDK label GetTimeCreated; terminates `RET 0x4`",
+      "shared_pattern": "five neighbouring virtuals read the SAME word at +0x1c, null-test it and tail-jump into a sibling accessor of the 0x005507a0 family (0x005507a0 returns receiver+0x18, 0x005507c0 returns receiver+0x20, 0x005507e0 returns receiver+0x2c, and 0x00550880/0x005508a0/0x005508c0/0x00550cf0 are the other three tails). That is why the header models the word as a pointer to an opaque inner object rather than as an integer, and why the record at inner+0x18 is given a name-free WordPair type."
+    },
+    "installed_slot_observation": {
+      "consistent_reading": "dword index 11, byte displacement 0x2c",
+      "holds_for": [
+        "0x013ff6d8",
+        "0x014627e8",
+        "0x0147cc40",
+        "0x01489120",
+        "0x01489440"
+      ],
+      "ambiguous": [
+        "0x0147ca88",
+        "0x0147cb50"
+      ],
+      "used_by_the_model": false
+    }
+  },
+  "semantics": {
+    "claim": "re_006417d0(receiver, out) loads the object pointer at receiver+0x1c; if it is null, or if BOTH of the two dwords that 0x005507a0 returns from it are 0xffffffff, it returns 0 and writes nothing. Otherwise it reloads receiver+0x1c, calls 0x005507a0 a second time, copies that call's two dwords into out[0] and out[1], and returns 1.",
+    "confidence": "IMPLEMENTED for the control flow, the receiver displacement and its two independent reads, the null test, the exact 0xffffffff conjunction and its short circuit, which of the two calls is judged and which is copied, the eight-byte write width and its target, the byte-sized return, the callee-side 4-byte stack cleanup, and the whole register/frame discipline.",
+    "not_claimed": "any reading of what the two dwords mean; any name for this body; any claim that the upper three bytes of EAX hold anything in particular; and any claim about the +0x1c object beyond being a pointer the body hands to 0x005507a0."
+  },
+  "evidence": [
+    "reconstruction/evidence/006417d0/evidence.json",
+    "GhidraMCP /disassemble_function 0x006417d0 (23 instructions, 0x006417d0..0x00641809)",
+    "GhidraMCP /get_function_by_address 0x006417d0 (body_span_bytes 60, xref_count 7, callees [FUN_005507a0], no callers, signature \"undefined FUN_006417d0(void)\")",
+    "GhidraMCP /decompile_function 0x006417d0 (the CONCAT31 return rendering and the shifted parameter naming)",
+    "GhidraMCP /disassemble_function 0x005507a0 (11 bytes; receiver+0x18 accessor, C3 terminator)",
+    "GhidraMCP /get_function_callers 0x005507a0 (27 callers, including this body twice over)",
+    "GhidraMCP /search_functions cSPAssetDataOTDB (10 SDK-derived members; this VA absent)",
+    "GhidraMCP /search_functions GetAssetID (one hit, at 0x006417c0)",
+    "objdump -d -M intel SPORE/SporeBin/SporeApp.exe 0x6417c0..0x641810 (listing re-derived from the image for this package)",
+    "objdump -d -M intel SPORE/SporeBin/SporeApp.exe 0x5507a0..0x550830 (the callee's seventeen bytes, re-derived for this package)",
+    "objdump -d -M intel SPORE/SporeBin/SporeApp.exe 0x641760..0x641870 and 0x641340..0x6414a0 (the neighbouring virtuals that share the +0x1c pattern, context only)",
+    "python3 struct.unpack over SPORE/SporeBin/SporeApp.exe .rdata at the seven xref addresses (the slot indices)",
+    "reconstruction/metadata/pkg16-sporepedia/006417c0.json (prior handoff: the live bytes at 0x006417c0 are an x87 constant, not this contract)",
+    "/tmp/opencode/factory/w1/tasks/006417d0.json (assembled briefing)"
+  ],
+  "provenance": [
+    "/tmp/opencode/factory/w1/WORKER.md (worker contract)",
+    "reconstruction/staging/pkg-dfw-006a2e20/ (the STATIC PASS reference package: structure, annotation density and comment discipline only, no semantics copied)",
+    "reconstruction/staging/pkg-swarm-w1-00641780/ , reconstruction/staging/pkg-swarm-w1-006413d0/ , reconstruction/staging/pkg-swarm-w1-00641fa0/ (sibling workers in the same table family; read for shape consistency and for the shared +0x1c context, not as evidence)"
+  ],
+  "validation": {
+    "build": "clean under g++ 16.2.1 and clang++ 22.1.8, both -m32 -std=c++17 -Wall -Wextra -Werror; the header also compiles standalone as a one-line TU including only it, under both",
+    "header_standalone": "compiles under the same flags as a one-line TU including only it",
+    "model_test": "235 checks. g++ 16.2.1 (the contract's prescribed command) and clang++ 22.1.8 (the promoted-package build in src/reconstruction/CMakeLists.txt) both build the two TUs clean under -m32 -std=c++17 -Wall -Wextra -Werror. g++ reports 0 failures and exits 0. clang++ reports exactly 1 failure and exits 1: the pre-existing wave-1 check_word on caller_saved_esi at model-test line 973 ('both calls see the same word at [ESP+4]: there is one frame'), which is a toolchain-frame coincidence and is documented, not hidden, in known_blockers[1] and [3]. It is unchanged by the wave-3 FIELDS/OFFSETS repair, which is what the identical 235/1 counts prove.",
+    "mutation_testing": "33 defects injected one at a time into copies of swarm_w1_006417d0.cpp / _types.hpp; 33 killed, 0 survived (wave-1, measured by w16 and not re-measured by rp05). The wave-3 FIELDS/OFFSETS repair is behaviour-preserving -- the two stores write the same four bytes at the same two offsets through the existing word_at accessor -- so it can neither resurrect a killed defect nor let a new one through, and it ADDS compile-time kills rather than removing any: the five new namespace-scope static_asserts in the .cpp now fail the build for any mutation that edits a displacement constant or the sentinel away from the instruction that fixes it, which previously reached the runtime checks. The same sentence about the unobservable store-order mutation still stands.",
+    "verdict": "PASS (validator-owned; rp05 did not run `openspore validate`)"
+  },
+  "unresolved_questions": [
+    "What are the two dwords that 0x005507a0 returns? The 0xffffffff/0xffffffff sentinel says only that the pair has an invalid state; the image offers no name, no constant and no string for it in this body.",
+    "The SDK-imported label Sporepedia::cSPAssetDataOTDB::GetAssetID sits on 0x006417c0, whose live bytes are `FLD DWORD PTR [0x013eb1bc]; RET` -- an x87 constant that cannot implement `bool GetAssetID(uint64_t&)`. This body's shape (byte-sized bool in AL, one out pointer, RET 4, an 8-byte non-sentinel pair) is exactly what that SDK signature describes, and 0x006417c0 sits at dword index 15 of the table at 0x013ff648 while this body sits at index 11 of six other tables. That is suggestive, not decisive: the SDK address map and the vtable orderings could each be off, and this package cannot adjudicate. No name is asserted; the export is re_006417d0.",
+    "Is the object's class cSPAssetDataOTDB, a derived class, or neither? The body is installed in six distinct tables, which says at least that the layout is shared, but this body has no MSVC RTTI to read and no vtable pass has been run in this image.",
+    "Does any real callee in the game ever write the receiver's +0x1c word, so that the reload at 0x006417ea differs from the load at 0x006417d3 in practice? The model test proves only that the MODEL re-reads it, which is what the instruction fixes.",
+    "Does 0x005507a0 ever return a null pointer to a real caller? This body does not test the return value, only the receiver word, and the model test deliberately never scripts a null return because the only way to observe the difference would be a fault.",
+    "The absolute stack distance from the model's entry to the accessor's entry is 16 in the machine but a property of the -O0 frame GCC generates, so it is not asserted; see the model test's not-asserted list for what replaces it."
+  ],
+  "blockers": [],
+  "notes": [
+    "No file outside reconstruction/staging/pkg-swarm-w1-006417d0/ and reconstruction/metadata/pkg-swarm-w1-006417d0/ was created or modified. src/ was not touched. Nothing was committed. Ghidra was not restarted.",
+    "The brief's abi_derived block is truncated in the assembled briefing (abi.preview is itself a truncated JSON string), so the ABI facts used here were re-derived from the listing, from 0x005507a0's own bytes and from the model's own measurement. The one brief field that conflicts with the listing, ordinary_stack_arguments[0].read = false, is explained in observed_original_abi.argument_surface."
+  ],
+  "known_blockers": [
+    "CONSTANTS FAIL (wave 1, r03 repair): the validator reported '1 source constant(s) are absent from the machine listing: 0x0'. The span scored by validate._target_span() is the body of re_006417d0 only, and the offender was the two literal `0x00` arguments at `word_at(probe, 0x00)` and `word_at(source, 0x00)`, which canonicalise to 0x0. The 23-instruction listing writes NO displacement at all for the first word of the record -- 0x006417df is `CMP dword ptr [EAX],-0x1` and 0x006417f2 is `MOV EDX,dword ptr [EAX]` -- so the value zero is the ABSENCE of a constant in the listing, not a constant it contains, and a source that spells it as a hex literal asserts one the machine does not have. Note that 0xffffffff is NOT a contributor: the listing writes that compare as the signed form `-0x1`, which the extractor does not take, and the sentinel reaches the span only through the header's kSentinelWord, which is outside the span. FIX: both first-word reads and both second-word reads now use the header's already-declared named displacements kRecordFirstDisplacement / kRecordSecondDisplacement, which the types header had defined and documented (kRecordFirstDisplacement = 0x00) but the .cpp had been duplicating as raw literals. Comments were added at both read sites stating that the machine writes no displacement for the first word, so the source no longer asserts a constant the listing lacks while still grounding the access. The reconstruction's behaviour is bit-identical: kRecordFirstDisplacement is 0 and kRecordSecondDisplacement is 4, exactly the values the literals had. The span now states one constant, 0x1c, which the listing carries at 0x006417d3 and 0x006417ea, and the parse record is 23 of 23 with unparsed=0 and degraded=false, so the CONSTANTS arm takes its PASS arm. Verified with the validator's own extractor: absent-from-listing is empty. Comments were left untouched throughout because _hex_tokens() runs over _code(), which strips line and block comments, so comment hex is not extracted; the span's comment text quotes 0xffffffff, 0x18, 0x8 and 0x006417d0 and none of them is counted.",
+    "RESOLVED BY rp17 (2026-09-28) -- MODEL TEST DOES NOT EXIT 0 (pre-existing wave-1 defect, found by r03, NOT introduced by the CONSTANTS fix and NOT repaired by r03): under the prescribed build -- clang++ -Wall -Wextra -Werror -m32 -std=c++17, no -O, default PIE, i.e. exactly what src/reconstruction/CMakeLists.txt compiles a promoted package with -- the test runs 235 checks and reports 1 failure, so it exits 1, not 0. The failing check is swarm_w1_006417d0_model_test.cpp:972-973, `check_word(g_obs.record[0].caller_saved_esi, g_obs.record[1].caller_saved_esi, 'both calls see the same word at [ESP+4]: there is one frame')`, observed as got 0x00000000, want a heap address. DIAGNOSIS: caller_saved_esi is the trampoline's sample of [E+4] at the accessor's entry. In the machine that word is the saved ESI pushed by PUSH ESI at 0x006417d0, so it is fixed for the whole body and both calls see the same value. This model deliberately has no real PUSH ESI -- the .cpp parks the ESI traffic in the g_saved_esi/g_restored_esi frame words because a real-register version is impossible under the prescribed PIE build (the comment at the top of re_006417d0 says so, and the test asserts the PUSH/POP pair through saved_esi_frame_word()/restored_esi_word() instead, at lines 636-637, 1035-1036, 1047-1048 and 1059-1060). So [E+4] is an unrelated compiler local: objdump of the compiled re_006417d0 shows `push ebp; mov ebp,esp; push ebx; sub esp,0x34` plus a GOT-base thunk and NO push esi, which makes [E+4] the uninitialised slot [ebp-0x30]. It reads 0 on the first call and a leftover address on the second, so the check is measuring a coincidence of the toolchain's frame, not a machine fact. The machine-fixed claim it names -- one frame, no stack movement between 0x006417da and 0x006417ed -- is already asserted correctly and passes, at line 969, by comparing the two accessors' entry ESP directly. r03 deliberately did not touch this assertion: rewriting or relaxing a wave-1 assertion is not this target's repair, and it is exactly the change that could silently weaken coverage. Dispatching it is the parent's call. ||| rp17 outcome: the assertion named here was replaced, not deleted; see the rp17 entry appended at the end of known_blockers. The suite now runs 251 checks, 0 failures, and exits 0 under BOTH toolchains.",
+    "r03 did not run `openspore validate`; the parent owns that. Everything above was established with the validator's own Python surface only: _record/_source/_target_span/_listing/_machine_record/_hex_tokens, all read-only, plus a direct build of the two staging TUs. No assertion was added, removed, relaxed or reworded in the model test, and the three staging files are otherwise byte-identical to wave 1 apart from the four word_at() call sites and their two explanatory comments in the .cpp.",
+    "FIELDS/OFFSETS WARN REMOVED (wave-3, rp05). The validator's arm is evidence_fields._named_only, reached because the scored span -- the body of re_006417d0 only, comments stripped by _code() -- named two struct members: `out->field_00` and `out->field_04`. The machine-derived receiver record for this target is `bounds_only` (abi_derived.receiver: bounds_only true, offsets [28], max_offset 28, register ECX, shape R-ALIAS, written_through 0, confidence INFERRED) and carries no member names anywhere in the pack, so it can confirm that +0x00 and +0x04 are displacements this body reaches and can say NOTHING about which member of the caller's out record lives at either one. The name was therefore an identity claim no machine evidence here can settle, while the displacement beside it is a local fact the same record does settle. FIX, in the .cpp span (the two stores at 0x006417f8/0x006417fd): `out->field_00 = word_at(source, kRecordFirstDisplacement); out->field_04 = word_at(source, kRecordSecondDisplacement);` became `word_at(out, kRecordFirstDisplacement) = word_at(source, kRecordFirstDisplacement); word_at(out, kRecordSecondDisplacement) = word_at(source, kRecordSecondDisplacement);` -- both member names deleted, both displacements kept, and they keep going through the header's kRecordFirstDisplacement / kRecordSecondDisplacement so the wave-1 CONSTANTS fix (no 0x0 literal) is preserved. `word_at(WordPair*, size_t)` already existed in the header and already returned a reference, so this is the file's own idiom for a displacement write and the same two 4-byte stores land at the same two offsets: the behaviour is bit-identical. SUPPORTING SHAPE, in the header, so the pack carries no member identity anywhere and the accepted shape of pkg-swarm-w2-00a85790 is matched: (1) `WordPair` is now an opaque 8-byte run (`alignas(4)`, `std::array<Word,2> opaque_00_07`) with a two-argument constructor that writes through `store_word` at the two named displacements, so every `WordPair{a, b}` in the model test still compiles and still means exactly the same two words; (2) `AssetData`, the receiver, is now a single opaque 0x28-byte run instead of `opaque_00_1b / field_1c / opaque_20_27`; (3) kReceiverInnerDisplacement is renamed kReceiverWordDisplacement (value unchanged, 0x1c) and `inner_pointer_at` is renamed `inner_word_at`; (4) five `static_assert`s in the .cpp at namespace scope -- outside the scored span -- pin kReceiverWordDisplacement==0x1c, kRecordFirstDisplacement==0, kRecordSecondDisplacement==4, kAccessorAddend==0x18 and kSentinelWord==0xffffffff, each with the instruction address in its message, so an edit to a header constant now breaks the build. VERIFIED with the validator's own read-only surface (_record/_listing/_machine_record/_target_span/_field_declarations/_hex_tokens/_source_conventions/_callee_addresses/_data_addresses and evidence_fields.decide), NOT `openspore validate`, which the parent owns: FIELDS/OFFSETS now returns PASS -- 'the source span declares 1 displacement(s) (0x1c) and every one of them is a displacement the complete 23-instruction listing shows: 1 attributed to the receiver ECX as proven (0x1c)' -- and _field_declarations over the span returns exactly {'displacement 0x1c'} with an empty member-name set. CONSTANTS is untouched and still PASS on the same wording as before ('span literals = {0x1c}, absent-from-listing = {}', parse 23/23, unparsed 0, degraded false); the span's single hex literal is still the 0x1c the listing prints at 0x006417d3 and 0x006417ea, and no 0x0 or any other literal the listing lacks was introduced. VIRTUAL DISPATCH still reads no virtual-dispatch token in the span and agrees with the machine record (indirect_calls 0, vtable_shaped_loads 0); ABI still reads the thiscall token off the span's declaration; CALLS still names 0x005507a0 and nothing else; GLOBALS still names no data address in either the span or the listing. `InnerData::pair_18` deliberately KEEPS its name: it is not the receiver, it is not one of the two names the validator named, and its `offsetof(InnerData, pair_18) == 0x18` is a real layout check against the callee's own seventeen bytes (`MOV EAX,[EBP-0x4]; ADD EAX,0x18`) rather than a name the evidence cannot ground.",
+    "MODEL-TEST ASSERTION REPLACED, NOT WEAKENED (wave-3, rp05), and only because the member it named no longer exists: `static_assert(offsetof(AssetData, field_1c) == 0x1c, \"006417d3 and 0x006417ea are MOV ECX,[ESI+0x1c]\")` could not survive AssetData becoming an opaque run, since there is no field_1c to take an offset of. It is replaced by the same two facts in the form the opaque run can express, neither weaker than the original: `static_assert(kReceiverWordDisplacement == 0x1c, \"006417d3 and 0x006417ea are MOV ECX,[ESI+0x1c]\")` keeps the value-to-instruction binding the message used to carry, and `static_assert(kReceiverWordDisplacement + sizeof(Word) <= sizeof(AssetData), ...)` keeps the layout half (the word the body reads must lie inside the modelled receiver) that `offsetof` used to check, as a bounds check on the run. The header's `offsetof(WordPair, field_04) == 4` is likewise replaced by `kRecordSecondDisplacement + sizeof(Word) <= sizeof(WordPair)`, with the value-to-instruction binding moved to the new namespace-scope static_assert in the .cpp. `sizeof(WordPair) == 8` and `static_assert(offsetof(InnerData, pair_18) == 0x18, ...)` are untouched. Five member READS/WRITES in the model test were respelled through the same displacement accessor the model now uses -- `g_obs.result[0].field_00` and `.field_04` in poison_first_record, the same two in one check_word at old line 754, and the three `guard->field_00` uses in the PROT_NONE case -- and one comment line was reworded where it named a member that no longer exists. No `check` / `check_word` call was added, removed, reordered or reworded.",
+    "MODEL TEST COUNTS RE-CONFIRMED INERT (wave-3, rp05), both toolchains, after the FIELDS/OFFSETS fix. g++ 16.2.1 (the contract's prescribed command: g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. <src>.cpp <test>.cpp): 'PASS: 235 checks, 0 failures', exit 0 -- identical to the pre-change baseline. clang++ 22.1.8 (what src/reconstruction/CMakeLists.txt compiles a promoted package with, and what known_blockers[1] measured): 'FAIL: 235 checks, 1 failures', exit 1, and the one failure is still exactly `check_word(g_obs.record[0].caller_saved_esi, g_obs.record[1].caller_saved_esi, \"both calls see the same word at [ESP+4]: there is one frame\")` at old line 972 (now 973, one line added above it), now reporting got 0x00000000 / want 0x565970e0 where the pre-change run reported got 0x00000000 / want 0x565dd0e0. The wanted value is a different heap address on every run, which is the signature of the toolchain-frame coincidence known_blockers[1] describes and confirms it is not a machine fact. Check count 235 and failure count 1 are both unchanged, and the assertion at old lines 969-970 that carries the machine-fixed claim it names (`check_word(g_obs.record[0].entry_esp, g_obs.record[1].entry_esp, \"[ESP+0] ... 0x006417da/0x006417ed\")`) passes and was not edited. The header also still compiles standalone as a one-line TU including only it, under both g++ and clang++ with the same -Werror flags.",
+    "MODEL-TEST ASSERTION REPLACED, NOT DELETED, AND NOT WEAKENED (wave-1 model-test blocker, rp17, 2026-09-28). THE BLOCKER: the promotion gate's CTest step failed with rc 8 because the suite exited 1 -- 235 checks, 1 failure -- under the gate's own compiler (clang++ -m32 -std=c++17 -Wall -Wextra -Werror, PIE). The failing check was swarm_w1_006417d0_model_test.cpp:973-974, check_word(g_obs.record[0].caller_saved_esi, g_obs.record[1].caller_saved_esi, 'both calls see the same word at [ESP+4]: there is one frame'), reported as got 0x00000000, want 0x565ba0d4. WHY IT COULD NOT BE KEPT: caller_saved_esi is the trampoline's sample of [E+4] at the accessor's entry. In the machine that word is the ESI that 0x006417d0 PUSH ESI parked, so it is fixed for the whole body and both calls see the same value. This model has no real PUSH ESI -- the prescribed PIE build gives this translation unit 'call __x86.get_pc_thunk.si; addl $_GLOBAL_OFFSET_TABLE_,%esi', so ESI carries the GOT base and a real-register version is impossible -- so the model's PUSH ESI is the g_saved_esi/g_restored_esi frame word, and [E+4] is an unrelated compiler frame slot. The compiled body is 'push ebp; mov ebp,esp; push ebx; sub esp,0x34' with no push esi at all, which makes [E+4] an uninitialised spill that clang++ writes between the two calls. The word is therefore a property of the toolchain's register allocation, and the address it reported changed on every build. It is a proxy that is unsound in this harness, not a machine fact. WHAT WAS DONE INSTEAD: the claim it names -- one frame, no stack movement between 0x006417da and 0x006417ed -- is now measured three ways by a new case, case_one_frame_between_the_two_calls, and the check is STRONGER than the one it replaces, not weaker. (R1) A second naked trampoline, w16_model_entry_observer, is entered where re_006417d0 would have been entered and tail-jumps into it, so the model's OWN entry frame is read from outside: the frame is exactly the two words a CALL builds (entry ESP 8 below the caller's), [entry+0] is a return address into the test, and [entry+4] IS the caller's out-record pointer -- the `entry+4` slot that 0x006417f4 `MOV ECX,[ESP+0x8]` resolves to with ESP at entry-4 and the word both `RET 0x4` sites drop. That fact was asserted NOWHERE before this change. (R2) The DEPTH: the accessor is entered at the same stack ADDRESS at 0x006417da and at 0x006417ed, and both calls reach the [ESP+4] SLOT (the one the machine's saved ESI occupies) at the same stack ADDRESS. A stack address is not something register allocation can move, which is exactly why the entry-ESP equality was already sound and the [ESP+4] WORD equality was not. (R3) A CONTROL, so the depth measurement is a measurement and not a constant: the same run is repeated from a call site whose stack is lowered by 16 bytes, and the model's entry ESP and the accessor's entry ESP are both required to move down by exactly that amount, expressed as the difference of the two runs' OWN recorded call-site ESPs so the control never assumes the two call sites sit at the same depth. VERIFIED: the defect class the old check named is still caught -- a 34th mutant, 'subl $4,%esp' before 0x006417ed's call and 'addl $4,%esp' after it, is KILLED by exactly the new checks (the two entry-ESP equalities, the [ESP+4] slot-address equality and the control run's own equality). COVERAGE NOT LOST: the PUSH/POP ESI pair is still asserted as a VALUE on all three return paths (case 17, decoy O: saved_esi_frame_word()/restored_esi_word() against kEntryEsi), and the FRAME that value belongs to is now asserted by ADDRESS instead of by word value. NOTHING WAS DELETED, SKIPPED, `if (false)`-ed OR INVERTED: net checks 235 -> 251.",
+    "GATE AND TEST NUMBERS RE-MEASURED (wave-1 model-test blocker, rp17, 2026-09-28). GATE REPRODUCTION (the contract's section 5, verbatim: clang++ -std=c++17 -Wall -Wextra -Werror -m32, each file to an object, ar qc + ranlib into a static archive, then clang++ to link the test object against that archive): compiles clean with no diagnostic and no linker warning, and `/tmp/g_test` prints 'PASS: 251 checks, 0 failures' and exits 0. Previously: 235 checks, 1 failure, exit 1. g++ -m32 -std=c++17 -Wall -Wextra -Werror on the two sources together also prints 'PASS: 251 checks, 0 failures' and exits 0 (previously 235/0). CHECK COUNT 235 -> 251 (+17: sixteen new checks in case_one_frame_between_the_two_calls, one removed [ESP+4] word check). MUTATION KILLS RE-VERIFIED FROM SCRATCH, not carried over: all 33 recorded defects were re-injected one at a time into copies of swarm_w1_006417d0.cpp / _types.hpp and rebuilt through the gate's own clang++ static-library route -- 33/33 killed, none survived -- and the same 33 plus the 34th were re-run under g++ -m32 -Werror -- 34/34 killed. The per-mutant failing-check counts are re-measured and now printed in the test's own MUTATION CHECKING header, which also states the toolchain they were measured on. The three compile-time kills are still compile-time kills: 'widen the return to uint32_t' and 'caller-side cleanup (cdecl) instead of ret' are conflicting-declaration errors, and 'mis-declare the accessor's addend (+0x1c)' trips the header's kAccessorAddend static_assert plus sizeof(InnerData) == 0x20.",
+    "OBSERVATION, NOT A BLOCKER, NOT ACTED ON (rp17, 2026-09-28): this package is -O0-only, and the cause is PRE-EXISTING and outside the scope of this repair. At -O1 and above the suite fails, and the failing check is case_abi_is_measured's cdecl sensitivity control, which uses the untouched call_cdecl_probe helper. Both call_model and call_cdecl_probe embed a `call` inside an inline asm block whose clobber list names only \"cc\",\"memory\"; an embedded call destroys every caller-saved register, and a block that fails to declare that will have the compiler holding the address of an output in EAX when the call returns. This was isolated with a standalone reproduction of the call_cdecl_probe asm shape alone: it returns the correct 4 at g++ -O0/-O1/-O2 and at clang++ -O0, and garbage at clang++ -O1/-O2, with no package code involved. rp17's own new call site declares all six general registers as clobbered and is correct at -O0. The gate and the contract both prescribe no -O flag, so this is left alone: fixing call_model/call_cdecl_probe would perturb the recorded mutation kill counts for no gate benefit, and the contract asks for the smallest change that removes the blocker. Flagged for whoever owns the shared -O policy."
+  ]
+}

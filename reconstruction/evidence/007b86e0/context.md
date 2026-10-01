@@ -1,7 +1,7 @@
 # Reconstruction context 0x007b86e0
 
 - Status: `partial`
-- Content SHA-256: `a90b92849716387287aab2179807e8132cc428ce3b8eefba0cf38d0f748e05f5`
+- Content SHA-256: `cf1dd59d559b3608a1494efb23923c419bb14c741c5fc23a02b0113af8a7c4c4`
 
 ## 01_assignment
 
@@ -41,7 +41,7 @@
 {
   "blocked": false,
   "reconstructed": false,
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "candidate"
 }
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "b7d7aa44bad61bcd0f89656745ac298da9a5ecb4cc44a6792f7b819767905abc",
-  "live_attempts": [],
+  "content_sha256": "545a4d10d907946f14c6e267eee3397c222b3a78c14f7265361c23bc1c64064d",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x007b86e0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,39 +71,34 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-int __fastcall FUN_007b86e0(int param_1)
-
-{
-  int iVar1;
-  
-  iVar1 = *(int *)(param_1 + 8) + -1;
-  *(int *)(param_1 + 8) = iVar1;
-  if (iVar1 == 0) {
-    *(undefined4 *)(param_1 + 8) = 1;
-    (*(code *)**(undefined4 **)(param_1 + 4))(1);
-    iVar1 = 0;
-  }
-  return iVar1;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 6816,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"integral_in_EAX\",\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"flow_not_modelled: the linear ESP walk ends at +4, so the listing is not one path\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"CORE_RESOLVED\",\n  \"conflicts\": [],\n  \"content_sha256\": \"a7fc653e73d27eda207f38e9d44c25eb44cc12c298cb1f94f49330b4818b385d\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": \"__thiscall\",\n    \"candidate_conventions\": [\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 0,\n    \"persisted\": \"no_information\",\n    \"persisted_calling_convention\": null\n  },\n  \"dispatch\": {\n    \"call_offsets\": [],\n    \"indirect_calls\": 1,\n    \"vtable_shaped_load
-[TRUNCATED]
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is the receiver; 0x007b86e3 ADD ECX,4 biases it to the embedded sub-object and it stays biased for the indirect call at 0x007b86fb",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x007b86e6 ADD EAX,-1 leaves the new count in EAX and 0x007b86ec JNZ branches to 0x007b86ff (RET) with EAX untouched, so the non-zero path returns the decremented count. The zero path ends at 0x007b86fd XOR EAX,EAX, so it returns exactly 0. Both paths write the full 32-bit register.",
+  "return_register": "EAX",
+  "return_semantics": "the decremented reference count, or 0 when the zero arm ran and the object was destroyed",
+  "return_type": "std::int32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single RET at 0x007b86ff; the JNZ at 0x007b86ec targets it directly"
+}
 ```
 
 ## 07_callers_callees
@@ -206,7 +209,9 @@ int __fastcall FUN_007b86e0(int param_1)
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "std::int32_t"
+  ],
   "vtables": [
     "vtable:0x013f56a8",
     "vtable:0x013f57f8",
@@ -226,14 +231,18 @@ int __fastcall FUN_007b86e0(int param_1)
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
   "runtime": {
     "blocking_reason": null,
-    "gates": [],
+    "gates": [
+      "No original-process trace has been captured for 0x007b86e0. A differential run must confirm that the decrement, the restore-to-1 and the destructor call happen in that order on a real receiver, and that no runtime patch retargets the address.",
+      "The 417 vtable slots need at least one resolved concrete receiver before any owning class can be named.",
+      "The zero arm has never been observed executing. Whether the delete-on-zero path is reachable in the shipping build, and what the caller does with the 0 return, needs a trace."
+    ],
     "validated": 0
   },
   "semantic": {}
@@ -349,74 +358,78 @@ int __fastcall FUN_007b86e0(int param_1)
 [
   {
     "match_basis": [
-      "shared_vtable:vtable:0x014542e8,vtable:0x014626b8"
+      "same_subsystem",
+      "shared_vtable:vtable:0x0140da74,vtable:0x014123b4"
     ],
-    "package": "PKG-WAVE6-CONTAINERS-MEMORY",
-    "score": 4,
-    "symbol": "wave6_reference_00432a50",
-    "va": "0x00432a50"
+    "package": "pkg-vft-preinc-0051e340",
+    "score": 10,
+    "symbol": "vft_preinc_0051e340",
+    "va": "0x0051e340"
   },
   {
     "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x0140da74,vtable:0x014123b4"
+    ],
+    "package": "subobject-forward-0051e380",
+    "score": 10,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
       "shared_vtable:vtable:0x013f57f8"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_005737d0",
-    "va": "0x005737d0"
+    "package": "pkg-swarm-w2-00586700",
+    "score": 10,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
   },
   {
     "match_basis": [
+      "same_subsystem",
       "shared_vtable:vtable:0x013f57f8"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00585890",
-    "va": "0x00585890"
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 10,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
   },
   {
     "match_basis": [
+      "same_subsystem",
       "shared_vtable:vtable:0x013f57f8"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00585d10",
-    "va": "0x00585d10"
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 10,
+    "symbol": "re_005ba0d0",
+    "va": "0x005ba0d0"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8,vtable:0x013fdc9c"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00588570",
-    "va": "0x00588570"
+    "package": "pkg-editor-child-007f30d0",
+    "score": 10,
+    "symbol": "FUN_007f30d0",
+    "va": "0x007f30d0"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_0058ac10",
-    "va": "0x0058ac10"
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 6,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_0058b650",
-    "va": "0x0058b650"
-  },
-  {
-    "match_basis": [
-      "shared_vtable:vtable:0x0147c9e8,vtable:0x0147cc14"
-    ],
-    "package": "PKG-16-SPOREPEDIA-ONLINE",
-    "score": 4,
-    "symbol": "Sporepedia_cSPAssetDataOTDB_IsEditab
+    "package": "pkg-swarm-
 [TRUNCATED]
 ```
 
@@ -427,9 +440,15 @@ int __fastcall FUN_007b86e0(int param_1)
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b04/007b86e0.json"
+  ]
 }
 ```
 
@@ -446,28 +465,25 @@ int __fastcall FUN_007b86e0(int param_1)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "Is the SDK correspondence Spore::Object::Release an identity or only a slot-shape match? The declared order {AddRef, Release, ~Object, Cast} matches one sampled table exactly and 0x00e5cac0 at slot +0x0C does return its receiver unchanged as Cast would, but the SDK declares Object with no data members while the observed count lives at +0x08, so the two layouts are not the same declaration.",
+    "No differential trace exists for any of the 63 code references, so it is unproven that every receiver reaching this body has the expected +0x04 sub-object and is not a null or a dangling pointer.",
+    "No original-process trace has been captured for 0x007b86e0. A differential run must confirm that the decrement, the restore-to-1 and the destructor call happen in that order on a real receiver, and that no runtime patch retargets the address.",
+    "The 417 vtable slots need at least one resolved concrete receiver before any owning class can be named.",
+    "The zero arm has never been observed executing. Whether the delete-on-zero path is reachable in the shipping build, and what the caller does with the 0 return, needs a trace.",
+    "What happens to the 8 data references whose slot-offset scan did not report +0x04? They were not individually inspected.",
+    "What is the second base at +0x04? Its vtable is 0x013ef094 for the one class inspected and its slot +0x00 is a deleting destructor; the SDK's IVirtual, documented as an interface whose only virtual is a destructor, fits, but that is a candidate and no other slot of that b
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-dispatch-b04/007b86e0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -485,11 +501,6 @@ int __fastcall FUN_007b86e0(int param_1)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -502,21 +513,29 @@ int __fastcall FUN_007b86e0(int param_1)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-dispatch-b04/007b86e0.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp",
+      "source_class": "committed_artifact"
     }
   ],
   "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    "rec
+[TRUNCATED]
 ```

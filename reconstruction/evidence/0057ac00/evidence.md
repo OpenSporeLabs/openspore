@@ -2,9 +2,89 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `dfc0870c652cfe26aeff167af0dd692781317c8fb21e38732da2fbac441cdec3`
+- Content SHA-256: `6b7427f646045602fed83d43ddfffc7b5c0cc016b5a69581bf934caa7adb65d0`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall with a hidden pointer return",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX, spilled to ESI at 0x0057ac07; the body reads [ESI + 0x24], [ESI + 0x48], [ESI + 0x98], [ESI + 0x2a8], [ESI + 0x4b1] and [ESI + 0x4b2] and, through 0x0057a960 and 0x0057a9e0, [ESI + 0x1cc]",
+  "ordinary_stack_argument_slots": 4,
+  "receiver": true,
+  "ret_form": "RET 0x10",
+  "return_note": "(a pointer to a 16-byte four-dword structure)",
+  "return_observation": "0x0057add8 MOV EAX,dword ptr [ESP + 0x64] loads argument 1 into EAX after the last helper call, and 0x0057ade8/0x0057adee/0x0057adf7/0x0057adfa write the four dwords through EAX. EAX is never otherwise written between 0x0057add8 and the RET. The early path agrees: 0x0057ac1d MOV EAX,dword ptr [ESP + 0x5c] then four stores through EAX then 0x0057ac35 RET 0x10.",
+  "return_register": "EAX",
+  "return_semantics": "returns the same pointer that was passed as argument 1; all six callers immediately dereference EAX as [EAX], [EAX + 4], [EAX + 8] and [EAX + 0xc]",
+  "return_type": "EditMask0057ac00*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBX",
+    "EBP",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "frame_offset": "[ESP + 0x5c]",
+      "read_at": [
+        "0x0057ac1d",
+        "0x0057add8"
+      ],
+      "role": "pointer to the 16-byte output buffer; also the return value",
+      "slot": 1,
+      "written_at": [
+        "0x0057ac23",
+        "0x0057ac25",
+        "0x0057ac28",
+        "0x0057ac2b",
+        "0x0057ade8",
+        "0x0057adee",
+        "0x0057adf7",
+        "0x0057adfa"
+      ]
+    },
+    {
+      "frame_offset": "[ESP + 0x60]",
+      "read_at": [
+        "0x0057ac6b",
+        "0x0057ac83",
+        "0x0057ad38",
+        "0x0057ad8c"
+      ],
+      "role": "the edit-history record; becomes the `this` of 0x004bac30 at 0x0057ac83 and the first argument of 0x004efb20 / 0x004ef880",
+      "slot": 2
+    },
+    {
+      "frame_offset": "[ESP + 0x64]",
+      "read_at": [
+        "0x0057adc9",
+        "0x0057add2"
+      ],
+      "role": "the part name; the single argument of 0x004edf40 at 0x0057add2",
+      "slot": 3
+    },
+    {
+      "frame_offset": "[ESP + 0x68]",
+      "read_at": [],
+      "role": "unused; pushed as the constant 1 at five call sites (0x0058a75d, 0x0058aae8, 0x0057f794, 0x0057f7cd, 0x0058d2f0) and as the caller's EBP register at 0x0058662b, and never read by the body",
+      "slot": 4
+    }
+  ],
+  "stack_cleanup_bytes": 16,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x10 via two exits: 0x0057ac35 (the global kill-switch path) and 0x0057ae01 (the normal path)"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -236,7 +316,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "8f225ade223fd4e75fd946688ceae468e0505ea4935685809a39153086c3a726",
+  "content_sha256": "84566fd1a50c55ac26c4bf2ec9165a6ac9e9ee9755c7ab7f0fd2358e961c8f8b",
   "conventions": {
     "ambiguities": [],
     "calling_convention": null,
@@ -255,26 +335,69 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall with a hidden pointer return"
   },
   "dispatch": {
-    "call_offsets": [],
-    "indirect_calls": 0,
-    
+    "call_offset
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "app_direct_property_list_get_direct_bool_006a25a0",
+    "reconstructed": true,
+    "va": "0x006a25a0"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057ea30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057f6c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00586410"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058a5a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058a950"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058d1c0"
+  }
+]
+```
 
 ## contradictions
 
@@ -284,13 +407,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nvoid __thiscall FUN_0057ac00(int param_1,uint *param_2,undefined4 param_3,undefined4 param_4)\n\n{\n  char cVar1;\n  bool bVar2;\n  uint *puVar3;\n  int iVar4;\n  int iVar5;\n  int iVar6;\n  undefined4 uVar7;\n  ResourceKey local_48;\n  ResourceKey local_3c;\n  uint local_30;\n  uint local_2c;\n  uint local_28;\n  uint local_24;\n  uint local_20;\n  uint local_1c;\n  uint local_18;\n  uint local_14;\n  undefined1 local_10 [16];\n  \n  cVar1 = Prop_GetPropValueBool(0x55d7ca1);\n  if (cVar1 != '\\0') {\n    *param_2 = 0;\n    param_2[1] = 0;\n    param_2[2] = 0;\n    param_2[3] = 0;\n    return;\n  }\n  FUN_0057a960(&local_20);\n  puVar3 = (uint *)FUN_0057a9e0(local_10);\n  FUN_004bac30(&local_30,local_20 | *puVar3,local_1c | puVar3[1],local_18 | puVar3[2],\n               local_14 | puVar3[3],0);\n  if ((*(int *)(param_1 + 0x2a8) == 0x2b978c46) || (*(int *)(param_1 + 0x2a8) == 0x3d97a8e4)) {\n    iVar6 = 0;\n    iVar4 = FUN_004accf0();\n    if (0 < iVar4) {\n      do {\n        uVar7 = 0xb00f0fec;\n        FUN_004accb0(iVar6);\n        iVar5 = FUN_00435b60(uVar7);\n        if (iVar5 != 0) {\nLAB_0057acfb:\n          local_30 = local_30 & 0xfffffbff;\n          goto LAB_0057ad03;\n        }\n        uVar7 = 0x11b79301;\n        FUN_004accb0(iVar6);\n        iVar5 = FUN_00435b60(uVar7);\n        if (iVar5 != 0) goto LAB_0057acfb;\n        iVar6 = iVar6 + 1;\n      } while (iVar6 < iVar4);\n    }\n    local_30 = local_30 | 0x400;\n  }\nLAB_0057ad03:\n  local_48.instanceID = 0;\n  local_48.typeID = 0;\n  local_48.groupID = Global;\n  if (*(PropertyList **)(param_1 + 0x24) == (PropertyList *)0x0) {\nLAB_0057ad4f:\n    local_30 = local_30 & 0xfffbffff;\n  }\n  else {\n    bVar2 = App__Property__GetKey(*(PropertyList **)(param_1 + 0x24),0x7a926123,&local_48);\n    if (!bVar2) goto LAB_0057ad4f;\n    cVar1 = FUN_004efb20(param_3,local_48.instanceID,param_1 + 0x48);\n    if (cVar1 != '\\0') goto LAB_0057ad4f;\n    local_30 = local_30 | 0x40000;\n  }\n  local_3c.instanceID = 0;\n  local_3c.typeID = 0;\n  local_3c.groupID = Global;\n  if (*(PropertyList **)(param_1 + 0x24) != (PropertyList *)0x0) {\n    bVar2 = App__Property__GetKey(*(PropertyList **)(param_1 + 0x24),0xf5cbe065,&local_3c);\n    if (bVar2) {\n      cVar1 = FUN_004ef880(param_3,local_3c.instanceID,param_1 + 0x48);\n      if (cVar1 == '\\0') {\n        local_30 = local_30 | 0x20;\n        goto LAB_0057ada5;\n      }\n    }\n  }\n  local_30 = local_30 & 0xffffffdf;\nLAB_0057ada5:\n  if ((*(char *)(param_1 + 0x4b1) == '\\0') || (*(char *)(param_1 + 0x4b2) != '\\0')) {\n    local_30 = local_30 & 0xfffff7ff;\n  }\n  else {\n    local_30 = local_30 | 0x800;\n  }\n  FUN_004edf40(param_4,&local_30);\n  *param_2 = local_30;\n  param_2[1] = local_2c;\n  param_2[2] = local_28;\n  param_2[3] = local_24;\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -300,8 +419,295 @@
 
 ```json
 {
-  "original_bytes": 13926,
-  "preview": "{\n  \"count\": 166,\n  \"instructions\": [\n    {\n      \"address\": \"0057ac00\",\n      \"instruction\": \"SUB ESP,0x48\"\n    },\n    {\n      \"address\": \"0057ac03\",\n      \"instruction\": \"PUSH EBX\"\n    },\n    {\n      \"address\": \"0057ac04\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"0057ac05\",\n      \"instruction\": \"PUSH ESI\"\n    },\n    {\n      \"address\": \"0057ac06\",\n      \"instruction\": \"PUSH EDI\"\n    },\n    {\n      \"address\": \"0057ac07\",\n      \"instruction\": \"MOV ESI,ECX\"\n    },\n    {\n      \"address\": \"0057ac09\",\n      \"instruction\": \"MOV ECX,dword ptr [0x015fd918]\"\n    },\n    {\n      \"address\": \"0057ac0f\",\n      \"instruction\": \"PUSH 0x55d7ca1\"\n    },\n    {\n      \"address\": \"0057ac14\",\n      \"instruction\": \"CALL 0x006a25a0\"\n    },\n    {\n      \"address\": \"0057ac19\",\n      \"instruction\": \"TEST AL,AL\"\n    },\n    {\n      \"address\": \"0057ac1b\",\n      \"instruction\": \"JZ 0x0057ac38\"\n    },\n    {\n      \"address\": \"0057ac1d\",\n      \"instruction\": \"MOV EAX,dword ptr [ESP + 0x5c]\"\n    },\n    {\n      \"address\": \"0057ac21\",\n      \"instruction\": \"XOR ECX,ECX\"\n    },\n    {\n      \"address\": \"0057ac23\",\n      \"instruction\": \"MOV dword ptr [EAX],ECX\"\n    },\n    {\n      \"address\": \"0057ac25\",\n      \"instruction\": \"MOV dword ptr [EAX + 0x4],ECX\"\n    },\n    {\n      \"address\": \"0057ac28\",\n      \"instruction\": \"MOV dword ptr [EAX + 0x8],ECX\"\n    },\n    {\n      \"address\": \"0057ac2b\",\n      \"instruction\": \"MOV dword ptr [EAX + 0xc],ECX\"\n    },\n    {\n      \"address\": \"0057ac2e\",\n      \"instruction\": \"POP EDI\"\n    },\n    {\n      \"address\": \"0057ac2f\",\n      \"instruction\": \"POP ESI\"\n    },\n    {\n      \"address\": \"0057ac30\",\n      \"instruction\": \"POP EBP\"\n    },\n    {\n      \"address\": \"0057ac31\",\n      \"instruction\": \"POP EBX\"\n    },\n    {\n      \"address\": \"0057ac32\",\n      \"instruction\": \"ADD ESP,0x48\"\n    },\n    {\n      \"address\": \"0057ac35\",\n      \"instruction\": \"RET 0x10\"\n    },\n    {\n      \"address\": \"0057ac38\",\n      \"instruction\": \"LEA EAX,[ESP + 0x38]\"\n    },\n    {\n      \"address\": \"0057ac3c\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"0057ac3d\",\n      \"instruction\": \"MOV ECX,ESI\"\n    },\n    {\n      \"address\": \"0057ac3f\",\n      \"instruction\": \"CALL 0x0057a960\"\n    },\n    {\n      \"address\": \"0057ac44\",\n      \"instruction\": \"LEA ECX,[ESP + 0x48]\"\n    },\n    {\n      \"address\": \"0057ac48\",\n      \"instruction\": \"PUSH ECX\"\n    },\n    {\n      \"address\": \"0057ac49\",\n      \"instruction\": \"MOV ECX,ESI\"\n    },\n    {\n      \"address\": \"0057ac4b\",\n      \"instruction\": \"CALL 0x0057a9e0\"\n    },\n    {\n      \"address\": \"0057ac50\",\n      \"instruction\": \"MOV ECX,dword ptr [ESP + 0x38]\"\n    },\n    {\n      \"address\": \"0057ac54\",\n      \"instruction\": \"OR ECX,dword ptr [EAX]\"\n    },\n    {\n      \"address\": \"0057ac56\",\n      \"instruction\": \"MOV EDX,dword ptr [ESP + 0x3c]\"\n    },\n    {\n      \"address\": \"0057ac5a\",\n      \"instruction\": \"OR EDX,dword ptr [EAX + 0x4]\"\n    },\n    {\n      \"address\": \"0057ac5d\",\n      \"instruction\": \"MOV EDI,dword ptr [ESP + 0x40]\"\n    },\n    {\n      \"address\": \"0057ac61\",\n      \"instruction\": \"OR EDI,dword ptr [EAX + 0x8]\"\n    },\n    {\n      \"address\": \"0057ac64\",\n      \"instruction\": \"MOV EBP,dword ptr [ESP + 0x44]\"\n    },\n    {\n      \"address\": \"0057ac68\",\n      \"instruction\": \"OR EBP,dword ptr [EAX + 0xc]\"\n    },\n    {\n      \"address\": \"0057ac6b\",\n      \"instruction\": \"MOV EBX,dword ptr [ESP + 0x60]\"\n    },\n    {\n      \"address\": \"0057ac6f\",\n      \"instruction\": \"PUSH 0x0\"\n    },\n    {\n      \"address\": \"0057ac71\",\n      \"instruction\": \"SUB ESP,0x10\"\n    },\n    {\n      \"address\": \"0057ac74\",\n      \"instruction\": \"MOV EAX,ESP\"\n    },\n    {\n      \"address\": \"0057ac76\",\n      \"instruction\": \"MOV dword ptr [EAX],ECX\"\n    },\n    {\n      \"address\": \"0057ac78\",\n      \"instruction\": \"MOV dword ptr [EAX + 0x4],EDX\"\n    },\n    {\n      \"address\": \"0057ac7b\",\n      \"instruction\": \"LEA EDX,[ESP + 0x3c]\"\n    },\n    {\n      \"address\": \"0057ac7f\",\n      \"instruction\": \"MOV dword ptr [EAX + 0x8],EDI\"\n    },\n    {\n      \"address\": \"0057ac82\",\n      \"instruction\": \"PUSH EDX\"\n    },\n    {\n      \"address\": \"0057ac83\",\n      \"instruction\": \"MOV ECX,EBX\"\n    },\n    {\n      \"address\": \"0057ac85\",\n      \"instruction\": \"MOV dword ptr [EAX + 0xc],EBP\"\n    },\n    {\n      \"address\": \"0057ac88\",\n      \"instruction\": \"CALL 0x004bac30\"\n    },\n    {\n      \"address\": \"0057ac8d\",\n      \"instruction\": \"MOV EAX,dword ptr [ESI + 0x2a8]\"\n    },\n    {\n      \"address\": \"0057ac93\",\n      \"instruction\": \"CMP EAX,0x2b978c46\"\n    },\n    {\n      \"address\": \"0057ac98\",\n      \"instruction\": \"JZ 0x0057aca1\"\n    },\n    {\n      \"address\": \"0057ac9a\",\n      \"instruction\": \"CMP EAX,0x3d97a8e4\"\n    },\n    {\n      \"address\": \"0057ac9f\",\n      \"instruction\": \"JNZ 0x0057ad03\"\n    },\n    {\n      \"address\": \"0057aca1\",\n      \"instruction\": \"MOV ECX,dword ptr [ESI + 0x98]\"\n    },\n    {\n      \"address\": \"0057aca7\",\n      \"instruction\": \"XOR EDI,EDI\"\n    },\n    {\n      \"address\": \"0057aca9\",\n      \"instruction\": \"CALL 0x004accf0\"\n    },\n    {\n      \"address\": \"0057acae\",\n      \"instruction\": \"MOV EBP,EAX\"\n    },\n    {\n      \"address\": \"0057acb0\",\n      \"instruction\": \"TEST EBP,EBP\"\n    },\n    {\n      \"address\": \"0057acb2\",\n      \"instruction\": \"JLE 0x0057acf1\"\n  
+  "count": 166,
+  "instructions": [
+    {
+      "address": "0057ac00",
+      "instruction": "SUB ESP,0x48"
+    },
+    {
+      "address": "0057ac03",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "0057ac04",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "0057ac05",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "0057ac06",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "0057ac07",
+      "instruction": "MOV ESI,ECX"
+    },
+    {
+      "address": "0057ac09",
+      "instruction": "MOV ECX,dword ptr [0x015fd918]"
+    },
+    {
+      "address": "0057ac0f",
+      "instruction": "PUSH 0x55d7ca1"
+    },
+    {
+      "address": "0057ac14",
+      "instruction": "CALL 0x006a25a0"
+    },
+    {
+      "address": "0057ac19",
+      "instruction": "TEST AL,AL"
+    },
+    {
+      "address": "0057ac1b",
+      "instruction": "JZ 0x0057ac38"
+    },
+    {
+      "address": "0057ac1d",
+      "instruction": "MOV EAX,dword ptr [ESP + 0x5c]"
+    },
+    {
+      "address": "0057ac21",
+      "instruction": "XOR ECX,ECX"
+    },
+    {
+      "address": "0057ac23",
+      "instruction": "MOV dword ptr [EAX],ECX"
+    },
+    {
+      "address": "0057ac25",
+      "instruction": "MOV dword ptr [EAX + 0x4],ECX"
+    },
+    {
+      "address": "0057ac28",
+      "instruction": "MOV dword ptr [EAX + 0x8],ECX"
+    },
+    {
+      "address": "0057ac2b",
+      "instruction": "MOV dword ptr [EAX + 0xc],ECX"
+    },
+    {
+      "address": "0057ac2e",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "0057ac2f",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "0057ac30",
+      "instruction": "POP EBP"
+    },
+    {
+      "address": "0057ac31",
+      "instruction": "POP EBX"
+    },
+    {
+      "address": "0057ac32",
+      "instruction": "ADD ESP,0x48"
+    },
+    {
+      "address": "0057ac35",
+      "instruction": "RET 0x10"
+    },
+    {
+      "address": "0057ac38",
+      "instruction": "LEA EAX,[ESP + 0x38]"
+    },
+    {
+      "address": "0057ac3c",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "0057ac3d",
+      "instruction": "MOV ECX,ESI"
+    },
+    {
+      "address": "0057ac3f",
+      "instruction": "CALL 0x0057a960"
+    },
+    {
+      "address": "0057ac44",
+      "instruction": "LEA ECX,[ESP + 0x48]"
+    },
+    {
+      "address": "0057ac48",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "0057ac49",
+      "instruction": "MOV ECX,ESI"
+    },
+    {
+      "address": "0057ac4b",
+      "instruction": "CALL 0x0057a9e0"
+    },
+    {
+      "address": "0057ac50",
+      "instruction": "MOV ECX,dword ptr [ESP + 0x38]"
+    },
+    {
+      "address": "0057ac54",
+      "instruction": "OR ECX,dword ptr [EAX]"
+    },
+    {
+      "address": "0057ac56",
+      "instruction": "MOV EDX,dword ptr [ESP + 0x3c]"
+    },
+    {
+      "address": "0057ac5a",
+      "instruction": "OR EDX,dword ptr [EAX + 0x4]"
+    },
+    {
+      "address": "0057ac5d",
+      "instruction": "MOV EDI,dword ptr [ESP + 0x40]"
+    },
+    {
+      "address": "0057ac61",
+      "instruction": "OR EDI,dword ptr [EAX + 0x8]"
+    },
+    {
+      "address": "0057ac64",
+      "instruction": "MOV EBP,dword ptr [ESP + 0x44]"
+    },
+    {
+      "address": "0057ac68",
+      "instruction": "OR EBP,dword ptr [EAX + 0xc]"
+    },
+    {
+      "address": "0057ac6b",
+      "instruction": "MOV EBX,dword ptr [ESP + 0x60]"
+    },
+    {
+      "address": "0057ac6f",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "0057ac71",
+      "instruction": "SUB ESP,0x10"
+    },
+    {
+      "address": "0057ac74",
+      "instruction": "MOV EAX,ESP"
+    },
+    {
+      "address": "0057ac76",
+      "instruction": "MOV dword ptr [EAX],ECX"
+    },
+    {
+      "address": "0057ac78",
+      "instruction": "MOV dword ptr [EAX + 0x4],EDX"
+    },
+    {
+      "address": "0057ac7b",
+      "instruction": "LEA EDX,[ESP + 0x3c]"
+    },
+    {
+      "address": "0057ac7f",
+      "instruction": "MOV dword ptr [EAX + 0x8],EDI"
+    },
+    {
+      "address": "0057ac82",
+      "instruction": "PUSH EDX"
+    },
+    {
+      "address": "0057ac83",
+      "instruction": "MOV ECX,EBX"
+    },
+    {
+      "address": "0057ac85",
+      "instruction": "MOV dword ptr [EAX + 0xc],EBP"
+    },
+    {
+      "address": "0057ac88",
+      "instruction": "CALL 0x004bac30"
+    },
+    {
+      "address": "0057ac8d",
+      "instruction": "MOV EAX,dword ptr [ESI + 0x2a8]"
+    },
+    {
+      "address": "0057ac93",
+      "instruction": "CMP EAX,0x2b978c46"
+    },
+    {
+      "address": "0057ac98",
+      "instruction": "JZ 0x0057aca1"
+    },
+    {
+      "address": "0057ac9a",
+      "instruction": "CMP EAX,0x3d97a8e4"
+    },
+    {
+      "address": "0057ac9f",
+      "instruction": "JNZ 0x0057ad03"
+    },
+    {
+      "address": "0057aca1",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x98]"
+    },
+    {
+      "address": "0057aca7",
+      "instruction": "XOR EDI,EDI"
+    },
+    {
+      "address": "0057aca9",
+      "instruction": "CALL 0x004accf0"
+    },
+    {
+      "address": "0057acae",
+      "instruction": "MOV EBP,EAX"
+    },
+    {
+      "address": "0057acb0",
+      "instruction": "TEST EBP,EBP"
+    },
+    {
+      "address": "0057acb2",
+      "instruction": "JLE 0x0057acf1"
+    },
+    {
+      "address": "0057acb4",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x98]"
+    },
+    {
+      "address": "0057acba",
+      "instruction": "PUSH 0xb00f0fec"
+    },
+    {
+      "address": "0057acbf",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "0057acc0",
+      "instruction": "CALL 0x004accb0"
+    },
+    {
+      "address": "0057acc5",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "0057acc7",
+      "instruction": "CALL 0x00435b60"
+    },
+    {
+      "address": "0057accc",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "0057acce",
+      "instruction": "JNZ 0x0057acfb"
+    },
+    {
+      "address": "0057acd0",
+      "instruction": "MOV ECX,dword ptr [ESI + 0x98]"
+    },
+    {
+      "address": "0057acd6",
+      "in
 [TRUNCATED]
 ```
 
@@ -313,9 +719,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12356,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall with a hidden pointer return\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX, spilled to ESI at 0x0057ac07; the body reads [ESI + 0x24], [ESI + 0x48], [ESI + 0x98], [ESI + 0x2a8], [ESI + 0x4b1] and [ESI + 0x4b2] and, through 0x0057a960 and 0x0057a9e0, [ESI + 0x1cc]\",\n    \"ordinary_stack_argument_slots\": 4,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x10\",\n    \"return_note\": \"(a pointer to a 16-byte four-dword structure)\",\n    \"return_observation\": \"0x0057add8 MOV EAX,dword ptr [ESP + 0x64] loads argument 1 into EAX after the last helper call, and 0x0057ade8/0x0057adee/0x0057adf7/0x0057adfa write the four dwords through EAX. EAX is never otherwise written between 0x0057add8 and the RET. The early path agrees: 0x0057ac1d MOV EAX,dword ptr [ESP + 0x5c] then four stores through EAX then 0x0057ac35 RET 0x10.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"returns the same pointer that was passed as argument 1; all six callers immediately dereference EAX as [EAX], [EAX + 4], [EAX + 8] and [EAX + 0xc]\",\n    \"return_type\": \"EditMask0057ac00*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBX\",\n      \"EBP\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"frame_offset\": \"[ESP + 0x5c]\",\n        \"read_at\": [\n          \"0x0057ac1d\",\n          \"0x0057add8\"\n        ],\n        \"role\": \"pointer to the 16-byte output buffer; also the return value\",\n        \"slot\": 1,\n        \"written_at\": [\n          \"0x0057ac23\",\n          \"0x0057ac25\",\n          \"0x0057ac28\",\n          \"0x0057ac2b\",\n          \"0x0057ade8\",\n          \"0x0057adee\",\n          \"0x0057adf7\",\n          \"0x0057adfa\"\n        ]\n      },\n      {\n        \"frame_offset\": \"[ESP + 0x60]\",\n        \"read_at\": [\n          \"0x0057ac6b\",\n          \"0x0057ac83\",\n          \"0x0057ad38\",\n          \"0x0057ad8c\"\n        ],\n        \"role\": \"the edit-history record; becomes the `this` of 0x004bac30 at 0x0057ac83 and the first argument of 0x004efb20 / 0x004ef880\",\n        \"slot\": 2\n      },\n      {\n        \"frame_offset\": \"[ESP + 0x64]\",\n        \"read_at\": [\n          \"0x0057adc9\",\n          \"0x0057add2\"\n        ],\n        \"role\": \"the part name; the single argument of 0x004edf40 at 0x0057add2\",\n        \"slot\": 3\n      },\n      {\n        \"frame_offset\": \"[ESP + 0x68]\",\n        \"read_at\": [],\n        \"role\": \"unused; pushed as the constant 1 at five call sites (0x0058a75d, 0x0058aae8, 0x0057f794, 0x0057f7cd, 0x0058d2f0) and as the caller's EBP register at 0x0058662b, and never read by the body\",\n        \"slot\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 16,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x10 via two exits: 0x0057ac35 (the global kill-switch path) and 0x0057ae01 (the normal path)\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-20-PROPERTY-ADAPTER\",\n      \"score\": 3,\n      \"symbol\": \"app_direct_property_list_get_direct_bool_006a25a0\",\n      \"va\": \"0x006a25a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"app_direct_property_list_get_direct_bool_006a25a0\",\n        \"reconstructed\": true,\n        \"va\": \"0x006a25a0\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057ea30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057f6c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00586410\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058a5a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058a950\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058d1c0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0057eb7c\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057ea30\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057f79e\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057f6c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057f7d9\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057f6c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00586635\",\n        \"direction\": \"in\",\n        \"other\": \"0x00586410\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0058a768\",\n        \"direction\": \"in\",\n        \"other\": \"0x0058a5a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0058aaf3\",\n        \"direction\": \"in\",\n        \"other\": \"0x0058a950\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0058d2fb\",\n        \"direction\": \"in\",\n        \"other\": \"0x0058d1c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057acc7\",\n        \"direction\": \"out\",\n        \"other\": \"0x00435b60\",\n        \"reference_type\": \"direct-ca
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -331,25 +744,25 @@
   "body_span_bytes": 516,
   "body_start": "0057ac00",
   "callees": [
-    "FUN_0057a9e0",
-    "FUN_004edf40",
-    "FUN_004ef880",
-    "FUN_00435b60",
-    "FUN_004accf0",
-    "App::Property::GetKey",
     "FUN_004efb20",
     "FUN_0057a960",
     "FUN_004accb0",
+    "FUN_0057a9e0",
+    "FUN_004ef880",
+    "FUN_004accf0",
+    "FUN_004edf40",
     "FUN_004bac30",
-    "Prop_GetPropValueBool"
+    "Prop_GetPropValueBool",
+    "FUN_00435b60",
+    "App::Property::GetKey"
   ],
   "callers": [
-    "FUN_0057ea30",
-    "Editors::cEditor::Undo",
-    "FUN_0058d1c0",
-    "Editors::cEditor::Redo",
+    "Editors::cEditor::CommitEditHistory",
     "FUN_0057f6c0",
-    "Editors::cEditor::CommitEditHistory"
+    "FUN_0058d1c0",
+    "Editors::cEditor::Undo",
+    "FUN_0057ea30",
+    "Editors::cEditor::Redo"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -362,117 +775,102 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_48",
-      "storage": "Stack[-0x48]:4",
-      "type": "ResourceKey"
+      "name": "local_10",
+      "storage": "Stack[-0x10]:1",
+      "type": "undefined"
     },
     {
-      "name": "local_3c",
-      "storage": "Stack[-0x3c]:4",
-      "type": "ResourceKey"
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
     },
     {
-      "name": "local_2c",
-      "storage": "Stack[-0x2c]:4",
-      "type": "uint"
-    },
-    {
-      "name": "local_30",
-      "storage": "Stack[-0x30]:4",
-      "type": "uint"
-    },
-    {
-      "name": "iVar5",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "local_24",
-      "storage": "Stack[-0x24]:4",
-      "type": "uint"
-    },
-    {
-      "name": "iVar6",
-      "storage": "register:0000001c:4",
-      "type": "int"
-    },
-    {
-      "name": "local_28",
-      "storage": "Stack[-0x28]:4",
-      "type": "uint"
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_1c",
       "storage": "Stack[-0x1c]:4",
-      "type": "uint"
-    },
-    {
-      "name": "uVar7",
-      "storage": "Stack[-0x5c]:4",
       "type": "undefined4"
     },
     {
       "name": "local_20",
       "storage": "Stack[-0x20]:4",
-      "type": "uint"
-    },
-    {
-      "name": "cVar1",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "local_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "uint"
-    },
-    {
-      "name": "bVar2",
-      "storage": "register:00000000:1",
-      "type": "bool"
-    },
-    {
-      "name": "local_18",
-      "storage": "Stack[-0x18]:4",
-      "type": "uint"
-    },
-    {
-      "name": "puVar3",
-      "storage": "register:00000000:4",
-      "type": "uint *"
-    },
-    {
-      "name": "iVar4",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "local_10",
-      "storage": "",
-      "type": "undefined1[16]"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "uint *"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0x8]:4",
       "type": "undefined4"
     },
     {
-      "name": "param_4",
-      "storage": "Stack[0xc]:4",
+      "name": "local_24",
+      "storage": "Stack[-0x24]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_28",
+      "storage": "Stack[-0x28]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_2c",
+      "storage": "Stack[-0x2c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_30",
+      "storage": "Stack[-0x30]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_34",
+      "storage": "Stack[-0x34]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_38",
+      "storage": "Stack[-0x38]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_3c",
+      "storage": "Stack[-0x3c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_40",
+      "storage": "Stack[-0x40]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_44",
+      "storage": "Stack[-0x44]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_48",
+      "storage": "Stack[-0x48]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_60",
+      "storage": "Stack[-0x60]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_64",
+      "storage": "Stack[-0x64]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_68",
+      "storage": "Stack[-0x68]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_6c",
+      "storage": "Stack[-0x6c]:4",
       "type": "undefined4"
     }
   ],
-  "locals_count": 22,
+  "locals_count": 19,
   "mode": "live",
   "name": "FUN_0057ac00",
   "namespace": null,
@@ -532,9 +930,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b05/0057ac00.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -544,9 +956,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential trace that mutates a model with and without a mouth part would be required to confirm the bit-0x400 polarity end to end.",
+    "A runtime trace is required to read the eight mask globals after initialisation, to observe the actual property values behind ids 0x055D7CA1, 0x7A926123 and 0xF5CBE065, to see which capability bits the evaluator grants in practice, and to confirm the runtime class of the object at cEditor + 0x1CC.",
+    "No original-process trace has been captured for 0x0057ac00. Every claim in this record is static.",
+    "The Cell stage has never been entered in any recorded run, so the cll branch of the mouth scan has no runtime oracle."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -556,15 +981,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "EditMask0057ac00* (a pointer to a 16-byte four-dword structure)"
+]
+```
 
 ## vtables
 

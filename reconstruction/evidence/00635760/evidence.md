@@ -2,9 +2,52 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `0067b21387565f593d018ae385716df07d8a1aee318c1bb033febc8e01e8d232`
+- Content SHA-256: `f3a323343a28a3cbcf4ddf99e3a344101a4874f62e783222be244d6873883c0f`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, forwarded unchanged to 0x00634dc0; overwritten at 0x0063577b with the resolved window before the tail transfer",
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 2,
+  "receiver": true,
+  "ret_form": "RET 0x8",
+  "return_observation": "EAX is a lookup result on entry to the dispatch path and is overwritten with the window pointer at 0x0063577b; on the null path EAX is 0 at 0x0063576a. No consumer reads EAX after any of the recorded call sites, so no return value is observable.",
+  "return_register": null,
+  "return_semantics": "void",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [],
+  "stack_arguments": [
+    {
+      "entry_offset": "ESP+4",
+      "name": "control_id",
+      "role": "UTFWin control id, forwarded to the lookup and then replaced by the constant 1 before the tail transfer",
+      "type": "std::uint32_t",
+      "width_bytes": 4
+    },
+    {
+      "entry_offset": "ESP+8",
+      "name": "visible",
+      "role": "value written into kWinFlagVisible; forwarded verbatim as the second argument of the +0x7C dispatch",
+      "type": "bool",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 8,
+  "stack_cleanup_owner": "callee",
+  "termination": "0x0063577f RET 8 on the null path; 0x0063577d JMP EDX (tail transfer) on the success path"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -57,14 +100,22 @@
   ],
   "cleanup": {
     "bytes": 8,
-    "confidence": "OBSERVED",
+    "confidence": "SUPPORTED",
     "corroboration": "not_available",
     "evidence": "ret 0x8",
     "side": "callee"
   },
   "completeness": "CORE_RESOLVED",
-  "conflicts": [],
-  "content_sha256": "1a2fc33fd1f99871471e437e3ea4ab49a339ddf6683556908698df0635a6b2f9",
+  "conflicts": [
+    {
+      "field": "calling_convention",
+      "inferred": "__stdcall",
+      "kind": "inferred_vs_persisted",
+      "persisted": "__thiscall",
+      "resolution_status": "unresolved"
+    }
+  ],
+  "content_sha256": "23566c136d25cbbe90d9a8eb0231fb3bdb691da8c7d99ec6fe4f7f87992df0c6",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__stdcall",
@@ -79,8 +130,8 @@
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "disagrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -269,17 +320,7 @@
       "disp": null,
       "id": "obs-0010",
       "index": 9,
-      "kind": "JMP_INDIRECT",
-      "raw": "JMP EDX",
-      "via": "register"
-    },
-    {
-      "at": "0x0063577f",
-      "form": "RET 0x8",
-      "id": "obs-0011",
-      "imm": 8,
-      "index": 10,
-      "
+      "ki
 [TRUNCATED]
 ```
 
@@ -291,9 +332,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062ba10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062bf10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062c340"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062c990"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062e7a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062e7e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062ebe0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062ec30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f340"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062f480"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062fc90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062fda0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0062fe40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x006301a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00630280"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00632ba0"
+  }
+]
+```
 
 ## contradictions
 
@@ -303,13 +429,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_00635760(undefined4 param_1)\n\n{\n  int *piVar1;\n  \n  piVar1 = (int *)FUN_00634dc0(param_1);\n  if (piVar1 != (int *)0x0) {\n                    /* WARNING: Could not recover jumptable at 0x0063577d. Too many branches */\n                    /* WARNING: Treating indirect jump as call */\n    (**(code **)(*piVar1 + 0x7c))();\n    return;\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -377,9 +499,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 15052,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX, forwarded unchanged to 0x00634dc0; overwritten at 0x0063577b with the resolved window before the tail transfer\",\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 2,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x8\",\n    \"return_observation\": \"EAX is a lookup result on entry to the dispatch path and is overwritten with the window pointer at 0x0063577b; on the null path EAX is 0 at 0x0063576a. No consumer reads EAX after any of the recorded call sites, so no return value is observable.\",\n    \"return_register\": null,\n    \"return_semantics\": \"void\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"ESP+4\",\n        \"name\": \"control_id\",\n        \"role\": \"UTFWin control id, forwarded to the lookup and then replaced by the constant 1 before the tail transfer\",\n        \"type\": \"std::uint32_t\",\n        \"width_bytes\": 4\n      },\n      {\n        \"entry_offset\": \"ESP+8\",\n        \"name\": \"visible\",\n        \"role\": \"value written into kWinFlagVisible; forwarded verbatim as the second argument of the +0x7C dispatch\",\n        \"type\": \"bool\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 8,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"0x0063577f RET 8 on the null path; 0x0063577d JMP EDX (tail transfer) on the success path\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062ba10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062bf10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062c340\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062c990\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062e7a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062e7e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062ebe0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062ec30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f340\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062f480\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062fc90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062fda0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0062fe40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x006301a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00630280\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00632ba0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00632c00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00632c60\"\n      },\n      {\n        \"name\": null,\n     
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -398,33 +527,33 @@
     "FUN_00634dc0"
   ],
   "callers": [
-    "FUN_0062c990",
-    "FUN_0063e880",
-    "FUN_0062ebe0",
-    "FUN_0063b760",
-    "FUN_0062ec30",
-    "FUN_00632ce0",
-    "FUN_00632c00",
-    "FUN_00632c60",
-    "FUN_00630280",
-    "FUN_0063c8f0",
-    "FUN_0062fc90",
-    "FUN_0063f5c0",
-    "FUN_0062fda0",
-    "FUN_00636560",
-    "FUN_0062f480",
-    "FUN_0062bf10",
-    "FUN_00634030",
-    "FUN_00632ba0",
-    "FUN_0063d910",
-    "FUN_0062c340",
     "FUN_0062e7e0",
-    "FUN_0062fe40",
-    "FUN_0062ba10",
-    "FUN_006411b0",
     "FUN_006301a0",
     "FUN_0062f340",
-    "FUN_0062e7a0"
+    "FUN_0063b760",
+    "FUN_0062f480",
+    "FUN_00632c60",
+    "FUN_006411b0",
+    "FUN_0063d910",
+    "FUN_0062e7a0",
+    "FUN_0062c340",
+    "FUN_00632c00",
+    "FUN_00632ce0",
+    "FUN_00630280",
+    "FUN_0062ba10",
+    "FUN_0062bf10",
+    "FUN_0063c8f0",
+    "FUN_0063f5c0",
+    "FUN_0062ebe0",
+    "FUN_0062c990",
+    "FUN_0062fe40",
+    "FUN_0063e880",
+    "FUN_0062ec30",
+    "FUN_00636560",
+    "FUN_00632ba0",
+    "FUN_0062fc90",
+    "FUN_00634030",
+    "FUN_0062fda0"
   ],
   "classification": "wrapper",
   "dispatch": null,
@@ -435,19 +564,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "piVar1",
-      "storage": "register:00000000:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "undefined4"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00635760",
   "namespace": null,
@@ -780,9 +898,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.cpp",
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.hpp",
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-pilot-dispatch-b00/00635760.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -792,9 +924,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential test would have to (a) confirm the lookup returns the same window for a given control id, (b) confirm the +0x7C dispatch reaches an IWindow::SetFlag implementation and not a patched one, and (c) confirm the callee really uses RET 8, which the tail transfer requires but which no in-binary observation of the concrete callee can prove.",
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -804,15 +947,31 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "bool",
+  "std::uint32_t",
+  "void"
+]
+```
 
 ## vtables
 
@@ -823,5 +982,13 @@
 ## Conflicts
 
 ```json
-[]
+[
+  {
+    "derived": "__stdcall",
+    "field": "calling_convention",
+    "kind": "derived_vs_persisted",
+    "persisted": "__thiscall",
+    "resolution_status": "unresolved"
+  }
+]
 ```

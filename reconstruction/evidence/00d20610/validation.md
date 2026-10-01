@@ -1,0 +1,60 @@
+# Validation 0x00d20610
+
+- Static reconstruction: `WARN`
+- Runtime (original process): `GATED`
+- Source: `reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `WARN` | `partial` | the derived ABI record abstained (ABI_UNKNOWN): receiver_not_determinable: ecx_address_taken_without_memory_access |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 2-instruction listing each record no outgoing transfer, which is evidence that this target makes no call; the source span names none either; the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 0 outgoing call edge row(s) over 0 distinct address(es) for 0x00d20610; 77 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees; the record's edges_truncated flag is set, and it is computed over this record's incoming and outgoing call rows together, so incoming edges alone can set it; the export records 0 outgoing call edge row(s) for this target, which is the count that bounds a callee set |
+| GLOBALS | `PASS` | `complete` | the complete 2-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no globalthe data-reference artifact at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/datarefs-2540f2ca.tsv is read whole and records no data reference out of 0x00d20610; that is a recorded absence, not a missing read;  |
+| FIELDS/OFFSETS | `WARN` | `partial` | 1 source field-offset declaration(s) (displacement 0x1c8) are reconstruction-declared and no machine-derived struct layout exists to corroborate them: this target has no complete listing, or its ABI record names no receiver register to check them against |
+| CONSTANTS | `PASS` | `complete` | the machine listing is fully parsed (2 of 2 instruction(s), 0 unparsed) and all 1 source constant(s) appear in it |
+| CONTROL FLOW | `PASS` | `complete` | the complete 2-instruction listing contains no conditional branch, which is itself the evidence that the body is straight-line; the source span declares no branch keyword, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `PASS` | `complete` | the complete 2-instruction body names no indirect transfer through a register or a memory operand and the machine dispatch record agrees at 0, so neither the body nor the source span claims virtual dispatch |
+| RETURN SEMANTICS | `PASS` | `complete` | the source span declares return type 'OpaqueMember*' and the machine return state is WIDTH_4_IN_EAX: the complete 2-instruction listing writes EAX at a determinate 4-byte width before all 1 reachable return(s); the width is a machine fact and the C type of that width is a source-side choice. The width is corroborated by the machine; the exact C type spelling remains a source-side choice among the types of that width and is not verified here. |
+
+Static evidence basis: 8 of 8 static checks evaluated, 6 passed, 0 had no evidence to evaluate; 10 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 10 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `e9362a5ce81d4c5ebf52eb3919b097ead1ee71c1f67b1c0271de4c3e788f6110`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `a658705906bc19573f405338690f88cc973d978eeb521d5911f4e07313969668`
+- Pack digest quoted by the briefing: `e9362a5ce81d4c5ebf52eb3919b097ead1ee71c1f67b1c0271de4c3e788f6110`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `identify the class or classes whose accessors were merged or shared at this address, which the 95-site fan-in with six distinct ECX sources leaves open`, `observe one real caller long enough to record what lives at receiver+0x1c8 and whether its element type is the float triple that some sites read at +0/+4/+8 or the pointer triple that others read`, `separate __thiscall from __fastcall on a caller that also passes a second argument, which is the only shape where the two conventions differ observably`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game.
+- THE CALLER-SIDE EAX USE IS A MEASUREMENT OVER A WINDOW, NOT A WHOLE-BODY PROOF. The 71-of-95 pointer-consumption figure comes from a bounded scan of the 8 instructions following each call site, so it is a lower bound on pointer consumption, not an exhaustive classification of all 95 sites. The sampled remainder were read individually and all consume the result as a pointer or an argument.
+- THE DERIVED ABI RECORD ABSTAINS AND THIS PACKAGE DOES NOT OVERRIDE IT. abi_derived.receiver is bounds_only with reason `ecx_address_taken_without_memory_access`, and inference R0 records the receiver register as null with UNKNOWN confidence. The consequence for the validator is stated plainly: FIELDS/OFFSETS cannot ground a declared offset, because there is no machine-derived receiver register to ground it against. The package therefore declares NO field offset, and the LEA displacement is carried as a computed constant instead.
+- WHICH CLASS OWNS THE 0x1c8 SUB-OBJECT IS UNKNOWN, AND THE FAN-IN IS THE EVIDENCE AGAINST A SINGLE OWNER. 95 call sites in 88 functions load ECX from at least six distinct sources ([ESI+0x40], [ESI+0x80], [ESI+0x14], EDI, EAX, and LEA-computed values) and every one of them receives the same displacement. Either one class hierarchy supplies all of them, or the compiler/linker shared the accessor across unrelated types; this evidence cannot separate those, and no class name is asserted.
+- __thiscall VERSUS __fastcall IS NOT SETTLED BY THE CALLEE. The derived record's own C10 inference says the function is byte-identical under all four conventions, and that is correct. The receiver framing is declared because the 95 call sites all load ECX immediately before the call and none passes an argument on the stack; a fastcall reading of the same bytes is not excluded by the callee and is recorded in observed_original_abi.calling_convention_alternatives rather than discarded.
+- identify the class or classes whose accessors were merged or shared at this address, which the 95-site fan-in with six distinct ECX sources leaves open
+- observe one real caller long enough to record what lives at receiver+0x1c8 and whether its element type is the float triple that some sites read at +0/+4/+8 or the pointer triple that others read
+- separate __thiscall from __fastcall on a caller that also passes a second argument, which is the only shape where the two conventions differ observably

@@ -1,0 +1,370 @@
+# Reconstruction context 0x00926140
+
+- Status: `partial`
+- Content SHA-256: `b2c2cf2cd8da7c84b27bd5e7dc9ac1ad9f46306f807d46ec6c5143194e6ddb7e`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00926140",
+  "phase": "reconstruction",
+  "target": "0x00926140"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "Wave6FixedPoolAllocator",
+  "name": "wave6_fixed_pool_allocator_free_00926140",
+  "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+  "subsystem": "Core.Memory",
+  "va": "0x00926140"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "bed56068a18f2422d1d42c3db56c613c6daf00bb33352a7ccb161351f6191b1e",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00926140 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "calling_convention": "cdecl observed from direct caller",
+  "receiver_register": null,
+  "return_register": "EAX",
+  "return_type": "std::int32_t",
+  "stack_arguments": [
+    {
+      "entry_offset": "ESP+0x04",
+      "name": "allocator",
+      "position": 1,
+      "type": "Wave6FixedPoolAllocator*",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "termination": "RET"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00927a50"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00927bb7",
+      "direction": "in",
+      "other": "0x00927a50",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0092614c",
+      "direction": "out",
+      "other": "EXT:KERNEL32.DLL::LeaveCriticalSection",
+      "reference_type": "external"
+    }
+  ],
+  "external_callees": [
+    "EXT:KERNEL32.DLL::LeaveCriticalSection"
+  ]
+}
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "FixedPoolAllocator",
+    "Wave6FixedPoolAllocator",
+    "Wave6FixedPoolAllocator*",
+    "Wave6LeaveCriticalSectionPort",
+    "std::int32_t"
+  ],
+  "vtables": []
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "gate-fixed-pool-allocator-critical-section-release"
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00927a50"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00927bb7",
+      "direction": "in",
+      "other": "0x00927a50",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x0092614c",
+      "direction": "out",
+      "other": "EXT:KERNEL32.DLL::LeaveCriticalSection",
+      "reference_type": "external"
+    }
+  ],
+  "edges_truncated": false,
+  "external_callees": [
+    "EXT:KERNEL32.DLL::LeaveCriticalSection"
+  ],
+  "fan_in": 1,
+  "fan_out": 0,
+  "manifest_callees": [
+    "LeaveCriticalSection"
+  ],
+  "manifest_callers": [
+    "0x00927a50"
+  ],
+  "nearby_reconstructed": [],
+  "scc": {
+    "id": "scc-0279",
+    "size": 1
+  },
+  "vtable_reference_count": 0
+}
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:FixedPoolAllocator,Wave6FixedPoolAllocator,Wave6FixedPoolAllocator*",
+      "same_calling_convention"
+    ],
+    "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+    "score": 30,
+    "symbol": "wave6_fixed_pool_allocator_alloc_00926100",
+    "va": "0x00926100"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem"
+    ],
+    "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+    "score": 14,
+    "symbol": "wave6_reference_00432a50",
+    "va": "0x00432a50"
+  }
+]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "file": "src/reconstruction/wave6_containers_memory/containers_memory.cpp",
+  "files": [
+    "reconstruction/staging/wave6-containers-memory/containers_memory.cpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory.hpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp",
+    "src/reconstruction/wave6_containers_memory/containers_memory.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave6/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/wave6-containers-memory/00926140.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "The concrete critical-section object and runtime caller pairing remain opaque.",
+    "The imported Free label and source-level allocator ownership semantics are not independently established.",
+    "The later 0x00926340 call in the teardown caller is outside this function.",
+    "concrete allocator owner",
+    "gate-fixed-pool-allocator-critical-section-release",
+    "imported Free label identity",
+    "runtime critical-section pairing"
+  ]
+}
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-wave6/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave6-containers-memory/00926140.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave6-containers-memory/containers_memory.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave6-containers-memory/containers_memory.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/wave6_containers_memory/containers_memory.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/integrated/batch-2026-09-25-wave6/handoff.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave6-containers-memory/00926140.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave6-containers-memory/containers_memory.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave6-containers-memory/containers_memory.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction
+[TRUNCATED]
+```

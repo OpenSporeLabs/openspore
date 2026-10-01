@@ -2,9 +2,52 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `578970ddf98d0abbc426cec98be9212760d9703e10badcae34e25233e47323da`
+- Content SHA-256: `2c0274480a7857eb208216a152012b1ef8b66ce9526532ed01a2eb1d684b976e`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read; ADD ECX,0xF0 then [ECX+0x00], [ECX+0x04] and [ECX+0x08] are the container's three cursors. A null receiver faults at 0x00c446f0's ADD is harmless but the first dereference at 0x00c4470f or 0x00c44721 is not.",
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 2,
+  "receiver": true,
+  "ret_form": "RET 0x8 (at 0x00c4471e, 0x00c44749 and 0x00c44759)",
+  "return_observation": "all three exits are RET 0x8 with no value contract; the two callees' returns are discarded at 0x00c4471b and 0x00c44756, and 0x00c43f20's iterator result is dropped even though the callee computes one.",
+  "return_register": "none - EAX is used for the argument pointer, the grow-path position and the callee's discarded return; no exit value is consumed",
+  "return_semantics": "none; the only effect is the growth of the vector member at receiver+0xF0 and the write of one 16-byte element into it",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI"
+  ],
+  "stack_arguments": [
+    {
+      "instruction": "0x00c446d3: MOV EAX,dword ptr [ESP + 0x14]",
+      "offset": "ESP+0x4 at entry (read as [ESP+0x14] after the SUB)",
+      "role": "pointer to three consecutive floats, the position to record",
+      "width_bytes": 4
+    },
+    {
+      "instruction": "0x00c446e5: MOV AL,byte ptr [ESP + 0x18]",
+      "offset": "ESP+0x8 at entry (read as [ESP+0x18] after the SUB)",
+      "role": "direction and stored tag: non-zero selects prepend and is normalised to the tag value 1",
+      "width_bytes": 1
+    }
+  ],
+  "stack_cleanup_bytes": 8,
+  "stack_cleanup_owner": "callee",
+  "termination": "three exits, all RET 0x8; there is no shared epilogue"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -82,7 +125,6 @@
   },
   "abstained_because": [
     "flow_not_modelled: the linear ESP walk ends at -16, so the listing is not one path",
-    "unparsed_lines_present: 1 line(s) matched no grammar rule",
     "slot_width_ambiguous: one entry slot is read at more than one width",
     "receiver_not_determinable: ecx_reassigned_before_deref",
     "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_reassigned_before_deref), and the convention rule that would apply discriminates on receiver absence",
@@ -97,7 +139,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "eecc034065ed611c8a65b137963d88462a3212c3885a8673eff5f0d259557101",
+  "content_sha256": "73994686343f0918c03a8dd300b6576ea7f6aa4c1cb04f6f34f74b981e632432",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -116,7 +158,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -127,8 +169,8 @@
     {
       "based_on": [
         "obs-0024",
-        "obs-0028",
-        "obs-0031"
+        "obs-0027",
+        "obs-0030"
       ],
       "claim": "the callee pops 8 byte(s) of stack arguments",
       "confidence": "OBSERVED",
@@ -142,7 +184,7 @@
       "based_on": [
         "obs-0004",
         "obs-0010",
-        "obs-0029"
+        "obs-0028"
       ],
       "claim": "entry-relative argument slots",
       "confidence": "APPROXIMATION",
@@ -157,7 +199,7 @@
       "based_on": [
         "obs-0004",
         "obs-0010",
-        "obs-0029"
+        "obs-0028"
       ],
       "claim": "one entry slot carries several read widths",
       "confidence": "UNKNOWN",
@@ -256,7 +298,11 @@
       "kind": "STACK_SLOT_READ",
       "raw": "MOV EAX,dword ptr [ESP + 0x14]",
       "resolved": true,
-      "size
+      "size": 4
+    },
+    {
+      "at": "0x00c446d3",
+      "defini
 [TRUNCATED]
 ```
 
@@ -268,9 +314,84 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b34380"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b452f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c0eec0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c13650"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c13a30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c18370"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c18740"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c18b40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c190e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c1a3c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c1b020"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c20230"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c2a190"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00f235e0"
+  }
+]
+```
 
 ## contradictions
 
@@ -280,13 +401,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __thiscall FUN_00c446d0(int param_1,undefined4 *param_2,char param_3)\n\n{\n  undefined4 *puVar1;\n  undefined4 local_10;\n  undefined4 local_c;\n  undefined4 local_8;\n  uint local_4;\n  \n  local_10 = *param_2;\n  local_c = param_2[1];\n  local_8 = param_2[2];\n  local_4 = (uint)(param_3 != '\\0');\n  if (param_3 != '\\0') {\n    FUN_00c43f20(*(undefined4 *)(param_1 + 0xf0),&local_10);\n    return;\n  }\n  puVar1 = *(undefined4 **)(param_1 + 0xf4);\n  if (puVar1 < *(undefined4 **)(param_1 + 0xf8)) {\n    *(undefined4 **)(param_1 + 0xf4) = puVar1 + 4;\n    if (puVar1 != (undefined4 *)0x0) {\n      *puVar1 = local_10;\n      puVar1[1] = local_c;\n      puVar1[2] = local_8;\n      puVar1[3] = 0;\n      return;\n    }\n  }\n  else {\n    FUN_00c43cc0(puVar1,&local_10);\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -486,9 +603,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12992,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read; ADD ECX,0xF0 then [ECX+0x00], [ECX+0x04] and [ECX+0x08] are the container's three cursors. A null receiver faults at 0x00c446f0's ADD is harmless but the first dereference at 0x00c4470f or 0x00c44721 is not.\",\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 2,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x8 (at 0x00c4471e, 0x00c44749 and 0x00c44759)\",\n    \"return_observation\": \"all three exits are RET 0x8 with no value contract; the two callees' returns are discarded at 0x00c4471b and 0x00c44756, and 0x00c43f20's iterator result is dropped even though the callee computes one.\",\n    \"return_register\": \"none - EAX is used for the argument pointer, the grow-path position and the callee's discarded return; no exit value is consumed\",\n    \"return_semantics\": \"none; the only effect is the growth of the vector member at receiver+0xF0 and the write of one 16-byte element into it\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"instruction\": \"0x00c446d3: MOV EAX,dword ptr [ESP + 0x14]\",\n        \"offset\": \"ESP+0x4 at entry (read as [ESP+0x14] after the SUB)\",\n        \"role\": \"pointer to three consecutive floats, the position to record\",\n        \"width_bytes\": 4\n      },\n      {\n        \"instruction\": \"0x00c446e5: MOV AL,byte ptr [ESP + 0x18]\",\n        \"offset\": \"ESP+0x8 at entry (read as [ESP+0x18] after the SUB)\",\n        \"role\": \"direction and stored tag: non-zero selects prepend and is normalised to the tag value 1\",\n        \"width_bytes\": 1\n      }\n    ],\n    \"stack_cleanup_bytes\": 8,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"three exits, all RET 0x8; there is no shared epilogue\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b34380\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b452f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c0eec0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c13650\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c13a30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c18370\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c18740\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c18b40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c190e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c1a3c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c1b020\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c20230\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c2a190\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f235e0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\"
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -504,24 +628,24 @@
   "body_span_bytes": 140,
   "body_start": "00c446d0",
   "callees": [
-    "FUN_00c43cc0",
-    "FUN_00c43f20"
+    "FUN_00c43f20",
+    "FUN_00c43cc0"
   ],
   "callers": [
-    "FUN_00c13650",
-    "FUN_00c13a30",
-    "FUN_00c18b40",
-    "FUN_00c1b020",
-    "FUN_00c20230",
     "FUN_00b452f0",
-    "FUN_00c18740",
     "FUN_00f235e0",
-    "FUN_00c0eec0",
+    "FUN_00c13650",
     "FUN_00c190e0",
-    "FUN_00b34380",
+    "FUN_00c0eec0",
+    "FUN_00c1b020",
+    "FUN_00c2a190",
+    "FUN_00c20230",
     "FUN_00c1a3c0",
+    "FUN_00c13a30",
     "FUN_00c18370",
-    "FUN_00c2a190"
+    "FUN_00c18740",
+    "FUN_00b34380",
+    "FUN_00c18b40"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -534,6 +658,16 @@
   "image_base": "0x400000",
   "locals": [
     {
+      "name": "local_4",
+      "storage": "Stack[-0x4]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
+    },
+    {
       "name": "local_c",
       "storage": "Stack[-0xc]:4",
       "type": "undefined4"
@@ -542,39 +676,9 @@
       "name": "local_10",
       "storage": "Stack[-0x10]:4",
       "type": "undefined4"
-    },
-    {
-      "name": "local_4",
-      "storage": "Stack[-0x4]:4",
-      "type": "uint"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "puVar1",
-      "storage": "unique:00017200:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0x8]:1",
-      "type": "char"
     }
   ],
-  "locals_count": 8,
+  "locals_count": 4,
   "mode": "live",
   "name": "FUN_00c446d0",
   "namespace": null,
@@ -661,9 +765,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b06/c446d0_tagged_vector3_push.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b06/00c446d0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -673,9 +792,23 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "Confirming that the growth policy is reached with capacity exactly 1 on the first append requires a runtime allocation trace, since the arithmetic is only reached through the callee.",
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+    "The container is empty in the shipping image and the owning subsystem was never started in any recorded run, so the grow path, the prepend path and the inlined append path have all never been observed executing.",
+    "The null-cursor behaviour can only be exercised by a container whose insert cursor is null while its end cursor is not, i.e. a corrupt or deliberately initialised state. A runtime test must construct that state deliberately to confirm the original leaves the advanced cursor behind.",
+    "The tag dword's meaning requires observing how the list is consumed after insertions from both ends. A differential trace that records the list contents after a prepend-then-append sequence would settle it; nothing static can."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -685,15 +818,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

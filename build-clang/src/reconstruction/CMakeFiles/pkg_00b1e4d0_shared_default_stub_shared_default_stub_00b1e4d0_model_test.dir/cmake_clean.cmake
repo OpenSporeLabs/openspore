@@ -1,0 +1,12 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test.dir/link.d"
+  "CMakeFiles/pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test.dir/pkg_00b1e4d0_shared_default_stub/shared_default_stub_00b1e4d0_model_test.cpp.o"
+  "CMakeFiles/pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test.dir/pkg_00b1e4d0_shared_default_stub/shared_default_stub_00b1e4d0_model_test.cpp.o.d"
+  "pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test"
+  "pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/pkg_00b1e4d0_shared_default_stub_shared_default_stub_00b1e4d0_model_test.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

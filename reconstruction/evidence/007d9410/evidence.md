@@ -2,54 +2,92 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `da1399010878f6a58b561d8dc85f488307a920914ccdffd0080f1018e88de31e`
+- Content SHA-256: `b1f792d20c11922aace3a8ba0b2bdf070d7d7df3b93efd01bfdf3aecc1492769`
 
 ## abi
 
 - Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX holds a pointer to the subobject that carries the OnKeyDown virtual; the entry rewinds it to the cMouseCamera start",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 1,
+  "receiver_register": "ECX",
+  "ret_form": [
+    "none in this body - the entry tail-jumps; the callee at 0x007d9bb0 ends with `POP ESI` / `RET 0x4`",
+    "none in this body (tail transfer)"
+  ],
+  "return_note": "unclassified in this model; the persisted record and the SDK/Ghidra prototype both say bool at the declaration site",
+  "return_register": [
+    "EAX",
+    "EAX per the persisted ABI record; the derived record names none (return.register null, register_class unknown, confidence UNKNOWN)"
+  ],
+  "return_type": "bool",
+  "saved_registers": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "the tail target: the body pushes nothing and pops nothing, and the persisted record describes 0x007d9bb0 as ending in POP ESI / RET 0x4, which is what drops the caller's one word and returns to this body's caller",
+  "termination": "JMP 0x007d9bb0 at 0x007d9413"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
 - Evidence state: `DERIVED`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function, tools/reconstruction_tooling/abi_infer.py#tail_target=0x007d9bb0`
 
 ```json
 {
   "abi": {
     "architecture": "x86-32",
-    "receiver": false
+    "calling_convention": "__thiscall",
+    "receiver": false,
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee"
   },
   "abstained_because": [
     "no_terminal_ret: the only exit observed is a tail jump"
   ],
   "cleanup": {
-    "bytes": null,
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available",
-    "evidence": null,
-    "side": null
+    "bytes": 4,
+    "confidence": "SUPPORTED",
+    "corroboration": "forwarded_from_tail_target",
+    "evidence": "forwarded from the tail target 0x007d9bb0: ret 0x4",
+    "side": "callee"
   },
   "completeness": "EMPTY",
-  "conflicts": [],
-  "content_sha256": "75460e8fe539e2aeb7bfafcf47d788519eecaf09da848d2c2f68460514b9d630",
+  "conflicts": [
+    {
+      "field": "stack_cleanup_bytes",
+      "inferred": 4,
+      "kind": "inferred_vs_persisted",
+      "persisted": 0,
+      "resolution_status": "unresolved"
+    }
+  ],
+  "content_sha256": "8c6c422e90a086301d804d50fdb1cd44ca1c7e46a6426471e8d8c1dae31e011a",
   "conventions": {
-    "ambiguities": [
-      "tail_call"
-    ],
-    "calling_convention": null,
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
     "candidate_conventions": [
-      "__cdecl",
-      "__stdcall",
-      "__thiscall",
-      "__fastcall"
+      "__thiscall"
     ],
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "forwarded_from_tail_target"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 3,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -97,6 +135,15 @@
       "value": {
         "form": "jmp"
       }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "calling convention is __thiscall, forwarded from the tail target 0x007d9bb0: this listing is a single ESP-neutral direct jump, inherits its caller's frame and never runs its own RET, so the two calls are one call (resolved from live listing for 0x007d9bb0)",
+      "confidence": "INFERRED",
+      "id": "T1-FWD",
+      "value": "__thiscall"
     }
   ],
   "observations": [
@@ -140,6 +187,7 @@
     "unparsed": 0
   },
   "receiver": {
+    "adjustor_delta": -4,
     "bounds_only": true,
     "confidence": "OBSERVED",
     "distinct_offsets": 0,
@@ -177,7 +225,7 @@
     "confidence": "APPROXIMATION",
     "derived_slots": 0,
     "gaps": 0,
-    "not_complete": true,
+    "not_complete": false,
     "observed_slots": 0,
     "slots": [],
     "total_bytes": 0,
@@ -265,118 +313,9 @@
 
 ```json
 {
-  "abi": {},
-  "analogues": [],
-  "audit_evidence_boundary": null,
-  "audit_findings": [],
-  "audit_status": null,
-  "blocked": false,
-  "blockers": [],
-  "body_status": null,
-  "class_type": null,
-  "cluster": "app-lifecycle",
-  "confidence": null,
-  "dependencies": {
-    "callees": [],
-    "callees_truncated": false,
-    "callers": [],
-    "callers_truncated": false,
-    "data_reference_count": 0,
-    "edges": [
-      {
-        "callsite": "0x007d9413",
-        "direction": "out",
-        "other": "0x007d9bb0",
-        "reference_type": "direct-call"
-      }
-    ],
-    "edges_truncated": false,
-    "external_callees": [],
-    "fan_in": 0,
-    "fan_out": 0,
-    "manifest_callees": [],
-    "manifest_callers": [],
-    "nearby_reconstructed": [],
-    "scc": {
-      "id": "scc-0214",
-      "size": 1
-    },
-    "vtable_reference_count": 0
-  },
-  "evidence_level": "CONFIRMED",
-  "globals": [],
-  "integration_status": null,
-  "name": "App::cMouseCamera::OnKeyDown",
-  "normalized_symbol": "App::cMouseCamera::OnKeyDown",
-  "observed_mechanics": [],
-  "ownership": {
-    "claimability": "queue_candidate",
-    "handoff_packages": [],
-    "manifest": {
-      "record": null,
-      "worker_ownership": null
-    },
-    "package": null,
-    "queue_state": "queued"
-  },
-  "package": null,
-  "reconstructed": false,
-  "review_status": null,
-  "runtime": {
-    "blocking_reason": null,
-    "gates": [],
-    "validated": 0
-  },
-  "runtime_gated": false,
-  "runtime_validated": 0,
-  "semantic": null,
-  "semantic_status": null,
-  "services": [],
-  "source": {
-    "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
-    "file": null,
-    "files": [
-      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c"
-    ],
-    "handoffs": [],
-    "metadata": [],
-    "provenance": []
-  },
-  "status": "queued",
-  "subsystem": "App",
-  "triage": {
-    "category": "ENGINE_INTERFACE",
-    "cluster": "app-lifecycle",
-    "db_triage_status": "QUEUED",
-    "decomp_path": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
-    "dependencies": [
-      "resource-io"
-    ],
-    "evidence": "CONFIRMED",
-    "kg_node_id": "fun:007d9410",
-    "name": "App::cMouseCamera::OnKeyDown",
-    "priority": "P0",
-    "provenance": {
-      "classifier": "triage-v4",
-      "generated_at": "2026-09-23T10:12:09Z",
-      "generator": "subagent-7-sequential-triage",
-      "sdk_name": "App::cMouseCamera::OnKeyDown",
-      "snapshot": "2540f2ca",
-      "snapshot_sha256": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
-      "vtable_addrs": [
-        "01412890"
-      ]
-    },
-    "queue_state": "queued",
-    "rank": 70
-  },
-  "types": [],
-  "unresolved_questions": [],
-  "va": "0x007d9410",
-  "vtables": [
-    "vtable:0x01412890"
-  ]
-}
+  "original_bytes": 10528,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX holds a pointer to the subobject that carries the OnKeyDown virtual; the entry rewinds it to the cMouseCamera start\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": [\n      \"none in this body - the entry tail-jumps; the callee at 0x007d9bb0 ends with `POP ESI` / `RET 0x4`\",\n      \"none in this body (tail transfer)\"\n    ],\n    \"return_note\": \"unclassified in this model; the persisted record and the SDK/Ghidra prototype both say bool at the declaration site\",\n    \"return_register\": [\n      \"EAX\",\n      \"EAX per the persisted ABI record; the derived record names none (return.register null, register_class unknown, confidence UNKNOWN)\"\n    ],\n    \"return_type\": \"bool\",\n    \"saved_registers\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"the tail target: the body pushes nothing and pops nothing, and the persisted record describes 0x007d9bb0 as ending in POP ESI / RET 0x4, which is what drops the caller's one word and returns to this body's caller\",\n    \"termination\": \"JMP 0x007d9bb0 at 0x007d9413\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"shared_types:DATA\"\n      ],\n      \"package\": \"pkg-app-imessage-manager-dtor\",\n      \"score\": 9,\n      \"symbol\": \"get_0067dc80\",\n      \"va\": \"0x0067dc80\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-cheat-func3ch-0067e6b0\",\n      \"score\": 8,\n      \"symbol\": \"func3_ch_0067e6b0\",\n      \"va\": \"0x0067e6b0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-cheat-dispatch-0067e6f0\",\n      \"score\": 8,\n      \"symbol\": \"cCheatManager_func40h_0067e6f0\",\n      \"va\": \"0x0067e6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"cheat-func44h-0067e730\",\n      \"score\": 8,\n      \"symbol\": \"func44h_0067e730\",\n      \"va\": \"0x0067e730\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-app-proplist-copyall-wave16\",\n      \"score\": 8,\n      \"symbol\": \"all_copy_from_properties_006a14d0\",\n      \"va\": \"0x006a14d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-proplist-dispatch-wave14\",\n      \"score\": 8,\n      \"symbol\": \"app_property_list_add_all_properties_from_006a1510\",\n      \"va\": \"0x006a1510\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-dfw-006a1540\",\n      \"score\": 8,\n      \"symbol\": \"proplist_write_006a1540\",\n      \"va\": \"0x006a1540\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"pkg-property-clear-wave13\",\n      \"score\": 8,\n      \"symbol\": \"property_list_clear_006a2a80\",\n      \"va\": \"0x006a2a80\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"app-lifecycle\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x007d9413\",\n        \"direction\": \"out\",\n        \"other\": \"0x007d9bb0\",\n        \"reference_type\": \"direct-call\"\n      }\n    ],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0248\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"CONFIRMED\",\n  \"globals\": [\n    \"global:PASS\",\n    \"global:none: the complete two-instruction listing names no data-segment address\"\n  ],\n  \"integration_status\": null,\n  \"name\": \"App::cMouseCamera::OnKeyDown\",\n  \"normalized_symbol\": \"App::cMouseCamera::OnKeyDown\",\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"queue_candidate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": \"queued\"\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [],\n    \"validated\": 0\n  },\n  \"runtime_gated\": false,\n  \"runtime_validated\": 0,\n  \"semantic\": null,\n  \"semantic_status\": null,\n  \"services\": [],\n  \"source\": {\n    \"decomp\": \".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c\",\n    \"file\": null,\n    \"files\": [\n      \".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c\",\n      \"reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.cpp\",\n      \"reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.hpp\",\n      \"reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410_model_test.cpp\",\n      \"reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410.
+[TRUNCATED]
 ```
 
 ## ghidra_function
@@ -484,9 +423,16 @@
 
 ## globals
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "global:PASS",
+  "global:none: the complete two-instruction listing names no data-segment address"
+]
+```
 
 ## reconstruction
 
@@ -498,10 +444,18 @@
 {
   "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
   "files": [
-    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c"
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.cpp",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.hpp",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410_model_test.cpp",
+    "reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410.cpp",
+    "reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410_types.hpp"
   ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/pkg-app-mouse-camera-keydown/007d9410.json",
+    "reconstruction/metadata/pkg-dfw-007d9410/007d9410.json"
+  ]
 }
 ```
 
@@ -547,9 +501,18 @@
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "DATA",
+  "bool",
+  "unclassified in this model; the persisted record and the SDK/Ghidra prototype both say bool at the declaration site",
+  "unclassified_in_EAX (a std::uint32_t alias)"
+]
+```
 
 ## vtables
 
@@ -559,7 +522,9 @@
 
 ```json
 [
-  "vtable:0x01412890"
+  "vtable:0x007d93a0",
+  "vtable:0x01412890",
+  "vtable:0x01412894"
 ]
 ```
 

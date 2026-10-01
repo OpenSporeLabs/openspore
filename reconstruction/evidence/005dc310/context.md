@@ -1,7 +1,7 @@
 # Reconstruction context 0x005dc310
 
-- Status: `complete`
-- Content SHA-256: `5bada0d10ed6c381925f51cdbca2bd30881b074e71cc8243ddcb79a1fee6a47f`
+- Status: `partial`
+- Content SHA-256: `8cccc66c3c98c22d5227d0c58c137c48df22f82534c5d588677efce124f2f032`
 
 ## 01_assignment
 
@@ -41,7 +41,7 @@
 {
   "blocked": false,
   "reconstructed": false,
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "unresolved"
 }
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "c436e92480bc43932c531501e7c2d14b69b0627e5c247d789753af4180063c0c",
-  "live_attempts": [],
+  "content_sha256": "5969882cb396c3adae2aafd53ff855e315911d5fb2e53757202bf776b8edea3f",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x005dc310 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,25 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-void FUN_005dc310(undefined4 param_1)
-
-{
-  int iVar1;
-  
-  iVar1 = FUN_008105b0(param_1,1);
-  if (iVar1 == 0) {
-    FUN_008105b0(param_1,1);
-  }
-  return;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -90,18 +81,29 @@ void FUN_005dc310(undefined4 param_1)
 
 ```json
 {
+  "architecture": "x86-32",
   "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, copied to ESI at 0x005dc316 and never reloaded",
   "hidden_this_register": "ECX",
-  "return_type": "void*",
-  "stack_arguments": [
-    {
-      "entry_offset": "ESP+4",
-      "name": "lookup_key",
-      "type": "uint32_t",
-      "width_bytes": 4
-    }
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_note": "(a pointer, in EAX); Opaque5dc310Window*; void*",
+  "return_observation": "0x005dc323 TEST EAX,EAX and 0x005dc325 JNZ read the first call's EAX; when the branch is not taken the second call at 0x005dc32d leaves its own answer in EAX. Neither POP EDI (0x005dc332) nor POP ESI (0x005dc333) touches EAX, and the epilogue is only those two pops plus RET. The Ghidra decompilation types this function 'void' and drops the result entirely; that typing is a decompiler miss, contradicted by every inspected caller.",
+  "return_register": "EAX",
+  "return_semantics": "the EAX produced by the last 0x008105b0 call that executed: the +0x14 sub-object's answer when it was non-null, otherwise the +0x2c sub-object's answer (which may itself be null)",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EDI",
+    "ESI"
   ],
-  "stack_cleanup_bytes": 4
+  "stack_arguments": [
+    "{'entry_offset': 'ESP+4', 'name': 'lookup_key', 'type': 'uint32_t', 'width_bytes': 4}",
+    "{'offset_in_callee': '[ESP + 0xc] before the two pushes', 'read_by': '0x005dc312: MOV EDI,dword ptr [ESP + 0xc]', 'role': 'the control id, forwarded to both 0x008105b0 calls', 'slot': 1, 'width_bytes': 4}"
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x4"
 }
 ```
 
@@ -211,8 +213,14 @@ void FUN_005dc310(undefined4 param_1)
 {
   "globals": [],
   "types": [
+    "EditorUI*",
     "Opaque void* for the lookup result; no concrete target owner or ownership contract is asserted",
+    "Opaque5dc310Window* (a pointer, in EAX)",
     "OpaqueEditorModeManager for ECX",
+    "pointer (nullable)",
+    "pointer one past the last array element",
+    "pointer to the first array element",
+    "sub-object address (opaque)",
     "uint32_t",
     "uint32_t for the lookup key",
     "void*"
@@ -223,14 +231,19 @@ void FUN_005dc310(undefined4 param_1)
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
   "runtime": {
     "blocking_reason": null,
-    "gates": [],
+    "gates": [
+      "A runtime differential test is required to resolve vtable slots +0x0c, +0x1c and +0xf0 on a live editor element, and to confirm that the +0x14 candidate really does shadow the +0x2c candidate in the shipping build.",
+      "No original-process trace exists for 0x005dc310; every claim is static and the Cell stage has never been entered in any recorded run.",
+      "The SDK's UILayoutObjects offsets must be re-derived before the +0x64/+0x68 scan bounds can be attributed to a named member.",
+      "Whether the +0x2c fallback is ever load-bearing cannot be settled statically; only a run with the main layout empty would show it."
+    ],
     "validated": 0
   },
   "semantic": {}
@@ -395,25 +408,25 @@ void FUN_005dc310(undefined4 param_1)
       "shared_types:void*",
       "same_calling_convention"
     ],
-    "package": "PKG-12-SIM-SPACE",
+    "package": "pkg-swarm-w1-00641fd0",
     "score": 5,
-    "symbol": "FUN_00aea230",
-    "va": "0x00aea230"
+    "symbol": "sporepedia_cached_handle_00641fd0",
+    "va": "0x00641fd0"
   },
   {
     "match_basis": [
-      "direct_xref_neighbor"
+      "shared_types:void*",
+      "same_calling_convention"
     ],
-    "package": "PKG-10-EDITOR-DISPATCH",
-    "score": 3,
-    "symbol": "editor_query_dispatch_005dfd00",
-    "va": "0x005dfd00"
+    "package": "pkg-vft-slot-006e64f0",
+    "score": 5,
+    "symbol": "re_006e64f0",
+    "va": "0x006e64f0"
   },
   {
     "match_basis": [
-      "shared_types:void*"
-    ],
-    "package": "PKG-UTFWIN-CORE-W
+      "shared_types:void*",
+  
 [TRUNCATED]
 ```
 
@@ -424,10 +437,14 @@ void FUN_005dc310(undefined4 param_1)
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp"
+  ],
   "handoffs": [],
   "metadata": [
-    "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json"
+    "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json",
+    "reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json"
   ]
 }
 ```
@@ -446,16 +463,22 @@ void FUN_005dc310(undefined4 param_1)
 {
   "conflicts": [],
   "unresolved_questions": [
+    "A runtime differential test is required to resolve vtable slots +0x0c, +0x1c and +0xf0 on a live editor element, and to confirm that the +0x14 candidate really does shadow the +0x2c candidate in the shipping build.",
     "Are the two internal subobjects at this+0x14 and this+0x2c distinct registries or alternate lookup paths?",
-    "What concrete type, if any, owns the opaque void* lookup result?"
-  ]
-}
+    "Is 0x005dc310 itself an interface method or a vtable entry? No vtable was located for the EditorUI aggregate and no pointer scan for this address was performed.",
+    "Is slot +0xf0 a recursive descent into children, or a lookup in a sibling container? Its (id, 1) shape is consistent with both.",
+    "Is the flag argument ever 0 for this function? Both call sites here hard-code 1, and all 25 recorded callers route through those two sites, so the non-recursive path may be dead in this build. Not proven, because 0x008105b0 has other callers that were not enumerated.",
+    "No original-process trace exists for 0x005dc310; every claim is static and the Cell stage has never been entered in any recorded run.",
+    "The SDK's UILayoutObjects offsets must be re-derived before the +0x64/+0x68 scan bounds can be attributed to a named member.",
+    "The element array scanned by 0x00810200 lives at +0x64..+0x68 of the layout-objects target, but the SDK declares UILayoutObjects::mRootComponents at +0x5c. Either the SDK offsets for that class are wrong, or the scanned array is a different member. Not reconciled.",
+    "The other 14 of the 25 callers were not inspected, so the argument distribution across t
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg10-editor-dispatch/005dc310.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg10-editor-dispatch/005dc310.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -477,11 +500,6 @@ void FUN_005dc310(undefined4 param_1)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -499,21 +517,25 @@ void FUN_005dc310(undefined4 param_1)
       "mode": "persisted",
       "ref": "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json",
       "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp",
+      "source_class": "committed_artifact"
     }
   ],
   "read_first": [
     "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+
+[TRUNCATED]
 ```

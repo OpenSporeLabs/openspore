@@ -32,11 +32,17 @@ bool sameEntry(const PaletteEntry& left, const PaletteEntry& right) {
 }
 
 bool runPaletteAndLoadChecks() {
+  // Braced at every level: PaletteEntry is an aggregate of four std::string
+  // members, so `{"a", "b", "c", "d"}` initialises the first member and
+  // copy-initialises the rest from a single const char*, which clang++ rejects
+  // under -Wmissing-braces (inside the -Werror promotion gate).
   const EditorSupportAssets support{
-      {"asset-b"},
-      {{"entry-b", "page-b", "group-b", "name-b"},
-       {"entry-a", "page-a", "group-a", "name-a"},
-       {"entry-c", "page-c", "group-a", "name-c"}}};
+      ResourceKey{"asset-b"},
+      std::vector<PaletteEntry>{
+          PaletteEntry{ResourceKey{"entry-b"}, "identity-b", "group-b", "name-b"},
+          PaletteEntry{ResourceKey{"entry-a"}, "identity-a", "group-a", "name-a"},
+          PaletteEntry{ResourceKey{"entry-c"}, "identity-c", "group-a", "name-c"},
+      }};
   InMemoryEditorSupportAssets assets({support});
   bool passed = true;
   const auto loaded = assets.load(ResourceKey{"asset-b"});

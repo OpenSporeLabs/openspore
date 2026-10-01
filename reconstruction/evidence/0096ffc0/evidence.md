@@ -1,0 +1,539 @@
+# Evidence 0x0096ffc0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `82d6b38b015188a2014af82ce2795ad8bffd6493b4f69ca8a4491ddd56bce2bf`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "x86-32 thiscall with first explicit opaque word in ECX and caller cleanup",
+  "return_semantics": "constant 0x01442694 in EAX",
+  "return_type": "Opaque",
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "caller"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__stdcall",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": false,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "source": "ret_immediate",
+        "written": false
+      }
+    ],
+    "receiver": false,
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics": "pointer_like_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": false,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "source": "ret_immediate",
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x4"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 4,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x4",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "67a37d602dbeb3fc2476a0236b042fac0ff76d5a6ec698b0a6cfb669fd485dea",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__stdcall",
+    "candidate_conventions": [
+      "__stdcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 2,
+    "persisted": "no_information",
+    "persisted_calling_convention": "x86-32 thiscall with first explicit opaque word in ECX and caller cleanup"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the callee pops 4 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 4,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "argument slots derived from the terminal immediate alone; no argument read was observed, so this is the popped area and not a parameter count",
+      "confidence": "APPROXIMATION",
+      "id": "A1-IMM",
+      "value": {
+        "derived_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "ECX is never read in any form, so there is no register receiver",
+      "confidence": "OBSERVED",
+      "id": "R2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "calling convention is __stdcall: a callee that pops stack arguments with no register receiver",
+      "confidence": "INFERRED",
+      "id": "C6",
+      "value": "__stdcall"
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the last value written to EAX classifies as pointer_like",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "pointer_like"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x0096ffc0",
+      "definite": true,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,0x1442694",
+      "reg": "EAX",
+      "write_kind": "imm"
+    },
+    {
+      "at": "0x0096ffc5",
+      "form": "RET 0x4",
+      "id": "obs-0002",
+      "imm": 4,
+      "index": 1,
+      "kind": "RET",
+      "raw": "RET 0x4"
+    }
+  ],
+  "parse": {
+    "declared_count": 2,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "OBSERVED",
+    "distinct_offsets": 0,
+    "max_offset": null,
+    "offsets": [],
+    "present": false,
+    "register": null,
+    "shape": null,
+    "written_through": 0
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "pointer_like",
+    "type": null,
+    "void_possible": false
+  },
+  "schema": "openspore-abi-inference-1",
+  "seh_or_cookie_frame": false,
+  "sret": {
+    "ambiguity": null,
+    "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed",
+    "candidates": null,
+    "confidence": "APPROXIMATION",
+    "eax_holds_slot0_at_ret": null,
+    "hypothesis_confidence": null,
+    "present": false,
+    "slot": null,
+    "this_interaction": null
+  },
+  "stack_arguments": {
+    "confidence": "APPROXIMATION",
+    "derived_slots": 1,
+    "gaps": 1,
+    "not_complete": false,
+    "observed_slots": 0,
+    "slots": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": false,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "source": "ret_immediate",
+        "written": false
+      }
+    ],
+    "total_bytes": 4,
+    "widths_ambiguous": false
+  },
+  "tail_call": {
+    "after_frame_setup": false,
+ 
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 2,
+  "instructions": [
+    {
+      "address": "0096ffc0",
+      "instruction": "MOV EAX,0x1442694"
+    },
+    {
+      "address": "0096ffc5",
+      "instruction": "RET 0x4"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 8582,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"x86-32 thiscall with first explicit opaque word in ECX and caller cleanup\",\n    \"return_semantics\": \"constant 0x01442694 in EAX\",\n    \"return_type\": \"Opaque\",\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"caller\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 25,\n      \"symbol\": \"utfwin_0096fec0\",\n      \"va\": \"0x0096fec0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 25,\n      \"symbol\": \"utfwin_0097e440\",\n      \"va\": \"0x0097e440\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:Opaque,openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 25,\n      \"symbol\": \"utfwin_0097e890\",\n      \"va\": \"0x0097e890\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:Opaque,openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 25,\n      \"symbol\": \"utfwin_00980200\",\n      \"va\": \"0x00980200\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:Opaque,openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"utfwin_0097e550\",\n      \"va\": \"0x0097e550\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"utfwin_0097e990\",\n      \"va\": \"0x0097e990\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"utfwin_0097ea50\",\n      \"va\": \"0x0097ea50\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout,openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect\"\n      ],\n      \"package\": \"PKG-UTFWIN-EFFECTS-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"utfwin_00980120\",\n      \"va\": \"0x00980120\"\n    }\n  ],\n  \"audit_evidence_boundary\": \"Reviewed static mechanics and x86-32 ABI are preserved; opaque runtime ports and ownership remain gated.\",\n  \"audit_findings\": [],\n  \"audit_status\": \"clean_after_reviewed_repairs\",\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": \"integrated\",\n  \"class_type\": null,\n  \"cluster\": \"utfwin-framework\",\n  \"confidence\": 0.9,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0313\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"SUPPORTED\",\n  \"globals\": [],\n  \"integration_status\": \"integrated\",\n  \"name\": \"UTFWin::GlideEffect::SetOffset\",\n  \"normalized_symbol\": \"utfwin_0096ffc0\",\n  \"observed_mechanics\": [\n    \"Returns the immutable type/name word 0x01442694 and ignores the stack word.\"\n  ],\n  \"ownership\": {\n    \"claimability\": \
+[TRUNCATED]
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "0096ffc7",
+  "body_span_bytes": 8,
+  "body_start": "0096ffc0",
+  "callees": [],
+  "callers": [],
+  "classification": "stub",
+  "dispatch": null,
+  "entry_point": "0096ffc0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [],
+  "locals_count": 0,
+  "mode": "live",
+  "name": "UTFWin::GlideEffect::SetOffset",
+  "namespace": "UTFWin",
+  "namespace_source": "derived_from_symbol_name",
+  "parameter_count": 2,
+  "parameters": [
+    {
+      "name": "this",
+      "ordinal": 0,
+      "storage": "Stack[0x4]:4",
+      "type": "IGlideEffect *"
+    },
+    {
+      "name": "offset",
+      "ordinal": 1,
+      "storage": "Stack[0x8]:4",
+      "type": "Point *"
+    }
+  ],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "void",
+  "return_type_resolved": true,
+  "rva": "0x56ffc0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "void UTFWin::GlideEffect::SetOffset(IGlideEffect * this, Point * offset)",
+  "size_bytes": 8,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x0096ffc0",
+  "vtables": {
+    "referenced_by_vtables": [
+      "0x01442678"
+    ],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 1,
+  "xrefs": [
+    {
+      "from": "01442690"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__GlideEffect__SetOffset.c",
+  "file": "src/reconstruction/pkg_utfwin_effects_wave6/utfwin_effects_wave6.cpp",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__GlideEffect__SetOffset.c",
+    "src/reconstruction/pkg_utfwin_effects_wave6/utfwin_effects_wave6.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave6-integrator-clean/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg-utfwin-effects-wave6/0096ffc0.json"
+  ]
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "constant interpretation and runtime vtable ownership remain gated",
+    "runtime validation not run"
+  ],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## types
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "Opaque",
+  "openspore::reconstruction::pkg_utfwin_effects_wave6::FloatRect",
+  "openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueColorTarget",
+  "openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueLayout",
+  "openspore::reconstruction::pkg_utfwin_effects_wave6::OpaqueModulateEffect"
+]
+```
+
+## vtables
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "vtable:0x01442678"
+]
+```
+
+## Conflicts
+
+```json
+[
+  {
+    "derived": "__stdcall",
+    "field": "calling_convention",
+    "kind": "derived_vs_persisted",
+    "persisted": "x86-32 thiscall with first explicit opaque word in ECX and caller cleanup",
+    "resolution_status": "unresolved"
+  }
+]
+```

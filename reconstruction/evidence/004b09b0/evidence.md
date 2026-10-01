@@ -2,9 +2,46 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `206f76a33c4cf64eb463a7d520e6fb7087a9dc1277a89829a71738917a8ce2ee`
+- Content SHA-256: `0034d4ded0add813607a7eef36549a4523a97c54848085110f10770de6f7faf1`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX, one stack argument, callee pops it)",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is read only by the spill at 0x004b09b6 and then served from the frame",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_note": "(the receiver)",
+  "return_observation": "0x004b09f9: MOV EAX,[EBP-8] where [EBP-8] was written from ECX at 0x004b09b6, so the result is always the receiver and is never derived from either pointer argument. The early exit at 0x004b09c1 jumps to the same 0x004b09f9, so the self-assignment case returns the holder too.",
+  "return_register": "EAX",
+  "return_semantics": "the holder itself, not the assigned pointer and not a status; 0x004b09f9 loads [EBP-8] into EAX, i.e. the address the caller passed in ECX",
+  "return_type": "IntrusiveRefHolder*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [
+    {
+      "offset": "[EBP+8]",
+      "role": "the incoming pointer",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "single RET 0x4 at 0x004b09ff"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -72,7 +109,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "edc7adba55fa064eb64e7d932b8c67edc4383eb4b55379b64c958337d84b6ae2",
+  "content_sha256": "383a5636da3a7a9781e1b4bec8e402bc0c9412ed94a19696d5ae7fac9fb44d29",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -88,7 +125,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall (receiver in ECX, one stack argument, callee pops it)"
   },
   "dispatch": {
     "call_offsets": [],
@@ -270,11 +307,7 @@
       "index": 2,
       "kind": "REG_WRITE",
       "raw": "SUB ESP,0x8",
-      "reg": "ESP",
-      "write_kind": "arith"
-    },
-    {
-      "at": "
+      "reg":
 [TRUNCATED]
 ```
 
@@ -286,9 +319,44 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004b0590"
+  },
+  {
+    "name": "editor_input_005737d0",
+    "reconstructed": true,
+    "va": "0x005737d0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00573c00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057e790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00582250"
+  },
+  {
+    "name": "editor_input_00588570",
+    "reconstructed": true,
+    "va": "0x00588570"
+  }
+]
+```
 
 ## contradictions
 
@@ -298,13 +366,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint * __thiscall FUN_004b09b0(int *param_1,int *param_2)\n\n{\n  int *piVar1;\n  \n  if (param_2 != (int *)*param_1) {\n    piVar1 = (int *)*param_1;\n    if (param_2 != (int *)0x0) {\n      (**(code **)(*param_2 + 4))();\n    }\n    *param_1 = (int)param_2;\n    if (piVar1 != (int *)0x0) {\n      (**(code **)(*piVar1 + 8))();\n    }\n  }\n  return param_1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -456,9 +520,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 7654,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall (receiver in ECX, one stack argument, callee pops it)\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is read only by the spill at 0x004b09b6 and then served from the frame\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_note\": \"(the receiver)\",\n    \"return_observation\": \"0x004b09f9: MOV EAX,[EBP-8] where [EBP-8] was written from ECX at 0x004b09b6, so the result is always the receiver and is never derived from either pointer argument. The early exit at 0x004b09c1 jumps to the same 0x004b09f9, so the self-assignment case returns the holder too.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the holder itself, not the assigned pointer and not a status; 0x004b09f9 loads [EBP-8] into EAX, i.e. the address the caller passed in ECX\",\n    \"return_type\": \"IntrusiveRefHolder*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"offset\": \"[EBP+8]\",\n        \"role\": \"the incoming pointer\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"single RET 0x4 at 0x004b09ff\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"editor_input_005737d0\",\n      \"va\": \"0x005737d0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"editor_input_00588570\",\n      \"va\": \"0x00588570\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004b0590\"\n      },\n      {\n        \"name\": \"editor_input_005737d0\",\n        \"reconstructed\": true,\n        \"va\": \"0x005737d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00573c00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057e790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00582250\"\n      },\n      {\n        \"name\": \"editor_input_00588570\",\n        \"reconstructed\": true,\n        \"va\": \"0x00588570\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x004b06c3\",\n        \"direction\": \"in\",\n        \"other\": \"0x004b0590\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005738e6\",\n        \"direction\": \"in\",\n        \"other\": \"0x005737d0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00573cd0\",\n        \"direction\": \"in\",\n        \"other\": \"0x00573c00\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057e843\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057e790\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005824ce\",\n        \"direction\": \"in\",\n        \"other\": \"0x00582250\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00588afb\",\n        \"direction\": \"in\",\n        \"other\": \"0x00588570\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00588b11\",\n        \"direction\": \"in\",\n        \"other\": \"0x00588570\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00588bf5\",\n        \"direction\": \"in\",\n        \"other\": \"0x00588570\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00589774\",\n        \"direction\": \"in\",\n        \"other\": \"0x00588570\",\n        \"reference_type\": \"direct-call\"\n      }\n    ],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 6,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [\n      \"0x005737d0\",\n      \"0x00588570\"\n    ],\n    \"scc\": {\n      \"id\": \"scc-0031\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": null,\n  \"globals\": [\n    \"global:The body contains no absolute address, so it touches no global.\"\n  ],\n  \"integration_status\": null,\n  \"name\": null,\n  \"normalized_symbol\": null,\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"runtime_gated_requires_explicit_gate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": null\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"No original-process trace exists for this function. The acquire/store/release order is proved statically but its purpose - which re-entrant write-back it defends against - has not been observed.\",\n      \"The +0x04 and +0x08 callees have never been resolved on a concrete receiver, so the reference-count names remain inferred.\"\n    ],\n    \"validated\": 0\n  },\n  \"runtime
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -476,11 +547,11 @@
   "callees": [],
   "callers": [
     "FUN_0057e790",
-    "FUN_00573c00",
-    "Editors::cEditor::sub_581F70",
     "Editors::cEditor::OnMouseMove",
+    "Editors::cEditor::sub_581F70",
     "Editors::cEditor::OnMouseDown",
-    "FUN_004b0590"
+    "FUN_004b0590",
+    "FUN_00573c00"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -493,22 +564,17 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "piVar1",
-      "storage": "unique:00017200:4",
-      "type": "int *"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     },
     {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int *"
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 3,
+  "locals_count": 2,
   "mode": "live",
   "name": "FUN_004b09b0",
   "namespace": null,
@@ -574,15 +640,35 @@
 
 ## globals
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "global:The body contains no absolute address, so it touches no global."
+]
+```
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/004b09b0_intrusive_ref_assign.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/004b09b0_intrusive_ref_assign.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b04/004b09b0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -592,9 +678,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists for this function. The acquire/store/release order is proved statically but its purpose - which re-entrant write-back it defends against - has not been observed.",
+    "The +0x04 and +0x08 callees have never been resolved on a concrete receiver, so the reference-count names remain inferred."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -604,15 +701,30 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "IntrusiveRefHolder* (the receiver)",
+  "eastl::intrusive_ptr<Editors::EditorRigblock> (SDK candidate)"
+]
+```
 
 ## vtables
 

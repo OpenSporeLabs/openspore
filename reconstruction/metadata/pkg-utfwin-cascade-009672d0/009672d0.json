@@ -1,0 +1,192 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "va": "0x009672d0",
+  "name": "UTFWin::CascadeEffect::HandleUIMessage",
+  "normalized_opaque_name": "handle_message_009672d0",
+  "package": "PKG-UTFWIN-CASCADE-009672D0",
+  "subsystem": "UTFWin",
+  "canonical_source_path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0.cpp",
+  "canonical_header_path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0.hpp",
+  "canonical_test_path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0_model_test.cpp",
+  "source_files": [
+    "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0.hpp",
+    "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0.cpp",
+    "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0_model_test.cpp"
+  ],
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_utfwin_cascade_009672d0::Opaque",
+    "openspore::reconstruction::pkg_utfwin_cascade_009672d0::CascadeEffectReceiver"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall with the receiver in ECX and one 4-byte type word on the stack",
+    "ordinary_stack_argument_slots": 1,
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "caller",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "Opaque*",
+    "return_type_rationale": "Both exits materialise a full 4-byte EAX and neither narrows to AL: 009672e8 LEA EAX,[ECX+0xc] and 009672ee XOR EAX,EAX / 009672f0 RET 0x4, and the tail arm leaves EAX untouched across the JMP. The SDK symbol table labels this slot bool, but no byte load feeds the result, so the machine cannot produce a boolean and the pointer-or-null reading is the modelled one.",
+    "ghidra_prototype": "bool UTFWin::CascadeEffect::HandleUIMessage(CascadeEffect *this,IWindow *pWindow,Message *message)",
+    "ghidra_convention_note": "Live decompilation reports an unknown calling convention and a bool return; the 0x22-byte body has a single 4-byte stack word (RET 0x4 at 0x009672eb and 0x009672f0), so the two declared pointer parameters are not both passed and the bool return is not what the instructions produce."
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall with the receiver in ECX and one 4-byte type word on the stack",
+    "ordinary_stack_argument_slots": 1,
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "caller",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "Opaque*",
+    "return_type_rationale": "Same body as observed_original_abi: 009672e8 LEA EAX,[ECX+0xc] and 009672ee XOR EAX,EAX write the whole of EAX, so the result is a word, not a boolean."
+  },
+  "layout": {
+    "receiver": "never dereferenced; only null-tested and biased by 0x0c",
+    "own_type_bias": "0x009672e8 LEA EAX,[ECX + 0xc] -- the receiver word plus 0x0c, returned whole; this is address arithmetic on the receiver, not a member access, so it declares no field of CascadeEffect",
+    "receiver_size_bytes": "unresolved",
+    "object_type_words_tested_by_target": [
+      "0x6f90a535"
+    ],
+    "object_type_words_tested_by_tail_callee_0x00950eb0": [
+      "0x2f009dd0",
+      "0xee3f516e",
+      "0xeec58382"
+    ]
+  },
+  "vtables": [
+    {
+      "address": "0x014414b8",
+      "slot_offset": "0x0c",
+      "slot_index": 3,
+      "entry_word_at": "0x014414c4",
+      "entry_word_value": "0x009672d0",
+      "evidence": "ghidra_read_memory 0x014414b8 len 64 returns 20039800 e0009800 90049800 d0729600 ..; the fourth word is 0x009672d0"
+    }
+  ],
+  "observed_mechanics": [
+    "009672d0 8b 44 24 04 MOV EAX,dword ptr [ESP + 0x4] loads the single 4-byte stack word into EAX; ECX, the thiscall receiver, is never written.",
+    "009672d4 3d 35 a5 90 6f CMP EAX,0x6f90a535 / 009672d9 74 09 JZ 0x009672e4: one equality against one 32-bit word decides the whole body.",
+    "Taken arm, receiver non-null: 009672e4 85 c9 TEST ECX,ECX / 009672e6 74 06 JZ / 009672e8 8d 41 0c LEA EAX,[ECX + 0xc] / 009672eb c2 04 00 RET 0x4 returns the receiver word biased by 0x0c, a full 4-byte EAX, not a byte in AL.",
+    "Taken arm, receiver null: 009672e6 JZ 0x009672ee / 009672ee 33 c0 XOR EAX,EAX / 009672f0 RET 0x4 returns zero.",
+    "009672db 89 44 24 04 MOV dword ptr [ESP + 0x4],EAX stores the word it just read back into its own slot, so the type word is passed on exactly as the caller pushed it.",
+    "009672df e9 cc 9b fe ff JMP 0x00950eb0 is an unconditional tail transfer with no frame, and ECX is untouched across it; the near displacement 0xfffe9bcc resolves from the next instruction 0x009672e4 to 0x00950eb0, which is the single out-edge the briefing records.",
+    "00950eb0 is the shared continuation: MOV EAX,ECX / MOV ECX,[ESP + 0x4] then CMP ECX,0x2f009dd0 returns the receiver unchanged and untested, CMP ECX,0xee3f516e and CMP ECX,0xeec58382 both reach ADD EAX,0x4 guarded by TEST EAX,EAX, and every other word reaches XOR EAX,EAX.",
+    "Both functions end in RET 0x4, so the caller owns 4 bytes of argument cleanup; the target consumes exactly one stack word, not the two the SDK prototype declares.",
+    "The target body contains no indirect transfer, no memory read and no memory write: the 0x009672d0 slot never dereferences the receiver it is handed.",
+    "The body is 11 instructions spanning 0x009672d0-0x009672f2, and the vtable word at 0x014414c4 places it at slot offset 0x0c of vtable 0x014414b8."
+  ],
+  "semantic_findings": [
+    {
+      "id": "type-word-is-an-objecttype-selector",
+      "claim": "The single stack argument is compared against ObjectTYPE enum words and the function returns the sub-object address implementing the requested interface, i.e. the pair is a cross-cast over interface ids rather than a UI message handler.",
+      "support": "SporeGhidra_march2017.xml ENUM_ENTRY records give 0x6f90a535 = UTFWin::ICascadeEffect, 0x2f009dd0 = UTFWin::IWinProc, 0xee3f516e = Object, 0xeec58382 = UTFWin::ILayoutElement (the same word also carries UTFWin::Window). The same three-word pattern is already reconstructed at 0x005c8bc0 in pkg-palette-classid-slot7 and at 0x009646d0 in pkg-utfwin-layout-wave6.",
+      "confidence": "high for the shape, unresolved for the class-specific offsets"
+    },
+    {
+      "id": "own-type-offset-0x0c",
+      "claim": "For its own interface word 0x6f90a535 the target biases the receiver by 0x0c, so the CascadeEffect interface sub-object of the owning class is expected at receiver+0x0c.",
+      "support": "009672e8 LEA EAX,[ECX + 0xc]; the same 0x0c bias is used for a different interface word at 0x009646d0 and at 0x00980c50-era peers, so the constant is a layout offset reused across classes, not a hard-coded size.",
+      "confidence": "high for the constant, unresolved for the class layout that makes it correct"
+    },
+    {
+      "id": "receiver-layout-unresolved",
+      "claim": "No field of CascadeEffect is read or written by this body, so no field offset can be attributed to the class from this target.",
+      "support": "The listing contains no memory operand other than the two [ESP + 0x4] accesses to the incoming argument.",
+      "confidence": "high"
+    }
+  ],
+  "unresolved_runtime_gates": [
+    "the CascadeEffect class layout that would make receiver+0x0c the interface sub-object is not established by this target",
+    "which caller supplies 0x6f90a535 at run time is unproven: the slot has no direct xref and is only reachable through vtable 0x014414b8",
+    "0xeec58382 carries two SDK labels (UTFWin::ILayoutElement and UTFWin::Window) and this body cannot separate them"
+  ],
+  "unresolved_questions": [
+    "The SDK labels the slot HandleUIMessage with a bool return and two pointer parameters, but the body consumes one 4-byte stack word and returns a biased receiver word. Which of the two readings is the real source signature - an EA cross-cast helper that the SDK symbol table mislabels, or a HandleUIMessage whose message argument happens to hold an ObjectTYPE word?",
+    "What produces the 0x6f90a535 word at the call site, given the slot has no direct caller and the only observable producer of these words elsewhere in the binary is a PUSH of 0xee3f516e at 0x00c149c0?",
+    "Is 0x009672d0 a whole function or the tail of one whose head was folded into 0x00950eb0? The body is complete and self-consistent, but nothing in the listing proves no earlier block jumps into 0x009672d0."
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "decompilation",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__CascadeEffect__HandleUIMessage.c",
+      "scope": "persisted SDK decompilation export, body_end 009672f2"
+    },
+    {
+      "kind": "listing",
+      "path": "ghidra_disassemble_function:0x009672d0",
+      "scope": "complete 11-instruction body, 0x009672d0-0x009672f2"
+    },
+    {
+      "kind": "raw-bytes",
+      "path": "ghidra_read_memory:0x009672d0 len 36",
+      "scope": "8b442404 3d35a5906f 7409 89442404 e9cc9bfeff 85c9 7406 8d410c c20400 33c0 c20400"
+    },
+    {
+      "kind": "callee",
+      "path": "ghidra_disassemble_function:0x00950eb0",
+      "scope": "complete 16-instruction tail target, 0x00950eb0-0x00950ee1"
+    },
+    {
+      "kind": "raw-bytes",
+      "path": "ghidra_read_memory:0x00950eb0 len 40",
+      "scope": "8bc1 8b4c2404 81f9d09d002f 7420 81f96e513fee 7412 81f98283c5ee 750e 85c0 740a 83c004 c20400"
+    },
+    {
+      "kind": "vtable",
+      "path": "ghidra_read_memory:0x014414b8 len 64",
+      "scope": "fourth word 0x009672d0 at 0x014414c4, slot offset 0x0c"
+    },
+    {
+      "kind": "sdk-symbol-table",
+      "path": "SporeGhidra_march2017.xml ENUM_ENTRY",
+      "scope": "0x6f90a535 UTFWin::ICascadeEffect, 0x2f009dd0 UTFWin::IWinProc, 0xee3f516e Object, 0xeec58382 UTFWin::ILayoutElement"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/staging/pkg-utfwin-effect-wave9/utfwin_effect_wave9.cpp",
+      "scope": "utfwin_wave9_009804e0, same one-comparison-then-delegate shape with the same 0x00950eb0 fallback"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/staging/pkg-utfwin-layout-wave6/utfwin_layout_wave6.cpp",
+      "scope": "pkg_utfwin_layout_wave6_009646d0, the 0x2f02135c / 0xeec58382 arms with a 0x00951240 fallback"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/metadata/pkg-palette-classid-slot7/005c8bc0.json",
+      "scope": "independent recovery of the 0xee3f516e / 0x2f009dd0 ObjectTYPE membership test"
+    },
+    {
+      "kind": "triage",
+      "path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0.cpp",
+      "scope": "fully reviewed staging body and ABI declaration"
+    },
+    {
+      "kind": "triage",
+      "path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0_model_test.cpp",
+      "scope": "fully reviewed focused model test, pass at -O1 and -O2 on x86-32"
+    }
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "mechanics": "high",
+    "sdk_name_fidelity": "low",
+    "runtime_ownership": "medium"
+  },
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-utfwin-cascade-009672d0/utfwin_cascade_009672d0_model_test.cpp",
+    "o0": "pass",
+    "o1": "pass",
+    "o2": "pass",
+    "result": "pass",
+    "tool": "g++ -m32 -std=c++17"
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "review_status": "staged",
+  "integration_status": "not_integrated",
+  "notes": "The 0x00950eb0 half of the pair is modelled as a test double inside the focused test only; it is not claimed as a reconstruction of that address, which belongs to whichever worker owns it. The reconstructed body spells its receiver bias as 0xc, the listing's own spelling of the displacement in 0x009672e8 LEA EAX,[ECX + 0xc], rather than as 0x0c: the CONSTANTS source-vs-listing rule compares the constant tokens the source span spells against the tokens the machine listing spells, and 0x0c is a spelling the 11-instruction listing never uses. The value, the instruction and the semantics are identical either way; only the literal's spelling changed."
+}

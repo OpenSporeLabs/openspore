@@ -1,8 +1,8 @@
 # Evidence 0x00b1fbf0
 
-- Evidence state: `PERSISTED`
-- Live requested: `False`
-- Content SHA-256: `78f01b2af698ca5c3c324c6b26960b2b29ce9eff248df6083e013f9520a2609b`
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `99f94b431be6bf704c07e192b4fe404261e565d8c3d59f325f7753407f95afce`
 
 ## abi
 
@@ -29,6 +29,235 @@
   "stack_cleanup_bytes": 0,
   "stack_cleanup_owner": "caller",
   "termination": "RET"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function, tools/reconstruction_tooling/vftables.py@25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "receiver": false,
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "3ee7de0fe8c60483e049c403eb2b40a6f6f2dd05d106fdf1d9048c92c2813b9e",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "ECX is never read in any form, so there is no register receiver",
+      "confidence": "OBSERVED",
+      "id": "R2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "calling convention is __thiscall: 0x00b1fbf0 is slot 3 of the vptr-backed vftable at 0x013f57f8, so it is a virtual member of some class; the callee pops nothing and no stack word is read as an argument, so the receiver is in a register, and ECX is the only one that carries one",
+      "confidence": "INFERRED",
+      "id": "V1-VFT",
+      "value": {
+        "cleanup_side": "caller",
+        "membership_count": 443,
+        "receiver_provenance": "vftable_slot",
+        "receiver_register": "ECX",
+        "slot_index": 3,
+        "table": "0x013f57f8"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00b1fbf0",
+      "definite": true,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV AL,0x1",
+      "reg": "EAX",
+      "write_kind": "imm"
+    },
+    {
+      "at": "0x00b1fbf2",
+      "form": "RET",
+      "id": "obs-0002",
+      "imm": null,
+      "index": 1,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 2,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "OBSERVED",
+    "distinct_offsets": 0,
+    "max_offset": null,
+    "offsets": [],
+    "present": false,
+    "provenance": "vftable_slot",
+    "register": "ECX",
+    "shape": null,
+    "written_through": 0
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "integral",
+    "type": null,
+    "void_possible": false
+  },
+  "schema": "openspore-abi-inference-1",
+  "seh_or_cookie_frame": false,
+  "sret": {
+    "ambiguity": null,
+    "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed",
+    "candidates": null,
+    "confidence": "APPROXIMATION",
+    "eax_holds_slot0_at_ret": null,
+    "hypothesis_confidence": null,
+    "present": false,
+    "slot": null,
+    "this_interaction": null
+  },
+  "stack_arguments": {
+    "confidence": "APPROXIMATION",
+    "derived_slots": 0,
+    "gaps": 0,
+    "not_complete": false,
+    "observed_slots": 0,
+    "slots": [],
+    "total_bytes": 0,
+    "widths_ambiguous": false
+  },
+  "tail_call": {
+    "after_frame_setup": false,
+    "form": null,
+    "present": false,
+    "target": null
+  },
+  "target": {
+    "address_available": true,
+    "image_base": "0x00400000",
+    "instructions": 2,
+    "syntax": "intel",
+    "va": "0x00b1fbf0"
+  },
+  "variadic": "UNKNOWN",
+  "verdict": "ABI_INFERRED"
 }
 ```
 
@@ -143,9 +372,25 @@
 
 ## disassembly
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
-- Provenance: ``
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 2,
+  "instructions": [
+    {
+      "address": "00b1fbf0",
+      "instruction": "MOV AL,0x1"
+    },
+    {
+      "address": "00b1fbf2",
+      "instruction": "RET"
+    }
+  ]
+}
+```
 
 ## external_callees
 
@@ -168,9 +413,397 @@
 
 ## ghidra_function
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
-- Provenance: ``
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00b1fbf2",
+  "body_span_bytes": 3,
+  "body_start": "00b1fbf0",
+  "callees": [],
+  "callers": [
+    "FUN_0098cc70",
+    "FUN_0096b3a0",
+    "FUN_00e0eab0",
+    "FUN_00e81120",
+    "FUN_007f53d0",
+    "FUN_00d73ca0",
+    "FUN_0082c210",
+    "FUN_0097c6d0",
+    "FUN_00a51f40",
+    "FUN_0098f3d0",
+    "FUN_00993fa0",
+    "FUN_00a43050",
+    "FUN_0096a670",
+    "FUN_00ee8860",
+    "FUN_00ccefb0",
+    "App::cCellModeStrategy::OnMouseWheel"
+  ],
+  "classification": "stub",
+  "dispatch": null,
+  "entry_point": "00b1fbf0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [],
+  "locals_count": 0,
+  "mode": "live",
+  "name": "FUN_00b1fbf0",
+  "namespace": null,
+  "namespace_source": null,
+  "parameter_count": 0,
+  "parameters": [],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "undefined",
+  "return_type_resolved": false,
+  "rva": "0x71fbf0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "undefined FUN_00b1fbf0(void)",
+  "size_bytes": 3,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x00b1fbf0",
+  "vtables": {
+    "referenced_by_vtables": [
+      "0x013fcc08",
+      "0x01443318",
+      "0x014446f0",
+      "0x01444b68",
+      "0x014793e0",
+      "0x013fcc48",
+      "0x013ff648",
+      "0x014368c4",
+      "0x01462764",
+      "0x0147c9e8",
+      "0x0147ca30",
+      "0x0147caf8",
+      "0x0147cbbc",
+      "0x014805fc",
+      "0x014807dc",
+      "0x01480a14",
+      "0x01480b24",
+      "0x01480c34",
+      "0x01480d44",
+      "0x01480e54"
+    ],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 100,
+  "xrefs": [
+    {
+      "from": "0081d470"
+    },
+    {
+      "from": "0082c27a"
+    },
+    {
+      "from": "0096a673"
+    },
+    {
+      "from": "0096b3a3"
+    },
+    {
+      "from": "0097c6d3"
+    },
+    {
+      "from": "0098cc7f"
+    },
+    {
+      "from": "0098f3dc"
+    },
+    {
+      "from": "00a43062"
+    },
+    {
+      "from": "00a51f7c"
+    },
+    {
+      "from": "00ccf3ed"
+    },
+    {
+      "from": "00d73cd5"
+    },
+    {
+      "from": "00e0ebc7"
+    },
+    {
+      "from": "00e81134"
+    },
+    {
+      "from": "007f53fe"
+    },
+    {
+      "from": "00993fe5"
+    },
+    {
+      "from": "0133baac"
+    },
+    {
+      "from": "0133bb08"
+    },
+    {
+      "from": "0133bb64"
+    },
+    {
+      "from": "0133bbd6"
+    },
+    {
+      "from": "0133bc24"
+    },
+    {
+      "from": "0133bd4a"
+    },
+    {
+      "from": "0133bdbc"
+    },
+    {
+      "from": "0133be12"
+    },
+    {
+      "from": "0133bf2e"
+    },
+    {
+      "from": "0133bf98"
+    },
+    {
+      "from": "0133bfee"
+    },
+    {
+      "from": "0133c052"
+    },
+    {
+      "from": "0133c0ae"
+    },
+    {
+      "from": "0133c10a"
+    },
+    {
+      "from": "0133c166"
+    },
+    {
+      "from": "0133c1ca"
+    },
+    {
+      "from": "0133c226"
+    },
+    {
+      "from": "0133c2e6"
+    },
+    {
+      "from": "0133c34a"
+    },
+    {
+      "from": "0133c3ae"
+    },
+    {
+      "from": "0139ab8c"
+    },
+    {
+      "from": "0139abfe"
+    },
+    {
+      "from": "0131ad4e"
+    },
+    {
+      "from": "0133a200"
+    },
+    {
+      "from": "0133a264"
+    },
+    {
+      "from": "0133a2c8"
+    },
+    {
+      "from": "0133a404"
+    },
+    {
+      "from": "0133a460"
+    },
+    {
+      "from": "0133a4bc"
+    },
+    {
+      "from": "0133a526"
+    },
+    {
+      "from": "0133a574"
+    },
+    {
+      "from": "0133a5d8"
+    },
+    {
+      "from": "0133a634"
+    },
+    {
+      "from": "0133a698"
+    },
+    {
+      "from": "0133a6fc"
+    },
+    {
+      "from": "0133a758"
+    },
+    {
+      "from": "01339a84"
+    },
+    {
+      "from": "01339ae0"
+    },
+    {
+      "from": "01339b3c"
+    },
+    {
+      "from": "01339ba6"
+    },
+    {
+      "from": "01339bf4"
+    },
+    {
+      "from": "01339db8"
+    },
+    {
+      "from": "01339e8e"
+    },
+    {
+      "from": "01339f88"
+    },
+    {
+      "from": "01339fec"
+    },
+    {
+      "from": "0133a05e"
+    },
+    {
+      "from": "01359f7c"
+    },
+    {
+      "from": "01359fe0"
+    },
+    {
+      "from": "0135a044"
+    },
+    {
+      "from": "0135a0a8"
+    },
+    {
+      "from": "01339605"
+    },
+    {
+      "from": "0131954c"
+    },
+    {
+      "from": "013195b0"
+    },
+    {
+      "from": "01319614"
+    },
+    {
+      "from": "01319678"
+    },
+    {
+      "from": "013997a8"
+    },
+    {
+      "from": "01399920"
+    },
+    {
+      "from": "01399996"
+    },
+    {
+      "from": "0133893c"
+    },
+    {
+      "from": "01338998"
+    },
+    {
+      "from": "013389fc"
+    },
+    {
+      "from": "01338a66"
+    },
+    {
+      "from": "01338ab4"
+    },
+    {
+      "from": "01338b10"
+    },
+    {
+      "from": "01338b79"
+    },
+    {
+      "from": "01338bda"
+    },
+    {
+      "from": "01338c44"
+    },
+    {
+      "from": "01338c9a"
+    },
+    {
+      "from": "01338cfe"
+    },
+    {
+      "from": "01338d26"
+    },
+    {
+      "from": "01338dbe"
+    },
+    {
+      "from": "01338e30"
+    },
+    {
+      "from": "01338f4c"
+    },
+    {
+      "from": "01339016"
+    },
+    {
+      "from": "0133906c"
+    },
+    {
+      "from": "01278908"
+    },
+    {
+      "from": "013390d0"
+    },
+    {
+      "from": "01339134"
+    },
+    {
+      "from": "013393c4"
+    },
+    {
+      "from": "01339424"
+    },
+    {
+      "from": "01339488"
+    },
+    {
+      "from": "0133fee8"
+    },
+    {
+      "from": "0133ff4c"
+    },
+    {
+      "from": "0133ffbe"
+    },
+    {
+      "from": "0133e8a4"
+    }
+  ]
+}
+```
 
 ## globals
 

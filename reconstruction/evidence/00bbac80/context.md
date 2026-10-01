@@ -1,7 +1,7 @@
 # Reconstruction context 0x00bbac80
 
 - Status: `partial`
-- Content SHA-256: `4bfb72e31c7ccb0729aa35010e56184aad05e2a6ec29e534420acdc6f0400e58`
+- Content SHA-256: `203125ad0001694c0637f0ab1de2436191b379e098d5195cfff14a28f3e9e2fe`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "c68511930727af24a754930d00dd72423078b1c2947a8cb30aed35722fe734d3",
-  "live_attempts": [],
+  "content_sha256": "d5a9e1ceb08b744941911c8b38b83a7e749554afd4d57ceca88dfae30719235e",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00bbac80 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,37 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-void __thiscall FUN_00bbac80(int param_1,int param_2)
-
-{
-  undefined4 uVar1;
-  undefined1 *puVar2;
-  int iVar3;
-  undefined4 uVar4;
-  undefined1 local_c [12];
-  
-  if (param_2 != *(int *)(param_1 + 0x58)) {
-    if ((*(char *)(param_1 + 0xac) != '\0') && ((*(uint *)(param_1 + 0x5c) >> 0xf & 1) == 0)) {
-      FUN_00bba640();
-      uVar4 = 1;
-      puVar2 = local_c;
-      iVar3 = param_2;
-      FUN_00b3d2a0(puVar2,param_2,1);
-      uVar1 = FUN_00ba8010(puVar2,iVar3);
-      FUN_00b8dde0(uVar1,uVar4);
-    }
-    *(int *)(param_1 + 0x58) = param_2;
-  }
-  return;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -181,7 +160,7 @@ void __thiscall FUN_00bbac80(int param_1,int param_2)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -209,11 +188,6 @@ void __thiscall FUN_00bbac80(int param_1,int param_2)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

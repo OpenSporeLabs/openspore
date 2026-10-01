@@ -1,0 +1,411 @@
+{
+ "schema": "openspore.reconstruction-worker-handoff.v1",
+ "package": "PKG-SWARM-W1-00A85070",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "va": "0x00a85070",
+ "address": "0x00a85070",
+ "symbol": "re_00a85070",
+ "normalized_symbol": "re_00a85070",
+ "ghidra_name": "FUN_00a85070",
+ "captured_on": "2026-09-28",
+ "target_state": "implemented staging handoff. The complete body is 13 instructions / 30 bytes (0x00a85070..0x00a8508c inclusive) and every one of them is reconstructed, annotated with the instruction it came from, and refutation-tested. The body is straight-line: two register-indirect transfers and one dword store at the receiver's +0x10, in that order, on every call. The machine-derived dispatch record agrees (indirect_calls 2, call_offsets [], vtable_shaped_loads 0) and the body has no direct callee at all, so the header declares the SHAPE of an indirect call (one register argument, a 4-byte EAX result) instead of a callee list. STATIC is expected to PASS on ABI, CALLS, GLOBALS, CONSTANTS, CONTROL FLOW, VIRTUAL DISPATCH and RETURN SEMANTICS; FIELDS/OFFSETS is expected to WARN and that is a true statement about the evidence, not a defect: the model names no member anywhere, because this body reads two words through two pointers it was handed and writes one word, and the machine record for the receiver is bounds_only. EVIDENCE COVERAGE is decided by the evidence pack, not by this source. RUNTIME remains GATED at 0 and nothing was attempted. The parent owns the validator run; this package did not run it.",
+ "source_files": [
+  "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_types.hpp",
+  "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070.cpp",
+  "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_model_test.cpp"
+ ],
+ "intended_paths": {
+  "staging_reconstruction": [
+   "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_types.hpp",
+   "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070.cpp",
+   "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_model_test.cpp"
+  ],
+  "canonical_reconstruction": [],
+  "status": "staging-only handoff; src/ is integrator-owned and was not touched, no other package's files were touched, nothing was committed"
+ },
+ "implementation": {
+  "status": "implemented in staging",
+  "symbol": "re_00a85070",
+  "declaration": "extern \"C\" Word PKG_SW1_00A85070_THISCALL re_00a85070(Receiver* receiver, OwnerObject* owner, Word second_stack_word);",
+  "linkage": "C language linkage",
+  "calling_convention": "__thiscall",
+  "argument_surface": "Three arguments, and each is machine-observed rather than guessed. The receiver arrives in ECX (0x00a85071 MOV ESI,ECX) and is the target of the body's only store, at +0x10 (0x00a85087). The first ordinary stack word is the owner: 0x00a85073 reads it with the displacement 0x08 taken against ESP = entry-4 (the prologue's PUSH ESI), so it lands on entry_ESP + 4, and it is the argument the first indirect call receives in ECX unchanged (0x00a8507c) and whose leading word the body dereferences once (0x00a85077). The second ordinary stack word exists only because the terminator is RET 0xc, which consumes the return address plus two words; no instruction in the body names it, so it is declared, left unnamed in the definition, and its type is not claimed. None of the three arguments is pushed by this body, so nothing about an outgoing call is implied.",
+  "return_type": "Word",
+  "return_note": "A 4-byte value. 0x00a85087 stores the dword in EAX to the receiver's +0x10 and the epilogue (POP ESI; RET 0xc) leaves EAX alone, so the returned word and the stored word are the same value; the model test asserts that identity in both directions. The abi record classifies the return as unclassified_in_EAX and no record gives it a C++ type, so the raw word is declared and nothing more.",
+  "source": "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070.cpp",
+  "header": "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_types.hpp",
+  "model_test": "reconstruction/staging/pkg-swarm-w1-00a85070/sw1_00a85070_model_test.cpp",
+  "receiver_model": "An opaque 0x6c-byte run with NO named member. This body touches exactly one thing on it: the dword at +0x10, written at 0x00a85087. It reads nothing, and it writes nothing else. The 0x6c size is not this body's evidence -- on its own the body would bound the object at 0x14 -- it is the minimum from the constructor 0x00a853b0, whose last scalar write is MOV dword ptr [ESI + 0x68], 0xffffffff at 0x00a8544d. That second listing is cited as such in the header and in the model, and no other constructor field is turned into a member.",
+  "dispatch_model": "Two sites, both shaped MOV reg, [base + displacement] followed by CALL reg, and both with a single register argument in ECX and no stack argument. Site 1 (0x00a85077 / 0x00a85079 / 0x00a8507c): base = *owner, displacement 0x20, receiver = owner. Site 2 (0x00a8507e / 0x00a85082 / 0x00a85085): base = *(*owner), displacement 0x60, receiver = *owner. The two bases are one and the same address reached by two dereferences, so the chase is two levels deep from the owner and not two independent objects. The model names the fetch helper load_slot and does not claim that both displacements are vtable slots: 0x60 is certainly a slot of a dispatch table, while 0x20 is either the owner's vtable slot 8 (making site 1 an ordinary virtual call) or a callback word inside a callback holder, and the three instructions are identical under both readings.",
+  "dependency_note": "No direct callee exists, so the header declares no extern callee. What it does declare is IndirectCall, the shape of an indirect call, which the listing fixes: a 4-byte target read out of memory, one register argument, and a 4-byte EAX result. The model threads ONE explicit EAX word through the body (exposed as eax_register()) because 0x00a8507e re-reads through the post-call EAX instead of reloading [ECX] -- see mechanics.post_call_eax_dependence. That word is model instrumentation, not a machine global.",
+  "compile_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw1_00a85070.cpp sw1_00a85070_model_test.cpp -o /tmp/w_00a85070  -- builds clean, exit 0, no warning. The header also compiles alone under the same flags (-fsyntax-only on a TU that only includes it)."
+ },
+ "function_extent": {
+  "entry": "0x00a85070",
+  "body_end_inclusive": "0x00a8508c",
+  "body_end_exclusive": "0x00a8508d",
+  "instruction_count": 13,
+  "span_bytes": 30,
+  "return_site": "0x00a8508b (RET 0xc, C2 0C 00)",
+  "listing_reexported": "The 13 instructions were re-read from the image bytes for this package rather than taken on trust: ghidra read_memory at 0x00a85070 returns 56 8B F1 8B 4C 24 08 8B 01 8B 50 20 FF D2 8B 10 8B C8 8B 42 60 FF D0 89 46 10 5E C2 0C 00, which parses as the 13 instructions the brief's disassembly block lists, at the same addresses, with the same operand displacements. The two 0xCC bytes at 0x00a8508d..0x00a8508e are INT3 padding and are NOT body: the 30-byte span ends at 0x00a8508c and Ghidra's body_end 0x00a8508d is exclusive. The brief's abi record is nested and truncated mid-object; the abi facts this package uses (x86-32, __thiscall, receiver ECX, RET 0xc, cleanup 12 bytes callee-owned, saved_registers [ESI], one observed argument slot at entry_ESP + 0x4 of size 4, receiver offset 16 written once, return unclassified_in_EAX) are all consistent with the bytes and are restated in observed_original_abi."
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "receiver_register": "ECX",
+  "receiver_alias": "ESI (0x00a85070 PUSH ESI / 0x00a85071 MOV ESI,ECX / 0x00a8508a POP ESI). ESI is the only register this body saves, and the single store 0x00a85087 goes through it, so the receiver is reached as [ESI + 0x10] for the body's whole life.",
+  "ordinary_stack_argument_slots": 2,
+  "stack_argument_1": "entry_ESP + 0x4, 4 bytes, READ. 0x00a85073 MOV ECX,dword ptr [ESP + 0x8] with ESP = entry-4, so entry-4 + 8 = entry+4. It is used twice: it is the receiver of the first indirect call (ECX is not written between 0x00a85073 and 0x00a8507c) and it is the object dereferenced once at 0x00a85077.",
+  "stack_argument_2": "entry_ESP + 0x8, 4 bytes, NEVER READ. It exists because 0x00a8508b is C2 0C 00, which consumes the return address plus two words; nothing else in the body or in any record constrains it. Declared so the frame balances, typed as a raw word because that is all the terminator implies, and left unnamed in the definition. The model test drives it with a benign word and with a pointer to a poisoned block and shows the observable outcome is byte-identical.",
+  "stack_cleanup_bytes": 12,
+  "stack_cleanup_owner": "callee",
+  "saved_registers": [
+   "ESI"
+  ],
+  "ret_form": "RET 0xc",
+  "termination": "RET 0xc (0x00a8508b, bytes C2 0C 00)",
+  "return_register": "EAX",
+  "return_type": "Word",
+  "frame_resolution": "Entry ESP is 0 in the walk. PUSH ESI puts ESP at entry-4, so 0x00a85073's displacement 0x08 lands on entry+4; POP ESI returns ESP to entry and RET 0xc leaves it at entry+12 = entry+4 + 8, which balances the two argument words and makes the callee their owner. The body never allocates a frame, never pushes an argument, and has no exception head.",
+  "evidence_level": "ABI, listing and byte level: complete and self-consistent. Semantics: partial -- every address, displacement and register role is fixed, and no C++ type, member name or class name is.",
+  "ghidra_prototype": "undefined FUN_00a85070(void) (ghidra_function.signature, parameter_count 0)",
+  "ghidra_convention_note": "Ghidra reports no calling convention, 0 parameters and an undefined return type for this VA, and cross-validation is recorded as no_information on both fields. That is consistent with a body whose whole argument surface is one register argument plus two stack words of which one is never read; it is not a disagreement, and the reconstruction does not adopt Ghidra's zero-parameter shape, because RET 0xc and the read at 0x00a85073 fix two stack words.",
+  "dispatch": "2 indirect transfers, 0 direct calls, 0 immediate targets. abi_derived.dispatch: indirect_calls 2, call_offsets [], vtable_shaped_loads 0. The body's own two fetches are the vtable-shaped loads the record does not count, because the record counts memory-operand transfer shapes and these are dword fetches out of a pointer held in a register.",
+  "return_type_note": "4 bytes, unclassified by every record: abi.return_semantics is unclassified_in_EAX and ghidra_function.return_type is undefined, so Word is the byte-accurate statement and no C++ type is claimed for the value."
+ },
+ "mechanics": {
+  "body_shape": "Straight-line, 13 instructions, zero conditional branches, zero unconditional branches, zero loops, no exception frame, no stack argument of its own. There is no arm, no guard and no early exit, so the observable behaviour is identical on every call: dereference the owner once, call through the word at +0x20 of what it points at with the owner as the argument, dereference the post-call EAX once, call through the word at +0x60 of that with the post-call EAX as the argument, store the result at the receiver's +0x10, and return it.",
+  "owner_read": "0x00a85077 MOV EAX,dword ptr [ECX] with ECX = the first stack argument. One dword read at displacement 0. The value is then used as an ADDRESS in two roles: as a table base at +0x20 (0x00a85079) and as a receiver (0x00a85080). A reconstruction that read a member of the owner here, or that treated the owner itself as the table, would be dereferencing a different object; the model test plants a live decoy table at the owner's +0x04 and +0x08 for that.",
+  "site_1": {
+   "target_fetch": "0x00a85079 MOV EDX,dword ptr [EAX + 0x20] (displacement 0x20)",
+   "call": "0x00a8507c CALL EDX (FF D2)",
+   "receiver": "ECX = the first stack argument, set at 0x00a85073 and never written again before the call",
+   "arguments": "one register argument, no stack argument, nothing pushed",
+   "result_use": "the EAX it leaves is read back by 0x00a8507e -- the only use of it"
+  },
+  "site_2": {
+   "base_fetch": "0x00a8507e MOV EDX,dword ptr [EAX] (displacement 0, through the post-call EAX)",
+   "receiver_setup": "0x00a85080 MOV ECX,EAX (the same post-call EAX, so the receiver and the base are one value)",
+   "target_fetch": "0x00a85082 MOV EAX,dword ptr [EDX + 0x60] (displacement 0x60)",
+   "call": "0x00a85085 CALL EAX (FF D0)",
+   "receiver": "ECX = the post-call EAX, i.e. *owner unless site 1's callee wrote EAX",
+   "arguments": "one register argument, no stack argument, nothing pushed",
+   "result_use": "stored at 0x00a85087 and returned"
+  },
+  "post_call_eax_dependence": "The single most important fact about this body, and the reason the model keeps an explicit EAX word instead of writing the natural C++. 0x00a8507e is MOV EDX,dword ptr [EAX] and 0x00a85080 is MOV ECX,EAX: the body does NOT reload [ECX] after the first indirect call. Site 2's receiver AND its table base are therefore whatever site 1's callee left in EAX. Under __thiscall EAX is caller-saved, so a callee is free to have written it, and a source-level reconstruction that re-read arg1->field_00 there is a DIFFERENT function in that case. The model therefore threads one explicit word (exposed as eax_register()) and the model test drives the first observer both ways: preserving EAX keeps the nominal path, and clobbering EAX must move the second dispatch onto a decoy object and a decoy table. Whether the REAL callee at +0x20 preserves EAX is not determinable from this body; it is the first unresolved question.",
+  "slot_index_arithmetic": "0x20 / 4 == 8 and 0x60 / 4 == 0x18. Recorded as arithmetic identities, not as second evidence, and asserted by nothing in the model.",
+  "store": "0x00a85087 89 46 10 -- a 3-byte dword store, MOV dword ptr [ESI + 0x10], EAX. It is the body's only memory write. It is not a byte or halfword store, not a store through a pointer the calls returned, and not an increment or an exchange: the EAX value replaces the old word. It happens after both calls return, which the model test measures by having each observer read the receiver's +0x10 as it is entered.",
+  "return_semantics_machine": "EAX at 0x00a85087 is site 2's return value, the same word that is stored. 0x00a8508a POP ESI and 0x00a8508b RET 0xc touch no general-purpose register that carries a result, so the caller receives exactly the word that was stored. The identity returned == stored is asserted by the model test.",
+  "receiver_writes": "One dword at the receiver's +0x10 and nothing else. The model test compares the receiver's whole 0x6c bytes before and after the call and requires that only bytes 0x10..0x13 changed, so 'no other byte changed' is asserted rather than assumed.",
+  "not_modelled": "The PUSH ESI / POP ESI pair (a frame fact with no observable in C++), the callee-owned argument pop, and the register names themselves, which the model reproduces through its single EAX word rather than through a register abstraction.",
+  "globals": "None. No instruction in the 13 names a data-segment address. The constructor 0x00a853b0 does read five constants (0x01677d7c, 0x01677d80, 0x01677d84, 0x01485720, 0x1677e28) but those are the constructor's evidence and none of them appears in this body.",
+  "vtable_membership": "This body is itself an entry of vtable 0x01458024, at byte offset +0 (slot 0), and that is checked here three ways rather than taken from the association: (a) the dword at 0x01458024 read out of the image is 0x00a85070; (b) the ONLY reference to 0x01458024 in the whole program is the DATA xref from 0x00a853d8, inside the constructor 0x00a853b0, whose instruction is MOV dword ptr [ESI], 0x1458024 -- i.e. the class installs this table on its own receiver at +0x00; (c) the 15 entries read from 0x01458024 to 0x0145805c are 0x00a85070, 0x004ae250, 0x00a850d0, 0x00a85790, 0x007edc60, 0x00a858c0, 0x00a85840, 0x00951230, 0x0082e640, 0x00950ea0, 0x0082e650, 0x0082e650, 0x0082e650, 0x0082e650, 0x0051e340, 0x0051e380, followed by the strings 'user8', 'user7', 'user6', 'user5'. Nothing before 0x01458024 is a code pointer (0x0145801c is 0x00000034 and 0x01458020 is 0x4b400000, a float), so the table starts where the record says it does. The body itself never reads a dispatch word on ITS OWN receiver, so nothing at receiver+0x00 is named in the model.",
+  "receiver_context_from_other_bodies": "Context only, and deliberately NOT turned into members. The same constructor 0x00a853b0 also installs a second vtable at the receiver's +0x04 (MOV dword ptr [ESI + 0x4], 0x14599e8 at 0x00a853de), which is the multiple-inheritance base of the class, and it zeroes +0x10 (MOV dword ptr [ESI + 0x10], EAX with EAX = 0 at 0x00a853e5). Two of the sibling entries of the same vtable then read that word as a pointer to a polymorphic object and dispatch on it: 0x00a850d0 does MOV ECX,[ESI+0x10] (0x00a850dd), TEST ECX,ECX / JZ (0x00a850e5..e7) and then MOV EAX,[ECX] / MOV EDX,[EAX + 0x18] / CALL EDX (0x00a850f7..fc); 0x00a85790 does CMP dword ptr [ESI + 0x10],0 (0x00a8579d) and the same +0x18 dispatch (0x00a857de..e6), and further dispatches through +0x1c, +0x14, +0x10 and +0x0c of the same object. Taken together those make it very likely that the word this body stores at +0x10 is a pointer to such an object -- but this body never READS that word, so nothing in its own listing fixes the type, and the model leaves the slot an opaque word and records the inference here instead of encoding it.",
+  "class_identity": "Not established, and deliberately not guessed. The vtable's 15 entries plus the constructor's own member set (two vtables, a pointer at +0x0c taken from the constructor's argument, a zeroed +0x10, a flag byte at +0x14, floats at +0x18/+0x1c/+0x20, zeroed halfwords at +0x24/+0x26, floats at +0x28..+0x34, an initialised member at +0x38, floats at +0x5c/+0x60/+0x64 and -1 at +0x68) are enough to recognise the SHAPE and not the NAME. One more caution: the second vtable 0x014599e8 holds 0x004ae250 at its own slot 2, and 0x004ae250 is a 7-instruction no-op (PUSH EBP; MOV EBP,ESP; PUSH ECX; MOV [EBP-4],ECX; MOV ESP,EBP; POP EBP; RET) -- so the SDK-derived name another staging package attached to that address is not corroborated by its bytes, and this package adopts no name for it either."
+ },
+ "return_semantics": {
+  "kind": "value (4-byte word in EAX)",
+  "value": "The value site 2's callee leaves in EAX, which 0x00a85087 stores at the receiver's +0x10 and which the epilogue returns unchanged. The model declares the raw Word and does not claim whether it is a pointer, a count, a handle or an id.",
+  "ownership": "Not applicable: the body allocates nothing and returns no address of its own. The returned word is whatever the callee produced.",
+  "lifetime": "The value is produced by a callee this body does not own and stores it into a field of a receiver it does not own, so its lifetime is the callee's and the field's, not this body's. The two sibling bodies of the same vtable go on to dispatch through the stored word, which is the only hint about its meaning.",
+  "unclassified_note": "abi.return_semantics is unclassified_in_EAX and ghidra_function.return_type is undefined, so no canonical return type exists to agree or disagree with; the reconstruction's Word is the byte-accurate statement and nothing more."
+ },
+ "evidence": {
+  "classification": "static_only",
+  "runtime_validated": false,
+  "persisted_pack": "reconstruction/evidence/00a85070/evidence.json",
+  "assembly": [
+   "00a85070: PUSH ESI",
+   "00a85071: MOV ESI,ECX",
+   "00a85073: MOV ECX,dword ptr [ESP + 0x8]",
+   "00a85077: MOV EAX,dword ptr [ECX]",
+   "00a85079: MOV EDX,dword ptr [EAX + 0x20]",
+   "00a8507c: CALL EDX",
+   "00a8507e: MOV EDX,dword ptr [EAX]",
+   "00a85080: MOV ECX,EAX",
+   "00a85082: MOV EAX,dword ptr [EDX + 0x60]",
+   "00a85085: CALL EAX",
+   "00a85087: MOV dword ptr [ESI + 0x10],EAX",
+   "00a8508a: POP ESI",
+   "00a8508b: RET 0xc"
+  ],
+  "decompiler": "UNAVAILABLE in this session, and recorded as such rather than omitted: ghidra_decompile_function on 0x00a85070, 0x004ae250 and 0x00951230 all returned \"Decompilation failed\", and openspore_ghidra_decompile returned an empty payload. The brief agrees: evidence.missing_sections lists DECOMPILATION with \"no persisted or live decompilation for this target\". Every statement in this package therefore comes from the disassembly and from raw image bytes, and no decompiler disagreement could be recorded because there is no decompilation.",
+  "decompiler_disagreements": "None available. The one field where a decompiler would normally be the tie-breaker -- whether the body reads one stack argument or two -- is settled by the terminator instead: RET 0xc consumes two argument words and 0x00a85073 reads the first of them, so one is read and one is merely present.",
+  "direct_callees": [],
+  "direct_callee_note": "None, and that is a fact rather than a gap: both transfers are CALL reg (0x00a8507c FF D2 and 0x00a85085 FF D0), the brief's callees list is empty, and abi_derived.dispatch.call_offsets is []. The model test therefore defines the INDIRECT callees as observers -- one per fetchable slot, planted by address in synthetic dispatch tables -- which is the same instrument the direct form would have given.",
+  "indirect_transfers": [
+   {
+    "site": 1,
+    "target_fetch": "0x00a85079",
+    "call": "0x00a8507c",
+    "base": "*owner",
+    "displacement": "0x20",
+    "slot_index": 8,
+    "receiver": "the first ordinary argument",
+    "result": "the EAX it leaves is read by 0x00a8507e"
+   },
+   {
+    "site": 2,
+    "target_fetch": "0x00a85082",
+    "call": "0x00a85085",
+    "base": "*(*owner) (through the post-call EAX)",
+    "displacement": "0x60",
+    "slot_index": 24,
+    "receiver": "*owner (the post-call EAX)",
+    "result": "stored at receiver+0x10 and returned"
+   }
+  ],
+  "direct_callers": [],
+  "direct_caller_note": "None, and expected: the body is reached only through vtable 0x01458024, so it has no call site. ghidra_function.callers is empty and the only xref in the export is the data reference from 0x01458024. That is also why the arity of the second stack word cannot be confirmed from a call site.",
+  "xref_export_edges": [
+   {
+    "callsite": "0x01458024",
+    "direction": "in",
+    "other": "vtable slot 0",
+    "reference_type": "data",
+    "note": "the dword at 0x01458024 is 0x00a85070; this body is that table's first slot"
+   },
+   {
+    "callsite": "0x00a853d8",
+    "direction": "out",
+    "other": "0x01458024",
+    "reference_type": "data",
+    "note": "the ONLY reference to the table anywhere: MOV dword ptr [ESI], 0x1458024 in the constructor 0x00a853b0"
+   }
+  ],
+  "machine_abi_record": "x86-32, __thiscall (inference C6B, based on the receiver register and the callee-owned RET 0xc), hidden this in ECX, receiver offsets [16] with written_through 1, one observed ordinary stack slot at entry_ESP + 0x4 of size 4, stack_cleanup_bytes 12 owned by the callee (OBSERVED, from ret 0xc), saved_registers [ESI], return_register EAX, return_semantics unclassified_in_EAX, dispatch indirect_calls 2 / call_offsets [] / vtable_shaped_loads 0, completeness CORE_RESOLVED, contradictions [].",
+  "vtable_associations": [
+   {
+    "vtable": "0x01458024",
+    "offset": "0x00",
+    "slot_index": 0,
+    "verified": true,
+    "how": "read from the image: the dword at 0x01458024 is 0x00a85070, and the only reference to 0x01458024 is the DATA xref from 0x00a853d8 inside the constructor 0x00a853b0, which stores the table at the receiver's +0x00"
+   },
+   {
+    "vtable": "0x014599e8",
+    "offset": null,
+    "slot_index": null,
+    "verified": false,
+    "how": "not an association of THIS body. It is the second vtable the same constructor installs at the receiver's +0x04 (0x00a853de), read here only to establish that 0x004ae250 -- the no-op at this table's slot 1 -- is also the base table's slot 2"
+   }
+  ],
+  "vtable_note": "The association is used to place the body inside a class, and nothing else. The body never reads a dispatch word on its own receiver, so the model's receiver type declares no vptr member and names nothing at +0x00, +0x04 or +0x08; the vtable context lives in mechanics.vtable_membership and mechanics.receiver_context_from_other_bodies instead of in the types.",
+  "other_listings_read_for_this_package": [
+   "0x00a850d0 (81 instructions) -- vtable slot 2: reads the receiver's +0x10 and dispatches through it at +0x18",
+   "0x00a85790 (64 instructions) -- vtable slot 3: CMP dword ptr [ESI + 0x10],0 and the same +0x18 dispatch",
+   "0x00a85840 (31 instructions) -- vtable slot 6: an inline copy of a 0x14-byte record into the receiver's +0x24",
+   "0x00a853b0 (37 instructions) -- the constructor: installs 0x01458024 at +0x00 and 0x014599e8 at +0x04, zeroes +0x10, last scalar write -1 at +0x68, RET 0x4",
+   "0x004ae250 (7 instructions) -- a no-op; it is this table's slot 1 and the base table's slot 2",
+   "read_memory 0x01458000 len 128 -- the table's own bytes and the 15 entries around them",
+   "read_memory 0x014599e8 len 16 -- the base table's four entries",
+   "read_memory 0x00a85070 len 32 -- this body's own bytes"
+  ]
+ },
+ "provenance": [
+  "reconstruction/evidence/00a85070/evidence.json (disassembly, abi, abi_derived, ghidra_function, function_identity, callees_dependencies, callers_dependencies, vtables, contradictions)",
+  "reconstruction/evidence/00a85070/context.json and context.md",
+  "reconstruction/evidence/00a85070/validation.json and validation.md",
+  "GhidraMCP /read_memory at 0x00a85070 len 32 (the 30 body bytes plus two 0xCC pad bytes)",
+  "GhidraMCP /read_memory at 0x01458000 len 128 and at 0x014599e8 len 16 (the vtable's own bytes)",
+  "GhidraMCP /disassemble_function at 0x00a850d0, 0x00a85790, 0x00a85840, 0x00a853b0, 0x004ae250 (sibling entries and the constructor, used as context only)",
+  "GhidraMCP /get_xrefs_to 0x01458024 (the table's single reference)",
+  "GhidraMCP /decompile_function 0x00a85070, 0x004ae250, 0x00951230 -- all three returned 'Decompilation failed'; recorded as unavailable, not as agreement",
+  "/tmp/opencode/factory/w1/tasks/00a85070.json (the assembled brief for this worker)",
+  "reconstruction/staging/pkg-dfw-006a2e20/ (structure, annotation density and comment discipline only; no semantics taken from it)"
+ ],
+ "unresolved_questions": [
+  "Does the real callee at the +0x20 fetch preserve EAX? The body depends on it -- 0x00a8507e and 0x00a85080 both read the post-call EAX rather than reloading [ECX] -- and nothing in this body can show it. The model reproduces the machine either way and the model test drives both behaviours; what is missing is evidence about the actual callee, which lives outside this body.",
+  "Is the word at the dispatch object's +0x20 a vtable slot of the owner (making site 1 an ordinary virtual call on the owner) or a callback word stored in a callback-holder object and invoked with the owner as its single argument? Both readings execute the identical three instructions at 0x00a85079, 0x00a8507c and the surrounding frame, so the listing cannot separate them and the model asserts neither.",
+  "What is the second stack word? It exists only because the terminator is RET 0xc. No instruction reads entry_ESP + 0x8, there is no call site to inspect (the body has no direct callers), and no record constrains it, so its type and its value are unconstrained here.",
+  "What are the C++ types, and what is the class? The vtable 0x01458024, its 15 entries and the constructor's member set fix the receiver's SHAPE but not its name, and no SDK association was corroborated for this VA. In particular 0x004ae250, which shares the table, is a 7-instruction no-op, so the name another package attached to it is not supported by its bytes.",
+  "Is the returned/stored word a pointer? Two sibling entries of the same vtable treat the receiver's +0x10 as a pointer to a polymorphic object, which makes it very likely -- but this body never reads that word, so its type is not fixed by this listing and the model leaves the slot opaque.",
+  "The receiver's layout above the single +0x10 store is taken from the constructor 0x00a853b0, not from this body. On its own this body bounds the object at 0x14 only. Any claim about a member beyond +0x10 rests on that second listing.",
+  "No decompilation exists for this VA in this session (three decompiler calls all failed), so no decompiler disagreement could be recorded and no decompiler observation backs the reconstruction.",
+  "Two of the vtable's later entries (0x0082e650, x4, and 0x0051e340 / 0x0051e380) were not disassembled, so whether the table is one homogeneous interface list or a mix of the class's own and inherited methods is not established. It does not affect this body, which is slot 0."
+ ],
+ "runtime_gate": {
+  "status": "required",
+  "runtime_validation": 0,
+  "conditions": [
+   "The original process is driven far enough to call this body through vtable 0x01458024 slot 0 with a live owner object.",
+   "A trace records the word at owner+0x00, the target fetched at 0x00a85079, the value in EAX immediately after 0x00a8507c returns, the word that 0x00a8507e then reads, the target fetched at 0x00a85082, and the dword written at 0x00a85087.",
+   "The decisive measurement is that EAX value: if it still equals owner+0x00, the body is insensitive to the first callee's EAX and the natural source-level re-read would have been equivalent; if it does not, the first unresolved question is answered and the re-read reconstruction is refuted.",
+   "The trace must also show whether the second callee is a virtual call on the object at *owner (whose +0x00 is the base) or a call through a field, which is what would settle the second unresolved question from the callee side.",
+   "Until a trace exists, RUNTIME stays GATED at 0 and nothing in this package may be promoted on the strength of a static pass alone."
+  ]
+ },
+ "validation": {
+  "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x00a85070', write=False)\" -- OWNED BY THE PARENT. This worker did not run it, per the worker contract.",
+  "compile_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw1_00a85070.cpp sw1_00a85070_model_test.cpp -o /tmp/w_00a85070 && /tmp/w_00a85070 -- run by this worker in reconstruction/staging/pkg-swarm-w1-00a85070: builds clean with zero warnings under -Werror and exits 0. The header was also compiled alone under the same flags (-fsyntax-only on a translation unit that only includes it): clean. The repo-wide cmake/ctest build was NOT touched.",
+  "model_test": "Nine cases. case_nominal walks the body and asserts what the 13 instructions fix: exactly two transfers in the order site 1 then site 2, site 1's receiver is the first argument itself, site 2's receiver is the word the argument leads with, EAX holds *owner at 0x00a8507c and the fetched target at 0x00a85085 (both sampled inside the observers), the receiver's +0x10 holds the second call's EAX, the returned word equals the stored word, and a byte-by-byte comparison of the receiver's whole 0x6c bytes shows that only 0x10..0x13 changed. case_slot_displacements, case_pointer_levels, case_first_callee_clobbers_eax, case_first_callee_preserves_eax, case_store_lands_on_the_receiver, case_write_is_last, case_result_values_are_passed_through and case_second_stack_word_is_unused are the refutation cases; the file header names the wrong reconstruction each one is aimed at. There is no case with zero refutation content.",
+  "mutation_checking": {
+   "method": "30 single-site mutations of sw1_00a85070.cpp, each built under the same -Werror gate and run; a mutation counts as killed only when the binary exits non-zero.",
+   "results": [
+    {
+     "mutation": "M1 reload [owner] instead of reading the post-call EAX at 0x00a8507e",
+     "outcome": "KILLED: 5 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M2 site 2's receiver = the owner instead of the post-call EAX",
+     "outcome": "KILLED: 4 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M3 second target fetch at 0x20 instead of 0x60",
+     "outcome": "KILLED: 51 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M4 first target fetch at 0x60 instead of 0x20",
+     "outcome": "KILLED: 56 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M5 store at receiver+0x14 instead of +0x10",
+     "outcome": "KILLED: 49 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M6 site 1's receiver = *owner instead of the owner",
+     "outcome": "KILLED: 1 assertion failure, exit 1"
+    },
+    {
+     "mutation": "M7 return 0 instead of the stored word",
+     "outcome": "KILLED: 6 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M8 store before the calls instead of after",
+     "outcome": "KILLED: 2 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M9 second base read at +0x04 instead of +0x00",
+     "outcome": "KILLED: 14 assertion failures then SIGSEGV, exit 139"
+    },
+    {
+     "mutation": "M10 second base = the object's own address (one dereference short)",
+     "outcome": "KILLED: 14 assertion failures then SIGSEGV, exit 139"
+    },
+    {
+     "mutation": "M11 owner read at +0x04 instead of +0x00",
+     "outcome": "KILLED: 58 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M12 store the first call's target instead of its result",
+     "outcome": "KILLED: 29 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M13 drop the second indirect call",
+     "outcome": "KILLED: 54 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M14 swap the two target displacements",
+     "outcome": "KILLED: 56 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M15 second target at 0x5c (one slot below)",
+     "outcome": "KILLED: 51 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M16 first target at 0x1c (one slot below)",
+     "outcome": "KILLED: 56 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M17 first target at 0x18",
+     "outcome": "KILLED: 56 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M18 first target at 0x24 (one slot above)",
+     "outcome": "KILLED: 56 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M19 second target at 0x64 (one slot above)",
+     "outcome": "KILLED: 51 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M20 use the owner itself as the dispatch object (no leading read)",
+     "outcome": "KILLED: SIGSEGV, exit 139"
+    },
+    {
+     "mutation": "M21 byte store at receiver+0x10 instead of a dword store",
+     "outcome": "KILLED: 18 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M22 no store at all",
+     "outcome": "KILLED: 24 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M23 store into the dispatch object instead of the receiver",
+     "outcome": "KILLED: 29 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M24 site 1's receiver = this",
+     "outcome": "KILLED: 1 assertion failure, exit 1"
+    },
+    {
+     "mutation": "M25 re-derive EAX after site 1 (i.e. ignore the callee's EAX)",
+     "outcome": "KILLED: 5 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M26 null-guard the store",
+     "outcome": "KILLED: 5 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M27 store g_eax + 1",
+     "outcome": "KILLED: 17 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M28 site 2's receiver = this",
+     "outcome": "KILLED: 4 assertion failures, exit 1"
+    },
+    {
+     "mutation": "M29 second base read at +0x08",
+     "outcome": "KILLED: 14 assertion failures then SIGSEGV, exit 139"
+    },
+    {
+     "mutation": "M30 second base read at +0x14",
+     "outcome": "KILLED: 14 assertion failures then SIGSEGV, exit 139"
+    }
+   ],
+   "survivors": "0 of 30. Nothing in this body's model is left unconstrained by the test.",
+   "known_limits": "Five of the thirty die on a SIGSEGV rather than on an assertion, and the reason is a property of the fixture, not a hole in the test: a decoy word that is a TABLE pointer, used where the model expects a CALL TARGET, makes the machine execute the fixture as code, and no C++ object can be both a valid function entry and a table with a live slot at +0x60. The test therefore plants decoys chosen for the role a wrong displacement would put them in -- table pointers at the words a wrong second-base read would pick up, function pointers at the words a wrong first-target fetch would pick up -- so each wrong word is caught by a named assertion in the role it can actually reach, and the remaining cross-role shape (M20) is killed by a fault. Four of the five print 14 assertion failures before faulting. Second limit: the sinks make a wrong path keep dereferencing valid memory, so a mutation that walks the whole chain wrongly can reach a live observer and be reported by name; that is stronger than a fault but it is still an assertion about the test's own observers, not about the original process."
+  },
+  "expected": {
+   "ABI": "PASS",
+   "CALLS": "PASS",
+   "GLOBALS": "PASS",
+   "CONSTANTS": "PASS",
+   "CONTROL FLOW": "PASS",
+   "VIRTUAL DISPATCH": "PASS",
+   "RETURN SEMANTICS": "PASS",
+   "FIELDS/OFFSETS": "WARN",
+   "EVIDENCE COVERAGE": "WARN"
+  },
+  "expected_reasons": {
+   "ABI": "__thiscall is declared once as the package macro PKG_SW1_00A85070_THISCALL in the header and used by the reconstructed definition, and both halves of the convention are machine-observed: the receiver register at 0x00a85071 and the callee-owned RET 0xc at 0x00a8508b. Ghidra reports no convention and 0 parameters for this VA, which cross-validates nothing either way.",
+   "CALLS": "Two transfers, both indirect, both with a single register argument and no stack argument; the direct-callee list is empty in the source, in the brief (callees []) and in abi_derived.dispatch.call_offsets, and the header declares the indirect-call shape instead of a callee.",
+   "GLOBALS": "No instruction in the 13 names a data-segment address, and the source declares no global. The five constants the constructor 0x00a853b0 reads are recorded as that listing's evidence and appear in no part of this body or its model.",
+   "FIELDS/OFFSETS": "EXPECTED WARN, and it is a true statement rather than a defect. The model names no member anywhere: the receiver is an opaque 0x6c-byte run reached at the single displacement 0x10, the owner is a 4-byte run reached at displacement 0, and the dispatch object is a 0x24-byte run reached at 0x00 and 0x20. The machine-derived receiver record for this VA is bounds_only with offsets [16], which says where the body was seen reaching and not which member is which, and the 0x6c size comes from a second listing (the constructor) rather than from this one. Fixing the WARN would mean either naming members the evidence does not fix (a false claim) or dropping the 0x6c bound this body does need (a worse model), so it is left as it is and named here.",
+   "CONSTANTS": "The source span states exactly three hexadecimal constants -- 0x20, 0x60 and 0x10 -- each inside a static_assert that names the instruction it came from, and all three appear in the machine listing at 0x00a85079, 0x00a85082 and 0x00a85087. The two zero-displacement reads are asserted in decimal on purpose, because the listing carries no zero constant and a 0x0 literal in the source would be absent from it.",
+   "CONTROL FLOW": "The complete 13-instruction listing has no conditional branch, no unconditional branch and no loop, so the branch graph is empty and closes trivially inside the recovered span. The model has no `if`, `for`, `while` or `switch` outside its test-only instrumentation.",
+   "VIRTUAL DISPATCH": "The listing names 2 indirect sites (CALL EDX at 0x00a8507c and CALL EAX at 0x00a85085) and the machine dispatch record counts 2, so the two sources agree. The source describes both slot boundaries -- the fetch helper is named load_slot, the two displacements are named constants with their instructions -- and the model's test measures each site's receiver, base and target offset rather than asserting them by comment.",
+   "RETURN SEMANTICS": "EAX carries site 2's result, the body stores it at receiver+0x10 and the epilogue leaves EAX alone, so the returned word and the stored word are one value. The reconstruction declares a 4-byte Word, which is the byte-accurate statement; the record's unclassified_in_EAX means there is no canonical type to agree with, and the model test asserts the returned-equals-stored identity for four different result values including 0.",
+   "EVIDENCE COVERAGE": "Decided by the evidence pack's own category availability, not by this source, so this package predicts it rather than claims it. It is expected to WARN because the pack's DECOMPILATION category is unavailable -- three decompiler calls all failed in this session, which is a capability gap in the bridge, not a gap in the reconstruction."
+  },
+  "not_verified": [
+   "The eight predicted verdicts above were NOT observed in this run. The worker contract reserves `openspore validate` for the parent, and the repo-wide build directory is shared with concurrent workers, so this package verified itself with the -Werror compile gate, the nine model-test cases and the 30-mutation battery only. Treat the predictions as predictions."
+  ],
+  "observed": {
+   "captured_on": "2026-09-28",
+   "static": "NOT_RUN",
+   "runtime": "NOT_AVAILABLE",
+   "runtime_validated": 0,
+   "aggregate_note": "No validator run was made by this worker. What was actually run: the -Werror compile gate (clean), the model test (exit 0), and the 30-mutation battery (0 survivors)."
+  }
+ },
+ "known_blockers": [
+  "FIELDS/OFFSETS (predicted WARN, real and not fixable from this package): the model declares no member, because this body reads two words through two pointers it was handed and writes one word, and its receiver record is bounds_only. The only way to clear it would be to name members no instruction fixes.",
+  "The EAX-preservation question is a runtime gate, not a static defect: 0x00a8507e reads the post-call EAX, so the reconstruction is only as good as that assumption until a trace shows what the +0x20 callee leaves in EAX. The model reproduces the machine in both directions and the test pins both, which is the most a static package can do.",
+  "No decompilation is available for this VA, so the package has no second, independently-derived reading to cross-check the reconstruction against."
+ ]
+}

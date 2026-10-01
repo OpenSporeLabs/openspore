@@ -148,16 +148,53 @@ class CoverageTest(unittest.TestCase):
 
         records = dim("integrated_reconstruction_record")
         unique = dim("integrated_unique_va")
-        # 300 records exist; 299 are integrated and 1 is blocked. The record
+        # 358 records exist; 357 are integrated and 1 is blocked. The record
         # dimension counts integrated RECORDS, the unique dimension counts
         # distinct VAs among them.
-        self.assertEqual(records["covered"], 299)
-        self.assertEqual(unique["covered"], 299)
-        self.assertEqual(records["universe"], 300)
+        #
+        # Re-pinned 2026-09-29 from 305/304 to 358/357. The whole +53 is the
+        # `satisfy apply` run (52 already-promoted packages) plus 0x00841440;
+        # it moved records, unique VAs and
+        # in_universe by exactly the same amount and left blocked, the 4
+        # out-of-universe rows and the 12 function_address-only records alone,
+        # so the derived splits below are unchanged by arithmetic, not by
+        # relabelling.
+        # Re-pinned 2026-09-29 (the R1-VFT wave): 357 -> 364 and 358 -> 365,
+        # both exactly +7. The seven are the targets the new receiver rule
+        # unlocked, promoted in one campaign: 0x0052e640, 0x0052e650,
+        # 0x0057d6f0, 0x005c8bc0, 0x00642210, 0x00b1fbf0, 0x00e5cac0. A
+        # reconstruction campaign must make this number go UP; a fall would
+        # mean a manifest record had been lost.
+        #
+        # Re-pinned 2026-09-30 (the R2-VFT wave): 365 -> 368 and 364 -> 367,
+        # both exactly +3. The three are the targets the address-taken receiver
+        # rule unlocked: 0x009817c0 directly, 0x00980480 through the tail
+        # target it forwards to, and 0x007d9410 through the same mechanism on a
+        # hop target whose listing the live bridge supplies. records, unique VAs
+        # and in_universe moved by exactly the same +3, which is the property
+        # that makes this a re-pin and not a relabelling.
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): 365 -> 373 and
+        # 364 -> 372, both exactly +8, and 368 -> 374 records. The eight are the
+        # targets the address-taken receiver rule unlocked, promoted across three
+        # waves: 0x009817c0 and 0x00841540 directly, 0x009804e0, 0x009672d0 and
+        # 0x007d9410 whose own ABI was the only blocker, 0x009646d0 whose record
+        # improved under an already-reconstructed package, and the two the
+        # receiver rule reaches only through a tail target -- 0x00980480 through
+        # 0x00980330 and 0x007d9410 through 0x007d9bb0 -- which T1-FWD then
+        # forwards to. records, unique VAs and in_universe moved by exactly the
+        # same +8, which is what makes this a re-pin and not a relabelling.
+        self.assertEqual(records["covered"], 373)
+        self.assertEqual(unique["covered"], 373)
+        self.assertEqual(records["universe"], 374)
         self.assertNotEqual(records["universe"], report()["reconstruction"]["packages"])
-        self.assertEqual(report()["reconstruction"]["records"], 300)
-        self.assertEqual(report()["reconstruction"]["unique_vas"], 300)
-        self.assertEqual(report()["reconstruction"]["in_universe"], 296)
+        self.assertEqual(report()["reconstruction"]["records"], 374)
+        self.assertEqual(report()["reconstruction"]["unique_vas"], 374)
+        self.assertEqual(report()["reconstruction"]["in_universe"], 370)
+        # Re-pinned 2026-09-29 (the second R1-VFT wave): 4 -> 5. The five are
+        # the VAs a manifest record carries that the gameplay universe does not
+        # list. Every reconstruction campaign grows this list; what must not
+        # happen is for a listed VA to leave it, and the universe count above
+        # pins that.
         self.assertEqual(len(report()["reconstruction"]["out_of_universe"]), 4)
         # 12 records carry `function_address` rather than `va`.
         self.assertEqual(report()["reconstruction"]["records_with_function_address_only"], 12)
@@ -167,7 +204,17 @@ class CoverageTest(unittest.TestCase):
         records = dim("integrated_reconstruction_record")
         blocked = dim("blocked_va")
         staged = dim("staged_va")
-        self.assertEqual(records["covered"], 299)
+        # 369 records exist, 368 integrated; re-pinned with the census above
+        # (was 358/357). The delta is +11, which is the same +11 the two R1-VFT
+        # waves promoted into `src/`. The records that campaign STAGED but could
+        # not promote are deliberately absent here: `satisfy` creates a manifest
+        # row only for a promoted package, and a hand-written row for a blocked
+        # one is what made this index's frontier disagree with the derived one.
+        #
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): 368 -> 373, the
+        # same +5 the census above moved: 0x009817c0, 0x00980480, 0x007d9410,
+        # 0x009672d0 and 0x009804e0.
+        self.assertEqual(records["covered"], 373)
         self.assertEqual(blocked["covered"], 1)
         self.assertEqual(blocked["blocked_va"], "0x00dd0e10")
         self.assertEqual(normalize_va(blocked["blocked_va"]), "0x00dd0e10")
@@ -183,8 +230,16 @@ class CoverageTest(unittest.TestCase):
         self.assertTrue(reconstruction["accounting_exclusions_are_not_subtractions"])
         self.assertTrue(reconstruction["accounting_exclusions_all_integrated"])
         self.assertIn("NOT an exclusion set", reconstruction["accounting_exclusions_warning"])
-        self.assertEqual(records["covered"], 299)
-        self.assertNotEqual(records["covered"], 299 - len(reconstruction["accounting_exclusions"]))
+        # The emitter's own warning text is generated from the same figure, and
+        # it already reads "from 368 to 363"; these two assertions pin the
+        # number that text is derived from, so they moved with the census.
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): 368 -> 373, the
+        # same +5 the rest of the wave moved. The subtraction form is the one
+        # with teeth and it must keep disagreeing: `accounting_exclusions` is a
+        # preservation list, so treating it as a subtraction would understate
+        # integration by five.
+        self.assertEqual(records["covered"], 373)
+        self.assertNotEqual(records["covered"], 373 - len(reconstruction["accounting_exclusions"]))
 
     # -- 4 ---------------------------------------------------------------
     def test_persisted_versus_live_only(self):
@@ -319,8 +374,27 @@ class CoverageTest(unittest.TestCase):
         self.assertTrue(record["id_says_without_but_covered_is_the_with_set"])
         self.assertIn("ALSO carry a persisted body", record["counting_rule"])
         complement = record["covered_without_persisted_body"]
-        self.assertEqual(complement, 151)
-        self.assertEqual(record["covered"] + complement, 300)
+        # Re-pinned 2026-09-29: the same `satisfy apply` run raised the with-set
+        # from 154 to 170 and the without-set from 151 to 187 over a universe
+        # that grew 305 -> 358. The sum invariant is the load-bearing assertion
+        # and it still closes exactly, at 358. The final +1 is 0x00841440, which
+        # the shared-target tail-forward ABI extension moved to STATIC PASS and
+        # which therefore arrived carrying a persisted body.
+        #
+        # Re-pinned 2026-09-29 (the R1-VFT wave): 187 -> 193 on the without-set
+        # and 170 -> 172 on the with-set, both summing to the same +7 the record
+        # census moved, and the sum invariant still closes exactly -- now at 365
+        # rather than 358. The split (two of the seven with a persisted body, five
+        # without) is what the emitter reports, not a number assigned here.
+        #
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): the with-set
+        # moved 174 -> 179 and the without-set held at 195, so the sum closes at
+        # 374 rather than 369 -- the same +5 the record census moved, arriving
+        # entirely on the with-set side because all five promoted packages carry
+        # a persisted body. The sum invariant is the assertion with teeth and it
+        # still closes exactly.
+        self.assertEqual(complement, 195)
+        self.assertEqual(record["covered"] + complement, 374)
 
     # -- 4f --------------------------------------------------------------
     def test_untracked_percentage_is_computed_not_asserted(self):
@@ -1025,17 +1099,66 @@ class CoverageSemanticsTest(unittest.TestCase):
         self.assertLessEqual(dim("functions_with_caller")["gameplay_covered"], 2149)
         self.assertLessEqual(dim("functions_with_callee")["gameplay_covered"], 2149)
 
-    # -- 20: type association (SEMI-STABLE) -------------------------------
+    # -- 20: type association (SEMI-STABLE DB half, VOLATILE index half) ----
     def test_type_association_count(self):
         require_db()
         record = dim("has_type_association")
-        self.assertEqual(record["covered"], 6807)
-        # It is a UNION, so each part is bounded by the whole.
+        # The DB half is SEMI-STABLE: it comes from the gitignored
+        # knowledgegraph/spore.db, is reproducible only where that DB exists, and
+        # has not moved, so it stays pinned.
+        self.assertEqual(record["database_only"], 6733)
+        self.assertTrue(record["machine_local"])
+        # `covered` and `knowledge_index_only` are functions of
+        # reconstruction/knowledge/index.json, which the reconstruction campaign
+        # rewrites continuously, so under the STABLE/VOLATILE policy above they
+        # get invariants, never a literal. This used to pin covered=6807 and
+        # knowledge_index_only=454; that pair was captured mid-campaign and was
+        # ALREADY 6878/527 against commit 18bcae4's own index.json, so the pin
+        # was stale before the first wave that tripped it. The corpus moved for a
+        # real reason -- types 767 -> 825, vtables 1308 -> 1321, globals 81 -> 90
+        # as later sidecars landed, index in-universe VAs 454 -> 529 -- while the
+        # DB half stayed at 6733, so all 73 of the delta came from the index half.
+        # Re-basing the literal would only have re-armed the tripwire for the
+        # next wave, so the numbers below are re-derived from their sources and
+        # the literals are gone.
         self.assertLessEqual(record["database_only"], record["covered"])
         self.assertLessEqual(record["knowledge_index_only"], record["covered"])
-        self.assertEqual(record["database_only"], 6733)
-        self.assertEqual(record["knowledge_index_only"], 454)
-        self.assertTrue(record["machine_local"])
+        index_path = ROOT / cov.KNOWLEDGE_INDEX_REL
+        self.assertTrue(index_path.exists(),
+                        "%s is absent, so the index half cannot be re-derived"
+                        % cov.KNOWLEDGE_INDEX_REL)
+        with open(index_path, encoding="utf-8") as handle:
+            index = json.load(handle)
+        # The dimension is documented as reading exactly these four subtrees, so
+        # a fifth one feeding it would break the re-derivation below rather than
+        # slip past it.
+        for key in INDEX_ASSOCIATION_KEYS:
+            self.assertIn(key, record["source_of_truth"], key)
+        occurrences, index_vas, per_key = _index_type_association(index)
+        universe = _universe_bare()
+        index_in_universe = index_vas & universe
+        self.assertEqual(record["knowledge_index_only"], len(index_in_universe))
+        # SET UNION over both sources, recomputed rather than trusted: summing
+        # the two halves instead of unioning them would over-report by the
+        # overlap, and the overlap is asserted explicitly below.
+        connection = read_only_db()
+        self.addCleanup(connection.close)
+        db_in_universe = _db_type_association(connection) & universe
+        self.assertEqual(record["database_only"], len(db_in_universe))
+        overlap = db_in_universe & index_in_universe
+        self.assertEqual(record["covered"], len(db_in_universe | index_in_universe))
+        self.assertEqual(record["covered"],
+                         record["database_only"] + record["knowledge_index_only"]
+                         - len(overlap))
+        # ...and neither side is a count of references or of rows. The index
+        # carries far more VA references than distinct VAs, and the four
+        # subtrees overlap heavily, so an engine that stopped de-duplicating
+        # would report a strictly larger figure here. These two comparisons are
+        # what let the dimension grow legitimately while still catching a
+        # duplication that a re-pinned literal would have blessed.
+        self.assertLess(len(index_in_universe), len(occurrences))
+        self.assertLess(len(index_in_universe),
+                        sum(len(vas & universe) for vas in per_key.values()))
 
     # -- 21: package membership (STABLE) ----------------------------------
     def test_package_membership_count(self):
@@ -1045,7 +1168,25 @@ class CoverageSemanticsTest(unittest.TestCase):
         # union of three vocabularies, each bounded by the whole
         for part in ("manifest_package", "queue_cluster", "blueprint_package"):
             self.assertLessEqual(record[part], record["covered"], part)
-        self.assertEqual(record["manifest_package"], 296)
+        # Re-pinned 2026-09-29: manifest_package 301 -> 354 is the same +53.
+        # The union figure `covered` (2344) did NOT move, because the 52 new
+        # manifest VAs were already inside the union through queue_cluster and
+        # blueprint_package. That the union held while one of its three inputs
+        # grew by 52 is the assertion with teeth here, and it still holds.
+        # Re-pinned 2026-09-29 (the R1-VFT wave): manifest_package 354 -> 361 is
+        # the same +7 as the record census. The union figure `covered` (2344)
+        # did NOT move, for the same reason it did not move last time: the new
+        # manifest VAs were already inside the union through queue_cluster and
+        # blueprint_package. That the union held while one of its three inputs
+        # grew by seven is the assertion with teeth, and it still holds.
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): manifest_package
+        # 361 -> 365 -> 370, the same +7 then +5 as the record census, and the
+        # union figure (2344) did NOT move a third time, for the same reason
+        # both times: the new manifest VAs were already inside the union through
+        # queue_cluster and blueprint_package. That the union held while one of
+        # its three inputs grew by five is the assertion with teeth, and it
+        # still holds.
+        self.assertEqual(record["manifest_package"], 370)
         self.assertEqual(record["queue_cluster"], 365)
         self.assertEqual(record["blueprint_package"], 2149)
         self.assertEqual(record["universe_without_membership"], 58757 - 2344)
@@ -1053,17 +1194,49 @@ class CoverageSemanticsTest(unittest.TestCase):
     # -- 22: queue census (STABLE) ----------------------------------------
     def test_queue_census(self):
         dependencies = report()["dependencies"]
-        self.assertEqual(dependencies["queue"], 368)
-        self.assertEqual(dependencies["in_universe"], 365)
-        self.assertEqual(dependencies["out_of_universe_count"], 3)
-        self.assertEqual(dependencies["out_of_universe"],
-                         ["00e3a400", "00e7b6c0", "00e7d2c0"])
-        self.assertEqual(dim("in_triage_queue")["covered"], 365)
-        # 368 = 365 in-universe + exactly the 3 listed out-of-universe rows.
+        self.assertEqual(dependencies["queue"], 369)
+        # Re-pinned 2026-09-30 (the target-identity correction): 366 -> 369 and
+        # 3 -> 0. The three out-of-universe rows were not work items at all --
+        # 0x00e3a400, 0x00e7b6c0 and 0x00e7d2c0 are the inclusive last byte of
+        # the instruction before each of them, so none of them names a function
+        # and none of them was ever reconstructable. Counting them as "actionable
+        # but out of universe" stated a contradiction as a census. They now
+        # resolve to FUN_00e3a270, FUN_00e7b630 and FUN_00e7d070, all three of
+        # which ARE in the universe, so the row count is unchanged and the split
+        # between in- and out-of-universe is not.
+        self.assertEqual(dependencies["in_universe"], 369)
+        self.assertEqual(dependencies["out_of_universe_count"], 0)
+        self.assertEqual(dependencies["out_of_universe"], [])
+        self.assertEqual(dim("in_triage_queue")["covered"], 369)
         self.assertEqual(dependencies["in_universe"] + dependencies["out_of_universe_count"],
                          dependencies["queue"])
         with open(ROOT / cov.QUEUE_REL, encoding="utf-8") as handle:
             self.assertEqual(dependencies["queue"], len(json.load(handle)["queue"]))
+
+    def test_a_queue_row_naming_a_non_entry_is_resolved_not_dropped(self):
+        # The queue is a committed artifact and is not rewritten here: three of
+        # its rows name the inclusive last byte of the instruction before them,
+        # and the correction is that the census RESOLVES them rather than
+        # dropping them. Both halves matter -- dropping them would silently retire
+        # work, and leaving them unresolved would count impossible targets.
+        with open(ROOT / cov.LEDGER_REL, encoding="utf-8") as handle:
+            ledger = json.load(handle)["ledger"]
+        with open(ROOT / cov.QUEUE_REL, encoding="utf-8") as handle:
+            queue = json.load(handle)["queue"]
+        entries = {cov._bare(row.get("va")) for row in ledger}
+        named = {cov._bare(row.get("va")) for row in queue}
+        non_entries = sorted(named - entries)
+        self.assertEqual(non_entries, ["00e3a400", "00e7b6c0", "00e7d2c0"])
+        resolved = cov._resolve_to_entries(set(non_entries), ledger)
+        self.assertEqual(sorted(resolved),
+                         ["00e3a270", "00e7b630", "00e7d070"])
+        # Every one of them is a real entry, and the count is preserved: three
+        # rows in, three work items out.
+        self.assertEqual(len(resolved), len(non_entries))
+        self.assertTrue(resolved <= entries)
+        # The function is a no-op on a set that is already all entries, which is
+        # what makes it safe to apply to the whole census.
+        self.assertEqual(cov._resolve_to_entries(entries, ledger), entries)
 
     # -- 23: readiness census (STABLE) ------------------------------------
     def test_readiness_census(self):
@@ -1134,23 +1307,59 @@ class CoverageSemanticsTest(unittest.TestCase):
     def test_actionable_frontier_agrees_with_the_knowledge_index(self):
         record = dim("in_actionable_frontier")
         dependencies = report()["dependencies"]
-        self.assertEqual(record["covered"], 231)
-        self.assertEqual(record["in_universe"], 228)
-        self.assertEqual(dependencies["actionable_frontier"], 231)
-        self.assertEqual(dependencies["actionable_frontier_in_universe"], 228)
-        # 231 actionable = the 228 in-universe ones + the 3 out-of-universe rows.
+        # Re-pinned 2026-09-29: 227 -> 174 and 224 -> 171, both exactly -53.
+        # This is the frontier SHRINKING for the right reason: actionable is
+        # queue MINUS manifest, and the same `satisfy apply` run that grew the
+        # manifest by 52 moved those 52 VAs out of the actionable set. A
+        # promotion campaign must make this number go down; a rise would mean a
+        # manifest record had been lost.
+        #
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): 167 -> 162 -> 158,
+        # both exactly -5, and 206 -> 211 the matching +5 from the manifest side.
+        # The five VAs that left the actionable set are exactly the five this
+        # campaign promoted, so the frontier shrank for the same reason and by
+        # the same amount it grew. The 3 out-of-universe rows are untouched.
+        # Re-pinned 2026-09-30 (the target-identity correction): 155 -> 158
+        # in-universe, for the reason in test_queue_census: the three rows that
+        # used to sit outside the universe are not outside it once they name the
+        # function that actually contains them. The actionable total is unchanged
+        # at 158 throughout, which is the point -- the same work, correctly
+        # attributed.
+        self.assertEqual(record["covered"], 158)
+        self.assertEqual(record["in_universe"], 158)
+        self.assertEqual(dependencies["actionable_frontier"], 158)
+        self.assertEqual(dependencies["actionable_frontier_in_universe"], 158)
+        # 158 actionable, all 158 of them in the universe.
         self.assertEqual(record["in_universe"] + dependencies["out_of_universe_count"],
                          record["covered"])
-        # The 137 in-universe queue rows NOT in the frontier are exactly the ones
+        # The 195 in-universe queue rows NOT in the frontier are exactly the ones
         # a manifest record already claims: actionable is queue MINUS manifest.
-        self.assertEqual(dependencies["in_universe"] - record["in_universe"], 137)
+        # 142 -> 195 is the same +53 arriving from the manifest side.
+        #
+        # Re-pinned 2026-09-29 (the R1-VFT wave): 174 -> 167 and 171 -> 164,
+        # both exactly -7, and 195 -> 202 the matching +7 from the manifest side.
+        # The frontier must go DOWN when a promotion campaign runs; a rise would
+        # mean a manifest record had been lost.
+        self.assertEqual(dependencies["in_universe"] - record["in_universe"], 211)
         index_path = ROOT / cov.KNOWLEDGE_INDEX_REL
         if not index_path.exists():
             self.skipTest("%s is absent; the frontier cross-check has nothing to compare"
                           % cov.KNOWLEDGE_INDEX_REL)
         cross = dependencies["frontier_cross_check"]
         self.assertTrue(cross["knowledge_index_present"])
-        self.assertEqual(cross["knowledge_index_frontier_size"], 231)
+        # Re-pinned 2026-09-29 (the R1-VFT wave): 174 -> 167, the same -7 as the
+        # derived frontier above. The set-equality assertion below is the one
+        # with teeth; this pins that the index's own count agrees.
+        # Re-pinned 2026-09-29 (the second R1-VFT wave): 174 -> 167 -> 162.
+        # The index's own frontier list is one row larger than the derived
+        # universe-scoped count because the index is not universe-scoped; the
+        # set-equality assertion below is the one that decides agreement, and
+        # it compares the two sets, not their sizes.
+        # Re-pinned 2026-09-30 (the R2-VFT campaign, complete): 162 -> 158, the
+        # same -5. The target-identity correction did not change this total: the
+        # three phantom rows left the frontier and the three entries that contain
+        # them entered it.
+        self.assertEqual(cross["knowledge_index_frontier_size"], 158)
         self.assertTrue(cross["agrees_with_derived_actionable_frontier"])
         # SET-EQUAL, not merely the same size.
         with open(index_path, encoding="utf-8") as handle:
@@ -1459,6 +1668,68 @@ def _universe_bare():
     return {row["va"] for row in ledger()["ledger"] if row.get("va")}
 
 
+# The four knowledge-index subtrees the has_type_association dimension walks.
+# Named here as well as in coverage.py so the re-derivation below is asserting
+# the DOCUMENTED key set: a fifth key feeding the dimension would make the
+# reported figure exceed what these four contain.
+INDEX_ASSOCIATION_KEYS = ("types", "vtables", "globals", "services")
+
+
+def _index_type_association(index):
+    """Recompute the knowledge-index half of has_type_association.
+
+    Returns ``(occurrences, distinct, per_key)``: every bare VA *reference* the
+    four subtrees contain with repeats, the set of distinct ones, and the
+    distinct set of each subtree separately. The engine reports the distinct
+    count, so these are asserted apart -- the gaps are what make a
+    de-duplication regression visible instead of invisible.
+    """
+    occurrences, per_key = [], {}
+
+    def collect(value, out):
+        if isinstance(value, list):
+            for child in value:
+                collect(child, out)
+        elif isinstance(value, dict):
+            for child in value.values():
+                collect(child, out)
+        elif isinstance(value, str) and value.startswith(("fun:", "0x")):
+            bare = cov._bare(value)
+            if bare:
+                out.add(bare)
+                occurrences.append(bare)
+
+    for key in INDEX_ASSOCIATION_KEYS:
+        collect(index.get(key), per_key.setdefault(key, set()))
+    distinct = set().union(*per_key.values()) if per_key else set()
+    return occurrences, distinct, per_key
+
+
+def _db_type_association(connection):
+    """Recompute the machine-local DB half of has_type_association.
+
+    Mirrors the three edge relations plus the triage struct_names column, so the
+    union reported by the engine can be checked as a real set union below.
+    """
+    cursor = connection.cursor()
+    vas = set()
+    for rel, dst_label, take_dst in (("hasSlot", "Function", True),
+                                     ("sdkAssociatedWithStructure", "Structure", False),
+                                     ("staticAssociatedWithStructure", "Structure", False)):
+        for left, right in cursor.execute(
+                "select sl.name, dl.name from edge e join node sl on sl.id=e.src "
+                "join node dl on dl.id=e.dst where e.rel=? and dl.label=?", (rel, dst_label)):
+            text = str(right if take_dst else left)
+            if text.startswith(("fun:", "semantic:function:")):
+                bare = cov._bare(text.split(":")[-1])
+                if bare:
+                    vas.add(bare)
+    vas |= {cov._bare(row[0]) for row in cursor.execute(
+        "select va from triage where struct_names <> '[]'")}
+    vas.discard(None)
+    return vas
+
+
 def _derived_actionable_frontier():
     """Recompute the actionable frontier from the two tracked inputs."""
     universe = _universe_bare()
@@ -1470,7 +1741,14 @@ def _derived_actionable_frontier():
         queue = json.load(handle)
     queue_vas = {normalize_va(row.get("va")) for row in queue["queue"]}
     queue_vas.discard(None)
-    return queue_vas - manifest_vas
+    # The same interior-address resolution the census and the index apply. Without
+    # it this recomputation compares the index's canonical frontier against the
+    # queue's raw addresses and the two can only ever differ by exactly the
+    # non-entries -- which is what it did until 2026-09-30.
+    with open(ROOT / cov.LEDGER_REL, encoding="utf-8") as handle:
+        ledger = json.load(handle)["ledger"]
+    return {normalize_va(va)
+            for va in cov._resolve_to_entries(queue_vas, ledger)} - manifest_vas
 
 
 def _mirrored_root(case):

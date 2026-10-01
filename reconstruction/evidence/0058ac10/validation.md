@@ -1,0 +1,54 @@
+# Validation 0x0058ac10
+
+- Static reconstruction: `FAIL`
+- Runtime (original process): `GATED`
+- Source: `src/reconstruction/pkg_editor_input_wave6/editor_input.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `WARN` | `partial` | derived calling-convention confidence is UNKNOWN; the oracle is not proven |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 774-instruction listing name the same 56 direct transfer target(s); the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 84 outgoing call edge row(s) over 56 distinct address(es) for 0x0058ac10; the record's dependency edge list is a scheduler projection of this export, not the export itself: it holds 30 row(s) and 22 address-named callee(s), against the 84 outgoing call edge row(s) and 56 distinct callee(s) the export records; 34 callee(s) the export records are absent from it, and the 30-row window capped at MAX_DEPENDENCY_EDGES=30 is why: 0x00572520, 0x005725d0, 0x00573480, 0x00573c00, 0x00573d70, 0x00575eb0, 0x005772b0, 0x0057c530, 0x0057e790, 0x005855b0, 0x005857c0, 0x005858f0 and 22 more; the record's edges_truncated flag is set, and it is computed over this record's incoming and outgoing call rows together, so incoming edges alone can set it; the export records 84 outgoing call edge row(s) for this target, which is the count that bounds a callee set; the source span names 0 of them and no others |
+| GLOBALS | `WARN` | `partial` | the complete 774-instruction listing names 1 data address(es) (0x15fd918) and the xref export carries no data-reference edge type, so there is nothing to corroborate them against; read/write mode still needs per-access evidence |
+| FIELDS/OFFSETS | `PASS` | `complete` | the source span declares 1 displacement(s) (0xf8) and every one of them is a displacement the complete 774-instruction listing shows: 1 attributed to the receiver ECX as proven (0xf8); the 774-instruction listing is the governing witness for what this body reaches -- it was consumed in full by the machine parse (declared_count=774, degraded=false, unparsed=0) -- and it is read alias-aware over receiver register ECX, so that a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the scan attributes 2 displacement(s) to the receiver as proven (0xf8, 0x397) and 0 more only on one arm of a branch, which is a may and grounds nothing (none); the machine-derived receiver record enumerates 16 displacement(s) (0x28, 0x2c, 0x30, 0x3c, 0x44, 0x78, 0x7c, 0x98, 0xd0, 0xd4, 0xe9, 0x148, 0x31c, 0x397, 0x3c4, 0x472), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open, so it widens what a claim may be grounded in and refutes nothing; 15 of those (0x28, 0x2c, 0x30, 0x3c, 0x44, 0x78, 0x7c, 0x98, 0xd0, 0xd4, 0xe9, 0x148, 0x31c, 0x3c4, 0x472) the scan does not attribute to the receiver, and the listing governs there; the listing shows 1 displacement(s) the record does not enumerate (0xf8), and a complete listing outranks a record that declares itself incomplete |
+| CONSTANTS | `FAIL` | `partial` | the source-vs-listing rule: 17 source constant(s) are absent from the machine listing: 0x12, 0x1b, 0x26, 0x2e, 0x31, 0x32, 0x33, 0x35, 0x42, 0x46, 0x4e, 0x53, 0x59, 0x5a, 0xbf, 0xd, 0xffffff88 |
+| CONTROL FLOW | `PASS` | `complete` | all 95 conditional branch target(s) in the complete 774-instruction listing lie inside the recovered body span 0x0058ac10..0x0058b53a, so the branch graph is closed inside it; the source span declares if, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `WARN` | `partial` | the complete 774-instruction body names 12 indirect transfer(s): 0x0058ac64 dispatches slot 0x84 through the table word in EDX; 0x0058ac87 dispatches slot 0x1c through the table word in EDX; 0x0058acc1 is INDIRECT_NON_VTABLE; 0x0058aee7 dispatches slot 0x8 through the table word in EAX; 0x0058b08c dispatches slot 0x8 through the table word in EDX; 0x0058b2a0 dispatches slot 0x30 through the table word in EDX; 0x0058b2fa dispatches slot 0x14 through the table word in EDX; 0x0058b35a dispatches slot 0x30 through the table word in EDX; 0x0058b39f dispatches slot 0x30 through the table word in EDX; 0x0058b3f0 dispatches slot 0x30 through the table word in EDX; 0x0058b482 dispatches slot 0x34 through the table word in EDX; 0x0058b4ab dispatches slot 0x30 through the table word in EDX; the machine parse consumed 774 of 774 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 12, so the dispatch is visible in the machine listing but is not proven: 1 of the 12 indirect transfer(s) classify as INDIRECT_NON_VTABLE (0x0058acc1), so the dispatch's identity is not established: the target is the memory operand [ECX*0x4 + 0x58b540], so no register chain exists to read; a scaled operand such as [EAX*0x4 + 0x5dd840] is a jump table and a plain [ESP + 0x30] is a frame slot, and neither is a virtual dispatch |
+| RETURN SEMANTICS | `PASS` | `partial` | return type agrees with the bounded ABI record |
+
+Static evidence basis: 8 of 8 static checks evaluated, 4 passed, 0 had no evidence to evaluate; 12 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 12 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `a381a0649ce1de8057627b4aa501cd387fdce07b30a1271ffc3ac8d985b3f256`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `a09651fdb15f6250f64365a36b5efafcaa78164d83a6d36e7146cf3b7cc13643`
+- Pack digest quoted by the briefing: `a381a0649ce1de8057627b4aa501cd387fdce07b30a1271ffc3ac8d985b3f256`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `input command domains, external paths, wheel handling, and runtime object/vtable ownership remain gated`, `runtime validation not run`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- input command domains, external paths, wheel handling, and runtime object/vtable ownership remain gated
+- runtime validation not run

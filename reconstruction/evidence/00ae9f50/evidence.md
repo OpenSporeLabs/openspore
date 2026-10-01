@@ -2,9 +2,41 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `ccb684b58d611003b5d20a529cac10bd64e3a479c8f6ac74891649fe29fdf8e9`
+- Content SHA-256: `0006c655c9e638c8df883f8902001ab4d5ca0f4fa05972cfae7073c91f296299`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, copied to ESI at 0x00ae9f57",
+  "hidden_this_register": "ECX is consumed immediately; ESI carries the receiver for the rest of the body, which is what lets ECX be reused as the receiver for the many __thiscall ports.",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_register": null,
+  "return_semantics": "No return value. EAX is a scratch register throughout.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI",
+    "EBX",
+    "EBP",
+    "EDI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "two exits, both the same bare RET: 0x00aea166 reached by falling off the end, and 0x00aea15f reached by the null-sub-object jump and by the +0x64 / +0x68 skips."
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -46,7 +78,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "2a9d66fa2f581e93375f884c53094afd305f2916c8a294f713f2cd8f3e8db8d5",
+  "content_sha256": "ecf88b253ff2b7038e6e90770e2e2b20bffcae4949d56a3af5c476ce34c972f8",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -54,16 +86,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -264,37 +296,169 @@
     {
       "at": "0x00ae9f65",
       "definite": true,
-      "id": "obs-001
+      "id": "obs-
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0067dcc0"
+  },
+  {
+    "name": "FUN_00b3d2a0",
+    "reconstructed": true,
+    "va": "0x00b3d2a0"
+  },
+  {
+    "name": "FUN_00b3d300",
+    "reconstructed": true,
+    "va": "0x00b3d300"
+  },
+  {
+    "name": "FUN_00b3d380",
+    "reconstructed": false,
+    "va": "0x00b3d380"
+  },
+  {
+    "name": "FUN_00b3d400",
+    "reconstructed": true,
+    "va": "0x00b3d400"
+  },
+  {
+    "name": "Simulator_cSpaceTrading_Get",
+    "reconstructed": true,
+    "va": "0x00b3d4d0"
+  },
+  {
+    "name": "Simulator_LookupEmpireByPoliticalId",
+    "reconstructed": true,
+    "va": "0x00ba9370"
+  },
+  {
+    "name": "FUN_01021090",
+    "reconstructed": false,
+    "va": "0x01021090"
+  },
+  {
+    "name": "pkg12_space_01021300",
+    "reconstructed": true,
+    "va": "0x01021300"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00aea210"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00aeb090"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00aeb7b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00aeb890"
+  }
+]
+```
 
 ## contradictions
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "anchors": [
+      "0x00b3d2a0",
+      "0x00b3d300",
+      "0x00b5b800",
+      "0x01021300",
+      "0x01021300",
+      "0x00ad23c0",
+      "0x00adbca0",
+      "0x00ae73e0",
+      "0x00ae9590",
+      "0x00ae9930",
+      "0x00ae9c90",
+      "0x00ae9f50",
+      "0x00aeb3e0",
+      "0x00aeb3e0",
+      "0x00aebe90",
+      "0x00b25fb0"
+    ],
+    "conflict_id": "global_root_identities",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": "The address/layout alternatives are preserved; no owner or exact binary identity is selected without a typed body or constructor path.",
+    "resolution_status": "The address/layout alternatives are preserved; no owner or exact binary identity is selected without a typed body or constructor path.",
+    "source": "knowledgegraph/research/conflicts/track-c-state-events.json",
+    "subject": null,
+    "unresolved_reason": "Runtime reachability is absent or the required direct body/call path is not recovered."
+  },
+  {
+    "anchors": [
+      "0x0067dcc0",
+      "0x0067deb0",
+      "0x00b3d330",
+      "0x00b3d4e0",
+      "0x015fd890",
+      "0x0167eaf0",
+      "0x0167eb60",
+      "0x0067dcc0",
+      "0x00ad23c0",
+      "0x00adbca0",
+      "0x00ae73e0",
+      "0x00ae9590",
+      "0x00ae9930",
+      "0x00ae9c90",
+      "0x00ae9f50",
+      "0x00aeb3e0"
+    ],
+    "conflict_id": "global_service_publication",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": "The committed evidence does not establish the requested transition contract; the available observation is retained without semantic promotion.",
+    "resolution_status": "The committed evidence does not establish the requested transition contract; the available observation is retained without semantic promotion.",
+    "source": "knowledgegraph/research/conflicts/track-c-state-events.json",
+    "subject": null,
+    "unresolved_reason": "Runtime reachability is absent or the required direct body/call path is not recovered."
+  }
+]
+```
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nvoid __fastcall FUN_00ae9f50(int param_1)\n\n{\n  wchar16 *pwVar1;\n  void *pvVar2;\n  IAppSystem *pIVar3;\n  void *pvVar4;\n  int iVar5;\n  int *piVar6;\n  undefined4 uVar7;\n  cToolManager *pcVar8;\n  bool bVar9;\n  undefined4 uVar10;\n  undefined4 uVar11;\n  undefined4 uVar12;\n  undefined4 uVar13;\n  undefined1 local_80 [56];\n  undefined4 local_48;\n  void *pvStack_44;\n  IAppSystem *pIStack_1c;\n  undefined4 uStack_14;\n  \n  FUN_00dd1ca0();\n  FUN_00dd30d0();\n  iVar5 = *(int *)(param_1 + 0x20);\n  if (iVar5 != 0) {\n    bVar9 = *(int *)(iVar5 + 0xc) != 0;\n    if (bVar9) {\n      pvVar2 = (void *)0x0;\n    }\n    else {\n      uVar7 = *(undefined4 *)(iVar5 + 0x18);\n      FUN_00b3d2a0(uVar7);\n      pvVar2 = (void *)FUN_00ba9370(uVar7);\n    }\n    local_80._48_4_ = (IAppSystem *)0x3ac86b5;\n    LOCK();\n    local_80._4_4_ = (string16 *)0x0;\n    UNLOCK();\n    iVar5 = *(int *)(param_1 + 0x20);\n    local_80._0_4_ = &PTR_FUN_013eb844;\n    local_48 = 0;\n    local_80._8_4_ = *(undefined4 *)(iVar5 + 0xc);\n    local_80._16_4_ = pvVar2;\n    if (bVar9) {\n      uVar7 = *(undefined4 *)(iVar5 + 0x18);\n      FUN_00b3d300(uVar7);\n      FUN_00b20750(uVar7);\n      local_80._16_4_ = *(void **)(iVar5 + 0x28);\n      if (*(void **)(iVar5 + 0x28) == (void *)0x0) {\n        local_80._16_4_ = FUN_00bd9bf0();\n      }\n    }\n    pwVar1 = *(wchar16 **)(param_1 + 0x20);\n    if (bVar9) {\n      local_80._24_4_ = *(undefined4 *)(pwVar1 + 0x10);\n      local_80._32_4_ = *(undefined4 *)(pwVar1 + 0x12);\n    }\n    else {\n      local_80._32_4_ = (wchar16 *)0x0;\n      local_80._24_4_ = pwVar1;\n    }\n    pIVar3 = App__IAppSystem__Get();\n    (*pIVar3->_vftable0->Init)((IAppSystem *)local_80._48_4_,(CommandLine *)local_80);\n    if ((*(char *)(*(int *)(param_1 + 0x20) + 0x30) == '\\0') &&\n       (pvVar4 = (void *)FUN_01021300(), pvVar2 != pvVar4)) {\n      pIStack_1c = (IAppSystem *)0x43f2590;\n      LOCK();\n      local_48 = 0;\n      UNLOCK();\n      local_80._52_4_ = &PTR_FUN_013eb844;\n      uStack_14 = 0;\n      pvStack_44 = pvVar2;\n      pIVar3 = App__IAppSystem__Get();\n      (*pIVar3->_vftable0->Init)(pIStack_1c,(CommandLine *)(local_80 + 0x34));\n      FUN_00421cf0();\n    }\n    iVar5 = FUN_00b3d380();\n    if (iVar5 != 0) {\n      FUN_00b32250(0x4d02e35);\n    }\n    piVar6 = (int *)FUN_00a206f0();\n    if (piVar6 == (int *)0x0) {\n      uVar7 = 0;\n    }\n    else {\n      uVar7 = (**(code **)(*piVar6 + 0x20))();\n    }\n    FUN_00435ed0(0x1e5e7302,uVar7);\n    pcVar8 = Simulator__cToolManager__Get();\n    if (pcVar8 != (cToolManager *)0x0) {\n      Simulator__cToolManager__Get();\n      FUN_00ae8ea0();\n    }\n    uVar7 = 1;\n    Simulator__cGameNounManager__Get();\n    FUN_00e14c10(uVar7);\n    iVar5 = *(int *)(param_1 + 0x74);\n    if (iVar5 != -1) {\n      FUN_00b3d2a0(iVar5);\n      iVar5 = FUN_00ba6d80(iVar5);\n      if (iVar5 != 0) {\n        uVar7 = FUN_01021090();\n        FUN_00c35240(iVar5,uVar7);\n      }\n      *(undefined4 *)(param_1 + 0x74) = 0xffffffff;\n    }\n    iVar5 = *(int *)(param_1 + 100);\n    if (iVar5 != *(int *)(param_1 + 0x68)) {\n      uVar13 = 0;\n      uVar12 = 0;\n      uVar11 = 0;\n      uVar10 = 0;\n      uVar7 = 1;\n      Simulator__cSpaceTrading__Get();\n      FUN_00ae0930(iVar5,uVar7,uVar10,uVar11,uVar12,uVar13);\n      if (*(undefined1 **)(param_1 + 100) != *(undefined1 **)(param_1 + 0x68)) {\n        **(undefined1 **)(param_1 + 100) = 0;\n        *(undefined4 *)(param_1 + 0x68) = *(undefined4 *)(param_1 + 100);\n      }\n    }\n    FUN_00421cf0();\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -304,8 +468,294 @@
 
 ```json
 {
-  "original_bytes": 14022,
-  "preview": "{\n  \"count\": 169,\n  \"instructions\": [\n    {\n      \"address\": \"00ae9f50\",\n      \"instruction\": \"SUB ESP,0x80\"\n    },\n    {\n      \"address\": \"00ae9f56\",\n      \"instruction\": \"PUSH ESI\"\n    },\n    {\n      \"address\": \"00ae9f57\",\n      \"instruction\": \"MOV ESI,ECX\"\n    },\n    {\n      \"address\": \"00ae9f59\",\n      \"instruction\": \"CALL 0x00dd1ca0\"\n    },\n    {\n      \"address\": \"00ae9f5e\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"00ae9f60\",\n      \"instruction\": \"CALL 0x00dd30d0\"\n    },\n    {\n      \"address\": \"00ae9f65\",\n      \"instruction\": \"MOV EAX,dword ptr [ESI + 0x20]\"\n    },\n    {\n      \"address\": \"00ae9f68\",\n      \"instruction\": \"TEST EAX,EAX\"\n    },\n    {\n      \"address\": \"00ae9f6a\",\n      \"instruction\": \"JZ 0x00aea15f\"\n    },\n    {\n      \"address\": \"00ae9f70\",\n      \"instruction\": \"CMP dword ptr [EAX + 0xc],0x0\"\n    },\n    {\n      \"address\": \"00ae9f74\",\n      \"instruction\": \"PUSH EBX\"\n    },\n    {\n      \"address\": \"00ae9f75\",\n      \"instruction\": \"SETZ BL\"\n    },\n    {\n      \"address\": \"00ae9f78\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"00ae9f79\",\n      \"instruction\": \"PUSH EDI\"\n    },\n    {\n      \"address\": \"00ae9f7a\",\n      \"instruction\": \"TEST BL,BL\"\n    },\n    {\n      \"address\": \"00ae9f7c\",\n      \"instruction\": \"JZ 0x00ae9f92\"\n    },\n    {\n      \"address\": \"00ae9f7e\",\n      \"instruction\": \"MOV EAX,dword ptr [EAX + 0x18]\"\n    },\n    {\n      \"address\": \"00ae9f81\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"00ae9f82\",\n      \"instruction\": \"CALL 0x00b3d2a0\"\n    },\n    {\n      \"address\": \"00ae9f87\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"00ae9f89\",\n      \"instruction\": \"CALL 0x00ba9370\"\n    },\n    {\n      \"address\": \"00ae9f8e\",\n      \"instruction\": \"MOV EBP,EAX\"\n    },\n    {\n      \"address\": \"00ae9f90\",\n      \"instruction\": \"JMP 0x00ae9f94\"\n    },\n    {\n      \"address\": \"00ae9f92\",\n      \"instruction\": \"XOR EBP,EBP\"\n    },\n    {\n      \"address\": \"00ae9f94\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x40],0x3ac86b5\"\n    },\n    {\n      \"address\": \"00ae9f9c\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x10],0x13eb90c\"\n    },\n    {\n      \"address\": \"00ae9fa4\",\n      \"instruction\": \"XOR EAX,EAX\"\n    },\n    {\n      \"address\": \"00ae9fa6\",\n      \"instruction\": \"LEA ECX,[ESP + 0x14]\"\n    },\n    {\n      \"address\": \"00ae9faa\",\n      \"instruction\": \"XCHG dword ptr [ECX],EAX\"\n    },\n    {\n      \"address\": \"00ae9fac\",\n      \"instruction\": \"MOV EDI,dword ptr [ESI + 0x20]\"\n    },\n    {\n      \"address\": \"00ae9faf\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x10],0x13eb844\"\n    },\n    {\n      \"address\": \"00ae9fb7\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x48],0x0\"\n    },\n    {\n      \"address\": \"00ae9fbf\",\n      \"instruction\": \"MOV EDX,dword ptr [EDI + 0xc]\"\n    },\n    {\n      \"address\": \"00ae9fc2\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x18],EDX\"\n    },\n    {\n      \"address\": \"00ae9fc6\",\n      \"instruction\": \"TEST BL,BL\"\n    },\n    {\n      \"address\": \"00ae9fc8\",\n      \"instruction\": \"JZ 0x00ae9fce\"\n    },\n    {\n      \"address\": \"00ae9fca\",\n      \"instruction\": \"MOV EAX,EBP\"\n    },\n    {\n      \"address\": \"00ae9fcc\",\n      \"instruction\": \"JMP 0x00ae9fed\"\n    },\n    {\n      \"address\": \"00ae9fce\",\n      \"instruction\": \"MOV EAX,dword ptr [EDI + 0x18]\"\n    },\n    {\n      \"address\": \"00ae9fd1\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"00ae9fd2\",\n      \"instruction\": \"CALL 0x00b3d300\"\n    },\n    {\n      \"address\": \"00ae9fd7\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"00ae9fd9\",\n      \"instruction\": \"CALL 0x00b20750\"\n    },\n    {\n      \"address\": \"00ae9fde\",\n      \"instruction\": \"MOV EAX,dword ptr [EDI + 0x28]\"\n    },\n    {\n      \"address\": \"00ae9fe1\",\n      \"instruction\": \"TEST EAX,EAX\"\n    },\n    {\n      \"address\": \"00ae9fe3\",\n      \"instruction\": \"JNZ 0x00ae9fed\"\n    },\n    {\n      \"address\": \"00ae9fe5\",\n      \"instruction\": \"MOV ECX,dword ptr [EDI + 0x20]\"\n    },\n    {\n      \"address\": \"00ae9fe8\",\n      \"instruction\": \"CALL 0x00bd9bf0\"\n    },\n    {\n      \"address\": \"00ae9fed\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x20],EAX\"\n    },\n    {\n      \"address\": \"00ae9ff1\",\n      \"instruction\": \"MOV EAX,dword ptr [ESI + 0x20]\"\n    },\n    {\n      \"address\": \"00ae9ff4\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"00ae9ff6\",\n      \"instruction\": \"TEST BL,BL\"\n    },\n    {\n      \"address\": \"00ae9ff8\",\n      \"instruction\": \"JNZ 0x00ae9ffd\"\n    },\n    {\n      \"address\": \"00ae9ffa\",\n      \"instruction\": \"MOV ECX,dword ptr [EAX + 0x20]\"\n    },\n    {\n      \"address\": \"00ae9ffd\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x28],ECX\"\n    },\n    {\n      \"address\": \"00aea001\",\n      \"instruction\": \"TEST BL,BL\"\n    },\n    {\n      \"address\": \"00aea003\",\n      \"instruction\": \"JZ 0x00aea009\"\n    },\n    {\n      \"address\": \"00aea005\",\n      \"instruction\": \"XOR EAX,EAX\"\n    },\n    {\n      \"address\": \"00aea007\",\n      \"instruction\": \"JMP 0x00aea00c\"\n    },\n    {\n      \"address\": \"00aea009\",\n      \"instruction\": \"MOV EAX,dword ptr [EAX + 0x24]\"\n    },\n    {\n      \"address\": \"00aea00c\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x30],EAX\"\n    },\n    {\n      \"address\": \"00aea010\",\n      \"instruc
+  "count": 169,
+  "instructions": [
+    {
+      "address": "00ae9f50",
+      "instruction": "SUB ESP,0x80"
+    },
+    {
+      "address": "00ae9f56",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00ae9f57",
+      "instruction": "MOV ESI,ECX"
+    },
+    {
+      "address": "00ae9f59",
+      "instruction": "CALL 0x00dd1ca0"
+    },
+    {
+      "address": "00ae9f5e",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00ae9f60",
+      "instruction": "CALL 0x00dd30d0"
+    },
+    {
+      "address": "00ae9f65",
+      "instruction": "MOV EAX,dword ptr [ESI + 0x20]"
+    },
+    {
+      "address": "00ae9f68",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "00ae9f6a",
+      "instruction": "JZ 0x00aea15f"
+    },
+    {
+      "address": "00ae9f70",
+      "instruction": "CMP dword ptr [EAX + 0xc],0x0"
+    },
+    {
+      "address": "00ae9f74",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "00ae9f75",
+      "instruction": "SETZ BL"
+    },
+    {
+      "address": "00ae9f78",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00ae9f79",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "00ae9f7a",
+      "instruction": "TEST BL,BL"
+    },
+    {
+      "address": "00ae9f7c",
+      "instruction": "JZ 0x00ae9f92"
+    },
+    {
+      "address": "00ae9f7e",
+      "instruction": "MOV EAX,dword ptr [EAX + 0x18]"
+    },
+    {
+      "address": "00ae9f81",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00ae9f82",
+      "instruction": "CALL 0x00b3d2a0"
+    },
+    {
+      "address": "00ae9f87",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00ae9f89",
+      "instruction": "CALL 0x00ba9370"
+    },
+    {
+      "address": "00ae9f8e",
+      "instruction": "MOV EBP,EAX"
+    },
+    {
+      "address": "00ae9f90",
+      "instruction": "JMP 0x00ae9f94"
+    },
+    {
+      "address": "00ae9f92",
+      "instruction": "XOR EBP,EBP"
+    },
+    {
+      "address": "00ae9f94",
+      "instruction": "MOV dword ptr [ESP + 0x40],0x3ac86b5"
+    },
+    {
+      "address": "00ae9f9c",
+      "instruction": "MOV dword ptr [ESP + 0x10],0x13eb90c"
+    },
+    {
+      "address": "00ae9fa4",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "00ae9fa6",
+      "instruction": "LEA ECX,[ESP + 0x14]"
+    },
+    {
+      "address": "00ae9faa",
+      "instruction": "XCHG dword ptr [ECX],EAX"
+    },
+    {
+      "address": "00ae9fac",
+      "instruction": "MOV EDI,dword ptr [ESI + 0x20]"
+    },
+    {
+      "address": "00ae9faf",
+      "instruction": "MOV dword ptr [ESP + 0x10],0x13eb844"
+    },
+    {
+      "address": "00ae9fb7",
+      "instruction": "MOV dword ptr [ESP + 0x48],0x0"
+    },
+    {
+      "address": "00ae9fbf",
+      "instruction": "MOV EDX,dword ptr [EDI + 0xc]"
+    },
+    {
+      "address": "00ae9fc2",
+      "instruction": "MOV dword ptr [ESP + 0x18],EDX"
+    },
+    {
+      "address": "00ae9fc6",
+      "instruction": "TEST BL,BL"
+    },
+    {
+      "address": "00ae9fc8",
+      "instruction": "JZ 0x00ae9fce"
+    },
+    {
+      "address": "00ae9fca",
+      "instruction": "MOV EAX,EBP"
+    },
+    {
+      "address": "00ae9fcc",
+      "instruction": "JMP 0x00ae9fed"
+    },
+    {
+      "address": "00ae9fce",
+      "instruction": "MOV EAX,dword ptr [EDI + 0x18]"
+    },
+    {
+      "address": "00ae9fd1",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00ae9fd2",
+      "instruction": "CALL 0x00b3d300"
+    },
+    {
+      "address": "00ae9fd7",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00ae9fd9",
+      "instruction": "CALL 0x00b20750"
+    },
+    {
+      "address": "00ae9fde",
+      "instruction": "MOV EAX,dword ptr [EDI + 0x28]"
+    },
+    {
+      "address": "00ae9fe1",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "00ae9fe3",
+      "instruction": "JNZ 0x00ae9fed"
+    },
+    {
+      "address": "00ae9fe5",
+      "instruction": "MOV ECX,dword ptr [EDI + 0x20]"
+    },
+    {
+      "address": "00ae9fe8",
+      "instruction": "CALL 0x00bd9bf0"
+    },
+    {
+      "address": "00ae9fed",
+      "instruction": "MOV dword ptr [ESP + 0x20],EAX"
+    },
+    {
+      "address": "00ae9ff1",
+      "instruction": "MOV EAX,dword ptr [ESI + 0x20]"
+    },
+    {
+      "address": "00ae9ff4",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00ae9ff6",
+      "instruction": "TEST BL,BL"
+    },
+    {
+      "address": "00ae9ff8",
+      "instruction": "JNZ 0x00ae9ffd"
+    },
+    {
+      "address": "00ae9ffa",
+      "instruction": "MOV ECX,dword ptr [EAX + 0x20]"
+    },
+    {
+      "address": "00ae9ffd",
+      "instruction": "MOV dword ptr [ESP + 0x28],ECX"
+    },
+    {
+      "address": "00aea001",
+      "instruction": "TEST BL,BL"
+    },
+    {
+      "address": "00aea003",
+      "instruction": "JZ 0x00aea009"
+    },
+    {
+      "address": "00aea005",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "00aea007",
+      "instruction": "JMP 0x00aea00c"
+    },
+    {
+      "address": "00aea009",
+      "instruction": "MOV EAX,dword ptr [EAX + 0x24]"
+    },
+    {
+      "address": "00aea00c",
+      "instruction": "MOV dword ptr [ESP + 0x30],EAX"
+    },
+    {
+      "address": "00aea010",
+      "instruction": "CALL 0x0067dcc0"
+    },
+    {
+      "address": "00aea015",
+      "instruction": "MOV EDX,dword ptr [EAX]"
+    },
+    {
+      "address": "00aea017",
+      "instruction": "MOV EDX,dword ptr [EDX + 0x14]"
+    },
+    {
+      "address": "00aea01a",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "00aea01c",
+      "instruction": "LEA ECX,[ESP + 0x14]"
+    },
+    {
+      "address": "00aea020",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00aea021",
+      "instruction": "MOV ECX,dword ptr [ESP + 0x48]"
+    },
+    {
+      "address": "00aea025",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00aea026",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00aea028",
+      "instruction": "CALL EDX"
+    },
+    {
+      "addr
 [TRUNCATED]
 ```
 
@@ -317,9 +767,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 14444,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX, copied to ESI at 0x00ae9f57\",\n    \"hidden_this_register\": \"ECX is consumed immediately; ESI carries the receiver for the rest of the body, which is what lets ECX be reused as the receiver for the many __thiscall ports.\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_register\": null,\n    \"return_semantics\": \"No return value. EAX is a scratch register throughout.\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"ESI\",\n      \"EBX\",\n      \"EBP\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"two exits, both the same bare RET: 0x00aea166 reached by falling off the end, and 0x00aea15f reached by the null-sub-object jump and by the +0x64 / +0x68 skips.\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"FUN_00b3d2a0\",\n      \"va\": \"0x00b3d2a0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"FUN_00b3d300\",\n      \"va\": \"0x00b3d300\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"FUN_00b3d400\",\n      \"va\": \"0x00b3d400\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"Simulator_cSpaceTrading_Get\",\n      \"va\": \"0x00b3d4d0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-11-SIM-CORE\",\n      \"score\": 3,\n      \"symbol\": \"Simulator_LookupEmpireByPoliticalId\",\n      \"va\": \"0x00ba9370\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-12-SIM-SPACE\",\n      \"score\": 3,\n      \"symbol\": \"pkg12_space_01021300\",\n      \"va\": \"0x01021300\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0067dcc0\"\n      },\n      {\n        \"name\": \"FUN_00b3d2a0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d2a0\"\n      },\n      {\n        \"name\": \"FUN_00b3d300\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d300\"\n      },\n      {\n        \"name\": \"FUN_00b3d380\",\n        \"reconstructed\": false,\n        \"va\": \"0x00b3d380\"\n      },\n      {\n        \"name\": \"FUN_00b3d400\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d400\"\n      },\n      {\n        \"name\": \"Simulator_cSpaceTrading_Get\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d4d0\"\n      },\n      {\n        \"name\": \"Simulator_LookupEmpireByPoliticalId\",\n        \"reconstructed\": true,\n        \"va\": \"0x00ba9370\"\n      },\n      {\n        \"name\": \"FUN_01021090\",\n        \"reconstructed\": false,\n        \"va\": \"0x01021090\"\n      },\n      {\n        \"name\": \"pkg12_space_01021300\",\n        \"reconstructed\": true,\n        \"va\": \"0x01021300\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aea210\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aeb090\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aeb7b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aeb890\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00aea210\",\n        \"direction\": \"in\",\n        \"other\": \"0x00aea210\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00aeb099\",\n        \"direction\": \"in\",\n        \"other\": \"0x00aeb090\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00aeb801\",\n        \"direction\": \"in\",\n        \"other\": \"0x00aeb7b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00aeb906\",\n        \"direction\": \"in\",\n        \"other\": \"0x00aeb890\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00aea08f\",\n        \"direction\": \"out\",\n        \"other\": \"0x00421cf0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00aea15a\",\n        \"direction\": \"out\",\n        \"other\": \"0x00421cf0\",\n        \"reference_type\": \"direct-call\"\n      
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -335,35 +792,35 @@
   "body_span_bytes": 535,
   "body_start": "00ae9f50",
   "callees": [
-    "FUN_00e14c10",
     "FUN_00dd30d0",
-    "FUN_00a206f0",
-    "FUN_00b20750",
-    "FUN_00b32250",
-    "FUN_00dd1ca0",
-    "FUN_01021090",
-    "FUN_00ba9370",
-    "FUN_00b3d2a0",
     "FUN_00c35240",
-    "FUN_00bd9bf0",
+    "FUN_01021090",
     "Simulator::cSpaceTrading::Get",
+    "FUN_00b32250",
+    "FUN_00ba9370",
     "FUN_00b3d380",
-    "Simulator::cToolManager::Get",
     "Simulator::cGameNounManager::Get",
-    "FUN_01021300",
-    "FUN_00ae8ea0",
-    "FUN_00ba6d80",
-    "FUN_00ae0930",
-    "FUN_00435ed0",
-    "App::IAppSystem::Get",
+    "FUN_00b3d2a0",
+    "FUN_00bd9bf0",
     "FUN_00421cf0",
-    "FUN_00b3d300"
+    "FUN_00435ed0",
+    "Simulator::cToolManager::Get",
+    "FUN_00e14c10",
+    "FUN_00dd1ca0",
+    "FUN_01021300",
+    "FUN_00a206f0",
+    "FUN_00ae0930",
+    "App::IAppSystem::Get",
+    "FUN_00b3d300",
+    "FUN_00ba6d80",
+    "FUN_00ae8ea0",
+    "FUN_00b20750"
   ],
   "callers": [
     "FUN_00aeb7b0",
+    "FUN_00aeb090",
     "FUN_00aeb890",
-    "FUN_00aea210",
-    "FUN_00aeb090"
+    "FUN_00aea210"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -376,102 +833,47 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "uVar13",
-      "storage": "Stack[-0x94]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "uVar11",
-      "storage": "Stack[-0x9c]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "uVar12",
-      "storage": "Stack[-0x98]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "bVar9",
-      "storage": "register:00000206:1",
-      "type": "bool"
-    },
-    {
-      "name": "uVar10",
-      "storage": "Stack[-0xa0]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "uStack_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "pvStack_44",
-      "storage": "Stack[-0x44]:4",
-      "type": "void *"
-    },
-    {
-      "name": "pIStack_1c",
-      "storage": "Stack[-0x1c]:4",
-      "type": "IAppSystem *"
-    },
-    {
-      "name": "local_80",
-      "storage": "Stack[-0x78]:4",
-      "type": "undefined1[56]"
-    },
-    {
-      "name": "uVar7",
-      "storage": "register:00000000:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "pcVar8",
-      "storage": "register:00000000:4",
-      "type": "cToolManager *"
-    },
-    {
-      "name": "iVar5",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "piVar6",
-      "storage": "register:00000000:4",
-      "type": "int *"
-    },
-    {
-      "name": "pIVar3",
-      "storage": "register:00000000:4",
-      "type": "IAppSystem *"
-    },
-    {
-      "name": "pvVar4",
-      "storage": "register:00000000:4",
-      "type": "void *"
-    },
-    {
-      "name": "pwVar1",
-      "storage": "unique:00017200:4",
-      "type": "wchar16 *"
-    },
-    {
       "name": "local_48",
       "storage": "Stack[-0x48]:4",
       "type": "undefined4"
     },
     {
-      "name": "pvVar2",
-      "storage": "register:00000014:4",
-      "type": "void *"
+      "name": "local_50",
+      "storage": "Stack[-0x50]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_60",
+      "storage": "Stack[-0x60]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_68",
+      "storage": "Stack[-0x68]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_70",
+      "storage": "Stack[-0x70]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_78",
+      "storage": "Stack[-0x78]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_7c",
+      "storage": "Stack[-0x7c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_80",
+      "storage": "Stack[-0x80]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 19,
+  "locals_count": 8,
   "mode": "live",
   "name": "FUN_00ae9f50",
   "namespace": null,
@@ -522,9 +924,32 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c47180_manager_slot_replace.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test2.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b08/00ae9f50.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -534,9 +959,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists. A differential run must confirm the two AppSystem submissions, the two publishes and the three memory writes actually occur in the observed order in the shipping build.",
+    "The claim that 0x00421CF0 destroys the stack records must be observed: a run that keeps the record alive after return would refute it.",
+    "The sentinel-free runtime values behind the six-entry table at 0x015D9650 used by the sibling 0x00C0CE80 are irrelevant here, but the two record ids 0x3AC86B5 and 0x43F2590 can only be resolved by observing what the AppSystem slot +0x14 does with them.",
+    "Whether receiver+0x74 can be non-(-1) at entry, and what 0x00BA6D80 returns for it, can only be established at runtime."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -546,15 +984,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

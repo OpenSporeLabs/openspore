@@ -1,0 +1,323 @@
+{
+  "schema": "pkg-sim-toolevent-01053d50.function-handoff.v1",
+  "package": "PKG-SIM-TOOLEVENT-01053D50",
+  "function_address": "0x01053d50",
+  "ghidra_name": "FUN_01053d50",
+  "normalized_symbol": "sim_toolevent_slot8_fun_01053d50",
+  "source_files": [
+    "reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50.cpp",
+    "reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50.hpp",
+    "reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "semantic_classification": "unnamed-in-image virtual that builds a 48-byte transform frame from the event position, hands it to the cSpaceTrading object-context poster, forwards the event on through its own vtable, then releases the frame",
+  "declaration": "void __thiscall sim_toolevent_slot8_fun_01053d50(OpaqueToolEventReceiver *receiver, void *event_argument, const OpaqueVector3 *position);",
+  "name_status": {
+    "sdk_symbol": null,
+    "observation": "The live Ghidra program carries no SDK name for 0x01053d50; ghidra_get_function_by_address and the SDK export set both leave it FUN_01053d50. No name is invented here. The only naming claim made is structural: the function is the entry at index 8 of the pointer block that also carries the SDK-named Simulator::cDefaultBeamTool::func4Ch at index 12.",
+    "module_context": "The block at 0x0149b7e0 sits in the same .rdata neighbourhood as the vtable-like block that carries Simulator::cDefaultBeamTool::func4Ch (0x01053db0) at 0x0149b810, so the receiver is a cDefaultBeamTool-family tool object by adjacency only, not by a proven this-type."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "return_type": "void",
+    "return_type_rationale": "No instruction on any path writes EAX after the last call. The body ends POP EDI / POP ESI / ADD ESP,0x40 / RET 0x8 at 0x01053d9a-0x01053d9f, and the only value produced in a register by the body itself is the result of the virtual call at 0x01053d8f, which is immediately overwritten by the register spill of the following LEA and is never tested. void is therefore the type the machine produces, not a guess.",
+    "hidden_this": true,
+    "receiver_register": "ECX",
+    "receiver_evidence": "MOV ESI,ECX at 0x01053d5e copies the incoming ECX into ESI; ESI is then the base of the only receiver dereference, MOV EDX,dword ptr [ESI] at 0x01053d82, and is reloaded into ECX for the dispatch, MOV ECX,ESI at 0x01053d8d. ECX is also the receiver of the frame constructor at 0x01053d65 and of the frame destructor at 0x01053d95.",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_slot": "ESP+0x04 at function entry",
+        "type": "void * (opaque, forwarded only)",
+        "width_bytes": 4,
+        "observed_use": "Loaded by MOV EAX,dword ptr [ESP + 0x4c] at 0x01053d84, where ESP is already 0x48 below the entry ESP, so the slot is entry ESP+0x04. It is pushed as the first stack argument of the virtual call at 0x01053d8f and is used nowhere else in the body."
+      },
+      {
+        "position": 2,
+        "entry_slot": "ESP+0x08 at function entry",
+        "type": "const OpaqueVector3 * (12-byte float triple)",
+        "width_bytes": 4,
+        "observed_use": "Loaded by MOV EDI,dword ptr [ESP + 0x50] at 0x01053d55 into EDI, which is kept live across three calls. It is the first stack argument of the frame constructor at 0x01053d65, whose body copies 12 bytes from it, and the second stack argument of the virtual call at 0x01053d8f."
+      }
+    ],
+    "stack_argument_count": 2,
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "stack_cleanup_evidence": "RET 0x8 at 0x01053d9f. Every intermediate call in the body is callee-clean as well, which is what makes the single RET 0x8 balance: the constructor at 0x00ad79d0 consumes the 8 bytes pushed at 0x01053d5d and 0x01053d60, the poster at 0x00ae09b0 consumes the 12 bytes pushed at 0x01053d6a, 0x01053d70 and 0x01053d71, and the virtual at 0x01053d8f consumes the 8 bytes pushed at 0x01053d8b and 0x01053d8c.",
+    "saved_registers": [
+      "ESI",
+      "EDI"
+    ],
+    "saved_register_evidence": "PUSH ESI / PUSH EDI at 0x01053d53-0x01053d54, POP EDI / POP ESI at 0x01053d9a-0x01053d9b. No other callee-saved register is touched, and both are live across the constructor, the accessor, the poster and the virtual call.",
+    "frame_reserve_bytes": 64,
+    "frame_evidence": "SUB ESP,0x40 at 0x01053d50, released by ADD ESP,0x40 at 0x01053d9c. The reserved area holds exactly two locals: a 16-byte rotation source at entry ESP-0x40 and a 48-byte frame at entry ESP-0x30, which together fill the reservation.",
+    "ret_form": "ret 0x8",
+    "termination": "Unconditional fall-through to the epilogue. The body contains no conditional branch, no loop, and no early exit, so every call in the sequence executes on every invocation.",
+    "return_semantics_note": "The function reports nothing; it is a pure side-effect step of the tool event pipeline."
+  },
+  "layout": {
+    "frame_transform_48": {
+      "size_bytes": 48,
+      "fields": [
+        {"name": "position", "offset": "0x00", "type": "OpaqueVector3 (3 floats)"},
+        {"name": "rotation", "offset": "0x0c", "type": "OpaqueQuaternion16 (4 floats)"},
+        {"name": "unit_scale", "offset": "0x1c", "width_bytes": 16, "type": "float[4]"},
+        {"name": "owner_2c", "offset": "0x2c", "type": "void *"}
+      ],
+      "evidence": "Not a layout this body reads: it is the layout of the local built by the callee at 0x00ad79d0, whose complete body copies 12 bytes from its second argument into words 0..2, 16 bytes from its third argument into words 3..6, writes 0x3f800000 into words 7..10 and 0 into word 11. The destructor at 0x00ad7ad0 then tests word 11 and dispatches the owner's table word at +0xc0, which fixes the last word as a pointer.",
+      "provenance": "derived from the two callee bodies, not from any SDK structure; no canonical type is claimed"
+    },
+    "rotation_source_16": {
+      "size_bytes": 16,
+      "fields": [
+        {"name": "v", "offset": "0x00", "width_bytes": 16, "type": "float[4]"}
+      ],
+      "evidence": "LEA EAX,[ESP + 0x8] at 0x01053d59 addresses entry ESP-0x40, immediately below the 48-byte frame, and the pointer is pushed as the constructor's third argument at 0x01053d5d. The body never writes those 16 bytes, so the value supplied to the frame is indeterminate at this VA."
+    },
+    "receiver": {
+      "size_bytes": 4,
+      "fields": [
+        {"name": "vtable_00", "offset": "0x00", "type": "const OpaqueToolEventVTable *"}
+      ],
+      "evidence": "The only receiver access in the body is MOV EDX,dword ptr [ESI] at 0x01053d82 followed by MOV EDX,dword ptr [EDX + 0x4c] at 0x01053d88. No other receiver field is read, so no other offset is claimed."
+    },
+    "receiver_table": {
+      "size_bytes": 80,
+      "fields": [
+        {"name": "slots_00", "offset": "0x00", "width_bytes": 76, "type": "void *[19]"},
+        {"name": "forward_4c", "offset": "0x4c", "type": "Word (__thiscall *)(OpaqueToolEventReceiver *, void *, const OpaqueVector3 *)"}
+      ],
+      "evidence": "The dispatch displacement is 0x4c at 0x01053d88, which is 76 bytes, index 19 of a 4-byte-pointer table. The 80-byte extent is the smallest that covers the dispatched word.",
+      "caveat": "The first 19 words are placeholders. The body proves only the byte offset of the one word it dispatches; the identity of the other 18 entries is not established by this VA."
+    },
+    "owner_table_used_by_the_frame_destructor": {
+      "size_bytes": 196,
+      "fields": [
+        {"name": "add_ref_bc", "offset": "0xbc", "type": "void (__thiscall *)(void *)"},
+        {"name": "release_c0", "offset": "0xc0", "type": "void (__thiscall *)(void *)"}
+      ],
+      "evidence": "Offsets come from the callee bodies at 0x00ad7ad0 (release at +0xc0) and 0x00ad9010 (add-ref at +0xbc, release at +0xc0). They are recorded for completeness of the frame contract and are not part of this VA's own dispatch."
+    }
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 0,
+      "observation": "ghidra_get_xrefs_to on 0x01053d50 returns only .rdata pointers, never a code reference, and the briefing reports an empty caller set. The function is therefore reached exclusively by dispatch through the pointer blocks listed under vtable_evidence, and the empty caller set is expected rather than a collection failure."
+    },
+    "direct_callees": {
+      "ghidra_count": 4,
+      "entries": [
+        {
+          "address": "0x00ad79d0",
+          "name": "FUN_00ad79d0",
+          "role": "thiscall frame constructor at 0x01053d65: this is the 48-byte local, argument 1 is the event position pointer (EDI), argument 2 is the 16-byte rotation source. Unnamed in the image."
+        },
+        {
+          "address": "0x00b3d4d0",
+          "name": "Simulator::cSpaceTrading::Get",
+          "role": "cdecl singleton accessor at 0x01053d76 whose three-instruction body returns the single global DAT_0167eb50. Its result is moved into ECX at 0x01053d7b and becomes the receiver of the next call."
+        },
+        {
+          "address": "0x00ae09b0",
+          "name": "FUN_00ae09b0",
+          "role": "thiscall object-context poster at 0x01053d7d with three callee-popped words: 0x5dce504a, the address of the 48-byte frame, and 0. Its body looks a record up by hash, probes its table word at +0x0c with 0x446e39c and, when the probe is non-zero, installs the 48-byte frame into the located object through the copy-assign at 0x00ad9010. Unnamed in the image."
+        },
+        {
+          "address": "0x007b86e0",
+          "name": "FUN_007b86e0",
+          "role": "not a direct callee: this is the resolved target of the indirect call at 0x01053d8f under the pointer-block base documented under vtable_evidence. Its body decrements the word at receiver+8 and, on reaching zero, calls the function pointer at receiver+4 with the argument 1, then reloads the counter with 1."
+        }
+      ]
+    },
+    "indirect_callees": [
+      {
+        "dispatch_site": "0x01053d8f",
+        "form": "MOV EDX,[ESI] / MOV EDX,[EDX+0x4c] / CALL EDX with the receiver in ECX",
+        "receiver": "the this-call receiver itself, not a sub-object",
+        "stack_arguments": ["first stack argument of this function", "second stack argument of this function"],
+        "return_value": "discarded",
+        "argument_order_note": "PUSH EDI at 0x01053d8b then PUSH EAX at 0x01053d8c means the slot receives the first stack argument at ESP+0x04 and the second at ESP+0x08, i.e. the same order this function itself was given."
+      }
+    ]
+  },
+  "vtables": [
+    "vtable:0x0149b800",
+    "vtable:0x0149b8a0",
+    "vtable:0x0149b8f0",
+    "vtable:0x0149b940",
+    "vtable:0x0149ba20",
+    "vtable:0x0149ba70"
+  ],
+  "vtable_evidence": {
+    "pointer_sites": [
+      {"address": "0x0149b800", "block_offset_from_0x0149b7e0": "0x20", "block_index": 8},
+      {"address": "0x0149b8a0", "block_offset_from_0x0149b880": "0x20", "block_index": 8},
+      {"address": "0x0149b8f0", "block_offset_from_0x0149b8d0": "0x20", "block_index": 8},
+      {"address": "0x0149b940", "block_offset_from_0x0149b920": "0x20", "block_index": 8},
+      {"address": "0x0149ba20", "block_offset_from_0x0149b9b0": "0x20", "block_index": 8},
+      {"address": "0x0149ba70", "block_offset_from_0x0149ba50": "0x20", "block_index": 8}
+    ],
+    "observation": "A read of 0x0149b770..0x0149ba74 shows a run of pointer blocks that all begin with the same five words (0x010537b0, then a word that varies, then 0x01053720, 0x01053730, 0x010537e0) and then continue with a common run (0x00b7d400, 0x01056160, 0x01053980) before diverging. This function is the ninth word of every block that contains it, at the same relative index, and it is absent from the two 18-word blocks at 0x0149b920 and 0x0149b968, which are also the two blocks that stop before the byte offset 0x4c that the body dispatches.",
+    "base_assumption": "The block base is taken to be the first of the five repeated words (0x010537b0). Under that base the function is index 8 (byte offset 0x20) and the word at the dispatched byte offset 0x4c is 0x007b86e0 in every block that contains this function, which is the same address as the independently decompiled refcount-decrement body named in direct_callees. The two short blocks lacking both the index-8 entry and the 0x4c entry are the internal consistency check for this base.",
+    "caveat": "The base is an inference from the repetition pattern, not from a verified RTTI complete-object locator: SporeApp.exe carries no usable MSVC RTTI, and the word 0x010537b0 at index 0 is a constructor (it tests the initialising-ctor flag, stores the data pointers 0x013eb938 and 0x013ec458 into the object, and returns this in EAX with RET 0x4), which is not the shape of an MSVC vtable slot 0. The index-8 and byte-offset-0x4c readings are therefore reported as the best-supported reading of the block, not as a verified vtable layout, and no class name is claimed from them.",
+    "briefing_vtable_addresses": "The briefing lists vtable:0x0149b810, vtable:0x0149b8b4 and vtable:0x0149b900. Those three words hold 0x01053db0 (the SDK-named sibling func4Ch), 0x01052f90 and 0x01053ff0 respectively, so they are pointer sites, not verified table bases; they are reported here and deliberately not adopted as bases."
+  },
+  "globals": [
+    "global:0x0167eb50"
+  ],
+  "globals_note": "0x0167eb50 is not referenced by this body. It is the single global returned by Simulator::cSpaceTrading::Get at 0x00b3d4d0, which this body calls at 0x01053d76, so the trading context is reached only through that accessor and never by a direct global read in this function.",
+  "observed_mechanics": [
+    "0x01053d50 SUB ESP,0x40 then PUSH ESI / PUSH EDI: a 64-byte reservation plus two saved registers, 0x48 bytes below the entry ESP for the whole body.",
+    "0x01053d55 MOV EDI,[ESP+0x50] with ESP at entry-0x48 loads entry ESP+0x08, the second stack argument, and keeps it in EDI across three calls.",
+    "0x01053d59 LEA EAX,[ESP+0x8] with ESP at entry-0x48 addresses entry-0x40, a 16-byte local that the body never writes.",
+    "0x01053d5e MOV ESI,ECX captures the hidden this-call receiver; ESI is the receiver base for the whole body.",
+    "0x01053d61 LEA ECX,[ESP+0x20] with ESP at entry-0x50 addresses entry-0x30, the 48-byte frame local, and 0x01053d65 calls the frame constructor with (frame, second stack argument, rotation source).",
+    "0x01053d6a PUSH 0x0, 0x01053d6c LEA ECX,[ESP+0x1c] with ESP at entry-0x4c addresses entry-0x30 again, so the third argument of the poster is the address of the frame just built; 0x01053d71 PUSH 0x5dce504a is the only immediate constant in the body.",
+    "0x01053d76 calls the singleton accessor and 0x01053d7b MOV ECX,EAX turns its result into the receiver of the poster, so the accessor result is used as a this-call receiver, not as a value.",
+    "0x01053d7d calls the poster with three callee-popped words; the three pushes made at 0x01053d6a, 0x01053d70 and 0x01053d71 are its arguments and it, not this body, removes them.",
+    "0x01053d82 MOV EDX,[ESI] / 0x01053d88 MOV EDX,[EDX+0x4c] / 0x01053d8f CALL EDX is the only indirect transfer in the body; the dispatch displacement 0x4c is 76 bytes, index 19 of a 4-byte-pointer table.",
+    "0x01053d8b PUSH EDI / 0x01053d8c PUSH EAX pass the second then the first stack argument, so the slot receives them in this function's own order, and the slot's return value is dropped.",
+    "0x01053d91 LEA ECX,[ESP+0x18] with ESP back at entry-0x48 addresses entry-0x30, the same frame, and 0x01053d95 calls the frame destructor.",
+    "0x01053d9f RET 0x8 with no EAX write anywhere on the path: the machine produces no return value.",
+    "The body contains no conditional branch, so the five calls are unconditional and there is no error path, no early exit and no null test in this VA."
+  ],
+  "null_and_error_paths": {
+    "observed": [
+      "No null test of any kind appears in the body. The receiver's table pointer is dereferenced at 0x01053d88 with no check, and the singleton returned at 0x01053d76 is used as a receiver with no check.",
+      "The frame's own owner word is not tested here; the test lives in the callee destructor at 0x00ad7ad0, which suppresses its dispatch when the word is null.",
+      "The rotation source is never written by this body, so the value the frame receives through that argument is indeterminate at this VA."
+    ],
+    "staging_policy": "The reconstruction preserves the absence of every null test and does not add an error return, because the machine produces none and no path can be skipped."
+  },
+  "analogue_agreement": {
+    "package": "reconstruction/staging/pkg-sim-beamtool-func4ch",
+    "symbol": "func4_ch_01053db0",
+    "observation": "The sibling at 0x01053db0 sits at index 12 of the same pointer block (0x0149b810 is 0x30 past 0x0149b7e0) and is SDK-named Simulator::cDefaultBeamTool::func4Ch, which is what places this function in the same class neighbourhood. That package reconstructs a receiver whose live state words sit at 0x124 and 0x174 and whose entry is itself a virtual; the two packages agree on the subsystem, on the this-call receiver in ECX and on the callee-popped stack convention, and neither claims a class name for the other. This package does not reuse that receiver layout: this body never dereferences a field other than the receiver's table pointer at +0x00, so no 0x124/0x174-style layout is asserted here."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01053d50",
+      "observation": "The complete 30-instruction body, from SUB ESP,0x40 at 0x01053d50 to RET 0x8 at 0x01053d9f, with the four direct calls, the single indirect call, and no branch."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01053d50",
+      "observation": "Renders the body as void __thiscall FUN_01053d50(int *param_1, undefined4 param_2, undefined4 param_3) with the four calls in the same order and the virtual as (**(code **)(*param_1 + 0x4c))(param_2, param_3), which independently confirms the receiver, the two stack arguments, the 0x4c displacement and the argument order. Its local_40/local_30 split matches the 16-byte and 48-byte locals derived from the listing."
+    },
+    {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x01053d50",
+      "observation": "Five DATA references, all in .rdata, at 0x0149b800, 0x0149b8a0, 0x0149b8f0, 0x0149b940 and 0x0149ba20, and no code reference; a later read of the same region also shows 0x0149ba70. This is the evidence that the function is reached by dispatch only."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0149b770",
+      "observation": "688 bytes of .rdata covering eleven pointer blocks, from which the repeating five-word prefix, the common run at +0x14..+0x1c, the index-8 position of this function, the index-12 position of 0x01053db0, and the 0x007b86e0 word at +0x4c are all read directly."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00b7d400",
+      "observation": "The word that the prior package took for a non-code interleaving is code: b0 01 c2 04 00 is mov al,1 / ret 4. Recorded so the block is not read as a mixed code/data table."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x010537b0",
+      "observation": "The repeated first word of every block is a constructor, not a destructor: it tests the initialising-ctor flag, stores 0x013ec458 and 0x013eb938 into the object, and returns this in EAX with RET 0x4. This is the basis for the caveat that the block is not a plain MSVC vtable."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ad79d0",
+      "observation": "The frame constructor: 12 bytes from the second argument into words 0..2, 16 bytes from the third argument into words 3..6, 0x3f800000 into words 7..10, and 0 into word 11. This fixes the 48-byte local's field widths."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ad7ad0",
+      "observation": "The frame destructor: it tests word 11 (byte offset 0x2c) and, only when non-null, calls the owner's table word at +0xc0. This fixes the last word of the frame as a pointer and shows why the call at 0x01053d95 is a no-op for a frame this body has just built."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ad9010",
+      "observation": "A 44-byte copy plus a refcounted-pointer swap at word 11: add-ref through the owner's +0xbc and release through the owner's +0xc0. It is what the poster calls to install the frame, and it is why word 11 must be a pointer."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ae09b0",
+      "observation": "The poster: derives the instance from its own object when the passed word is 0, looks a record up by hash 0x4474369 with the literal name \"Simulator/cObjectContext\", probes the located object's table word at +0x0c with 0x446e39c, and on a non-zero probe forwards the caller's words and installs the 48-byte frame through 0x00ad9010."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00b3d4d0",
+      "observation": "Simulator::cSpaceTrading::Get returns the single global DAT_0167eb50 and takes no argument, which is why its three pushed words are the poster's arguments rather than the accessor's."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007b86e0",
+      "observation": "The body reached through the dispatched table word: it decrements the word at receiver+8, and on reaching zero calls the pointer at receiver+4 with the argument 1 and stores 1 back into the counter. It ignores both stack words this body passes, which is consistent with a two-argument virtual whose extra arguments are optional."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01053d50",
+      "observation": "The live function spans 0x01053d50 through 0x01053da1 and is named FUN_01053d50, confirming the target is a real function boundary and that the image carries no SDK name for it."
+    },
+    {
+      "tool": "compile-and-run",
+      "address": "reconstruction/staging/pkg-sim-toolevent-01053d50",
+      "observation": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror builds the package and all 22 model checks pass, covering the five-call order, the identity of the frame address across init/post/release, the two forwarded arguments, the discarded slot result, the unit-scale and owner words written by the modelled constructor, the null-owner suppression in the modelled destructor, and the selection of a different slot body by a different receiver table."
+    },
+    {
+      "tool": "objdump",
+      "address": "sim_toolevent_slot8_fun_01053d50 in the compiled model",
+      "observation": "The compiled entry reloads its receiver into ECX, dispatches the table word at 0x4c, pushes the two forwarded arguments in the machine's order, discards the slot result, and ends with RET $0x8, so the staged ABI matches the listing on the receiver register, the dispatch offset, the argument order and the callee-cleaned 8-byte stack."
+    }
+  ],
+  "confidence": {
+    "overall": "high for the control flow, the stack ABI, the return type, the immediate constant, the dispatch offset and the argument order; medium for the 48-byte frame's field partition; low for the block base, the owning class and the role of the dispatched slot",
+    "high": [
+      "the function returns nothing; no path writes EAX and the epilogue is POP/POP/ADD/RET 0x8",
+      "the receiver is a hidden this-call receiver in ECX and the function takes exactly two callee-popped stack words",
+      "the first stack argument is forwarded only to the virtual, and the second stack argument is the 12-byte position consumed by the frame constructor",
+      "0x5dce504a and the zero third argument are the only immediates the body materialises",
+      "the sole indirect transfer dispatches the receiver's own table word at byte offset 0x4c and discards its result",
+      "the body is straight-line: no conditional branch exists, so all five calls always run",
+      "the six .rdata pointer sites and the absence of any code xref"
+    ],
+    "medium": [
+      "the 48-byte local's partition into 3 floats, 4 floats, 4 unit floats and one pointer, which is read off the constructor and destructor callees rather than off any structure in the image",
+      "that the dispatched table word resolves to 0x007b86e0, which follows only from the block-base inference",
+      "that the poster installs rather than merely records the frame, inferred from the 0x00ad9010 call inside it"
+    ],
+    "low": [
+      "the block base at 0x0149b7e0 and therefore the index-8 reading, since the repeated first word is a constructor and no RTTI locator is available",
+      "the owning class and the interface this virtual overrides; the image names neither",
+      "the meaning of the forwarded first argument and of the second argument at the dispatch, since the resolved implementation ignores both"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-sim-toolevent-01053d50 reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-sim-toolevent-01053d50 reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50.cpp reconstruction/staging/pkg-sim-toolevent-01053d50/sim_tool_event_01053d50_model_test.cpp -o /tmp/opencode/pkg-sim-toolevent-01053d50-model && /tmp/opencode/pkg-sim-toolevent-01053d50-model",
+    "model_result": "passed; 22 of 22 checks green",
+    "abi_fidelity_command": "objdump -d --no-show-raw-insn /tmp/opencode/pkg-sim-toolevent-01053d50-model, entry sim_toolevent_slot8_fun_01053d50",
+    "abi_fidelity_result": "passed on the four machine-visible properties: receiver reloaded into ECX, dispatch of the table word at 0x4c, the two arguments pushed in the machine's order with the slot result dropped, and RET $0x8; the frame-pointer and PIC prologue the compiler adds is not claimed to match the original",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" on the three staged files",
+    "format_result": "passed",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-sim-toolevent-01053d50/01053d50.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The image carries no name for 0x01053d50, so none is claimed. The class is not established either: the function is index 8 of six pointer blocks, but the repeated first word of those blocks is a constructor, so they are not plain MSVC vtables and no RTTI complete-object locator is available to name the class.",
+    "The base of each pointer block, and therefore the index-8 reading and the resolution of the dispatched byte offset 0x4c to 0x007b86e0, rest on the repetition pattern alone. If the true base is four words later, this function is index 4 and the dispatched word is 0x010537e0 instead.",
+    "The 16-byte rotation source is never written by this body, so the value the frame receives through that argument is indeterminate here. The original source most plausibly passed a default-constructed or dead value that the compiler proved irrelevant, but nothing in this VA's evidence shows which.",
+    "The first stack argument is forwarded to the dispatched slot and used nowhere else. Its type is not determined; it is compatible with the cSpaceToolData * that the SDK attaches to the sibling virtual at 0x01053db0, but that is an SDK guess on a different function and is not adopted here.",
+    "The role of the dispatched slot is unresolved. The address the block reading resolves to decrements a refcount-like word and calls a callback when it reaches zero, but the two forwarded arguments are ignored by it, so it is not established whether the tool is releasing itself, a related object, or invoking a hook with the event arguments.",
+    "The three constants inside the poster (0x4474369, 0x446e39c, 0x58) and the four inside the frame constructor (0x3f800000) belong to the callees, not to this VA, so they are recorded here and deliberately kept out of the staged source span.",
+    "No differential runtime corpus exists for this virtual, so the ordering and the dispatch are static-only evidence."
+  ],
+  "blockers": [
+    "The owning class and the overridden interface are unresolved, so this virtual cannot be tied to a named SDK declaration.",
+    "No canonical structure exists for the 48-byte frame, the 16-byte rotation source or the receiver; all three layouts are assembled from the observed offsets and the callee bodies.",
+    "Simulator::cDefaultBeamTool::OnMouseDown at 0x01053d00, the neighbouring address in the same class neighbourhood, has an unusable decompilation in the live program and cannot corroborate the receiver layout."
+  ]
+}

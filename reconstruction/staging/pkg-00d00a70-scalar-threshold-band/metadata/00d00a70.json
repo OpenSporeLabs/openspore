@@ -1,0 +1,313 @@
+{
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "package": "PKG-00D00A70-SCALAR-THRESHOLD-BAND",
+ "subsystem": "Simulator",
+ "cluster": "simulator-float-classifier",
+ "queue_id": "",
+ "va": "0x00d00a70",
+ "address": "0x00d00a70",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "sdk_symbol": null,
+ "normalized_symbol": "scalar_threshold_band_00d00a70",
+ "reconstructed_symbol": "scalar_threshold_band_00d00a70",
+ "target_state": "implemented in staging; integrator review pending",
+ "captured_on": "2026-10-01",
+ "canonical_source_path": "",
+ "source_files": [
+  "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70.hpp",
+  "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70.cpp",
+  "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70_model_test.cpp",
+  "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/mutation_test.sh"
+ ],
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70.hpp",
+  "source": "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70.cpp",
+  "model_test": "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/scalar_threshold_band_00d00a70_model_test.cpp",
+  "mutation_test": "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/mutation_test.sh"
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall, receiver in ECX, three 4-byte callee-cleaned stack arguments",
+  "calling_convention_evidence": "ECX is copied to ESI at 0x00d00a7c (`89 ce` MOV ESI,ECX) and every one of the four receiver reads is `[ESI+disp]`; the receiver is never taken from the stack. The terminator is `RET 0xc` at 0x00d00b03, 0x00d00b15, 0x00d00b2c and 0x00d00b35, so the callee pops its own three arguments and the caller pops nothing. __cdecl and __stdcall are excluded by that cleanup; a fastcall reading is not excluded by the callee's own bytes (see alternatives).",
+  "calling_convention_alternatives": "__fastcall is not separable from __thiscall on this body: a fastcall would place a second argument in EDX, and this body never reads EDX except as the first forwarded stack word, which is consistent with both. The receiver framing is declared because the call sites load ECX immediately before the call and none passes a second pointer argument in a register; the callee-side evidence alone does not exclude the fastcall reading.",
+  "receiver": "ECX at entry, moved to ESI at 0x00d00a7c and read at +0x10/+0x14/+0x18/+0x1c; never written",
+  "receiver_disposition": "The body performs four 4-byte reads and no store through the receiver. The package models the receiver at exactly the width the body reaches (0x20 bytes, prefix 0x00..0x0f opaque) and names no member, because the derived receiver record is bounds_only with displacements [0x10,0x14,0x18,0x1c] and no owner type.",
+  "ordinary_stack_arguments": [
+   {
+    "entry_offset": "entry_ESP+0x4",
+    "ordinal": 1,
+    "read_at": "0x00d00a77",
+    "width_bytes": 4,
+    "meaning": "forwarded to 0x00d05a20 as its first argument, unmodified"
+   },
+   {
+    "entry_offset": "entry_ESP+0x8",
+    "ordinal": 2,
+    "read_at": "0x00d00a7e",
+    "width_bytes": 4,
+    "meaning": "forwarded to 0x00d05a20 as its second argument, unmodified"
+   },
+   {
+    "entry_offset": "entry_ESP+0xc",
+    "ordinal": 3,
+    "read_at": "0x00d00a73",
+    "width_bytes": 4,
+    "meaning": "forwarded to 0x00d05a20 as its third argument, unmodified"
+   }
+  ],
+  "stack_cleanup_bytes": 12,
+  "stack_cleanup_owner": "callee",
+  "ret_form": "RET 0xc, at 0x00d00b03, 0x00d00b15, 0x00d00b2c and 0x00d00b35 -- one terminator per exit",
+  "frame": "SUB ESP,0x10 at 0x00d00a70 and PUSH ESI at 0x00d00a7b; ESI is popped on every exit. The 16 bytes of stack are the outgoing-argument area used by the call at 0x00d00a87 plus the two spilled clamp bounds and the spilled float, none of which outlives the call.",
+  "saved_registers": [
+   "ESI"
+  ],
+  "return_register": "EAX",
+  "return_type": "std::int32_t",
+  "return_semantics": "one of the five immediates 0,1,2,3,4: `XOR EAX,EAX` at 0x00d00b2f, `MOV EAX,0x1` at 0x00d00b23, `MOV EAX,0x2` at 0x00d00ade, `MOV EAX,0x3` at 0x00d00afa, `MOV EAX,0x4` at 0x00d00b0c -- one per exit, all of them integers",
+  "return_type_rationale": "OBSERVED FROM THE LISTING, NOT INFERRED FROM A TYPE. Each of the five exits writes an immediate into EAX and none touches ST0 on the way out; the x87 register is consumed by `FSTP dword ptr [ESP+0x4]` at 0x00d00a8c and is dead from there on. Corroborated from the CALL SIDE: at 0x00ae2e33 the instruction after the call is `CMP EAX,0x1` feeding `SETLE CL`, and at 0x00bef633 it is `CMP EAX,0x4` feeding `SETGE CL`. Both read EAX as a small integer and neither touches the FPU, so a float return would be refuted by both sites.",
+  "float_precision": "single. `FSTP dword ptr [ESP+0x4]` at 0x00d00a8c stores ST0 as a 4-byte value, and every subsequent access of that slot is MOVSS/COMISS, a single-precision form. The x87 push/pop is a transfer mechanism here, not an 80-bit computation."
+ },
+ "observed_mechanics": [
+  "the body is 58 instructions, 0x00d00a70..0x00d00b35, body span 198 bytes; the listing parse record is complete with no unparsed line at the disassembly level",
+  "instruction 0x00d00a70 SUB ESP,0x10 establishes the outgoing-argument area; 0x00d00a73/0x00d00a77/0x00d00a7e read the three incoming words at entry+0xc, entry+0x4 and entry+0x8 respectively -- note the read ORDER is third, first, second, which is why the forwarded order is by push sequence and not by read sequence",
+  "0x00d00a82..0x00d00a84 push the three words in reverse (EAX, ECX, EDX), so the callee at 0x00d00a87 sees them in argument order",
+  "0x00d00a85 MOV ECX,ESI restores the receiver into the register the callee reads (`MOV EDI,ECX` at 0x00d05a26)",
+  "0x00d00a87 CALL 0x00d05a20 is the body's only call; the callee's own body is 279 instructions and is NOT reconstructed here",
+  "the clamp is two instructions: 0x00d00ab2 MAXSS against [0x01478d5c] then 0x00d00ab8 MINSS against [0x01478d60], with the memory operand second on each. That operand position is what decides which bound an unordered value exits through.",
+  "the four band tests read [ESI+0x14] once into XMM1 at 0x00d00ac4 and keep it there; the last test at 0x00d00b18 compares against XMM1 without reloading, which is why the reconstruction loads edge14 once",
+  "all seven conditional branch targets lie inside 0x00d00a70..0x00d00b35, so the branch graph is closed inside the body; the body is a single fall-through chain, not a binary search",
+  "XMM1 is written once (0x00d00ac4) and read twice (0x00d00acf, 0x00d00b18); XMM2 is written twice (0x00d00ad4, 0x00d00af0) and never read",
+  "no instruction in the body performs a store through the receiver, through a pointer derived from it, or through any global",
+  "no indirect transfer of any kind appears in the body: no call through a register, no memory-indirect jump, no vtable-shaped load. The dispatch record agrees at zero indirect calls."
+ ],
+ "field_offsets": [
+  {
+   "owner": "the receiver",
+   "displacement": "0x10",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "instructions": [
+    "00d00b1d"
+   ],
+   "role": "band 1's lower edge. Band 1 requires the clamped value to be strictly above it."
+  },
+  {
+   "owner": "the receiver",
+   "displacement": "0x14",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "instructions": [
+    "00d00ac4"
+   ],
+   "role": "band 2's lower edge and band 1's upper edge. Loaded once into XMM1 and reused."
+  },
+  {
+   "owner": "the receiver",
+   "displacement": "0x18",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "instructions": [
+    "00d00ad4"
+   ],
+   "role": "band 2's upper edge and band 3's lower edge."
+  },
+  {
+   "owner": "the receiver",
+   "displacement": "0x1c",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "instructions": [
+    "00d00af0"
+   ],
+   "role": "band 3's upper edge and band 4's lower edge. Band 4 is the top of the chain and has no upper edge of its own."
+  }
+ ],
+ "layout": "The receiver is modelled at 0x20 bytes: an opaque 0x10-byte prefix the body never touches, then four consecutive 4-byte floats at +0x10/+0x14/+0x18/+0x1c. The extent is a MODELLING BOUND derived from the largest displacement read, not a recovered allocation size, and the four floats are named for the ROLE the listing gives them (a compared edge) and for nothing else. No member name is asserted, because the derived receiver record is bounds_only and identifies no member of any type. Nothing in this package asserts that the four are ascending, or even distinct.",
+ "globals": [
+  {
+   "address": "0x01478d5c",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "value_bits": "0xc1200000",
+   "value": "-10.0f",
+   "instructions": [
+    "00d00a90",
+    "00d00a98",
+    "00d00ab2"
+   ],
+   "evidence": "GhidraMCP read_memory @ 0x01478d5c length 8 returns `00 00 20 c1 00 00 20 41`; the first four bytes little-endian are 0xc1200000, which is -10.0f in IEEE-754 binary32. Read once as a bound and once spilled to a stack slot.",
+   "role": "the MAXSS operand at 0x00d00ab2, i.e. the clamp's lower bound"
+  },
+  {
+   "address": "0x01478d60",
+   "width_bytes": 4,
+   "access": "read-only float",
+   "value_bits": "0x41200000",
+   "value": "+10.0f",
+   "instructions": [
+    "00d00a9e",
+    "00d00aa6",
+    "00d00ab8"
+   ],
+   "evidence": "same read: the next four bytes are 0x41200000 = +10.0f in IEEE-754 binary32.",
+   "role": "the MINSS operand at 0x00d00ab8, i.e. the clamp's upper bound"
+  }
+ ],
+ "vtables": [],
+ "types": [],
+ "type_scope": "The receiver, the three forwarded words and the callee's result are the only types involved. Every one of them is opaque here: the receiver carries no named member, the forwarded words are modelled as uint32 because the derived ABI types them `undefined4` and the listing settles neither width nor signedness beyond the 4-byte access, and the callee at 0x00d05a20 is declared by ABI only.",
+ "analogues": [
+  {
+   "va": "0x00d00a10",
+   "package": "PKG-00D00A10-CLAMP-SCALAR-TO-RANGE",
+   "relationship": "shared callee and shared clamp bounds",
+   "detail": "0x00d00a10 forwards the same three words to the same callee 0x00d05a20 and clamps the result with MAXSS/MINSS against the same two global addresses. This body performs the identical forward-and-clamp sequence and then classifies the clamped value; it is the clamp half of that package with a band test appended. Read for consistency; that package is owned by another worker and nothing here was written to it."
+  },
+  {
+   "va": "0x00d05a20",
+   "package": null,
+   "relationship": "the sole callee",
+   "detail": "declared by ABI only: receiver in ECX, three 4-byte stack arguments, float result in ST0, callee pops 12. Its 279-instruction body is not reconstructed here and is not claimed."
+  }
+ ],
+ "semantic_findings": [
+  "0x00d00a70 is a five-way band index. It computes one scalar, clamps it into [-10.0, +10.0], and returns which of five bands the clamped value falls in, as an integer in EAX.",
+  "The bands are NOT uniform in closure, and the asymmetry is the listing's: (-inf,f10] -> 0, (f10,f14] -> 1, (f14,f18) -> 2, [f18,f1c) -> 3, [f1c,+inf) -> 4. Band 2 is open at both ends; band 1 is closed at its top and open at its bottom. A transcription that made every band half-open or that searched an ordered array would answer differently on four of the five boundaries.",
+  "The band chain is a fall-through list in the order 2, 3, 4, 1, 0 and NOT a binary search over an ordered key. That order is observable on unsorted fixtures, and the model test pins it with three of them.",
+  "The four receiver floats are read as four independent words. Nothing in the body compares one against another, so the reconstruction does not assume they are ascending, and the model test uses deliberately unsorted fixtures to show the answers are order-independent in the way the listing requires rather than sorted.",
+  "The clamp's OPERATION ORDER is observable. MAXSS runs against the lower bound first and MINSS against the upper bound second, both with the memory operand second, so an unordered value leaves through the LOWER bound. Transposing the two operations sends the same NaN out the upper end, and the model test catches that with a fixture where -10.0f and +10.0f land in different bands.",
+  "EVERY guard in the body is a NEGATED branch (`JBE`/`JC` used as `if (taken) leave`). That is why `!JBE(a,b)` is exactly `a > b` and `!JC(a,b)` is exactly `a >= b` even on an unordered pair: COMISS sets CF=ZF=1 there, so the branch is taken, so its negation is false, which is what the arithmetic comparison also gives. The model test asserts this identity directly, so the helpers cannot drift into something the machine does not do.",
+  "The result is one of exactly five integers, for every input tried, including both infinities, NaN and a denormal. The set is closed.",
+  "The body never writes memory outside its own frame: the receiver is read four times and written never, and both globals are read-only.",
+  "The three stack words are forwarded verbatim, in the order the pushes place them, and the receiver reaches the callee in ECX. That is the whole of the forwarding behaviour and the model test pins the word values and the call count."
+ ],
+ "not_claimed": [
+  "the receiver's class and any SDK name. SporeApp.exe has no MSVC RTTI, the derived receiver record is bounds_only, and the body touches four displacements and nothing else.",
+  "what the four receiver floats MEASURE. They are four compared edges and nothing more is observable: no caller in this package's evidence writes them, and the model test only asserts their positions and roles.",
+  "that the four receiver floats are ascending, or distinct, or even initialised. The body never compares one with another. The ascending band partition in `semantic_findings` is a statement about the FIXTURES the model test uses, not a claim about the receiver.",
+  "that 0x00d00a70 is named, enumerated or otherwise an enum member of some type. The five immediates are the machine's own values; nothing here enumerates them beyond the listing.",
+  "the semantics of the three forwarded words, and the semantics of the callee at 0x00d05a20. The callee is declared by ABI only and its body is not reconstructed here.",
+  "the clamp BOUNDS as anything but the two bit patterns read out of the binary. The address 0x01478d5c has no name in any evidence this package has.",
+  "that the clamp bounds are tunable state rather than constants. They are read-only data in this body; nothing here shows a writer.",
+  "any runtime behaviour of the original process. No original-process trace exists in this repository for this target.",
+  "the exact number of call sites' expectations. 42 call sites are recorded in the evidence pack's caller list; this package reads two of them (0x00ae2e20 and 0x00bef620) for the EAX-as-integer corroboration and claims nothing about the other forty."
+ ],
+ "conflicts": [
+  {
+   "kind": "derived_record_vs_listing",
+   "record": "evidence.json categories.abi_derived -> abi.return_register = \"ST0\", abi.return_semantics = \"float_or_x87_in_ST0\", inferences RT1",
+   "listing": "all five exits of 0x00d00a70 materialise an INTEGER immediate into EAX (0x00d00b2f XOR EAX,EAX; 0x00d00b23 MOV EAX,0x1; 0x00d00ade MOV EAX,0x2; 0x00d00afa MOV EAX,0x3; 0x00d00b0c MOV EAX,0x4), and ST0 is consumed and dead by 0x00d00a8c (`FSTP dword ptr [ESP+0x4]`)",
+   "resolution": "resolved against the derived record. RT1 states its own basis as 'an x87 or SSE instruction appears in the body' at confidence APPROXIMATION; that heuristic fires on the FSTP and on the clamp's MAXSS/MINSS, neither of which returns anything. This package declares EAX and a 32-bit integer, and the two caller sites cited above agree.",
+   "consequence_for_the_validator": "RETURN SEMANTICS should not be read from abi_derived.return_register for this target. The listing is the witness."
+  },
+  {
+   "kind": "derived_record_vs_listing",
+   "record": "evidence.json categories.abi_derived -> abi.saved_registers = [\"ESI\"], abi.ordinary_stack_arguments[*].read = false for all three slots",
+   "listing": "ESI is saved by PUSH ESI at 0x00d00a7b and restored on all five exits, and the record's own receiver inference R1 lists the four displacements [16,20,24,28]; but the three stack words ARE read, at 0x00d00a73, 0x00d00a77 and 0x00d00a7e",
+   "resolution": "the saved_registers entry agrees with the listing. The read=false entries do not: the record's own STACK_SLOT_READ observations (obs-0004 and the two that follow) are what produced its 0x14/0x1c displacements, so the flag is a parse artifact of the linear ESP walk, not a machine fact. This package declares all three arguments as read and forwarded, and follows the listing.",
+   "consequence_for_the_validator": "the FIELDS/OFFSETS scan in validation.md reports that the complete listing 'names no displacement through ECX', while abi_derived enumerates 0x10/0x14/0x18/0x1c. Both are right about different witnesses: the body reads through ESI, which holds a COPY of ECX (MOV ESI,ECX at 0x00d00a7c), so no instruction's operand names ECX. The four displacements are real and are declared."
+  }
+ ],
+ "confidence": "The 58-instruction body is recovered COMPLETELY from a fully parsed listing whose every branch target lies inside the recovered span; the four displacements, the two global words, the arithmetic, the operand order, the five immediates, the terminator form and the absence of every other behaviour are all OBSERVED. Two call sites were read for the return-register corroboration. INFERRED: the calling convention (from the callee's cleanup and the call sites, not from the receiver alone -- the fastcall reading is recorded rather than discarded) and the receiver's identity (not determined at all). CONTRADICTED: the derived record's return_register and its stack-argument read flags, both resolved against the listing above.",
+ "unresolved_questions": [
+  "WHAT THE FOUR RECEIVER FLOATS ARE IS UNKNOWN, AND IT IS THE QUESTION THAT WOULD NAME THE FUNCTION. They are four compared edges on a receiver this body shares with 42 call sites, and nothing in this package's evidence writes them or shows a caller reading the answer back into them. The band partition in `semantic_findings` is therefore a description of the arithmetic, not a claim about a domain.",
+  "WHY THE RESULT IS AN INDEX RATHER THAN A VALUE IS NOT SETTLED HERE. Five ordered bands over a clamped scalar is a natural shape for a quantiser, a difficulty band or a simulation-state selector, and this evidence distinguishes none of them. The 42 call sites would: a site that stores the result to a word and later compares that word against a small constant would identify the index's consumer. This package reads two call sites and does not claim the rest.",
+  "THE CALIBRATION OF THE FOUR EDGES IS NOT OBSERVED. Nothing shows what sets 0x10..0x1c, whether they can be re-tuned at runtime, and whether they are per-receiver or shared. The clamp bounds at 0x01478d5c/0x01478d60 ARE constants in the data section, but that says nothing about the four edges.",
+  "THE UNORDERED CASES ARE TRACED, NOT MEASURED. The five band answers under an unordered receiver float are derived from COMISS's documented flag behaviour and are asserted against the reconstruction's helpers, not against the original process. A trace of the original under a NaN edge would settle them.",
+  "NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game.",
+  "THE DERIVED ABI RECORD'S RETURN_REGISTER IS WRONG AND THE PACK DOES NOT SAY SO. It says ST0. The listing says EAX, and this package's header documents the disagreement, but the persisted `conflicts` array in evidence.json is empty and `records/0x00d00a70` in reconstruction/knowledge/index.json still carries the ST0 claim. An integrator reading the index rather than the header would inherit it."
+ ],
+ "evidence_provenance": [
+  "reconstruction/evidence/00d00a70/evidence.json category disassembly (LIVE, 58 instructions, body 0x00d00a70..0x00d00b35): the full listing, re-read live for this package via GhidraMCP /disassemble_function @ 0x00d00a70",
+  "reconstruction/evidence/00d00a70/evidence.json category decompilation (INFERRED): `undefined4 FUN_00d00a70(...)` returning 2/3/4/1/0 -- used as a cross-check on the band numbers and NOT as the source of them; the reconstruction reads the immediates out of the listing",
+  "GhidraMCP read_memory @ 0x01478d5c length 8 = `00 00 20 c1 00 00 20 41`, pinning the two clamp bounds to 0xc1200000 (-10.0f) and 0x41200000 (+10.0f)",
+  "GhidraMCP read_memory @ 0x00d00a90 length 56, re-reading the instruction encodings for the clamp block (f30f1044 2404 / f30f5f44 241c / f30f5d44 2420 / f30f1144 2404) so the MOVSS/MOVSS/MOVSS/MAXSS/MINSS/MOVSS sequence is read from bytes, not from a rendering",
+  "GhidraMCP get_function_by_address @ 0x00d05a20: entry 0x00d05a20, body 0x00d05a20..0x00d05d8b, 279 instructions -- the ABI of the callee, and the fact that its own body is out of scope here",
+  "GhidraMCP disassemble_function @ 0x00d05a20 read far enough to confirm the callee's own prologue (`SUB ESP,0x1c`, `MOV EDI,ECX` at 0x00d05a26, `FLD float ptr [0x01478d60]` at 0x00d05a53, `RET 0xc`), which is where the receiver register and the ST0 result come from",
+  "GhidraMCP get_function_callers @ 0x00d00a70: 42 call sites recorded; 0x00ae2e20 and 0x00bef620 read individually for the EAX-as-integer return corroboration",
+  "GhidraMCP get_assembly_context @ 0x00ae2e2c, 0x00bef620, 0x00bf8440: `CMP EAX,0x1`+`SETLE CL` after the first call and `CMP EAX,0x4`+`SETGE CL` after the second",
+  "reconstruction/evidence/00d00a70/evidence.json category abi_derived (openspore-abi-inference-1: cleanup 12 bytes OBSERVED owner callee; receiver register ECX bounds_only offsets [16,20,24,28]; dispatch indirect_calls 0; inferences RT1 and R1 -- RT1 is contradicted, see `conflicts`)",
+  "reconstruction/evidence/00d00a70/validation.md: the CONTROL FLOW and VIRTUAL DISPATCH passes on the complete 58-instruction listing, and the FIELDS/OFFSETS note that the ECX scan is narrower than the receiver record because the body reads through ESI",
+  "reconstruction/knowledge/index.json records/0x00d00a70 for the caller list and the current status (candidate, not reconstructed, 0 runtime validations)",
+  "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10.hpp, READ for consistency on the shared callee, the shared clamp bounds and the shared MAXSS/MINSS operand order. That package belongs to another worker; nothing was written into its staging directory.",
+  "docs/tooling/reconstruction-failure-modes.md and docs/tooling/validation-dimensions.md, applied throughout: canonical address spelling at every boundary, absence of an address is not evidence of an address, and the derived ABI record treated as inference rather than as fact wherever it disagrees with the listing"
+ ],
+ "focused_test": {
+  "cases": 13,
+  "checks": 148,
+  "mutants": 24,
+  "mutant_catch_counts": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "perturbations_of_the_reconstruction_itself_tried": [
+   "M1  band-2 lower edge read from +0x10 instead of +0x14",
+   "M2  band-2 upper edge read from +0x1c instead of +0x18",
+   "M3  band-2 lower edge made inclusive (JBE swapped for JC)",
+   "M4  band-2 upper edge made inclusive (JBE swapped for JC)",
+   "M5  band 1's upper edge made exclusive",
+   "M6  band 1's lower edge check dropped entirely",
+   "M7  band-4 edge read from +0x18 instead of +0x1c",
+   "M8  band 3 renumbered to 2",
+   "M9  band 1 tested before band 2 (band chain reordered)",
+   "M10 clamp's two operations transposed (MINSS before MAXSS)",
+   "M11 clamp dropped: the raw callee value reaches the bands",
+   "M12 MAXSS takes the FIRST source on an unordered pair, so a NaN leaves the clamp unchanged",
+   "M13 a JBE guard loses its negation (branch read as taken rather than not taken)",
+   "M14 a JC guard loses its negation",
+   "M15 the three forwarded words reordered on their way to the callee",
+   "M16 the receiver written through, which the listing never does",
+   "H1  kEdgeDisplacement14 restated as 0x10 -- caught by the package's own static_assert",
+   "H2  kEdgeDisplacement18 restated as 0x14 -- caught by the package's own static_assert",
+   "H3  kEdgeDisplacement1c restated as 0x18 -- caught by the package's own static_assert",
+   "H4  kEdgeDisplacement10 restated as 0x14 -- caught by the package's own static_assert",
+   "H5  kClampLowerBound restated as +10.0 -- caught by the package's own static_assert",
+   "H6  kClampUpperBound restated as -10.0 -- caught by the package's own static_assert",
+   "H7  modelled receiver extent restated as 0x18 -- caught by the package's own static_assert",
+   "H8  entry return type restated as float -- caught by the package's own static_assert"
+  ],
+  "mutation_catch_detail": "each mutant is REFUTED (nonzero exit from the rebuilt model test). Sixteen are refused by named runtime checks (M1..M16); eight are refused at compile time by a static_assert in the package (H1..H8), which is a refutation too, and the harness names the two mechanisms separately rather than conflating them. No mutant exited 0 and no mutant failed for an unrelated build reason.",
+  "notable_negative_result": "Degrading the comiss_jbe/comiss_jc HELPERS to the plain C++ `<=`/`<` is NOT a usable mutation for this body, and the reason is worth recording: every guard here is a NEGATED branch, and !(a <= b || unordered) is exactly `a > b`, so the helper and the operator agree on every input and no runtime case can separate them. An earlier draft of this harness did try it, and it reported as a HOLE IN THE TEST -- correctly, because it is not a hole, it is an equivalent mutation. The mutation was replaced with one that changes the GUARD instead of the helper (M13/M14), which is separable. Anyone extending this harness should not reintroduce the helper degradation and read the resulting 'not refuted' as a defect.",
+  "counting_method": "each mutant is built and run under the real gate (fresh archive per mutant: `rm -f` then `ar rc` -- `ar qc` appends and a stale object would silently win the link). Every mutant is compiled in a SELF-CONTAINED directory holding the impl .cpp, the .hpp AND the model test, because `#include \"x.hpp\"` resolves relative to the including file first and a test built from the package would pull in the ORIGINAL header, making every header mutation a no-op that reads as a pass.",
+  "gate": "clang++ -m32 -std=c++17 -O2 -I<dir> -c <src>.cpp && -c <test>.cpp && ar rc <fresh> && clang++ -m32 link && run: 148 checks, 0 failures (prints checks=148 failures=0 / OK). Byte-identical result under g++ -m32 -std=c++17 -O2: ALL MUTATIONS REFUTED, refuted 24 / 0. Both compilers also accept all three files under -Wall -Wextra -Werror.",
+  "harness": "reconstruction/staging/pkg-00d00a70-scalar-threshold-band/mutation_test.sh, run with CXX=g++ and with CXX=clang++",
+  "runtime_evidence_used": "none; the model test is a static model of the listing and asserts nothing about the original process"
+ },
+ "runtime_validation": 0,
+ "runtime_validation_status": "not performed",
+ "runtime_gates": [
+  "run the original under a trace with the four receiver edges set to distinct, recorded values and confirm the five band answers, which would turn the arithmetic partition from a transcription into an observation",
+  "run the original with one of the four edges set to a NaN and confirm the band answer, which is the case this package can only trace from COMISS's documented flag behaviour",
+  "read enough of the 42 call sites to find the index's consumer: a site that stores the result to a word and later compares that word against a small constant would identify what the five bands mean",
+  "observe a write to receiver+0x10..0x1c to establish what calibrates the four edges, and whether the calibration is per-receiver or shared",
+  "establish whether the two clamp bounds at 0x01478d5c/0x01478d60 are constants for the whole subsystem or are shadowed per instance at run time"
+ ],
+ "review_status": "staged_static_review",
+ "integration_status": "not promoted",
+ "worker_ownership": "w12/0x00d00a70"
+}

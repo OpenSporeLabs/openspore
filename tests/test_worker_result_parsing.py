@@ -93,6 +93,20 @@ def fenced(body, marker="json"):
     return "```%s\n%s\n```" % (marker, body)
 
 
+def text_event(text, message="msg_case"):
+    """One ``text`` event of an OpenCode event stream, as a JSONL line.
+
+    Only the fields the classifier looks at are filled in; the real captures
+    carry ids, timestamps and token counts, and none of them can change how a
+    line is classified.
+    """
+    return json.dumps({"type": "text", "timestamp": 1790389672945,
+                       "sessionID": "ses_case", "part": {
+                           "id": "prt_case", "messageID": message,
+                           "sessionID": "ses_case", "text": text,
+                           "type": "text"}})
+
+
 class RealCaptureChannelTest(unittest.TestCase):
     """What the real OpenCode output actually is, asserted against real bytes."""
 
@@ -171,6 +185,34 @@ class RealCaptureChannelTest(unittest.TestCase):
         self.assertIn("--print-logs", argv)
         self.assertEqual(argv[3:6], ["--print-logs", "--format", "json"])
 
+    def test_the_raw_captures_still_parse_the_same_way_after_the_extraction_rework(self):
+        """Regression guard on the real bytes, in the other direction.
+
+        These four captures were read before the parser rework and must read the
+        same way after it: each is rejected, because each carries a toy probe
+        payload (``{"a": 1, "b": 2}``, ``{"result": "HELLO_FROM_TOOL"}``) that
+        makes no result claim. A capture that started being *accepted* would mean
+        the strictness was lost somewhere in the rework; a capture that started
+        being read as a document, or off a different channel, would mean the
+        channel classification drifted. The one thing allowed to move is the
+        ``extraction_stage`` string, which is provenance, not decision.
+        """
+        expected = {
+            "real_opencode_default_prose_then_json.txt": wc.CHANNEL_TEXT,
+            "real_opencode_default_narration_then_result.txt": wc.CHANNEL_TEXT,
+            "real_opencode_json_prose_then_json.jsonl": wc.CHANNEL_EVENT_STREAM,
+            "real_opencode_json_tool_two_text_blocks.jsonl": wc.CHANNEL_EVENT_STREAM,
+        }
+        for name, channel in sorted(expected.items()):
+            with self.subTest(capture=name):
+                parsed = wc.parse_result(capture(name), va=VA)
+                self.assertFalse(parsed["accepted"])
+                self.assertEqual(parsed["code"], "malformed_worker_output")
+                self.assertEqual(parsed["channel"], channel)
+                self.assertEqual(parsed["candidates"], 0)
+                self.assertIn(parsed["extraction_stage"],
+                              ("no_result", "no_result_in_final_text_block"))
+
 
 class UnwrapReplyTest(unittest.TestCase):
     """``unwrap_reply`` classifies the channel; it never decides meaning."""
@@ -208,6 +250,235 @@ class UnwrapReplyTest(unittest.TestCase):
         self.assertTrue(wc.unwrap_reply("   \n ")["empty"])
         self.assertTrue(wc.unwrap_reply(None)["empty"])
 
+    def test_a_single_event_is_an_event_not_a_bare_document(self):
+        """A one-line JSONL reply is also a bare JSON object.
+
+        ``case_event_stream_single_text_event.jsonl`` is a real ``opencode``
+        turn short enough to produce exactly one ``text`` event -- the shape a
+        worker that never calls a tool emits. Read as a bare document, the
+        json_document channel claims the event *envelope*, ``document`` becomes
+        the event, extraction is skipped, and the result sitting in the event's
+        ``part.text`` is never looked at. The event test has to come first, and
+        the report has to say the result came off the event stream.
+        """
+        envelope = wc.unwrap_reply(
+            capture("case_event_stream_single_text_event.jsonl"))
+        self.assertEqual(envelope["channel"], wc.CHANNEL_EVENT_STREAM)
+        self.assertIsNone(envelope["document"])
+        self.assertEqual(len(envelope["blocks"]), 1)
+        parsed = wc.parse_result(
+            capture("case_event_stream_single_text_event.jsonl"), va=VA)
+        self.assertTrue(parsed["accepted"], parsed.get("reason"))
+        self.assertEqual(parsed["channel"], wc.CHANNEL_EVENT_STREAM)
+        self.assertEqual(parsed["result"]["summary"],
+                         result_document()["summary"])
+
+    def test_a_document_is_still_a_document(self):
+        """The control for the event test above: the same shape *without* the
+        ``part`` key is a real document and must keep taking the channel, so the
+        event rule cannot swallow ordinary payloads."""
+        for document in (dumped(), jtext({"type": "IMPLEMENTED", "va": VA})):
+            with self.subTest(document=document[:40]):
+                envelope = wc.unwrap_reply(document)
+                self.assertEqual(envelope["channel"], wc.CHANNEL_JSON_DOCUMENT)
+                self.assertIsNotNone(envelope["document"])
+
+
+class FinalTextBlockTest(unittest.TestCase):
+    """Which block of a multi-block reply the result may be read from.
+
+    The rule is structural, not a heuristic: OpenCode emits one ``text`` event
+    per assistant message, and the answer to a turn is its last message. So a
+    reply with more than one text block is searched in the FINAL block only.
+
+    Both directions are tested, because the rule has to be safe in both: a
+    result that only an earlier block carries must NOT be read (it is a
+    superseded answer), and a result-shaped decoy in a narration block must not
+    make the reply ambiguous (it was never offered as the answer). Neither is a
+    tie-break between candidates -- it is a decision about which text is a
+    candidate at all.
+    """
+
+    def parsed(self, name):
+        parsed = wc.parse_result(capture(name), va=VA)
+        self.assertEqual(parsed["channel"], wc.CHANNEL_EVENT_STREAM)
+        self.assertEqual(parsed["text_blocks"], 2, name)
+        return parsed
+
+    def test_a_result_in_an_earlier_block_is_not_the_answer(self):
+        """A worker that answers, then keeps talking, has produced a superseded
+        answer. Reading it is how a run gets recorded against something the
+        worker had already revised, so the final block governs and the earlier
+        one is never a fallback -- even though it holds a result that would
+        otherwise have validated perfectly.
+
+        Rejecting it is a bounded false reject: the worker can fix it by ending
+        its turn with the result. Accepting it is not fixable at all.
+        """
+        parsed = self.parsed(
+            "case_event_stream_stale_result_then_narration.jsonl")
+        self.assertFalse(parsed["accepted"])
+        self.assertEqual(parsed["code"], "malformed_worker_output")
+        self.assertEqual(parsed["extraction_stage"],
+                         "no_result_in_final_text_block")
+        self.assertEqual(parsed["candidates"], 0)
+        self.assertIn("no worker result document found", parsed["reason"])
+        self.assertIn("final assistant text block", parsed["reason"])
+
+    def test_a_result_shaped_decoy_in_narration_is_not_a_second_claim(self):
+        """The mirror case, and the one that provably failed before.
+
+        A worker that shows the template it was handed before filling it in
+        writes a result-shaped object into a narration block. Joined, that is
+        two claims and the reply is ambiguous. Read structurally, the template
+        was never the answer -- it is text the reply did not end on -- so the
+        real result in the final block is the only candidate, and it is accepted
+        with ``candidates == 1`` proving the decoy was never counted.
+        """
+        parsed = self.parsed(
+            "case_event_stream_decoy_narration_then_result.jsonl")
+        self.assertTrue(parsed["accepted"], parsed.get("reason"))
+        self.assertEqual(parsed["candidates"], 1)
+        self.assertEqual(parsed["result"]["summary"],
+                         result_document()["summary"])
+        self.assertTrue(parsed["extraction_stage"].startswith("fenced_result"))
+
+    def test_the_report_names_the_final_block_as_the_source(self):
+        """Provenance, and the only part of the rule an operator can act on: a
+        result read out of the final block says so, so a change in what a worker
+        puts in its last message is visible in the record instead of silently
+        changing which text was read."""
+        answer = jtext(result_document(), indent=2)
+        blocks = ["narration, then the candidate:\n"
+                  + jtext(result_document(outcome="STILL_UNKNOWN",
+                                          summary="superseded draft")),
+                  "settled. Here it is:\n" + answer]
+        raw = text_event(blocks[0]) + "\n" + text_event(blocks[1])
+        parsed = wc.parse_result(raw, va=VA)
+        self.assertTrue(parsed["accepted"], parsed.get("reason"))
+        self.assertEqual(parsed["extraction_stage"], "final_text_block")
+        self.assertEqual(parsed["candidates"], 1)
+        self.assertEqual(parsed["text_blocks"], 2)
+        # A fenced answer in the final block keeps the fence in the report -- the
+        # fence is the more specific statement of the same fact.
+        fenced_raw = (text_event(blocks[0]) + "\n"
+                      + text_event("```json\n" + answer + "\n```"))
+        fenced = wc.parse_result(fenced_raw, va=VA)
+        self.assertTrue(fenced["accepted"], fenced.get("reason"))
+        self.assertTrue(fenced["extraction_stage"].startswith("fenced_result"))
+
+    def test_ambiguity_inside_the_final_block_is_still_a_refusal(self):
+        """Restricting the search does not make the final block lenient. Two
+        answers in the text the reply ended on is still two answers."""
+        for tail in (dumped() + "\n" + dumped(outcome="PARTIAL"),
+                     jtext({"payload": result_document()}) + "\n" + dumped()):
+            with self.subTest(tail=tail[:40]):
+                raw = (text_event("narration only, no result here")
+                       + "\n" + text_event(tail))
+                parsed = wc.parse_result(raw, va=VA)
+                self.assertFalse(parsed["accepted"])
+                self.assertIn("ambiguous worker output", parsed["reason"])
+                self.assertEqual(parsed["extraction_stage"],
+                                 "ambiguous_in_final_text_block")
+                self.assertGreaterEqual(parsed["candidates"], 2)
+
+    def test_a_single_block_reply_is_still_searched_whole(self):
+        """The restriction is conditional on there being a choice to make. One
+        block has no ``final``, so the whole reply is searched -- which is what
+        keeps the default-format blob and the bare-document channel working."""
+        found = wc._searchable_span("only block", ["only block"])
+        self.assertEqual(found, (0, len("only block"), "whole_reply"))
+        self.assertEqual(wc._searchable_span("only block", None)[2],
+                         "whole_reply")
+        self.assertEqual(wc._searchable_span("only block", [])[2],
+                         "whole_reply")
+
+    def test_an_empty_block_does_not_make_the_answer_unreadable(self):
+        """A stream can carry an empty ``text`` part. The last block with
+        *content* is the answer, so an empty leading block must not make the
+        restriction point at nothing."""
+        answer = dumped()
+        raw = text_event("") + "\n" + text_event(answer)
+        parsed = wc.parse_result(raw, va=VA)
+        self.assertTrue(parsed["accepted"], parsed.get("reason"))
+        self.assertEqual(parsed["text_blocks"], 2)
+        span = wc._searchable_span("\n" + answer, ["", answer])
+        self.assertEqual(span, (1, 1 + len(answer), "final_text_block"))
+
+
+class UnbalancedQuoteProseTest(unittest.TestCase):
+    """One stray ``"`` in prose must not hide a valid result.
+
+    The scanner tracked quoting for the *whole* text, so a single unbalanced
+    quote in the narration -- ``He said "hello``, ``x " y``, a Windows path --
+    put it in string mode to the end of the reply. No ``{`` could then open a
+    span and a perfectly valid result was rejected as ``candidates=0``. That is
+    a false reject on a *compliant* worker, which is still a wasted attempt, so
+    the scanner recovers at line boundaries.
+    """
+
+    def test_one_unbalanced_quote_in_prose_does_not_hide_a_valid_result(self):
+        parsed = wc.parse_result(
+            capture("case_unbalanced_quote_prose_then_result.txt"), va=VA)
+        self.assertTrue(parsed["accepted"], parsed.get("reason"))
+        self.assertEqual(parsed["candidates"], 1)
+        self.assertEqual(parsed["result"]["summary"],
+                         result_document()["summary"])
+
+    def test_every_verified_false_reject_shape_is_now_accepted(self):
+        """The three shapes the false reject was measured on, one at a time, and
+        each with a result *after* the stray quote."""
+        for shape in ('He said "hello', 'x " y', 'path "C:\\x',
+                      'a " b " c " d', 'he said "ok" but then " cut off'):
+            with self.subTest(shape=shape):
+                parsed = wc.parse_result(shape + "\n" + dumped(), va=VA)
+                self.assertTrue(parsed["accepted"], (shape, parsed.get("reason")))
+                self.assertEqual(parsed["candidates"], 1)
+                self.assertEqual(parsed["extraction_stage"], "whole_reply")
+
+    def test_recovery_cannot_split_a_string_inside_an_object(self):
+        """The guard that makes recovery safe, pinned directly.
+
+        Recovery is refused while any ``{``-opened span is outstanding, because
+        that is the only state in which a brace could be a string's content
+        rather than the start of a payload. An odd quote *inside* an object is
+        therefore left alone: the span never closes, nothing is invented, and
+        the reply is a false reject -- the pre-existing and safe direction.
+        """
+        raw = ('prose\n{\n  "summary": "he said "hi {"\n'
+               '  "va": "0x005c5ee0"\n}\n')
+        self.assertEqual(wc._balanced_spans(raw), [])
+        parsed = wc.parse_result(raw, va=VA)
+        self.assertFalse(parsed["accepted"])
+        self.assertEqual(parsed["candidates"], 0)
+
+    def test_recovery_does_not_invent_a_candidate_out_of_prose_braces(self):
+        """Recovery can only ever *expose* text for the ordinary candidate test
+        to judge, so prose that merely looks brace-ish still cannot produce a
+        result. The shapes below are the ones recovery newly lets the scanner
+        *see*; none of them is a result claim, so none of them may be counted."""
+        for shape in ('He said "hello\nthe shape is { "a": 1 } and that is all\n',
+                      'x " y\n{}\n', 'path "C:\\x\n{,}\n',
+                      'he said "hi\n[1, 2, {"b": 2}]\n'):
+            with self.subTest(shape=shape):
+                parsed = wc.parse_result(shape, va=VA)
+                self.assertFalse(parsed["accepted"], shape)
+                self.assertEqual(parsed["candidates"], 0)
+                self.assertEqual(parsed["code"], "malformed_worker_output")
+
+    def test_brace_noise_inside_a_recovered_reply_still_survives_intact(self):
+        """Both fixes at once: a stray quote in the prose *and* a summary full
+        of braces and escaped quotes in the payload. The payload must arrive
+        byte-identical and be counted exactly once."""
+        summary = 'body is "{" then "}" then "," and \\ backslash'
+        for shape in ('He said "hello', 'x " y', 'path "C:\\x'):
+            with self.subTest(shape=shape):
+                parsed = wc.parse_result(
+                    shape + "\n" + dumped(summary=summary), va=VA)
+                self.assertTrue(parsed["accepted"], (shape, parsed.get("reason")))
+                self.assertEqual(parsed["result"]["summary"], summary)
+                self.assertEqual(parsed["candidates"], 1)
+
 
 class RequiredFixtureTest(unittest.TestCase):
     """The eight reply shapes, named as the contract requires."""
@@ -218,6 +489,10 @@ class RequiredFixtureTest(unittest.TestCase):
         self.assertEqual(parsed["result"]["va"], VA)
         self.assertEqual(parsed["result"]["summary"],
                          result_document()["summary"])
+        # D6: the count of claims the scan saw is reported on success too, so a
+        # decoy that was stepped over is visible in the accepted record and not
+        # merely inferred from the absence of an error.
+        self.assertEqual(parsed["candidates"], 1, parsed.get("reason"))
         return parsed
 
     def test_fixture_1_single_result_block(self):
@@ -231,6 +506,30 @@ class RequiredFixtureTest(unittest.TestCase):
             "The call at 0x5e90 is unconditional and ECX is unchanged.\n"
             "Here is the result document:\n" + dumped(indent=2) + "\n")
         self.assertEqual(parsed["extraction_stage"], "whole_reply")
+
+    def test_fixture_2b_default_format_prose_wrapped_result(self):
+        """The ``--format default`` shape, from a real capture: one stdout
+        carrying the preamble and the payload, with the payload on a single
+        line. One block, so the whole reply is searched and nothing is lost to
+        the block restriction."""
+        parsed = self.accepted(capture("case_default_prose_then_result.txt"))
+        self.assertEqual(parsed["channel"], wc.CHANNEL_TEXT)
+        self.assertEqual(parsed["text_blocks"], 1)
+        self.assertEqual(parsed["tool_calls"], 0)
+        self.assertEqual(parsed["extraction_stage"], "whole_reply")
+        self.assertEqual(parsed["candidates"], 1)
+
+    def test_fixture_2c_event_stream_prose_wrapped_result(self):
+        """The other real-envelope variant: a stream whose *single* text event
+        carries narration and the payload together. One block, so this is the
+        ``whole_reply`` path again -- the restriction only engages when the
+        worker really did emit more than one message."""
+        parsed = self.accepted(
+            capture("case_event_stream_prose_then_result.jsonl"))
+        self.assertEqual(parsed["channel"], wc.CHANNEL_EVENT_STREAM)
+        self.assertEqual(parsed["text_blocks"], 1)
+        self.assertEqual(parsed["extraction_stage"], "whole_reply")
+        self.assertEqual(parsed["candidates"], 1)
 
     def test_fixture_3_multiple_text_blocks(self):
         """An OpenCode event stream with narration, tool use, then the answer."""
@@ -327,8 +626,10 @@ class NegativeControlTest(unittest.TestCase):
                                     (decoy, parsed.get("reason")))
                     self.assertEqual(parsed["result"]["summary"],
                                      result_document()["summary"])
-                    self.assertEqual(parsed["candidates"] if
-                                     "candidates" in parsed else 1, 1)
+                    # D6: the report says how many claims the scan saw, so a
+                    # decoy that was stepped over is visible as 1 rather than
+                    # inferred from the absence of an error.
+                    self.assertEqual(parsed["candidates"], 1)
 
     def test_a_result_shaped_object_with_a_wrong_va_is_refused_not_relabelled(self):
         """Extraction may *find* a wrong-VA result; validation must still
@@ -460,6 +761,102 @@ class StrictnessPreservedTest(unittest.TestCase):
                     self.assertIn("raw_sha256", parsed)
                     if expected:
                         self.assertEqual(parsed["raw_sha256"], expected)
+
+    def test_a_missing_reply_is_audited_as_the_empty_reply(self):
+        """A worker that produced no output at all is the most common failure
+        there is, so it is the last one that may go unrecorded: the failure
+        carries the digest of the empty reply, which is the bytes it would have
+        had. Auditing it costs one constant and closes the only hole in the
+        rule that every rejection is tieable to a run."""
+        import hashlib
+        parsed = wc.parse_result(None, va=VA)
+        self.assertFalse(parsed["accepted"])
+        self.assertEqual(parsed["reason"], "worker produced no output")
+        self.assertEqual(parsed["raw_sha256"],
+                         hashlib.sha256(b"").hexdigest())
+
+    def test_a_bad_va_argument_is_a_typed_failure_not_an_exception(self):
+        """``va`` is an argument, but it was the one input that was trusted
+        blindly: it was normalized inline at four separate use sites with no
+        guard, so ``parse_result(valid_doc, va="not-an-address")`` raised
+        ``ValueError`` out of a function whose docstring promises it never
+        raises. ``orchestrate.ingest`` is called with no guard, so the escaping
+        exception left the queue row ``active`` with a lease still held -- the
+        same unrecoverable state as pinned defect C27, reached through the
+        orchestrator's own claim instead of through the worker's payload.
+
+        An unusable claim is refused like any other bad input: typed, counted,
+        and with the offending value attached so the operator can see which
+        address was nonsense.
+        """
+        for bad in ("not-an-address", True, 0x1_0000_0000, -1, [VA], {},
+                    "0x", 1.5):
+            with self.subTest(va=bad):
+                parsed = wc.parse_result(dumped(), va=bad)
+                self.assertFalse(parsed["accepted"], bad)
+                self.assertEqual(parsed["code"], "malformed_worker_output")
+                self.assertIn("assigned target va is not a valid address",
+                              parsed["reason"])
+                self.assertEqual(parsed["va"], bad)
+                self.assertIn("raw_sha256", parsed)
+        # A well-formed claim in every accepted spelling still binds, and
+        # ``None`` still means "cross-check against nothing".
+        for good in (VA, "5c5ee0", "0x5C5EE0", 0x005C5EE0, "rva:005c5ee0"):
+            with self.subTest(va=good):
+                parsed = wc.parse_result(dumped(), va=good)
+                self.assertTrue(parsed["accepted"], (good, parsed.get("reason")))
+                self.assertEqual(parsed["result"]["va"], VA)
+        unbound = wc.parse_result(dumped())
+        self.assertTrue(unbound["accepted"], unbound.get("reason"))
+        self.assertEqual(unbound["result"]["va"], VA)
+
+    def test_every_validation_refusal_carries_extraction_provenance(self):
+        """A refusal is the report an operator reads, and "unknown outcome" or
+        "wrong VA" says nothing about *how* the reply was read -- which channel,
+        which stage, how many claims were seen, how many blocks the worker wrote.
+        The two earliest refusals already reported those; the validation refusals
+        that follow did not, so the most confusing failures were the least
+        diagnosable. All of them report the same keys now, and none of them
+        changes its decision."""
+        provenance = ("channel", "extraction_stage", "candidates",
+                      "text_blocks", "tool_calls")
+        refusals = {
+            "wrong schema": jtext(result_document(schema="nope")),
+            "unknown outcome": jtext(result_document(outcome="ALMOST_DONE")),
+            "missing fields": jtext({"schema": wc.RESULT_SCHEMA, "va": VA}),
+            "unparseable payload va": jtext(result_document(va="zzz")),
+            "wrong va": jtext(result_document(va=OTHER_VA)),
+            "source_files not a list": jtext(
+                result_document(source_files="src/a.cpp")),
+            "non-mapping validation": jtext(
+                result_document(validation="PASS")),
+            "unknown verdict": jtext(
+                result_document(validation={"status": "MAYBE"})),
+        }
+        for label, raw in sorted(refusals.items()):
+            for envelope in (raw, "prose before\n" + raw + "\nprose after\n",
+                             "narration\n" + raw + "\nand the answer:\n" + raw):
+                with self.subTest(refusal=label, envelope=envelope[:30]):
+                    parsed = wc.parse_result(envelope, va=VA)
+                    self.assertFalse(parsed["accepted"], label)
+                    self.assertEqual(parsed["code"], "malformed_worker_output")
+                    for key in provenance:
+                        self.assertIn(key, parsed, (label, key))
+                    self.assertIsNotNone(parsed["channel"])
+                    self.assertIsNotNone(parsed["extraction_stage"])
+        # The wrong-VA refusal still reports both addresses, and the
+        # unknown-outcome refusal still reports the rejected value.
+        wrong = wc.parse_result("chatter\n" + jtext(result_document(va=OTHER_VA)),
+                                va=VA)
+        self.assertEqual(wrong["expected_va"], VA)
+        self.assertEqual(wrong["reported_va"], OTHER_VA)
+        self.assertEqual(wrong["extraction_stage"], "whole_reply")
+        unknown = wc.parse_result("chatter\n"
+                                  + jtext(result_document(outcome="ALMOST")),
+                                  va=VA)
+        self.assertEqual(unknown["outcome"], "ALMOST")
+        self.assertEqual(unknown["channel"], wc.CHANNEL_TEXT)
+        self.assertEqual(unknown["text_blocks"], 1)
 
     def test_reported_failures_say_which_channel_and_stage_arrived(self):
         parsed = wc.parse_result("just prose, no result here", va=VA)

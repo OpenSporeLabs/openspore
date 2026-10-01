@@ -1,0 +1,2 @@
+# Empty dependencies file for pkg_w2_00e5cac0.
+# This may be replaced when dependencies are built.

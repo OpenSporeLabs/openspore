@@ -1,0 +1,612 @@
+# Evidence 0x006a3400
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `609a338921fd044a2eac3e91b7c3fdcde31fadedda1c8f1271f3682b883a0700`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86:LE:32",
+  "calling_convention": "thiscall",
+  "hidden_receiver": "ECX = OpaqueResourceFactory*",
+  "ordinary_stack_arguments": [
+    {
+      "entry_offset": "ESP+0x04",
+      "name": "destination",
+      "position": 1,
+      "type": "TargetWord*",
+      "width_bytes": 4
+    },
+    {
+      "entry_offset": "ESP+0x08",
+      "name": "count",
+      "position": 2,
+      "type": "std::size_t",
+      "width_bytes": 4
+    }
+  ],
+  "return_note": "constant count result",
+  "return_register": "EAX",
+  "return_width_bytes": 4,
+  "stack_cleanup_bytes": 8,
+  "termination": "RET 0x8"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__stdcall",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4",
+      "entry_ESP+0x8"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": false,
+    "ret_form": "RET 0x8",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x8"
+  },
+  "abstained_because": [
+    "sret_vs_out_param: entry slot 0 is written through a pointer"
+  ],
+  "cleanup": {
+    "bytes": 8,
+    "confidence": "SUPPORTED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x8",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [
+    {
+      "field": "calling_convention",
+      "inferred": "__stdcall",
+      "kind": "inferred_vs_persisted",
+      "persisted": "__thiscall",
+      "resolution_status": "unresolved"
+    }
+  ],
+  "content_sha256": "8480e18a2b6fcd0900a0c753bef7b454500f021aabdde0bf2f7ca107aeeaa213",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__stdcall",
+    "candidate_conventions": [
+      "__stdcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 3,
+    "persisted": "disagrees",
+    "persisted_calling_convention": "thiscall"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007"
+      ],
+      "claim": "the callee pops 8 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 8,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002",
+        "obs-0004"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 2,
+        "total_bytes": 8
+      }
+    },
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "ECX is never read in any form, so there is no register receiver",
+      "confidence": "OBSERVED",
+      "id": "R2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007"
+      ],
+      "claim": "calling convention is __stdcall: a callee that pops stack arguments with no register receiver",
+      "confidence": "INFERRED",
+      "id": "C6",
+      "value": "__stdcall"
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "a hidden struct-return pointer is a hypothesis only: entry slot 0 is written through a pointer",
+      "confidence": "INFERRED",
+      "id": "S1",
+      "value": {
+        "ambiguity": "sret_vs_out_param",
+        "present": null,
+        "slot": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x006a3400",
+      "count": 2,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x006a3400",
+      "base": "ESP",
+      "disp": 4,
+      "id": "obs-0002",
+      "index": 0,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x006a3400",
+      "definite": true,
+      "id": "obs-0003",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x006a3408",
+      "base": "ESP",
+      "disp": 8,
+      "id": "obs-0004",
+      "index": 3,
+      "key": 8,
+      "kind": "STACK_SLOT_READ",
+      "raw": "CMP dword ptr [ESP + 0x8],0x1",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x006a340f",
+      "count": 2,
+      "first_use": 5,
+      "first_write_index": 0,
+      "id": "obs-0005",
+      "index": 5,
+      "kind": "REG_READ",
+      "raw": "XOR EAX,EAX",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x006a3411",
+      "form": "RET 0x8",
+      "id": "obs-0006",
+      "imm": 8,
+      "index": 6,
+      "kind": "RET",
+      "raw": "RET 0x8"
+    },
+    {
+      "at": "0x006a341f",
+      "form": "RET 0x8",
+      "id": "obs-0007",
+      "imm": 8,
+      "index": 9,
+      "kind": "RET",
+      "raw": "RET 0x8"
+    }
+  ],
+  "parse": {
+    "declared_count": 10,
+    "degr
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 10,
+  "instructions": [
+    {
+      "address": "006a3400",
+      "instruction": "MOV EAX,dword ptr [ESP + 0x4]"
+    },
+    {
+      "address": "006a3404",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "006a3406",
+      "instruction": "JZ 0x006a341a"
+    },
+    {
+      "address": "006a3408",
+      "instruction": "CMP dword ptr [ESP + 0x8],0x1"
+    },
+    {
+      "address": "006a340d",
+      "instruction": "JNC 0x006a3414"
+    },
+    {
+      "address": "006a340f",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "006a3411",
+      "instruction": "RET 0x8"
+    },
+    {
+      "address": "006a3414",
+      "instruction": "MOV dword ptr [EAX],0xb1b104"
+    },
+    {
+      "address": "006a341a",
+      "instruction": "MOV EAX,0x1"
+    },
+    {
+      "address": "006a341f",
+      "instruction": "RET 0x8"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 7842,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86:LE:32\",\n    \"calling_convention\": \"thiscall\",\n    \"hidden_receiver\": \"ECX = OpaqueResourceFactory*\",\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"ESP+0x04\",\n        \"name\": \"destination\",\n        \"position\": 1,\n        \"type\": \"TargetWord*\",\n        \"width_bytes\": 4\n      },\n      {\n        \"entry_offset\": \"ESP+0x08\",\n        \"name\": \"count\",\n        \"position\": 2,\n        \"type\": \"std::size_t\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"return_note\": \"constant count result\",\n    \"return_register\": \"EAX\",\n    \"return_width_bytes\": 4,\n    \"stack_cleanup_bytes\": 8,\n    \"termination\": \"RET 0x8\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 24,\n      \"symbol\": \"editor_anim_event_message_post_0059d840\",\n      \"va\": \"0x0059d840\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 24,\n      \"symbol\": \"editor_anim_event_message_send_0059d8b0\",\n      \"va\": \"0x0059d8b0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 24,\n      \"symbol\": \"app_prop_manager_get_global_property_list_006a3310\",\n      \"va\": \"0x006a3310\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 24,\n      \"symbol\": \"app_canvas_get_message_server_00c871d0\",\n      \"va\": \"0x00c871d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 22,\n      \"symbol\": \"app_cheat_manager_get_0067dde0\",\n      \"va\": \"0x0067dde0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n      \"score\": 22,\n      \"symbol\": \"app_id_generator_get_007c79e0\",\n      \"va\": \"0x007c79e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE8\",\n      \"score\": 14,\n      \"symbol\": \"ui_layer_manager_get_0067ca90\",\n      \"va\": \"0x0067ca90\"\n    },\n    {\n      \"match_basis\": [\n        \"same_subsystem\",\n        \"same_class\",\n        \"shared_types:OpaqueRuntimeService\"\n      ],\n      \"package\": \"PKG-RUNTIME-SERVICES-WAVE8\",\n      \"score\": 14,\n      \"symbol\": \"anim_manager_get_0067cae0\",\n      \"va\": \"0x0067cae0\"\n    }\n  ],\n  \"audit_evidence_boundary\": \"Static mechanics and x86-32 ABI reviewed from live Ghidra; runtime values, concrete owners, and unresolved ports remain gated.\",\n  \"audit_findings\": [],\n  \"audit_status\": \"clean_after_reviewed_repairs\",\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": \"integrated\",\n  \"class_type\": \"OpaqueRuntimeService\",\n  \"cluster\": \"app-lifecycle\",\n  \"confidence\": 0.7,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0225\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"SUPPORTED\",\n  \"globals\": [],\n  \"integration_status\": \"integrated\",\n  \"name\": \"App::cPropManager::GetSupportedTypes\",\n  \"normalized_symbol\": \"app_prop_manager_get_supported_types_006a3400\",\n  \"observed_mechanics\": [\n    \"{\\\"body_end_inclusive\\\": \\\"0x006a341f\\\", \\\"entry\\\": \\\"0x006a3400\\\", \\\"guarded_output\\\": \\\"destination[0] = 0x00b1b104\\\", \\\"instruction_count\\\": 10, \\\"mechanics\\\": [\\\"return 1 when destination is null\\\", \\\"return 1 without writing when count is unsigned-less-than 1\\\", \\\"write the single word 0x00b1b104 to destination[0] when destination is non-null and count is at least 1\\\", \\\"do not read or mutate the hidden receiver\\\"], \\\"raw_bytes_hex\\\": \\\"8b44240485c07412837c240801730533c0c20800c70004b1b100b801000000c2\\\"}\"\n  ],\n  \"ownership\": {\n    \"claimability\": \"do_not_claim\",\n    \"handoff_packages\": [\n      \"PKG-RUNTIME-SERVICES-WAVE7\"\n    ],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n    \"queue_state\": \"queued\"\n  },\n  \"package\": \"PKG-RUNTIME-SERVICES-WAVE7\",\n  \"reconstructed\": true,\n  \"review_status\": \"approved_after_parallel_review\",\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"required\"\n    ],\n    \"val
+[TRUNCATED]
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "006a3421",
+  "body_span_bytes": 34,
+  "body_start": "006a3400",
+  "callees": [],
+  "callers": [],
+  "classification": "leaf",
+  "dispatch": null,
+  "entry_point": "006a3400",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [],
+  "locals_count": 0,
+  "mode": "live",
+  "name": "App::cPropManager::GetSupportedTypes",
+  "namespace": "App",
+  "namespace_source": "derived_from_symbol_name",
+  "parameter_count": 3,
+  "parameters": [
+    {
+      "name": "this",
+      "ordinal": 0,
+      "storage": "Stack[0x4]:4",
+      "type": "IResourceFactory *"
+    },
+    {
+      "name": "pDstTypes",
+      "ordinal": 1,
+      "storage": "Stack[0x8]:4",
+      "type": "uint32_t *"
+    },
+    {
+      "name": "nCount",
+      "ordinal": 2,
+      "storage": "Stack[0xc]:4",
+      "type": "size_t"
+    }
+  ],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "size_t",
+  "return_type_resolved": true,
+  "rva": "0x2a3400",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "size_t App::cPropManager::GetSupportedTypes(IResourceFactory * this, uint32_t * pDstTypes, size_t nCount)",
+  "size_bytes": 34,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x006a3400",
+  "vtables": {
+    "referenced_by_vtables": [
+      "0x014091a0"
+    ],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 1,
+  "xrefs": [
+    {
+      "from": "014091dc"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cPropManager__GetSupportedTypes.c",
+  "file": "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cPropManager__GetSupportedTypes.c",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.hpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave7/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg-runtime-services-wave7/006a3400.json"
+  ]
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "required"
+  ],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## types
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "OpaqueRuntimeService",
+  "TargetWord*",
+  "constant count result",
+  "std::size_t"
+]
+```
+
+## vtables
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "vtable:0x014091a0"
+]
+```
+
+## Conflicts
+
+```json
+[
+  {
+    "derived": "__stdcall",
+    "field": "calling_convention",
+    "kind": "derived_vs_persisted",
+    "persisted": "thiscall",
+    "resolution_status": "unresolved"
+  }
+]
+```

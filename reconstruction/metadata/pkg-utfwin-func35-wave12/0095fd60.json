@@ -1,0 +1,269 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-UTFWIN-FUNC35-WAVE12",
+  "subsystem": "UTFWin",
+  "cluster": "utfwin-framework",
+  "queue_id": "fun:0095fd60:UTFWin::Window::func35",
+  "va": "0x0095fd60",
+  "address": "0x0095fd60",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": "UTFWin::Window::func35",
+  "normalized_symbol": "func35_0095fd60",
+  "reconstructed_symbol": "func35_0095fd60",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-09-26",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.hpp",
+    "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.cpp",
+    "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.hpp",
+    "source": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.cpp",
+    "model_test": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60_model_test.cpp"
+  },
+  "staging_paths": {
+    "reconstruction": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.cpp",
+    "header": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.hpp",
+    "test": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall; receiver in ECX (MOV ESI,ECX at 0x0095fd64)",
+    "receiver": "ECX, saved to ESI at 0x0095fd64, used as the base for [ESI+0xa8], [ESI+0x1dc] and both vtable loads",
+    "argument_surface": "one ordinary stack dword, read once at 0x0095fd6c as [ESP+0x24] (frame base + 0x24 after SUB ESP,0x1c / PUSH ESI), popped by the callee via RET 0x4 at 0x0095fdb4",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_semantics": "void",
+    "return_type_rationale": "MODELLED AS void AND BACKED BY THE DISASSEMBLY: no EAX write participates in any result path - the only EAX writes are loads of [ESI+0xa8] and of the two vtable slot words used as CALL targets, and the single exit 0x0095fdb0..0x0095fdb4 is POP ESI / ADD ESP,0x1c / RET 0x4 with no value materialised. Ghidra independently projects 'void UTFWin__Window__func35(IWindow *this,int param_2)'. Confidence high; the caveat is only that a __thiscall void member function may leave a stale EAX, which no caller can observe here because all 32 references to 0x0095fd60 are DATA vtable entries, not CALL sites.",
+    "locals": "28-byte frame (SUB ESP,0x1c) plus PUSH ESI; a 0x14-byte record is built at frame base + 0x04 and only its words at +0x08, +0x0c and +0x10 are stored",
+    "outgoing_call_0x114": "PUSH of &record at 0x0095fd8e, ECX = receiver, CALL EDX at 0x0095fd99 with no caller stack adjustment afterwards, so the callee pops that argument (callee cleanup on the slot 0x114 target)"
+  },
+  "observed_mechanics": [
+    "0x0095fd60 SUB ESP,0x1c / 0x0095fd63 PUSH ESI / 0x0095fd64 MOV ESI,ECX: 28-byte frame plus callee-saved ESI holding the receiver.",
+    "0x0095fd66 MOV EAX,[ESI+0xa8] reads the receiver word at offset 0xa8 into EAX; 0x0095fd6c MOV ECX,[ESP+0x24] reads the incoming stack argument.",
+    "0x0095fd70 CMP ECX,EAX / 0x0095fd72 JZ 0x0095fdb0: when the argument equals the word already at +0xa8 the body is skipped entirely and the function falls straight to POP ESI / ADD ESP,0x1c / RET 0x4 - no field store, no virtual call.",
+    "0x0095fd74 MOV [ESI+0xa8],ECX: the new value is committed to offset 0xa8 BEFORE any dispatch, so the field is already updated when the slot 0x114 callee runs.",
+    "0x0095fd7a MOV [ESP+0x10],ECX and 0x0095fd7e MOV [ESP+0x14],EAX write the new and previous words into the outgoing record at frame base + 0x14 and + 0x18; 0x0095fd91 MOV [ESP+0x10],0x13 (after the PUSH at 0x0095fd8e, i.e. frame base + 0x0c) writes the constant 0x13 into the record word at record + 0x08.",
+    "0x0095fd82 MOV EAX,[ESI] / 0x0095fd84 MOV EDX,[EAX+0x114] / 0x0095fd8a LEA ECX,[ESP+0x4] / 0x0095fd8e PUSH ECX / 0x0095fd8f MOV ECX,ESI / 0x0095fd99 CALL EDX: one register-indirect thiscall into vtable slot 0x114 with &record (frame base + 0x04) as the single stack argument; the callee pops it.",
+    "0x0095fd9b CMP dword ptr [ESI+0x1dc],0x0 / 0x0095fda2 JZ 0x0095fdb0: the receiver word at offset 0x1dc is a pure zero/non-zero gate on the second dispatch; the machine never inspects the value beyond the comparison with zero.",
+    "0x0095fda4 MOV EAX,[ESI] / 0x0095fda6 MOV EDX,[EAX+0x90] / 0x0095fdac MOV ECX,ESI / 0x0095fdae CALL EDX: the gated second dispatch is a thiscall into vtable slot 0x90 with no stack argument, always after the slot 0x114 call.",
+    "0x0095fdb0 POP ESI / 0x0095fdb1 ADD ESP,0x1c / 0x0095fdb4 RET 0x4: single shared exit; RET 0x4 proves caller cleanup of the one 4-byte argument.",
+    "All 32 references to 0x0095fd60 are DATA pointers into vtable images, every one at vtable_base + 0x04, and the word at vtable_base + 0x00 is 0x0095fa30 (SDK label UTFWin::Window::IsAncestorOf). The function is therefore a virtual reached only through vtable slot +0x04 and shared unchanged by 32 Window-derived vtable images; there is no direct CALL or JMP immediate to it anywhere in the image.",
+    "Record words +0x00 and +0x04 are never stored by this function; only +0x08, +0x0c and +0x10 are written, so the callee at slot 0x114 observes the first eight bytes as whatever the frame happened to contain.",
+    "Codegen correspondence check (g++ 12 -m32 -O2 on the staging .cpp): the compiler emits the same compare-and-branch-over early-out, the same pre-dispatch store to [ECX+0xa8], the same 0x13 constant into record +0x08 with the record address pushed, CALL DWORD PTR [EAX+0x114], the zero test on [ECX+0x1dc] with the jne to CALL DWORD PTR [EAX+0x90], and the same RET 0x4 caller cleanup. The only additions are the -fstack-protector canary and the explicit zeroing of record +0x00/+0x04, which the original leaves indeterminate."
+  ],
+  "field_offsets": [
+    {
+      "owner": "UTFWin::Window (receiver)",
+      "offset": "0xa8",
+      "access": "read then conditionally written",
+      "evidence": "MOV EAX,[ESI+0xa8] 0x0095fd66; MOV [ESI+0xa8],ECX 0x0095fd74",
+      "meaning": "opaque last-value word; compared against the incoming argument and forwarded to the callee as the new value"
+    },
+    {
+      "owner": "UTFWin::Window (receiver)",
+      "offset": "0x1dc",
+      "access": "read only",
+      "evidence": "CMP dword ptr [ESI+0x1dc],0x0 at 0x0095fd9b",
+      "meaning": "zero/non-zero gate on the vtable slot 0x90 dispatch"
+    },
+    {
+      "owner": "UTFWin::Window (receiver)",
+      "offset": "0x00",
+      "access": "read only",
+      "evidence": "MOV EAX,[ESI] at 0x0095fd82 and 0x0095fda4",
+      "meaning": "vtable pointer used for the slot 0x114 and slot 0x90 indirect calls"
+    },
+    {
+      "owner": "outgoing record at frame base + 0x04",
+      "offset": "+0x08",
+      "access": "written",
+      "evidence": "MOV [ESP+0x10],0x13 at 0x0095fd91 with ESP already decremented by the PUSH at 0x0095fd8e",
+      "meaning": "constant 0x13; the record's selector/code word"
+    },
+    {
+      "owner": "outgoing record at frame base + 0x04",
+      "offset": "+0x0c",
+      "access": "written",
+      "evidence": "MOV [ESP+0x10],ECX at 0x0095fd7a",
+      "meaning": "new value (the incoming argument)"
+    },
+    {
+      "owner": "outgoing record at frame base + 0x04",
+      "offset": "+0x10",
+      "access": "written",
+      "evidence": "MOV [ESP+0x14],EAX at 0x0095fd7e",
+      "meaning": "previous value (the word read from +0xa8)"
+    }
+  ],
+  "globals": [],
+  "vtables": {
+    "self_slot": {
+      "offset": "+0x04",
+      "note": "0x0095fd60 is the target stored at vtable_base + 0x04 in all 32 referencing vtable images; vtable_base + 0x00 holds 0x0095fa30 (SDK label UTFWin::Window::IsAncestorOf)",
+      "reference_count": 32,
+      "note_on_list": "the 32 vtable image bases, each one reference address minus 0x04; no image outside this list was seen to carry the pointer",
+      "images_observed": [
+        "0x013fdb6c",
+        "0x01414c14",
+        "0x01414f04",
+        "0x014151cc",
+        "0x0141876c",
+        "0x01419104",
+        "0x0141933c",
+        "0x014195dc",
+        "0x01419974",
+        "0x01419ba4",
+        "0x0141abc4",
+        "0x01441174",
+        "0x014417c4",
+        "0x01441b4c",
+        "0x01441f0c",
+        "0x01442e44",
+        "0x0144324c",
+        "0x01443b1c",
+        "0x01444624",
+        "0x01444a9c",
+        "0x01444f94",
+        "0x01445464",
+        "0x014458f4",
+        "0x01445d94",
+        "0x01445fac",
+        "0x014461e4",
+        "0x014464c4",
+        "0x0145d68c",
+        "0x01479314",
+        "0x0147f79c",
+        "0x0147f964",
+        "0x0147fc14"
+      ]
+    },
+    "called_slot_0x90": {
+      "offset": "+0x90",
+      "targets_read": ["0x00960280", "0x00961950"],
+      "notes": "0x013fdb6c and 0x01414c14 both hold 0x00960280; the vtable images at 0x01414ed4/0x0141873c/0x014190d4/0x0141930c/0x014195ac hold 0x00961950. FUN_00960280 walks this->0x3c as a cursor until this->0x38, mapping that word (0 or 8 -> 0, otherwise value-4) into a call through vtable slot 0xe0, i.e. a pending-event drain. The slot return value is discarded by func35."
+    },
+    "called_slot_0x114": {
+      "offset": "+0x114",
+      "targets_read": ["0x00993200", "0x006f2f20"],
+      "notes": "0x013fdb6c holds 0x00993200 (no Ghidra function defined at that address); 0x01414c14 holds 0x006f2f20, which decompiles to a bare 'return 0' stub. The record layout above is taken from the producer side only; the consumer's interpretation of code 0x13 is not established."
+    }
+  },
+  "types": [
+    "openspore::reconstruction::pkg_utfwin_func35_wave12::OpaqueWindow",
+    "openspore::reconstruction::pkg_utfwin_func35_wave12::OpaqueWindowVTable",
+    "openspore::reconstruction::pkg_utfwin_func35_wave12::OpaqueStateMessage",
+    "openspore::reconstruction::pkg_utfwin_func35_wave12::OpaquePendingQueue"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added",
+  "semantic_findings": [
+    {
+      "kind": "state_machine",
+      "confidence": "high",
+      "finding": "func35 is an idempotent state setter: it latches the argument at +0xa8, suppresses all work when the value is unchanged, and on a real transition emits a (0x13, new, previous) record through vtable slot 0x114 before optionally draining the pending queue through slot 0x90."
+    },
+    {
+      "kind": "virtual_dispatch",
+      "confidence": "high",
+      "finding": "Two register-indirect calls, both with the receiver in ECX; slot 0x114 takes one callee-cleaned stack pointer, slot 0x90 takes none and its return value is discarded."
+    },
+    {
+      "kind": "ordering",
+      "confidence": "high",
+      "finding": "The +0xa8 store precedes both dispatches, and the slot 0x90 call can only follow a completed slot 0x114 call."
+    },
+    {
+      "kind": "virtual_slot_occupancy",
+      "confidence": "high",
+      "finding": "The function occupies vtable offset +0x04 in 32 Window-derived vtable images, directly after the slot +0x00 the SDK labels UTFWin::Window::IsAncestorOf (0x0095fa30), and is never overridden in the images scanned - the pointer is identical everywhere."
+    }
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "mechanics": "high",
+    "field_semantics": "medium",
+    "runtime_ownership": "low"
+  },
+  "unresolved_questions": [
+    "What the constant 0x13 in record +0x08 denotes: the SDK gives no name for func35, and the decompiler's 'Enum ObjectTYPE' warning is program-wide rather than tied to this literal, so no enum meaning is claimed.",
+    "Whether the word at +0xa8 and the argument are object pointers or plain identifiers: this function only compares, stores and forwards the word, so nothing here distinguishes a pointer from an id; the value is kept as an opaque 32-bit word.",
+    "What vtable slot 0x114 does with the record. Its two observed implementations are an address with no defined function (0x00993200) and a stub returning 0 (0x006f2f20), so the consumer-side meaning of (0x13, new, previous) is unresolved.",
+    "Whether the +0x1dc gate is a dirty/needs-invalidate flag. Only a zero test is observed here; the flag's producer and full field extent beyond 0x1df are unestablished (0x1e0 is only the arithmetic end of the last dword, not an observed object size).",
+    "The declaring class of func35 within UTFWin::Window: no MSVC RTTI exists in SporeApp.exe, so the owning class and its position in the hierarchy are not provable from this target alone."
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "disassembly",
+      "path": "ghidra:disassemble_function:0x0095fd60",
+      "scope": "all 26 instructions 0x0095fd60..0x0095fdb4, exact opcode reading used for every claim above"
+    },
+    {
+      "kind": "decompilation",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__func35.c",
+      "scope": "Ghidra projection 'void UTFWin__Window__func35(IWindow *this,int param_2)' with locals local_1c/local_14/local_10/local_c and the enum warning"
+    },
+    {
+      "kind": "xrefs",
+      "path": "ghidra:references_to:0x0095fd60",
+      "scope": "32 references, every one DATA, each at vtable_base + 0x04 with 0x0095fa30 at vtable_base + 0x00"
+    },
+    {
+      "kind": "vtable_reads",
+      "path": "ghidra:memory_read:0x013fdb6c,0x01414c14,0x01414ed4,0x0141873c,0x014190d4,0x0141930c,0x014195ac",
+      "scope": "slot +0x90 and +0x114 words for the Window-derived vtable images"
+    },
+    {
+      "kind": "callee_decompilation",
+      "path": "ghidra:decompile:0x00960280",
+      "scope": "slot 0x90 target: cursor at +0x3c, terminator word at +0x38, dispatch through vtable slot 0xe0"
+    },
+    {
+      "kind": "sdk_symbol_table",
+      "path": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml",
+      "scope": "label UTFWin::Window::func35 at 0x0095fd60 and UTFWin::Window::IsAncestorOf at 0x0095fa30"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/staging/pkg-utfwin-window-wave9/utfwin_window_wave9.cpp",
+      "scope": "prior reconstruction of the same VA in a different package; used only to cross-check the +0xa8/+0x1dc/0x114/0x90 reading and the record layout. Not modified, not imported."
+    },
+    {
+      "kind": "codegen_correspondence",
+      "path": "g++ -m32 -O2 on reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60.cpp",
+      "scope": "instruction-level shape comparison of the emitted body against the original listing"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-utfwin-func35-wave12/utfwin_func35_0095fd60_model_test.cpp",
+    "o0": "pass",
+    "o2": "pass",
+    "result": "pass",
+    "command": "g++ -m32 -std=c++17 -O0/-O2 -Wall -Wextra utfwin_func35_0095fd60.cpp utfwin_func35_0095fd60_model_test.cpp",
+    "cases": [
+      "equal value is a no-op with the gate set and clear",
+      "changed value dispatches exactly one message with code 0x13 and (new, previous), and latches the field",
+      "the record words are addressed at &record + 0x08 / +0x0c / +0x10",
+      "the +0x1dc gate adds the slot 0x90 call strictly after the slot 0x114 call, for any non-zero gate value",
+      "transitions to and from zero still dispatch; a zero-to-zero call does not"
+    ]
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "runtime_gates": [
+    "record consumer semantics (vtable slot 0x114) unresolved",
+    "ownership and lifetime of the word stored at +0xa8 unresolved",
+    "producer of the +0x1dc gate unresolved"
+  ],
+  "review_status": "staged for integrator review",
+  "integration_status": "staging-only; src/ not touched",
+  "unresolved_runtime_ports": [
+    "record consumer semantics (vtable slot 0x114) unresolved",
+    "ownership and lifetime of the word stored at +0xa8 unresolved"
+  ]
+}

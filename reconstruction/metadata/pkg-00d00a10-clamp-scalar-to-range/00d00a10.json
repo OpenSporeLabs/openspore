@@ -1,0 +1,233 @@
+{
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "package": "PKG-00D00A10-CLAMP-SCALAR-TO-RANGE",
+ "subsystem": "Simulator",
+ "cluster": "unknown-fun-mass",
+ "queue_id": "",
+ "va": "0x00d00a10",
+ "address": "0x00d00a10",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "sdk_symbol": null,
+ "normalized_symbol": "clamp_scalar_to_range_00d00a10",
+ "reconstructed_symbol": "clamp_scalar_to_range_00d00a10",
+ "target_state": "implemented in staging; integrator review pending",
+ "captured_on": "2026-10-01",
+ "canonical_source_path": "",
+ "source_files": [
+  "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10.hpp",
+  "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10.cpp",
+  "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10_model_test.cpp"
+ ],
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10.hpp",
+  "source": "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10.cpp",
+  "model_test": "reconstruction/staging/pkg-00d00a10-clamp-scalar-to-range/clamp_scalar_to_range_00d00a10_model_test.cpp"
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__stdcall for the three stack arguments (OBSERVED from RET 0xc); the receiver rides in ECX and is forwarded without ever being touched (INFERRED from the call sites and from the callee's own prologue)",
+  "calling_convention_evidence": "the terminator is `RET 0xc` at 0x00d00a62 (`c2 0c 00`), so the callee pops all twelve bytes of its own three stack arguments and the caller pops none of them -- that is the stdcall cleanup rule, observed directly in the instruction. There is no PUSH EBP / MOV EBP,ESP prologue, so there is no alternative reading of the frame.",
+  "calling_convention_alternatives": "__cdecl is excluded by the `RET 0xc` immediate: a cdecl callee returns with a bare RET and its caller would have to `ADD ESP,0xc`, which no caller of this function does. __thiscall versus __stdcall CANNOT be separated by this function's own bytes, because ECX is never read or written in any of the 20 instructions (inference R2 in the derived ABI record). The __thiscall framing is declared from the call side and from the callee, not from the callee under reconstruction -- see observed_original_abi.receiver_evidence. A reconstruction that declared this __stdcall with the receiver as a fourth stack argument would not build against the call sites, which pass no such argument.",
+  "receiver": "ECX, read by nobody in this body and written by nobody in this body; it is handed to the callee unchanged",
+  "receiver_evidence": "THREE INDEPENDENT SOURCES, none of which is this body. (1) The derived ABI record's inference R2 states ECX is never read in any form, which is what makes the receiver invisible from the callee side and is why abi_derived.receiver is null. (2) The callee 0x00d05a20, whose listing begins `MOV EDI,ECX` at 0x00d05a26 and uses EDI as its object pointer for the rest of its 279 instructions, so whatever is in ECX at the CALL is that callee's receiver. (3) Call sites load ECX immediately before calling: 0x00d00d8e is `MOV ECX,EBX` where EBX was saved from the caller's own ECX at 0x00d00d61 (`MOV EBX,ECX`), and 0x00d05ac4 is `MOV ECX,EDI` on the same forwarding pattern. So the value in ECX on entry to 0x00d00a10 is the value the caller intended for the evaluator, and this function passes it along without disturbing it.",
+  "receiver_disposition": "the receiver is declared as an incomplete OpaqueReceiver carrying no fields and no asserted size, because nothing in this evidence determines what it points at. The model test proves the body never dereferences it by handing it a PROT_NONE mapping.",
+  "ordinary_stack_argument_slots": 3,
+  "ordinary_stack_arguments": [
+   {
+    "ordinal": 1,
+    "entry_offset": "entry_ESP+0x4",
+    "size_inferred": false,
+    "sizes": [
+     4
+    ],
+    "observed": true,
+    "read": true,
+    "written": false
+   },
+   {
+    "ordinal": 2,
+    "entry_offset": "entry_ESP+0x8",
+    "size_inferred": false,
+    "sizes": [
+     4
+    ],
+    "observed": true,
+    "read": true,
+    "written": false
+   },
+   {
+    "ordinal": 3,
+    "entry_offset": "entry_ESP+0xc",
+    "size_inferred": false,
+    "sizes": [
+     4
+    ],
+    "observed": true,
+    "read": true,
+    "written": false
+   }
+  ],
+  "stack_arguments_evidence": "after `SUB ESP,0x10` the frame sits 16 bytes below entry, so the three entry slots appear at [ESP+0x1c], [ESP+0x18] and [ESP+0x18-after-one-push]. The body reads them at 0x00d00a13, 0x00d00a17 and 0x00d00a1c and pushes them back in reverse order at 0x00d00a1b, 0x00d00a20 and 0x00d00a21 -- the ordinary stdcall outgoing-argument sequence. The derived ABI record marks these slots read:false, which is a property of ITS linear ESP walk rather than of the machine: the words ARE read, three instructions into the body.",
+  "stack_cleanup_bytes": 12,
+  "stack_cleanup_owner": "callee",
+  "ret_form": "RET 0xc (0x00d00a62 `c2 0c 00`)",
+  "return_register": "ST0",
+  "return_type": "float",
+  "return_semantics": "the x87 top of stack, loaded by `FLD float ptr [ESP]` at 0x00d00a5c from the value the clamp step stored at [ESP] on 0x00d00a57",
+  "return_type_rationale": "OBSERVED. The value leaves through the x87 stack, not through EAX or XMM0: 0x00d00a27 `FSTP float ptr [ESP]` pops the evaluator's result to the frame, the clamp rewrites [ESP] via MOVSS, and 0x00d00a5c `FLD float ptr [ESP]` pushes that back for the return. The derived ABI record's inference RT1 names ST0 with APPROXIMATION confidence for the same reason. No 32-bit integer return is possible here because nothing is written to EAX on any path.",
+  "saved_registers": [
+   "EBX",
+   "ESI",
+   "EDI",
+   "EBP"
+  ],
+  "saved_registers_evidence": "none are saved by this body -- there is no PUSH of any of them. The value is stated as ABI-safe because the body provably writes only EAX, EDX, ECX-free scratch (EAX/EDX/XMM0) and the stack slots inside its own frame, and ECX is passed through untouched; call sites that keep live values across the call (0x00d00d60 saves EBX/ESI/EDI itself around the call) confirm the register set this body may clobber is exactly EAX, EDX and XMM0.",
+  "frame": "no PUSH EBP, no MOV EBP,ESP: `SUB ESP,0x10` at 0x00d00a10 is the only frame setup, giving a 16-byte frame; `ADD ESP,0x10` at 0x00d00a5f is the matching teardown, immediately before the terminator"
+ },
+ "observed_mechanics": [
+  "the body is 20 instructions and 85 bytes, 0x00d00a10..0x00d00a62 inclusive, and the listing was re-read from memory for this package (GhidraMCP read_memory @ 0x00d00a10 length 85 = 83ec108b44241c8b542418508b4424185250e8f94f0000d91c24f30f10055c8d4701f30f11442418f30f1005608d4701f30f1144241cf30f100424f30f5f442418f30f5d44241cf30f110424d9042483c410c20c00) which matches the disassembled listing byte for byte",
+  "there is exactly one CALL and it is direct: 0x00d00a22 `E8 F9 4F 00 00`, a rel32 of +0x4ff9 from the next instruction, landing on 0x00d05a20. No instruction in the body transfers control through a register or a memory operand, so the body contains no indirect dispatch at all -- which is why the derived dispatch record reads indirect_calls 0 and vtable_shaped_loads 0",
+  "the body contains NO conditional branch and no unconditional branch other than the terminator. The 20 instructions are strictly linear, so every path through this function executes all 20. The CONTROL FLOW check reading PASS on 'contains no conditional branch' is measuring this directly",
+  "the evaluator's result is stored at [ESP] by `FSTP float ptr [ESP]` (0x00d00a27) and read back three instructions later at 0x00d00a46 `MOVSS XMM0,dword ptr [ESP]`. The intervening two instructions only fill argument slots with the bounds",
+  "the two bounds are spilled into the DEAD ARGUMENT SLOTS rather than into fresh locals: with ESP at entry-0x10, [ESP+0x18] is entry_ESP+0x8 and [ESP+0x1c] is entry_ESP+0xc, which are the second and third argument words the body already consumed. That is why the frame is 16 bytes rather than 24, and it is why no stack word the body writes is observable by the caller",
+  "the clamp is two instructions in this exact order: 0x00d00a4b `MAXSS XMM0,dword ptr [ESP + 0x18]` (against the lower bound) THEN 0x00d00a51 `MINSS XMM0,dword ptr [ESP + 0x1c]` (against the upper bound). The order is observable: MAXSS and MINSS each return their SECOND source operand on an unordered comparison, so a NaN input is captured by the LOWER bound first and never reaches the upper step. The model test pins this with a quiet and a negative NaN",
+  "MAXSS/MINSS are NOT interchangeable with fmaxf/fminf here. Both SSE forms return the second operand on unordered comparison, which the comparison-ternary reproduces exactly, whereas C's fmaxf/fminf are specified to return the non-NaN operand. The two differ on a NaN input, and this package's ternary form is the one that agrees with the machine",
+  "the function holds no state: it reads no global other than the two bounds, writes no memory outside its own frame, and keeps nothing between calls. Two calls with the same evaluator result agree bit for bit regardless of the receiver"
+ ],
+ "field_offsets": [],
+ "layout": "no field offsets and no layout are claimed. The receiver is never dereferenced by this body, so there is neither a floor nor a ceiling on its size, and OpaqueReceiver is an incomplete type with no members and no static_assert on its size anywhere in the package. The derived ABI record abstains from naming a receiver register, and FIELDS/OFFSETS is therefore NOT_AVAILABLE for this target; nothing in this package overrides that abstention.",
+ "globals": [
+  {
+   "address": "0x01478d5c",
+   "name": "kClampLowerBound",
+   "type": "float",
+   "value": -10.0,
+   "raw_bytes": "000020c1",
+   "bit_pattern": "0xc1200000",
+   "block": ".rdata (0x013cc000..0x0150b5ff, readable, not writable)",
+   "access": "read",
+   "instructions": [
+    "00d00a2a"
+   ],
+   "note": "read once by `MOVSS XMM0,dword ptr [0x01478d5c]` at 0x00d00a2a, immediately spilled to [ESP+0x18] and used by the MAXSS at 0x00d00a4b. The value is read out of the binary (GhidraMCP read_memory @ 0x01478d5c length 12 -> hex 000020c10000204100010200) rather than chosen."
+  },
+  {
+   "address": "0x01478d60",
+   "name": "kClampUpperBound",
+   "type": "float",
+   "value": 10.0,
+   "raw_bytes": "00002041",
+   "bit_pattern": "0x41200000",
+   "block": ".rdata (0x013cc000..0x0150b5ff, readable, not writable)",
+   "access": "read",
+   "instructions": [
+    "00d00a38"
+   ],
+   "note": "read once by `MOVSS XMM0,dword ptr [0x01478d60]` at 0x00d00a38, immediately spilled to [ESP+0x1c] and used by the MINSS at 0x00d00a51. The second word of the same 12-byte read at 0x01478d5c."
+  }
+ ],
+ "vtables": [],
+ "types": [],
+ "type_scope": "every object involved is opaque. The receiver is forwarded and never dereferenced; the three forwarded words are typed uint32 because the evidence types them undefined4, with no signedness claimed; the result is an IEEE-754 binary32 float because the body manipulates it with FSTP/MOVSS/FLD on 4-byte memory operands.",
+ "callee_contracts": [
+  {
+   "va": "0x00d05a20",
+   "role": "the evaluator whose float result this function clamps",
+   "reconstructed": false,
+   "declared_abi": "__thiscall: receiver in ECX, three 4-byte stack arguments, float result in ST0, callee pops 12",
+   "evidence": "0x00d05a20 `MOV EDI,ECX` at 0x00d05a26; `RET 0xc` at both 0x00d05a5f and 0x00d05c0c and 0x00d05d89; the result path is x87 throughout, e.g. `FLD float ptr [0x01478d60]` at 0x00d05a53 returning directly and `FLD float ptr [ESP + 0x10]` at 0x00d05d74 on the long path",
+   "body_size": "279 instructions, 0x00d05a20..0x00d05d89",
+   "note": "NOT reconstructed here. The package declares only the ABI the 0x00d00a10 listing shows the callee being called with, and the model test links its own definition so it controls the returned value. Claiming the evaluator's semantics would be a second target's work."
+  }
+ ],
+ "analogues": [],
+ "semantic_findings": [
+  "0x00d00a10 is a range clamp around a scalar evaluation: forward three words and a receiver to 0x00d05a20, clamp the returned float into [-10.0, +10.0], return it in ST0. The wrapper IS the function -- there is no other behaviour in the 85 bytes.",
+  "The clamp bounds are not immediates. They are two floats in .rdata at 0x01478d5c and 0x01478d60, holding 0xc1200000 and 0x41200000, read once each. A reconstruction that inlined -10.0F and 10.0F as immediates would be behaviourally identical today and wrong the moment either word is edited by the game, which is why the header carries them as named constants keyed to their addresses.",
+  "The clamp ORDER is observable and is MAXSS-then-MINSS. A NaN input leaves through the LOWER bound (-10.0) because MAXSS returns its second source operand on an unordered comparison. Swapping the two steps sends the same NaN out at +10.0 instead. This is the single most discriminating fact about the body and it is what the NaN case in the model test exists to pin.",
+  "Signed zero is passed through with its sign intact. The comparisons are ordered, so -0.0 is above -10.0 and is returned unchanged; neither step normalises it.",
+  "The three forwarded words are 4 bytes each and reach the evaluator unswapped, in ordinal order, each read exactly once. The evidence types them undefined4, so this package models them as uint32 and asserts nothing about their meaning.",
+  "The receiver is forwarded in ECX and touched nowhere. That is why the derived ABI record reports no receiver: it is invisible from the callee side, and the __thiscall framing comes from the call sites and from the callee's own `MOV EDI,ECX` prologue instead."
+ ],
+ "not_claimed": [
+  "what 0x00d05a20 computes. Its 279-instruction body is not reconstructed here; this package models only its ABI and the value the model test chooses to return from it",
+  "what the three forwarded words MEAN. They are 4-byte values the evidence types undefined4; the mapping ordinal-1-to-ordinal-1 is claimed, their content is not",
+  "the meaning of the receiver. It is forwarded and never dereferenced, so this evidence names no class, no fields and no size for it",
+  "whether the bounds are ever WRITTEN by the game. Both live in .rdata, which Ghidra reports as not writable, and this body writes neither; but nothing here proves no other code patches them at run time",
+  "that the two bounds are conceptually 'a clamp range'. They are two adjacent float words in .rdata with values -10.0 and 10.0; that they form a symmetric range is a reading of the numbers, not a name the binary carries",
+  "__thiscall as a fact provable from this function's own bytes. It is not: ECX is never read or written in the body, so __stdcall is byte-indistinguishable from the callee side. The framing is declared from the call sites and the callee's prologue and the alternative is recorded above",
+  "any runtime behaviour of the original process. No original-process observation exists in this repository for this target"
+ ],
+ "confidence": "the body is recovered COMPLETELY from a 20-instruction listing whose 85 bytes were independently re-read from memory, with no unparsed line and no branch. The clamp order, both operand directions, the two global values, the argument order, the terminator form and the absence of every other behaviour are all OBSERVED. What is INFERRED is the __thiscall receiver framing (from the call sites and the callee's prologue, not from this body) and the uint32 typing of the three forwarded words (from their undefined4 evidence type, not from a use).",
+ "unresolved_questions": [
+  "THE RECEIVER CONVENTION IS NOT SETTLED BY THE CALLEE UNDER RECONSTRUCTION. The derived ABI record's inference R2 says ECX is never read in any form, and abi_derived.receiver is null, so the machine-derived receiver evidence is EMPTY. This package does not override that abstention with a class name; it declares an opaque first parameter on the strength of three other observations (the callee's `MOV EDI,ECX` prologue, and two call sites that load ECX immediately before the call) and records the limitation in observed_original_abi.calling_convention_alternatives. A reviewer who wants the weaker reading can restate the prototype as __stdcall plus an unnamed ECX passthrough without changing the body.",
+  "THE THREE FORWARDED WORDS ARE UNTYPED, AND THEIR ORDER IS CLAIMED ONLY AS AN ORDER. The evidence gives them size 4 and nothing else, so this package types them uint32 and asserts ordinal-to-ordinal forwarding. Whether ordinal 1 is a count, an index, a handle or a bitfield is not determined here, and the model test's distinct sentinels deliberately test only the mapping.",
+  "THE CALLEE IS A SEPARATE TARGET AND IS NOT RECONSTRUCTED. 0x00d05a20 is 279 instructions and this package models only its ABI. In particular the model test SUPPLIES the evaluated value rather than deriving it, so the clamp is measured against a controlled input and not against the real evaluator. Any claim about what the clamped quantity represents -- a distance, a ratio, a score -- would have to come from that target.",
+  "THE GLOBAL CHECK IS WARN, NOT PASS, AND THAT IS CORRECT. validation.md reports GLOBALS at partial coverage because the data-reference artifact records 2 reference rows for this body against the 2 addresses the listing names, which is complete for the body; the residual WARN reflects that the artifact is read whole rather than sliced to this span. The CONSTANTS check is likewise WARN with degraded=True and unparsed=2, while the disassembly category itself lists all 20 instructions with no parse failure -- the two unparsed lines are counted against the ABI grammar, not against the listing, and the 85 bytes were re-read from memory to confirm the listing is complete.",
+  "NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game. The runtime gate is open and nothing was attempted."
+ ],
+ "evidence_provenance": [
+  "reconstruction/evidence/00d00a10/evidence.json category disassembly (LIVE, 20 instructions, listing_state complete): SUB ESP,0x10; three argument loads; three pushes; CALL 0x00d05a20; FSTP [ESP]; two MOVSS loads from 0x01478d5c and 0x01478d60; two spills; MOVSS/MAXSS/MINSS/MOVSS; FLD [ESP]; ADD ESP,0x10; RET 0xc",
+  "reconstruction/evidence/00d00a10/evidence.json category decompilation (LIVE, GhidraMCP REST /decompile_function): the same shape as a clamp of one call result into [-10.0, 10.0], with the call to FUN_00d05a20 taking the three forwarded parameters",
+  "reconstruction/evidence/00d00a10/evidence.json category ghidra_function (LIVE): body_start 00d00a10, body_end 00d00a64, body_span_bytes 85, size_bytes 85, xref_count 46, callees [FUN_00d05a20]",
+  "GhidraMCP read_memory @ 0x00d00a10 length 85, re-read for this package to pin the encodings the model test asserts on and to confirm the listing covers the whole body",
+  "GhidraMCP read_memory @ 0x01478d5c length 12 = 000020c10000204100010200, which is the evidence for both clamp bounds",
+  "GhidraMCP disassemble_function @ 0x00d05a20 (279 instructions, read only for the callee's ABI: MOV EDI,ECX at 00d05a26, RET 0xc at 00d05a5f/00d05c0c/00d05d89, FLD result paths)",
+  "GhidraMCP disassemble_function @ 0x00d00d60 (read only for the receiver forwarding: MOV EBX,ECX at 00d00d61, MOV ECX,EBX at 00d00d8e, CALL 0x00d00a10 at 00d00d90)",
+  "GhidraMCP list_segments on SporeApp.exe: 0x01478d5c and 0x01478d60 both fall inside .rdata (0x013cc000..0x0150b5ff), readable and not writable",
+  "measured MAXSS/MINSS semantics on this target's x87/SSE hardware: a scratch program (/tmp/opencode/maxss/probe.cpp) ran the exact instruction pair maxss lo / minss hi over 11 inputs including +0.0, -0.0, both infinities and a quiet NaN, and compared the result against three candidate C++ forms. The comparison-ternary form reproduces the machine on all 11; fmaxf/fminf agrees on this input set but is not the specified behaviour on the unordered case, and an over-strict zero-avoiding form diverges on both zeros. This is what fixed the body to the ternary form.",
+  "reconstruction/evidence/00d00a10/validation.md: CONTROL FLOW PASS on 'no conditional branch in the complete 20-instruction listing', VIRTUAL DISPATCH PASS at 0 machine dispatch records, GLOBALS WARN at partial coverage over the 2 named data addresses, CONSTANTS WARN with the listing itself complete",
+  "docs/tooling/reconstruction-failure-modes.md rules 5, 7 and 8: the gate compiler is clang++ with the archive step reproduced exactly, exactly one symbol in the package embeds 00d00a10 (the reconstructed one -- the callee declaration carries 00d05a20), and every constexpr is used in the body rather than existing only to satisfy a static_assert message",
+  "docs/tooling/validation-dimensions.md section 'Absence is not a pass', applied to the no-branch and no-dispatch results: both are stated as facts about a listing that IS complete, not as facts about a body that was merely unread"
+ ],
+ "focused_test": {
+  "cases": 10,
+  "checks": 52,
+  "mutants": 10,
+  "mutant_catch_counts": [
+   11,
+   5,
+   29,
+   27,
+   1,
+   2,
+   2,
+   2,
+   3,
+   12
+  ],
+  "perturbations_of_the_reconstruction_itself_tried": [
+   "lower bound -10.0F -> -9.0F: 11 of 52 named checks fail",
+   "upper bound 10.0F -> 11.0F: 5 of 52 named checks fail",
+   "lower clamp inverted to compare against +10.0F: 29 of 52 named checks fail",
+   "upper clamp inverted to compare against -10.0F: 27 of 52 named checks fail",
+   "the third forwarded word replaced by third*0U before the call: 1 of 52 named checks fail",
+   "the second and third forwarded words swapped at the call: 2 of 52 named checks fail",
+   "the receiver replaced by nullptr at the call: 2 of 52 named checks fail",
+   "an early `if (result != result) return result;` NaN passthrough added ahead of the clamp: 2 of 52 named checks fail",
+   "the two clamp steps swapped, so MAXSS-then-MINSS becomes MINSS-then-MAXSS: 3 of 52 named checks fail. This is the mutant the NaN case exists for -- the same NaN now leaves at +10.0 instead of -10.0",
+   "both clamp steps deleted, leaving the raw evaluator result: 12 of 52 named checks fail"
+  ],
+  "equivalence_probe": {
+   "description": "an unconditional no-op branch (`if (result == result) { }`) inserted into the body: behaviourally identical to the original, so it MUST pass",
+   "result": "rc=0, 52 checks, 0 failures",
+   "why_it_matters": "it shows the harness is discriminating on behaviour and not simply rejecting any edit -- a mutant suite with no surviving-equivalence control cannot distinguish a sensitive test from a build that refuses to compile"
+  },
+  "counting_method": "each mutant is a full COPY of the staging directory with one edit, and the harness compiles from that MUTATED copy: clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<mutated dir> -c <mutated src>.cpp, then the mutated test, then a FRESH archive (rm -f p.a; ar rc p.a s.o; ranlib p.a -- because `ar qc` APPENDS and a stale archive silently links the previous object and makes a mutant pass for the wrong reason), then link and run. The test counts every failing named case rather than exiting at the first, so each mutant's blast radius is a number; the unmutated build reports 0 failures.",
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<dir> -c <src>.cpp && -c <test>.cpp && rm -f p.a && ar rc p.a s.o && ranlib p.a && clang++ -Wall -Wextra -Werror -m32 <test.o> -o p_test p.a && ./p_test : 52 checks, 0 failures (prints checks=52 failures=0). Byte-identical result under g++ -std=c++17 -Wall -Wextra -Werror -m32 (52 checks, 0 failures).",
+  "harness": "the mutation driver is /tmp/opencode/w11/mutate.sh, invoked as `bash mutate.sh <staging dir>`; it exits non-zero if the baseline fails or any mutant survives",
+  "validator": "openspore validate 0x00d00a10 reads the staging source through reconstruction/metadata/pkg-00d00a10-clamp-scalar-to-range/00d00a10.json: overall status FAIL, 4 of 8 static checks PASS (CALLS, CONTROL FLOW, RETURN SEMANTICS, VIRTUAL DISPATCH), 3 WARN (CONSTANTS, GLOBALS, EVIDENCE COVERAGE), 1 NOT_AVAILABLE (FIELDS/OFFSETS), 1 FAIL (ABI). The single FAIL is `source convention ['thiscall'] conflicts with persisted stdcall`, and it is NOT a build defect and NOT something this package can fix without overclaiming. It is the convention disagreement described in unresolved_questions: the persisted and derived ABI records both say __stdcall because ECX is never read in this body (inference R2), while the call sites and the callee's `MOV EDI,ECX` prologue say __thiscall. This package declares __thiscall because that is what the call sites support, and it therefore disagrees with the persisted oracle by construction. Restating the entry as __stdcall would turn the check green and simultaneously make the ECX forwarding unmodellable, because a stdcall declaration declares ECX to be caller-saved scratch -- so the green reading is the one that cannot express what the body demonstrably does. The FAIL is left standing rather than tuned away."
+ },
+ "runtime_validation": 0,
+ "runtime_validation_status": "not performed",
+ "runtime_gates": [
+  "observe one real caller long enough to record what the three forwarded words carry and what the clamped quantity represents, which would settle the undefined4 typing this package declines to guess",
+  "confirm whether the two .rdata bounds are patched at run time, which would make the clamp range dynamic and would justify reading them per call rather than as constants",
+  "execute the wrapper under a real evaluator (0x00d05a20) rather than the model test's stub, which is the only way to see the clamp engage on values the game actually produces"
+ ],
+ "review_status": "staged_static_review",
+ "integration_status": "not promoted",
+ "worker_ownership": "w11/0x00d00a10"
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "va": "0x00980480",
+  "normalized_opaque_name": "handle_message_00980480",
+  "reconstructed_symbol": "handle_message_00980480",
+  "queue_id": "fun:00980480:UTFWin::PerspectiveEffect::HandleUIMessage",
+  "canonical_source_path": "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12.cpp",
+  "canonical_header_path": "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12.hpp",
+  "canonical_test_path": "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12_model_test.cpp",
+  "source_files": [
+    "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12.cpp",
+    "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12_model_test.cpp"
+  ],
+  "package": "PKG-UTFWIN-PERSPECTIVE-WAVE12",
+  "subsystem": "UTFWin",
+  "target_name": "UTFWin::PerspectiveEffect::HandleUIMessage",
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_utfwin_perspective_wave12::Opaque",
+    "openspore::reconstruction::pkg_utfwin_perspective_wave12::MessageSlot"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall with the receiver in ECX and one 4-byte stack word, popped by the tail callee",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "return_type": "Opaque*",
+    "return_type_rationale": "modelled as a pointer because every path through the tail chain materialises one: 0x0098034b LEA EAX,[ECX+0xc] (receiver + 0x0c) and 0x00980350 XOR EAX,EAX, with 0x00950ed2 ADD EAX,4 on its own matched paths. No path writes only AL, so a normalised byte is never produced. The SDK symbol table labels this virtual `bool HandleUIMessage(PerspectiveEffect*, IWindow*, Message*)`; the source span declares the pointer spelling because that is what the machine produces, and the disagreement is recorded in unresolved_questions",
+    "parameter_convention": "the thunk body is `SUB ECX,0x4` plus an unconditional transfer and never touches the stack, so its own arity is unobservable; the arity modelled here is the one the tail callee consumes (a single 4-byte word, popped by RET 0x4 at 0x0098034b and 0x00980350)",
+    "register_passthrough": "EAX, EDX and the flags are untouched by the two instructions, so whatever the caller loaded in them reaches the tail callee unchanged",
+    "termination": "the body does not return; control leaves through the tail transfer at 0x00980483"
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall with the receiver in ECX and one 4-byte stack word, popped by the tail callee",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "return_type": "Opaque*",
+    "return_semantics": "delegated result in EAX, forwarded verbatim from 0x00980330"
+  },
+  "layout": {
+    "source": "Spore-ModAPI SDK symbol table, STRUCTURE PerspectiveEffect (/Spore/UTFWin), SIZE 0x14",
+    "object_size": "0x14",
+    "members": [
+      {"offset": "0x00", "name": "_vftable0", "type": "PerspectiveEffect__vftable*"},
+      {"offset": "0x04", "name": "_vftable1", "type": "ILayoutElement__vftable*"},
+      {"offset": "0x08", "name": "mnRefCount", "type": "int"},
+      {"offset": "0x0c", "name": "_vftable2", "type": "IPerspectiveEffect__vftable*"},
+      {"offset": "0x10", "name": "mfNearPlane", "type": "float"}
+    ],
+    "derived_observations": [
+      "the thunk's SUB ECX,0x4 converts the +0x04 secondary base back to the primary object pointer",
+      "0x00950eb0 returns primary+0x04 and 0x00980330 returns primary+0x0c, which are exactly the offsets of the two secondary interface sub-objects",
+      "the sibling thunk at 0x00980470 subtracts 0x0c, the other secondary base, so the two thunks are the same virtual reached through the two bases"
+    ]
+  },
+  "globals": [],
+  "vtables": [
+    {
+      "id": "vtable:0x01443f2c",
+      "from": "worker briefing (knowledge-graph association)",
+      "status": "not verified by this worker",
+      "note": "0x00980480 is stored as a 4-byte pointer in .rdata at VA 0x01443f68 (located by scanning the PE section table for the byte pattern 80 04 98 00). The briefing associates the target with vtable 0x01443f2c, but no slot index is claimed here: the knowledge-graph vtable association is documented in validate.py as withdrawn as an oracle, and this worker's evidence does not independently establish a vtable start or a slot offset for this function"
+    }
+  ],
+  "observed_mechanics": [
+    "0x00980480 is two instructions, eight bytes, 0x00980480..0x00980487: SUB ECX,0x4 at 0x00980480 and JMP 0x00980330 at 0x00980483 -- a cross-vtable this-adjusting thunk with no branch, no memory reference and no arithmetic other than the receiver adjustment.",
+    "The receiver arrives in ECX pointing at a secondary base; SUB ECX,0x4 recovers the primary object pointer and the following JMP transfers control without touching EAX, EDX, the flags or the stack, so the tail callee sees the caller's register state and the same single stack word.",
+    "The SDK layout of UTFWin::PerspectiveEffect (SIZE 0x14, secondary bases at +0x04 ILayoutElement and +0x0c IPerspectiveEffect) is what makes 0x4 the correct adjustment rather than 0xc; the sibling thunk at 0x00980470 subtracts 0x0c.",
+    "Tail callee 0x00980330 (complete, 11 instructions 0x00980330..0x00980350) compares its single stack word against 0xef865d7e; on a match it returns the primary receiver plus 0x0c, or 0 when the receiver is null, and on any other value it forwards the unchanged receiver and stack word to 0x00950eb0.",
+    "0x00950eb0 (complete, 16 instructions 0x00950eb0..0x00950ede) loads the stack word into ECX and returns the saved receiver plus 0x04 for 0xee3f516e and 0xeec58382, and returns 0 for 0x2f009dd0 and for every unrecognised word.",
+    "Three of the four immediate constants are published in the SDK ObjectTYPE enum: 0x2f009dd0 = UTFWin::IWinProc, 0xee3f516e = Object, 0xeec58382 = UTFWin::ILayoutElement. 0xef865d7e has no enum entry, so the class it names is unknown.",
+    "The SDK enum is not injective -- 0xeec58382 is also published for UTFWin::Window and 0xef2b293b for IGlideEffect, IPerspectiveEffect and IRotateEffect alike -- so the enum match is evidence about the constant family and not a proven identification of a class.",
+    "The body has no test of ECX before the adjustment, so a null receiver is de-adjusted to a non-null address and the callee's own null test never fires; the reconstruction reproduces that rather than adding a guard."
+  ],
+  "semantic_findings": [
+    "The pattern -- a receiver in ECX, one 32-bit word argument compared against SDK ObjectTYPE class ids, and a returned receiver-plus-offset or null -- is the shape of an Object::Cast-style type-id resolver, and the offsets it returns (+0x0c and +0x04) are the offsets of the two secondary interface sub-objects in the SDK layout. This is a hypothesis consistent with every observed instruction, not a proven identification: the SDK names the fourth Object slot `Cast` but publishes no signature for it, so nothing ties these bodies to it.",
+    "The returned pointer is never written through, so the callee chain only computes an address; no field of the object is modified by this call path."
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "mechanics": "high",
+    "return_type_spelling": "medium",
+    "semantic_identification": "low",
+    "runtime_ownership": "medium"
+  },
+  "unresolved_questions": [
+    "The SDK symbol table types this virtual as `bool HandleUIMessage(IWindow *pWindow, Message *message)` while the tail callee pops exactly one stack word (RET 0x4 at 0x0098034b and 0x00980350) and returns a pointer or null rather than a normalised byte. Either the SDK signature is a documentation-only entry or the Ghidra symbol at 0x00980480 is attached to the wrong body; the machine cannot distinguish a 2-word caller that also reclaims the second word from a 1-word signature. The reconstruction follows the machine and is therefore a PARTIAL, not an IMPLEMENTED, claim.",
+    "The class id 0xef865d7e, the one word 0x00980330 answers with receiver+0x0c, has no entry in the SDK ObjectTYPE enum, so the interface it selects is unidentified.",
+    "The vtable slot that reaches this thunk is unverified. The briefing associates vtable 0x01443f2c with the target and the address is stored in .rdata at VA 0x01443f68, but this worker did not establish a vtable start or a slot index, so no slot offset is claimed.",
+    "0x00950eb0 returns receiver+0x04 for the class ids of Object and ILayoutElement but null for IWinProc, which is the primary base of PerspectiveEffect at +0x00. That ordering is unexplained by the observed instructions alone and is the strongest single reason the type-id reading above stays a hypothesis."
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "machine-listing",
+      "path": "ghidra_disassemble_function 0x00980480",
+      "scope": "complete 2-instruction body 0x00980480..0x00980487"
+    },
+    {
+      "kind": "machine-listing",
+      "path": "ghidra_disassemble_function 0x00980330 and 0x00950eb0",
+      "scope": "complete 11- and 16-instruction tail chain bodies, read for the delegated contract only"
+    },
+    {
+      "kind": "sdk-symbol-table",
+      "path": "SporeGhidra_march2017.xml lines 50874..50946 (/Spore/UTFWin PerspectiveEffect, PerspectiveEffect__vftable, HandleUIMessage) and the /Spore ObjectTYPE enum entries at lines 51581, 51651, 51590, 51760",
+      "scope": "object layout, declared signature, class-id constant values"
+    },
+    {
+      "kind": "binary-scan",
+      "path": "SPORE/SporeBin/SporeApp.exe PE section table scan for the byte pattern 80 04 98 00",
+      "scope": "the single .rdata slot at VA 0x01443f68 that stores the target address"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/staging/pkg-utfwin-effects-wave6/utfwin_effects_wave6.cpp (0x00980470) and reconstruction/metadata/pkg-utfwin-effects-wave6/00980470.json",
+      "scope": "the sibling thunk that subtracts 0x0c; layout, naming and sidecar shape reused"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-utfwin-perspective-wave12/utfwin_perspective_wave12_model_test.cpp",
+    "command": "clang++ -m32 -std=c++17 -O0 / -O2 -Wall -Wextra utfwin_perspective_wave12.cpp utfwin_perspective_wave12_model_test.cpp",
+    "o0": "pass",
+    "o2": "pass",
+    "result": "pass"
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "unresolved_runtime_gates": [
+    "adjusted receiver ownership and the identity of the class id 0xef865d7e remain gated until the object layout is observed at runtime"
+  ],
+  "review_status": "pending_review",
+  "integration_status": "staged"
+}

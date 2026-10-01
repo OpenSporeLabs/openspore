@@ -1,0 +1,61 @@
+# Validation 0x00b21340
+
+- Static reconstruction: `WARN`
+- Runtime (original process): `GATED`
+- Source: `src/reconstruction/pkg11_sim_core/noun_projection.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `PASS` | `partial` | calling convention is present in the target source span and canonical metadata |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 80-instruction listing name the same 2 direct transfer target(s); 4 intra-procedural jump(s) target inside the recovered body span 0x00b21340..0x00b21407 are excluded, because a jump that lands back in the body is control flow and not a transfer out of it: 0x00b2139f, 0x00b213bd, 0x00b213c8, 0x00b213f7; the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 2 outgoing call edge row(s) over 2 distinct address(es) for 0x00b21340; 318 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees; the record's dependency edge list is a scheduler projection of this export, not the export itself: it holds 30 row(s) and 0 address-named callee(s), against the 2 outgoing call edge row(s) and 2 distinct callee(s) the export records; 2 callee(s) the export records are absent from it, and the 30-row window capped at MAX_DEPENDENCY_EDGES=30 is why: 0x00ba8420, 0x00e5c780; the record's edges_truncated flag is set, and it is computed over this record's incoming and outgoing call rows together, so incoming edges alone can set it; the export records 2 outgoing call edge row(s) for this target, which is the count that bounds a callee set; the source span names 2 of them and no others |
+| GLOBALS | `PASS` | `complete` | the complete 80-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no global; the xref export carries no data-reference edge type to corroborate against, and none is needed for an absence |
+| FIELDS/OFFSETS | `WARN` | `partial` | the source span names 6 member(s) (anchor, list_sentinel, needs_update, next_link) and no machine record in this pack carries member names, so the identity of the member at a given displacement can be neither confirmed nor refuted by any machine evidence here and the name stays a review item: a displacement is a location claim and this pack settles those, a name is an identity claim and it settles none; the 0 displacement(s) declared alongside (none) are reported above with the witness each one rests on; the 80-instruction listing is the governing witness for what this body reaches -- it was consumed in full by the machine parse (declared_count=80, degraded=false, unparsed=0) -- and it is read alias-aware over receiver register ECX, so that a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the scan attributes 3 displacement(s) to the receiver as proven (0x78, 0x98, 0x9c) and 1 more only on one arm of a branch, which is a may and grounds nothing (0x84); the machine-derived receiver record enumerates 1 displacement(s) (0x78), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open, so it widens what a claim may be grounded in and refutes nothing; the listing shows 2 displacement(s) the record does not enumerate (0x98, 0x9c), and a complete listing outranks a record that declares itself incomplete |
+| CONSTANTS | `PASS` | `complete` | the machine listing is fully parsed (80 of 80 instruction(s), 0 unparsed) and all 1 source constant(s) appear in it |
+| CONTROL FLOW | `PASS` | `complete` | all 8 conditional branch target(s) in the complete 80-instruction listing lie inside the recovered body span 0x00b21340..0x00b21407, so the branch graph is closed inside it; the source span declares if, while, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `WARN` | `partial` | the complete 80-instruction body names 4 indirect transfer(s): 0x00b2136d is INDIRECT_NON_VTABLE; 0x00b213a5 is INDIRECT_NON_VTABLE; 0x00b213d7 is FUNCTION_POINTER; 0x00b213e2 is INDIRECT_NON_VTABLE; the machine parse consumed 80 of 80 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 4, so the dispatch is visible in the machine listing but is not proven: 1 of the 4 indirect transfer(s) classify as FUNCTION_POINTER (0x00b213d7), so the dispatch's identity is not established: EBP is loaded from [ESP + 0x30], but ESP is defined by an immediate or register assignment, not a memory load earlier in the listing, so the word it names is not shown to be a table word and 3 of the 4 indirect transfer(s) classify as INDIRECT_NON_VTABLE (0x00b2136d, 0x00b213a5, 0x00b213e2), so the dispatch's identity is not established: the target is the memory operand [ESP + 0x20], so no register chain exists to read; a scaled operand such as [EAX*0x4 + 0x5dd840] is a jump table and a plain [ESP + 0x30] is a frame slot, and neither is a virtual dispatch |
+| RETURN SEMANTICS | `PASS` | `complete` | the source span declares return type 'NounProjectionVector*' and the machine return state is WIDTH_4_IN_EAX: the complete 80-instruction listing writes EAX at a determinate 4-byte width before all 1 reachable return(s); the width is a machine fact and the C type of that width is a source-side choice. The width is corroborated by the machine; the exact C type spelling remains a source-side choice among the types of that width and is not verified here. |
+
+Static evidence basis: 8 of 8 static checks evaluated, 6 passed, 0 had no evidence to evaluate; 13 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 13 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `d67bbd35c1ac11c6e108b9b9a9ce8635c578dfc9b9cfde2e150015dd3e83c01e`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `d8e9588ee9e5c6ba696d7a0e961515bbd791434fd16a7ec6959057392915656b`
+- Pack digest quoted by the briefing: `d67bbd35c1ac11c6e108b9b9a9ce8635c578dfc9b9cfde2e150015dd3e83c01e`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `gate-noun-projection-callbacks-and-map-ownership`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- FUN_00ba8420 is retained as an insertion boundary; its allocator, red-black rebalance, and failure behavior are not reconstructed in this package.
+- The exact ownership and destruction policy for the returned noun vector pointer is not established by the target body.
+- The live Ghidra prototype is undefined, so the callback typedef names and hidden-calling-convention details are staged from observed call widths and argument order.
+- The target has no null guard after create_callback or map-hit value extraction; malformed null inputs remain fault paths rather than normalized errors.
+- callback concrete implementations
+- fault behavior for null callbacks or values
+- gate-noun-projection-callbacks-and-map-ownership
+- map insertion allocator and failure behavior
+- returned vector ownership

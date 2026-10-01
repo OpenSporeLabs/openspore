@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `ad41d4fa600c171c5653e4c718507628d0a55678aba13f4fbf798da739aab75d`
+- Content SHA-256: `ab240282dcdb84758c34f36724db76ec9ae7e3828abf0d1fa622d4c757e0530f`
 
 ## abi
 
@@ -61,8 +61,7 @@
     "termination": "RET 0x10"
   },
   "abstained_because": [
-    "flow_not_modelled: the linear ESP walk ends at +24, so the listing is not one path",
-    "unparsed_lines_present: 1 line(s) matched no grammar rule"
+    "flow_not_modelled: the linear ESP walk ends at +24, so the listing is not one path"
   ],
   "cleanup": {
     "bytes": 16,
@@ -73,7 +72,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "03c2906e8b52d8a7027a6d85dfa80a9b6d5e09c0111f21a38b12ef05c00f3893",
+  "content_sha256": "98288938ae33e4fbaf3bbe9708c3d7e71b2cc44688c158a08fe9f295e225af46",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -99,7 +98,7 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0054"
+        "obs-0053"
       ],
       "claim": "the callee pops 16 byte(s) of stack arguments",
       "confidence": "OBSERVED",
@@ -129,11 +128,11 @@
         "obs-0010",
         "obs-0019",
         "obs-0030",
-        "obs-0036",
-        "obs-0038",
-        "obs-0041",
-        "obs-0043",
-        "obs-0047"
+        "obs-0035",
+        "obs-0037",
+        "obs-0040",
+        "obs-0042",
+        "obs-0046"
       ],
       "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
       "confidence": "INFERRED",
@@ -155,12 +154,12 @@
         "obs-0010",
         "obs-0019",
         "obs-0030",
-        "obs-0036",
-        "obs-0038",
-        "obs-0041",
-        "obs-0043",
-        "obs-0047",
-        "obs-0054"
+        "obs-0035",
+        "obs-0037",
+        "obs-0040",
+        "obs-0042",
+        "obs-0046",
+        "obs-0053"
       ],
       "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
       "confidence": "INFERRED",
@@ -169,7 +168,7 @@
     },
     {
       "based_on": [
-        "obs-0054"
+        "obs-0053"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -180,7 +179,7 @@
     },
     {
       "based_on": [
-        "obs-0054"
+        "obs-0053"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -189,7 +188,7 @@
     },
     {
       "based_on": [
-        "obs-0054"
+        "obs-0053"
       ],
       "claim": "the last value written to EAX classifies as integral",
       "confidence": "INFERRED",
@@ -276,7 +275,288 @@
       "first_use": 3,
       "first_write_index": 4,
       "id": "obs-0007",
-      "index":
+      "index": 3,
+      "kind": "REG_READ",
+      "raw": "PUSH ESI",
+      "reg
+[TRUNCATED]
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0x10",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "saved_registers": [
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 16,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x10"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at +24, so the listing is not one path"
+  ],
+  "cleanup": {
+    "bytes": 16,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x10",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "98288938ae33e4fbaf3bbe9708c3d7e71b2cc44688c158a08fe9f295e225af46",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 4,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0053"
+      ],
+      "claim": "the callee pops 16 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 16,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009",
+        "obs-0010",
+        "obs-0019",
+        "obs-0030",
+        "obs-0035",
+        "obs-0037",
+        "obs-0040",
+        "obs-0042",
+        "obs-0046"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          44,
+          48,
+          64
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009",
+        "obs-0010",
+        "obs-0019",
+        "obs-0030",
+        "obs-0035",
+        "obs-0037",
+        "obs-0040",
+        "obs-0042",
+        "obs-0046",
+        "obs-0053"
+      ],
+      "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
+      "confidence": "INFERRED",
+      "id": "C6B",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0053"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0053"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0053"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "and_esp": null,
+      "at": "0x00828c30",
+      "ebp_is_general_register": false,
+      "fp": false,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "FRAME",
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "raw": "SUB ESP,0x3c",
+      "sub": 60
+    },
+    {
+      "at": "0x00828c30",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "SUB ESP,0x3c",
+      "reg": "ESP",
+      "write_kind": "arith"
+    },
+    {
+      "at": "0x00828c33",
+      "count": 24,
+      "first_use": 1,
+      "first_write_index": 0,
+      "id": "obs-0003",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "MOV EDX,dword ptr [ESP + 0x40]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00828c33",
+      "base": "ESP",
+      "disp": 64,
+      "id": "obs-0004",
+      "index": 1,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EDX,dword ptr [ESP + 0x40]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x00828c33",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "raw": "MOV EDX,dword ptr [ESP + 0x40]",
+      "reg": "EDX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00828c37",
+      "count": 5,
+      "first_use": 2,
+      "first_write_index": 42,
+      "id": "obs-0006",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "PUSH EBX",
+      "reg": "EBX"
+    },
+    {
+      "at": "0x00828c38",
+      "count": 9,
+      "first_use": 3,
+      "first_write_index": 4,
+      "id": "obs-0007",
+      "index": 3,
+      "kind": "REG_READ",
+      "raw": "PUSH ESI",
+      "reg
 [TRUNCATED]
 ```
 
@@ -300,13 +580,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Removing unreachable block (ram,0x00828cef) */\n\nundefined4 __thiscall\nFUN_00828c30(int param_1,uint param_2,undefined4 param_3,uint param_4,int *param_5)\n\n{\n  uint *puVar1;\n  int *piVar2;\n  uint *puVar3;\n  undefined1 local_38 [16];\n  ushort local_28;\n  undefined2 local_26;\n  undefined4 local_24;\n  uint local_20;\n  int *local_1c;\n  ushort local_8;\n  undefined2 local_6;\n  undefined4 local_4;\n  \n  local_20 = param_2;\n  local_26 = 0;\n  local_6 = 0;\n  local_28 = 0;\n  local_1c = (int *)0x0;\n  local_8 = 0;\n  FUN_00542b80(local_38);\n  puVar1 = *(uint **)(param_1 + 0x30);\n  local_4 = local_24;\n  puVar3 = (uint *)FUN_00d01210(*(undefined4 *)(param_1 + 0x2c),puVar1,&local_20,\n                                *(undefined1 *)(param_1 + 0x40));\n  if ((puVar3 == puVar1) || (local_20 < *puVar3)) {\n    puVar3 = (uint *)FUN_00828b80(puVar3,&local_20);\n  }\n  if ((local_8 & 4) != 0) {\n    FUN_0093db80(0);\n  }\n  if (local_1c != (int *)0x0) {\n    (**(code **)(*local_1c + 4))();\n  }\n  if ((local_28 & 4) != 0) {\n    FUN_0093db80(0);\n  }\n  FUN_00542b80(param_3);\n  piVar2 = (int *)puVar3[1];\n  puVar3[7] = param_4 | 4;\n  if (param_5 != piVar2) {\n    if (param_5 != (int *)0x0) {\n      (**(code **)*param_5)();\n    }\n    puVar3[1] = (uint)param_5;\n    if (piVar2 != (int *)0x0) {\n      (**(code **)(*piVar2 + 4))();\n    }\n  }\n  return 1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -632,19 +908,19 @@
   "body_span_bytes": 270,
   "body_start": "00828c30",
   "callees": [
-    "FUN_0093db80",
-    "FUN_00d01210",
+    "FUN_00828b80",
     "FUN_00542b80",
-    "FUN_00828b80"
+    "FUN_0093db80",
+    "FUN_00d01210"
   ],
   "callers": [
-    "FUN_00e47520",
-    "FUN_00bdde70",
     "FUN_00e2d6a0",
+    "FUN_00e47520",
     "FUN_005e4560",
-    "FUN_00677700",
     "FUN_005e6b40",
-    "FUN_00e2c590"
+    "FUN_00e2c590",
+    "FUN_00677700",
+    "FUN_00bdde70"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -657,79 +933,9 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_3",
-      "storage": "Stack[0x8]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "uint"
-    },
-    {
-      "name": "param_5",
-      "storage": "Stack[0x10]:4",
-      "type": "int *"
-    },
-    {
-      "name": "param_4",
-      "storage": "Stack[0xc]:4",
-      "type": "uint"
-    },
-    {
-      "name": "piVar2",
-      "storage": "unique:00017200:4",
-      "type": "int *"
-    },
-    {
-      "name": "puVar1",
-      "storage": "unique:00017200:4",
-      "type": "uint *"
-    },
-    {
-      "name": "puVar3",
-      "storage": "register:00000000:4",
-      "type": "uint *"
-    },
-    {
-      "name": "local_28",
-      "storage": "Stack[-0x28]:2",
-      "type": "ushort"
-    },
-    {
-      "name": "local_26",
-      "storage": "Stack[-0x26]:2",
-      "type": "undefined2"
-    },
-    {
-      "name": "local_38",
-      "storage": "",
-      "type": "undefined1[16]"
-    },
-    {
-      "name": "local_1c",
-      "storage": "Stack[-0x1c]:4",
-      "type": "int *"
-    },
-    {
-      "name": "local_24",
-      "storage": "Stack[-0x24]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "local_20",
-      "storage": "Stack[-0x20]:4",
-      "type": "uint"
-    },
-    {
       "name": "local_4",
       "storage": "Stack[-0x4]:4",
       "type": "undefined4"
-    },
-    {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:2",
-      "type": "ushort"
     },
     {
       "name": "local_6",
@@ -737,12 +943,52 @@
       "type": "undefined2"
     },
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:2",
+      "type": "undefined2"
+    },
+    {
+      "name": "local_18",
+      "storage": "Stack[-0x18]:1",
+      "type": "undefined"
+    },
+    {
+      "name": "local_1c",
+      "storage": "Stack[-0x1c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_24",
+      "storage": "Stack[-0x24]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_26",
+      "storage": "Stack[-0x26]:2",
+      "type": "undefined2"
+    },
+    {
+      "name": "local_28",
+      "storage": "Stack[-0x28]:2",
+      "type": "undefined2"
+    },
+    {
+      "name": "local_38",
+      "storage": "Stack[-0x38]:1",
+      "type": "undefined"
+    },
+    {
+      "name": "local_3c",
+      "storage": "Stack[-0x3c]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 17,
+  "locals_count": 11,
   "mode": "live",
   "name": "FUN_00828c30",
   "namespace": null,

@@ -1,0 +1,273 @@
+{
+  "schema": "pkg-sim-beamtool-func4ch.function-handoff.v1",
+  "package": "PKG-SIM-BEAMTOOL-FUNC4CH",
+  "function_address": "0x01053db0",
+  "ghidra_name": "Simulator::cDefaultBeamTool::func4Ch",
+  "normalized_symbol": "func4_ch_01053db0",
+  "source_files": [
+    "reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.hpp",
+    "reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.cpp",
+    "reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "semantic_classification": "unconditional-success virtual that releases an owned beam target and conditionally resets relationship state",
+  "declaration": "bool __cdecl func4_ch_01053db0(OpaqueBeamToolState *tool_state);",
+  "abi": {
+    "logical_return_type": "bool",
+    "staged_return_type": "bool",
+    "calling_convention": "MSVC x86 virtual-member convention observed: the receiver is passed as the first stack argument and the callee pops it",
+    "hidden_this": false,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x08 at the post-prologue ESP+0x04 slot after PUSH ESI",
+        "type": "OpaqueBeamToolState *",
+        "width_bytes": 4,
+        "observed_use": "Copied into ESI at 0x01053db1 by `mov esi, dword ptr [esp+0x8]` immediately after `push esi` at 0x01053db0. The same register is the base for every field access and is reloaded into ECX at 0x01053ddf."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "AL",
+    "return_width_bytes": 1,
+    "return_value": "Constant true. `mov al, 0x1` at 0x01053df7 executes on every path; no instruction other than this one writes AL on the return path.",
+    "return_semantics": "Unconditional success. The result is independent of the owned beam target presence, of the gate word at +0x174, and of the relationship manager global.",
+    "prologue_epilogue": "PUSH ESI at 0x01053db0 / POP ESI at 0x01053de6 / RET 0x4 at 0x01053df9. ESI is the only callee-saved register touched, and it is restored before the final two calls, so the two relationship calls inherit the callee's own preservation contract.",
+    "correction_of_live_prototype": "The live Ghidra prototype `bool Simulator::cDefaultBeamTool::func4Ch(cDefaultBeamTool *this, cSpaceToolData *pTool, Vector3 *param_3)` is not supported by the body. The listing has no site that reads ESP+0x0C or ESP+0x10, and `ret 0x4` pops exactly one word, so the receiver is the only stack argument. The `cSpaceToolData *` and `Vector3 *` parameters are rejected."
+  },
+  "layout": {
+    "beam_tool_state": {
+      "size_bytes": 376,
+      "fields": [
+        {"name": "opaque_000", "offset": "0x00", "width_bytes": 292},
+        {"name": "owned_beam_target_124", "offset": "0x124", "type": "OpaqueBeamTarget *"},
+        {"name": "opaque_128", "offset": "0x128", "width_bytes": 76},
+        {"name": "gate_174", "offset": "0x174", "type": "std::uint32_t"}
+      ],
+      "evidence": "The body reads the pointer at +0x124 four times (0x01053db5, 0x01053dc4 read; 0x01053dce clear) and the gate word at +0x174 through the helper at 0x0104cd50. No field below +0x124 and no field between +0x128 and +0x174 is touched. The 0x178 extent is the smallest size that covers the last observed access and is corroborated by the independent pkg-sim-tool-wave9 OpaqueToolState layout."
+    },
+    "beam_target": {
+      "size_bytes": 344,
+      "fields": [
+        {"name": "vtable_00", "offset": "0x00", "type": "const OpaqueBeamTargetVTable *"},
+        {"name": "opaque_004", "offset": "0x04", "width_bytes": 337},
+        {"name": "state_155", "offset": "0x155", "type": "std::uint8_t"}
+      ],
+      "evidence": "The body loads the target vtable at +0x00 and calls the slot at +0x04. The 0x155 byte is written by the helper at 0x00cb3c70, whose only instruction is `mov byte ptr [ecx+0x155], 0x1` with ECX holding the same +0x124 pointer."
+    },
+    "beam_target_vtable": {
+      "size_bytes": 8,
+      "fields": [
+        {"name": "slots_00", "offset": "0x00", "width_bytes": 4},
+        {"name": "release_04", "offset": "0x04", "type": "void (__thiscall *)(OpaqueBeamTarget *)"}
+      ],
+      "evidence": "`mov eax, [ecx]` then `mov edx, [eax+0x4]` then `call edx` at 0x01053dd8-0x01053ddd. The callee is invoked with the target in ECX, so the slot is a thiscall member of the target, and only the word at +0x04 is dispatched."
+    },
+    "relationship_state": {
+      "size_bytes": 21924,
+      "fields": [
+        {"name": "opaque_000", "offset": "0x00", "width_bytes": 32},
+        {"name": "state_20", "offset": "0x20", "type": "std::uint32_t"},
+        {"name": "opaque_024", "offset": "0x24", "width_bytes": 21884},
+        {"name": "event_55a0", "offset": "0x55a0", "type": "std::uint32_t"}
+      ],
+      "evidence": "Reached indirectly through the accessor at 0x00b3d3c0, which returns the single global 0x0167eb14. The two words are written by the reset helper at 0x00b78860, whose complete body is `and dword ptr [ecx+0x20], 0xfffffffb` / `mov dword ptr [ecx+0x55a0], 0x0` / `jmp 0x00b77aa0`. Corroborated by the independent pkg-sim-tool-wave9 OpaqueRelationshipState layout."
+    }
+  },
+  "mechanics": {
+    "owned_beam_target_release": [
+      "Load the owned target: `mov ecx, [esi+0x124]` at 0x01053db5, then `test ecx, ecx` / `jz 0x01053ddf` at 0x01053dbb-0x01053dbd.",
+      "When the pointer is non-null, call 0x00cb3c70 with the target still in ECX, so the call is a thiscall on the owned target, not a free function on the tool. The helper sets the target byte at +0x155 to 1.",
+      "Re-load the slot: `mov ecx, [esi+0x124]` at 0x01053dc4, then re-test and jump to 0x01053ddf when null. The re-read is a genuine second load from the tool, not a reuse of the register copy.",
+      "Clear the owning slot before the virtual call: `mov dword ptr [esi+0x124], 0x0` at 0x01053dce. The store precedes the dispatch, so the tool never holds the pointer while the release runs.",
+      "Dispatch the target's vtable word at +0x04 with the target in ECX: `mov eax, [ecx]` / `mov edx, [eax+0x4]` / `call edx` at 0x01053dd8-0x01053ddd. Only slot +0x04 is used; the return value is discarded.",
+      "A null owned target falls straight to 0x01053ddf, so the mark and the release are both suppressed."
+    ],
+    "gate_evaluation": [
+      "Reload the receiver into ECX and call the predicate: `mov ecx, esi` at 0x01053ddf then `call 0x0104cd50` at 0x01053de1. The receiver is the tool itself, so the gate is a thiscall on the tool.",
+      "The predicate at 0x0104cd50 is exactly three instructions: `mov eax, [ecx+0x174]` / `shr eax, 0x4` / `and al, 0x1` / `ret`. It therefore tests bit 4 of the word at +0x174, equivalently `(gate_174 & 0x10) != 0`.",
+      "The decompiler renders the predicate as `*(uint *)(param_1 + 0x174) >> 4 & 0xffffff01`. That 0xffffff01 mask is a zero-extension artifact of the byte-sized `and al, 0x1`; the listing is authoritative and the gate is a single bit, not two.",
+      "`test al, al` / `jz 0x01053df7` at 0x01053de7-0x01053de9 selects the relationship path."
+    ],
+    "relationship_reset_path": [
+      "Fetch the singleton through the accessor 0x00b3d3c0, which is a three-instruction body returning the global 0x0167eb14; its EAX result becomes the ECX receiver.",
+      "Call the reset helper at 0x00b78860 with the manager in ECX.",
+      "The reset helper clears bit 2 of the word at +0x20 (`and dword ptr [ecx+0x20], 0xfffffffb`), zeroes the word at +0x55a0, and tail-jumps to 0x00b77aa0 with ECX unchanged, so the drain receives the same receiver. The drain's semantics are not reconstructed in this package.",
+      "This whole path is reached only when the gate bit is set; a clear gate jumps straight to 0x01053df7 and touches no global."
+    ],
+    "control_flow": {
+      "basic_blocks": 6,
+      "branches": [
+        {"at": "0x01053dbd", "condition": "owned target pointer is null", "target": "0x01053ddf", "effect": "skip mark and release"},
+        {"at": "0x01053dcc", "condition": "re-loaded target pointer is null", "target": "0x01053ddf", "effect": "skip the null-then-release step only"},
+        {"at": "0x01053de9", "condition": "gate bit 4 of +0x174 is clear", "target": "0x01053df7", "effect": "skip the relationship reset"}
+      ],
+      "note": "Both release branches converge on the single unconditional gate evaluation at 0x01053ddf, so the gate and the relationship path execute on every return, whether or not a target was owned."
+    },
+    "virtual_dispatch": {
+      "indirect_call_sites": 1,
+      "site": "0x01053ddd",
+      "form": "`mov eax, [ecx]` / `mov edx, [eax+0x4]` / `call edx` with the owned target in ECX",
+      "target_class": "OpaqueBeamTarget, the object owned at tool+0x124",
+      "slot_offset": "0x04",
+      "note": "This is the only indirect call in the body. Its target is the owned sub-object's own vtable, never the tool's vtable, so the concrete implementation is a property of the beam target type and cannot be named from this body alone."
+    }
+  },
+  "null_and_error_paths": {
+    "observed": [
+      "A null owned beam target at +0x124 is the only tested and handled error input; it suppresses both the state-byte write and the release.",
+      "The gate is a predicate, not an error path: a clear gate simply skips the relationship reset and the function still reports success.",
+      "There is no null check on the result of the 0x00b3d3c0 accessor before it is used as a thiscall receiver, so a null singleton would fault inside the reset helper.",
+      "There is no null check on the owned target's vtable pointer before the word at +0x04 is loaded."
+    ],
+    "staging_policy": "The reconstruction preserves the absence of the two unguarded dereferences and does not add a normalized error return, because the body reports success on every path it can reach."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 0,
+      "observation": "The briefing and the live program report no direct call xrefs. The pointer to 0x01053db0 occurs in .rdata only, so the function is reached exclusively through the tool class vtable region and the empty caller set is expected rather than a collection failure."
+    },
+    "direct_callees": {
+      "ghidra_count": 4,
+      "entries": [
+        {"address": "0x00cb3c70", "name": "FUN_00cb3c70", "role": "Thiscall on the owned beam target; the only instruction is `mov byte ptr [ecx+0x155], 0x1`."},
+        {"address": "0x0104cd50", "name": "FUN_0104cd50", "role": "Thiscall gate predicate on the tool; reads bit 4 of the word at +0x174."},
+        {"address": "0x00b3d3c0", "name": "Simulator::cRelationshipManager::Get", "role": "Cdecl singleton accessor returning the global 0x0167eb14."},
+        {"address": "0x00b78860", "name": "FUN_00b78860", "role": "Thiscall relationship reset; clears the word at +0x20, zeroes +0x55a0, and tail-jumps to the drain at 0x00b77aa0."}
+      ]
+    },
+    "indirect_callees": [
+      {"dispatch_site": "0x01053ddd", "via": "owned target vtable word at +0x04", "receiver": "the object previously stored at tool+0x124"}
+    ]
+  },
+  "vtable_evidence": {
+    "pointer_sites": [
+      {"address": "0x0149b810", "block": ".rdata"},
+      {"address": "0x0149b900", "block": ".rdata"},
+      {"address": "0x0149ba30", "block": ".rdata"}
+    ],
+    "observation": "A whole-memory scan of every initialized block finds the little-endian encoding of 0x01053db0 at exactly these three .rdata words and nowhere else, which is consistent with the function being a virtual member reached by dispatch rather than by direct call.",
+    "caveat": "The surrounding region interleaves non-code words among the code pointers (0x00b7d400 at 0x0149b7f8, 0x00c6a960 at 0x0149b828, 0x007b86e0 at 0x0149b82c), so the three sites are not a single contiguous vtable and an exact slot index is not claimed. The four addresses carried in the briefing as vtable:0x0149b810, 0x0149b8b4, 0x0149b900 and 0x0149ba30 are reported as pointers to the function rather than as verified vtable bases; 0x0149b8b4 in fact holds 0x01052f90 and is the start of a different image."
+  },
+  "structure_and_global_evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01053db0",
+      "observation": "The live function spans 0x01053db0 through 0x01053dfb and is named Simulator::cDefaultBeamTool::func4Ch, matching the briefing target name."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01053db0",
+      "observation": "The persisted SDK export at .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cDefaultBeamTool__func4Ch.c shows the same release-then-gate-then-relationship order and the same unconditional `return true`, but renders the owned field as `this[0x18]._vftable1` and the three-parameter prototype is unsupported by the listing."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01053db0",
+      "observation": "The raw bytes `568b7424088b8e24010000...b001c20400cc` confirm PUSH ESI, MOV ESI,[ESP+8], MOV ECX,[ESI+0x124] and the terminating MOV AL,1 / RET 0x4 with the 0xCC int3 padding Ghidra reports as the body end."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0104cd50",
+      "observation": "Four instructions only: MOV EAX,[ECX+0x174] / SHR EAX,0x4 / AND AL,0x1 / RET. This is the sole source of the gate bit and refutes the decompiler's 0xffffff01 two-bit mask."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00cb3c70",
+      "observation": "Two instructions only: MOV byte ptr [ECX+0x155],0x1 / RET, establishing the +0x155 state byte and confirming the ECX receiver is the owned target."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b78860",
+      "observation": "Three instructions: AND dword ptr [ECX+0x20],0xfffffffb / MOV dword ptr [ECX+0x55a0],0x0 / JMP 0x00b77aa0, giving the exact mask, the exact clear, and a tail call that preserves ECX as the drain receiver."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00b3d3c0",
+      "observation": "Simulator::cRelationshipManager::Get returns the single global DAT_0167eb14, so the relationship state is reached only through that accessor and the body itself contains no direct global reference."
+    },
+    {
+      "tool": "ghidra_list_class_members",
+      "class_name": "cDefaultBeamTool",
+      "observation": "Only two members carry the cDefaultBeamTool this type: this function at 0x01053db0 and Simulator::cDefaultBeamTool::OnMouseDown at 0x01053d00. The OnMouseDown decompilation is unusable (it references unaff_EBX, unaff_ESI and unaff_EDI), so it is not used as semantic evidence here."
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "observation": "A whole-memory byte scan of every initialized block locates the encoding of 0x01053db0 at 0x0149b810, 0x0149b900 and 0x0149ba30 in .rdata, and at no other address."
+    }
+  ],
+  "analogue_agreement": {
+    "package": "reconstruction/staging/pkg-sim-tool-wave9",
+    "symbol": "target_01053db0",
+    "observation": "That package already reconstructs this same VA in the same subsystem, and its staged body is independently identical to the reconstruction derived here from the listing: owned target at +0x124, the 0x00cb3c70 mark writing the target byte at +0x155, the re-load and second null test, clearing +0x124 before the vtable slot +0x04 release, the bit-4 gate read from the word at +0x174 via 0x0104cd50, the 0x00b3d3c0 singleton into 0x0167eb14, the bit-2 clear of the word at +0x20, the zeroing of +0x55a0, the 0x00b77aa0 drain, the unconditional true return, and the single callee-popped stack receiver. This package supplies the mandated entry name func4_ch_01053db0 and a dedicated ABI model; it independently rejects the three-parameter prototype that the SDK export carries."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01053db0",
+      "observation": "Twenty-three instructions: the four-way release sequence, the gate call, the two-call relationship path, and the MOV AL,1 / RET 4 tail."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01053db0",
+      "observation": "Independent byte-level confirmation of the prologue, the +0x124 and +0x4 displacements, and the 0xC2 0x04 0x00 return form."
+    },
+    {
+      "tool": "objdump",
+      "address": "func4_ch_01053db0 (staged naked rebuild)",
+      "observation": "The staged naked entry disassembles instruction-for-instruction to the same sequence as 0x01053db0, differing only in call and jump displacements, which confirms the reconstruction is register- and stack-faithful."
+    },
+    {
+      "tool": "compile-and-run",
+      "address": "reconstruction/staging/pkg-sim-beamtool-func4ch",
+      "observation": "The model binary builds with clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror and all 24 model checks pass, covering the release ordering, the null suppression, the gate bit selection against bits 0 and 8, the relationship word effects, and the unconditional true return."
+    }
+  ],
+  "confidence": {
+    "overall": "high for control flow, stack ABI, field offsets, the gate bit, the relationship word effects, and the constant return; medium for the semantic role of the owned target and the gate; low for the meaning of the vtable slot and the drain helper",
+    "high": [
+      "the receiver is a single callee-popped stack argument and the three-parameter SDK prototype is wrong",
+      "the owned beam target pointer is at +0x124 and is nulled before the virtual release",
+      "the release dispatches only the target vtable word at +0x04 with the target in ECX",
+      "the mark helper writes the target byte at +0x155 to 1",
+      "the gate is bit 4 of the word at +0x174, read by the three-instruction helper at 0x0104cd50",
+      "the relationship reset clears bit 2 of +0x20, zeroes +0x55a0, and tail-calls 0x00b77aa0",
+      "the relationship state is reached only through the 0x0167eb14 singleton",
+      "the return is the constant true on every reachable path"
+    ],
+    "medium": [
+      "that the owned target is a beam, derived from the owning type name cDefaultBeamTool and the +0x155 state byte rather than from an independent type definition",
+      "that the gate bit 4 represents a pending or active beam state; the bit is proven, its meaning is not",
+      "that the +0x04 release slot is a refcount release, inferred from the Ghidra vftable naming and the null-then-release idiom"
+    ],
+    "low": [
+      "the exact slot index and owning class of the three .rdata pointer sites, because the region interleaves non-code words",
+      "the behaviour of the 0x00b77aa0 drain and of the indirect vtable slot +0x04 callee",
+      "whether FUN_00cb3c70 can clear the +0x124 slot, which the second null test tolerates but no evidence confirms"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-sim-beamtool-func4ch reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-sim-beamtool-func4ch reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.cpp reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch_model_test.cpp -o /tmp/opencode/pkg-sim-beamtool-func4ch-model && /tmp/opencode/pkg-sim-beamtool-func4ch-model",
+    "model_result": "passed; 24 of 24 checks green",
+    "abi_fidelity_command": "objdump -d /tmp/opencode/pkg-sim-beamtool-func4ch-model --start-address=<func4_ch_01053db0>",
+    "abi_fidelity_result": "passed; the staged naked entry reproduces the 23-instruction sequence of 0x01053db0 instruction-for-instruction",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.hpp reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch.cpp reconstruction/staging/pkg-sim-beamtool-func4ch/beam_tool_func4ch_model_test.cpp",
+    "format_result": "passed; namespace comments disabled to honor the no-comments constraint",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-sim-beamtool-func4ch/01053db0.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The slot index and owning class of the three .rdata pointer sites at 0x0149b810, 0x0149b900 and 0x0149ba30 are not established, because the region interleaves non-code words (0x00b7d400, 0x00c6a960, 0x007b86e0) and no RTTI complete-object locator is confirmed; the briefing's four vtable addresses are therefore reported as function pointers, not verified vtable bases.",
+    "The meaning of gate bit 4 in the word at +0x174 is not determined; only the bit selection is proven. The decompiler's two-bit 0xffffff01 reading is a byte-mask artifact and is rejected in favour of the listing.",
+    "The concrete implementation behind the owned target's vtable word at +0x04 is not resolved, and calling it a refcount release is an inference from the null-then-release idiom rather than an observed decrement.",
+    "The behaviour of the 0x00b77aa0 drain, which is tail-called with the relationship manager as receiver, is outside this package.",
+    "No canonical Ghidra structure exists for OpaqueBeamToolState, OpaqueBeamTarget or OpaqueRelationshipState; the layouts are assembled from the observed offsets and corroborated by the pkg-sim-tool-wave9 staging package rather than promoted from a live type.",
+    "FUN_00cb3c70 could in principle clear the +0x124 slot, which the defensive second null test would absorb; no evidence shows that it does, so the second test is staged as a plain re-read guard.",
+    "The SDK export's two extra parameters, cSpaceToolData * and Vector3 *, are refuted by the listing and the ret 0x4, but the reason the SDK import attached them is not established; the interface this virtual actually overrides is not named."
+  ],
+  "blockers": [
+    "No differential runtime corpus is available for this virtual, so the gate bit and the release ordering are static-only evidence.",
+    "The owning class of the dispatch slot is unresolved, so the function cannot be tied to a named interface override.",
+    "Simulator::cDefaultBeamTool::OnMouseDown at 0x01053d00, the only other member carrying this this type, has an unusable decompilation and is not usable to corroborate the field layout."
+  ]
+}

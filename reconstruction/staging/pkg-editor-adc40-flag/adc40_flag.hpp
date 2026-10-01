@@ -32,6 +32,16 @@ static_assert(sizeof(Field) == 1,
 // and everything the object may hold above 0x4f is outside the extent this
 // package claims.
 //
+// What this struct is, and what it is not. `byte_04f` is a displacement label,
+// not a field name. The machine-derived receiver record for 0x004adc40
+// enumerates the one displacement the body was seen using through ECX (0x4f)
+// with `bounds_only` set -- it records where the body reached and says nothing
+// about which member occupies that offset. So no member here claims that the
+// original class has a member of that name or meaning there. The struct exists
+// so the model test can observe the receiver byte-exactly; the reconstructed
+// body in the .cpp addresses the receiver by displacement alone and names
+// nothing.
+//
 // No SDK type is named. Ghidra names two of the direct callers
 // Editors::cEditor::sub_581F70 and Editors::cEditor::OnMouseDown, but the
 // sampled call sites load the receiver from a +0x28 member of the caller's own

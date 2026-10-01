@@ -2,9 +2,48 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `82ca3c3e315ea14f80aee1dcf7956434a0f021217dab80956afd1612a475c6a8`
+- Content SHA-256: `c2b4ff5bdacde3a6cd95fb020a191c681022f52186ea7319d4ed1f7d3df6ce98`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX, callee pops the one stack word)",
+  "hidden_receiver": "explicit",
+  "hidden_this_register": "ECX, read at 0x0059c740 and 0x0059c748 before anything else; never written",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_note": "(pointer to the mapped 4-byte value)",
+  "return_observation": "0x0059c7b3 LEA EAX,[EDX + 0x14] on the hit path and 0x0059c7a1 MOV EAX,dword ptr [ESP + 0x18] / 0x0059c7a5 ADD EAX,0x14 on the insert path. Three call sites dereference the result exactly once (0x0059caf2 MOV EAX,dword ptr [EAX], 0x0059cb4a MOV ESI,dword ptr [EAX]) and one passes it as ECX to another method (0x0059c986), which is the behaviour of a pointer to a pointer.",
+  "return_register": "EAX",
+  "return_semantics": "the address of the mapped value inside the tree node, i.e. node + 0x14, on both the hit and the insert path; never the value itself",
+  "return_type": "std::uint32_t*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP, ESI, EDI (pushed 0x0059c746/0x0059c747/0x0059c74b, popped 0x0059c7a8/0x0059c7a9/0x0059c7aa and 0x0059c7b1/0x0059c7b2/0x0059c7b6)"
+  ],
+  "stack_arguments": [
+    {
+      "address_at_entry": "[ESP_entry + 0x4]",
+      "loaded_by": "0x0059c74c MOV EDI,dword ptr [ESP + 0x18] (ESP is 0x14 below entry)",
+      "note": "0x0059c77b MOV byte ptr [ESP + 0x18],0x0 overwrites the low byte of this argument slot itself; the slot is dead after 0x0059c74c, and the body then reuses it as the out-parameter cell for the insert port.",
+      "role": "const std::uint32_t* - the key. Dereferenced at 0x0059c756, 0x0059c76e and 0x0059c775, so it is read up to three times.",
+      "slot": 0
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "two unconditional exits, 0x0059c7ae and 0x0059c7ba, both RET 0x4"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -66,7 +105,6 @@
   },
   "abstained_because": [
     "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path",
-    "unparsed_lines_present: 2 line(s) matched no grammar rule",
     "slot_width_ambiguous: one entry slot is read at more than one width",
     "sret_vs_out_param: entry slot 0 is written through a pointer"
   ],
@@ -79,7 +117,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "2d5b916cc38c14a65862cbaacea701bb4964fc910230b361a517c6e0d9f3894a",
+  "content_sha256": "725f6b06f2373fc209d8facf391698fea69daeddc3988f0f8492cada539c6524",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -95,7 +133,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall (receiver in ECX, callee pops the one stack word)"
   },
   "dispatch": {
     "call_offsets": [],
@@ -105,8 +143,8 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the callee pops 4 byte(s) of stack arguments",
       "confidence": "OBSERVED",
@@ -119,9 +157,9 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0018",
-        "obs-0019",
-        "obs-0021"
+        "obs-0016",
+        "obs-0017",
+        "obs-0019"
       ],
       "claim": "entry-relative argument slots",
       "confidence": "APPROXIMATION",
@@ -135,9 +173,9 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0018",
-        "obs-0019",
-        "obs-0021"
+        "obs-0016",
+        "obs-0017",
+        "obs-0019"
       ],
       "claim": "one entry slot carries several read widths",
       "confidence": "UNKNOWN",
@@ -165,8 +203,8 @@
       "based_on": [
         "obs-0001",
         "obs-0002",
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
       "confidence": "INFERRED",
@@ -176,7 +214,7 @@
     {
       "based_on": [
         "obs-0009",
-        "obs-0019"
+        "obs-0017"
       ],
       "claim": "a hidden struct-return pointer is a hypothesis only: entry slot 0 is written through a pointer",
       "confidence": "INFERRED",
@@ -189,8 +227,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "in MSVC x86 a hidden struct-return pointer is always stack slot 0 while this is in ECX, so the two never contend",
       "confidence": "APPROXIMATION",
@@ -201,8 +239,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -211,8 +249,8 @@
     },
     {
       "based_on": [
-        "obs-0028",
-        "obs-0032"
+        "obs-0026",
+        "obs-0030"
       ],
       "claim": "the last value written to EAX classifies as aggregate_unknown",
       "confidence": "INFERRED",
@@ -264,7 +302,7 @@
       "at": "0x0059c743",
       "definite": true,
       "id": "obs-0004",
-   
+      "ind
 [TRUNCATED]
 ```
 
@@ -392,13 +430,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uint *param_2)\n\n{\n  undefined4 *puVar1;\n  undefined4 *puVar2;\n  undefined4 *puVar3;\n  undefined4 *puVar4;\n  uint local_8 [2];\n  \n  puVar1 = (undefined4 *)(param_1 + 4);\n  puVar4 = puVar1;\n  if (*(undefined4 **)(param_1 + 0xc) != (undefined4 *)0x0) {\n    puVar2 = *(undefined4 **)(param_1 + 0xc);\n    do {\n      if ((uint)puVar2[4] < *param_2) {\n        puVar3 = (undefined4 *)*puVar2;\n      }\n      else {\n        puVar3 = (undefined4 *)puVar2[1];\n        puVar4 = puVar2;\n      }\n      puVar2 = puVar3;\n    } while (puVar3 != (undefined4 *)0x0);\n  }\n  if ((puVar4 != puVar1) && ((uint)puVar4[4] <= *param_2)) {\n    return puVar4 + 5;\n  }\n  local_8[0] = *param_2;\n  param_2 = (uint *)((uint)param_2 & 0xffffff00);\n  local_8[1] = 0;\n  FUN_0059c520(&param_2,puVar4,local_8,param_2);\n  return (undefined4 *)((int)param_2 + 0x14);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -632,8 +666,8 @@
 
 ```json
 {
-  "original_bytes": 9393,
-  "preview": "{\n  \"abi\": {},\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 6,\n      \"symbol\": \"FUN_00ff3f00\",\n      \"va\": \"0x00ff3f00\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_GetCreatureController_0059cac0\",\n      \"va\": \"0x0059cac0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_PlayAnimation_0059cb10\",\n      \"va\": \"0x0059cb10\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_SetTargetAngle_0059cea0\",\n      \"va\": \"0x0059cea0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_SetTargetPosition_0059cf00\",\n      \"va\": \"0x0059cf00\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"gameglobal-misc\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059c830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059c9c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059ca70\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_GetCreatureController_0059cac0\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cac0\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_PlayAnimation_0059cb10\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cb10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cbd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cc40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cd20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cdb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059ce30\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_SetTargetAngle_0059cea0\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cea0\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_SetTargetPosition_0059cf00\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cf00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cf60\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cfb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d010\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d0b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d180\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d1e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d240\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d300\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0059c981\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059c830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059ca36\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059c9c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059ca9d\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059ca70\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059caed\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cac0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059cb45\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cb10\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059cc05\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cbd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059cc7d\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cc40\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059cd55\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cd20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059cde6\",\n        \"direction\": \"in\",\n        \"other\": \"0x0059cdb0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0059ce65\",\n        \"direction\": \"in\",\n        \"other\": \"0
+  "original_bytes": 14952,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall (receiver in ECX, callee pops the one stack word)\",\n    \"hidden_receiver\": \"explicit\",\n    \"hidden_this_register\": \"ECX, read at 0x0059c740 and 0x0059c748 before anything else; never written\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_note\": \"(pointer to the mapped 4-byte value)\",\n    \"return_observation\": \"0x0059c7b3 LEA EAX,[EDX + 0x14] on the hit path and 0x0059c7a1 MOV EAX,dword ptr [ESP + 0x18] / 0x0059c7a5 ADD EAX,0x14 on the insert path. Three call sites dereference the result exactly once (0x0059caf2 MOV EAX,dword ptr [EAX], 0x0059cb4a MOV ESI,dword ptr [EAX]) and one passes it as ECX to another method (0x0059c986), which is the behaviour of a pointer to a pointer.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the address of the mapped value inside the tree node, i.e. node + 0x14, on both the hit and the insert path; never the value itself\",\n    \"return_type\": \"std::uint32_t*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP, ESI, EDI (pushed 0x0059c746/0x0059c747/0x0059c74b, popped 0x0059c7a8/0x0059c7a9/0x0059c7aa and 0x0059c7b1/0x0059c7b2/0x0059c7b6)\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"address_at_entry\": \"[ESP_entry + 0x4]\",\n        \"loaded_by\": \"0x0059c74c MOV EDI,dword ptr [ESP + 0x18] (ESP is 0x14 below entry)\",\n        \"note\": \"0x0059c77b MOV byte ptr [ESP + 0x18],0x0 overwrites the low byte of this argument slot itself; the slot is dead after 0x0059c74c, and the body then reuses it as the out-parameter cell for the insert port.\",\n        \"role\": \"const std::uint32_t* - the key. Dereferenced at 0x0059c756, 0x0059c76e and 0x0059c775, so it is read up to three times.\",\n        \"slot\": 0\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"two unconditional exits, 0x0059c7ae and 0x0059c7ba, both RET 0x4\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_subsystem\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 6,\n      \"symbol\": \"FUN_00ff3f00\",\n      \"va\": \"0x00ff3f00\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_GetCreatureController_0059cac0\",\n      \"va\": \"0x0059cac0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_PlayAnimation_0059cb10\",\n      \"va\": \"0x0059cb10\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_SetTargetAngle_0059cea0\",\n      \"va\": \"0x0059cea0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"EditorAnimWorld_SetTargetPosition_0059cf00\",\n      \"va\": \"0x0059cf00\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"gameglobal-misc\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059c830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059c9c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059ca70\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_GetCreatureController_0059cac0\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cac0\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_PlayAnimation_0059cb10\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cb10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cbd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cc40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cd20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cdb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059ce30\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_SetTargetAngle_0059cea0\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cea0\"\n      },\n      {\n        \"name\": \"EditorAnimWorld_SetTargetPosition_0059cf00\",\n        \"reconstructed\": true,\n        \"va\": \"0x0059cf00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cf60\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059cfb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d010\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d0b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0059d180\"\n  
 [TRUNCATED]
 ```
 
@@ -654,28 +688,28 @@
     "FUN_0059c520"
   ],
   "callers": [
-    "FUN_0059d1e0",
-    "FUN_0059c9c0",
-    "FUN_0059cd20",
-    "Editors::cEditorAnimWorld::SetTargetPosition",
-    "EditorAnimWorld_PlayAnimation",
-    "Editors::cEditorAnimWorld::GetCreatureController",
-    "FUN_0059cf60",
-    "FUN_0059d0b0",
-    "FUN_0059d300",
-    "FUN_0059cc40",
-    "FUN_0059d110",
-    "FUN_0059d010",
     "FUN_0059d180",
+    "FUN_0059d1e0",
     "FUN_0059cfb0",
-    "FUN_0059cbd0",
-    "Editors::cEditorAnimWorld::SetTargetAngle",
-    "FUN_0059cdb0",
-    "FUN_0059ce30",
+    "FUN_0059cd20",
+    "FUN_0059d300",
     "Editors::cEditorAnimWorld::GetAnimatedCreature",
+    "FUN_0059cc40",
+    "FUN_0059c9c0",
+    "Editors::cEditorAnimWorld::SetTargetAngle",
+    "FUN_0059cf60",
+    "Editors::cEditorAnimWorld::SetTargetPosition",
     "FUN_0059d060",
+    "Editors::cEditorAnimWorld::GetCreatureController",
     "FUN_0059c830",
-    "FUN_0059d240"
+    "EditorAnimWorld_PlayAnimation",
+    "FUN_0059d240",
+    "FUN_0059d0b0",
+    "FUN_0059d110",
+    "FUN_0059cdb0",
+    "FUN_0059cbd0",
+    "FUN_0059d010",
+    "FUN_0059ce30"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -688,42 +722,22 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "puVar3",
-      "storage": "register:00000000:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "puVar4",
-      "storage": "register:00000008:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "uint *"
-    },
-    {
-      "name": "puVar1",
-      "storage": "unique:00006600:4",
-      "type": "undefined4 *"
-    },
-    {
-      "name": "puVar2",
-      "storage": "register:00000000:4",
-      "type": "undefined4 *"
+      "name": "local_4",
+      "storage": "Stack[-0x4]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_8",
       "storage": "Stack[-0x8]:4",
-      "type": "uint[2]"
+      "type": "undefined4"
+    },
+    {
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 7,
+  "locals_count": 3,
   "mode": "live",
   "name": "map_int_EditorCreatureControllerPtr__get",
   "namespace": null,
@@ -834,9 +848,15 @@
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.cpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.hpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create_model_test.cpp"
+  ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c740.json"
+  ]
 }
 ```
 
@@ -855,7 +875,12 @@
 ```json
 {
   "blocking_reason": null,
-  "gates": [],
+  "gates": [
+    "A differential test must confirm the mapped handle the insert path produces, which no static evidence in this batch pins down.",
+    "A differential test must establish whether the key pointer is ever null in practice, because the miss path dereferences it at 0x0059c775.",
+    "A differential test must exercise the miss path and observe what 0x0059c520 writes into the caller's argument slot, since that value becomes the return value; a wrong node there would be an immediate fault in every caller.",
+    "No original-process trace exists for 0x0059c740. Every statement here is static."
+  ],
   "validated": 0
 }
 ```
@@ -874,7 +899,7 @@
 
 ```json
 {
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "candidate"
 }
@@ -882,9 +907,15 @@
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t* (pointer to the mapped 4-byte value)"
+]
+```
 
 ## vtables
 

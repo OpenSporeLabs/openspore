@@ -1,0 +1,462 @@
+# Evidence 0x00e65640
+
+- Evidence state: `PERSISTED`
+- Live requested: `False`
+- Content SHA-256: `35c71ec95fbf70c6adce32b9cf84ae7644d40afa20d9df16e8246397c64cceb7`
+
+## abi
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## abi_derived
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## callees_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "embedded_object_first_word_init_00743b50",
+    "reconstructed": true,
+    "va": "0x00743b50"
+  }
+]
+```
+
+## callers_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "Simulator::Cell::CreateCellObject",
+    "reconstructed": false,
+    "va": "0x00e74a20"
+  }
+]
+```
+
+## contradictions
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "anchors": [
+      "0x00e65640",
+      "0x00000000",
+      "0x00e65640",
+      "0x00000000"
+    ],
+    "conflict_id": "TB-FL-008",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": {
+      "merge_decision": "separate_dimensions",
+      "preferred_claim": "Use instanceID/typeID/groupID for memory offsets and keep lookup/order claims separate.",
+      "preserved_alternatives": true,
+      "scope_note": "The same 12-byte value participates in different orders for different operations; this is not an ABI contradiction by itself.",
+      "status": "same_observation_different_scope",
+      "taxonomy": "same_observation_different_scope"
+    },
+    "resolution_status": "same_observation_different_scope",
+    "source": "knowledgegraph/research/conflicts/track-b-vtable-fields.json",
+    "subject": "ResourceKey field order versus lookup and comment order",
+    "unresolved_reason": "The cited static evidence leaves the competing owner, slot, layout, or lifecycle interpretation unresolved; no positive original runtime or MSVC RTTI evidence is available."
+  }
+]
+```
+
+## decompilation
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## disassembly
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "abi": {},
+  "analogues": [
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-11-H4-HELPER-WAVE3",
+      "score": 6,
+      "symbol": "address_window_offset_005c65e0",
+      "va": "0x005c65e0"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-SIMULATOR-SAFE-WAVE11",
+      "score": 6,
+      "symbol": "dispatch_key_00628450",
+      "va": "0x00628450"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-SIMULATOR-SAFE-WAVE11",
+      "score": 6,
+      "symbol": "cycle_key_006286a0",
+      "va": "0x006286a0"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-SIMULATOR-SAFE-WAVE11",
+      "score": 6,
+      "symbol": "release_child_0062c910",
+      "va": "0x0062c910"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-01-SHARED-STATE-ROOTS",
+      "score": 6,
+      "symbol": "FUN_00b3d2a0",
+      "va": "0x00b3d2a0"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-01-SHARED-STATE-ROOTS",
+      "score": 6,
+      "symbol": "FUN_00b3d300",
+      "va": "0x00b3d300"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-01-SHARED-STATE-ROOTS",
+      "score": 6,
+      "symbol": "Simulator_GetUIMissionLogManager",
+      "va": "0x00b3d4f0"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "PKG-13-E4-EMPIRE-WAVE3",
+      "score": 6,
+      "symbol": "EmpirePoliticalColor_00c32cd0",
+      "va": "0x00c32cd0"
+    }
+  ],
+  "audit_evidence_boundary": null,
+  "audit_findings": [],
+  "audit_status": null,
+  "blocked": false,
+  "blockers": [],
+  "body_status": null,
+  "class_type": null,
+  "cluster": "sim-cell",
+  "confidence": null,
+  "dependencies": {
+    "callees": [
+      {
+        "name": "embedded_object_first_word_init_00743b50",
+        "reconstructed": true,
+        "va": "0x00743b50"
+      }
+    ],
+    "callees_truncated": false,
+    "callers": [
+      {
+        "name": "Simulator::Cell::CreateCellObject",
+        "reconstructed": false,
+        "va": "0x00e74a20"
+      }
+    ],
+    "callers_truncated": false,
+    "data_reference_count": 0,
+    "edges": [
+      {
+        "callsite": "0x00e74e37",
+        "direction": "in",
+        "other": "0x00e74a20",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00e65649",
+        "direction": "out",
+        "other": "0x00743b50",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00e65666",
+        "direction": "out",
+        "other": "0x00743b50",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00e65658",
+        "direction": "out",
+        "other": "0x00e4cc40",
+        "reference_type": "thunk"
+      },
+      {
+        "callsite": "0x00e65673",
+        "direction": "out",
+        "other": "0x00e4cc40",
+        "reference_type": "thunk"
+      },
+      {
+        "callsite": "0x00e656ef",
+        "direction": "out",
+        "other": "0x00e655c0",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00e656c2",
+        "direction": "out",
+        "other": "0x00e82130",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00e656cb",
+        "direction": "out",
+        "other": "0x00e82130",
+        "reference_type": "direct-call"
+      }
+    ],
+    "edges_truncated": false,
+    "external_callees": [],
+    "fan_in": 1,
+    "fan_out": 1,
+    "manifest_callees": [],
+    "manifest_callers": [],
+    "nearby_reconstructed": [
+      "0x00743b50"
+    ],
+    "scc": {
+      "id": "scc-0538",
+      "size": 1
+    },
+    "vtable_reference_count": 0
+  },
+  "evidence_level": "CONFIRMED",
+  "globals": [],
+  "integration_status": null,
+  "name": "Simulator::Cell::GetModelKeyForCellResource",
+  "normalized_symbol": "Simulator::Cell::GetModelKeyForCellResource",
+  "observed_mechanics": [],
+  "ownership": {
+    "claimability": "queue_candidate",
+    "handoff_packages": [],
+    "manifest": {
+      "record": null,
+      "worker_ownership": null
+    },
+    "package": null,
+    "queue_state": "implemented"
+  },
+  "package": null,
+  "reconstructed": false,
+  "review_status": null,
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [],
+    "validated": 0
+  },
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "semantic": null,
+  "semantic_status": null,
+  "services": [],
+  "source": {
+    "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+    "file": null,
+    "files": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c"
+    ],
+    "handoffs": [],
+    "metadata": [],
+    "provenance": []
+  },
+  "status": "implemented",
+  "subsystem": "Simulator",
+  "triage": {
+    "category": "GAMEPLAY_SUPPORT",
+    "cluster": "sim-cell",
+    "db_triage_status": "DONE",
+    "decomp_path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+    "dependencies": [
+      "resource-io",
+      "app-lifecycle",
+      "utfwin-framework",
+      "graphics-render"
+    ],
+    "evidence": "CONFIRMED",
+    "kg_node_id": "fun:00e65640",
+    "name": "Simulator::Cell::GetModelKeyForCellResource",
+    "priority": "P3",
+    "provenance": {
+      "classifier": "triage-v4",
+      "generated_at": "2026-09-23T10:12:09Z",
+      "generator": "subagent-7-sequential-triage",
+      "sdk_name": "Simulator::Cell::GetModelKeyForCellResource",
+      "snapshot": "2540f2ca",
+      "snapshot_sha256": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
+      "vtable_addrs": []
+    },
+    "queue_state": "implemented",
+    "rank": 191
+  },
+  "types": [],
+  "unresolved_questions": [],
+  "va": "0x00e65640",
+  "vtables": []
+}
+```
+
+## ghidra_function
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c"
+  ],
+  "handoffs": [],
+  "metadata": []
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "implemented"
+}
+```
+
+## types
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## vtables
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## Conflicts
+
+```json
+[
+  {
+    "anchors": [
+      "0x00e65640",
+      "0x00000000",
+      "0x00e65640",
+      "0x00000000"
+    ],
+    "conflict_id": "TB-FL-008",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": {
+      "merge_decision": "separate_dimensions",
+      "preferred_claim": "Use instanceID/typeID/groupID for memory offsets and keep lookup/order claims separate.",
+      "preserved_alternatives": true,
+      "scope_note": "The same 12-byte value participates in different orders for different operations; this is not an ABI contradiction by itself.",
+      "status": "same_observation_different_scope",
+      "taxonomy": "same_observation_different_scope"
+    },
+    "resolution_status": "same_observation_different_scope",
+    "source": "knowledgegraph/research/conflicts/track-b-vtable-fields.json",
+    "subject": "ResourceKey field order versus lookup and comment order",
+    "unresolved_reason": "The cited static evidence leaves the competing owner, slot, layout, or lifecycle interpretation unresolved; no positive original runtime or MSVC RTTI evidence is available."
+  }
+]
+```

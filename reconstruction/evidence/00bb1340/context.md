@@ -1,7 +1,7 @@
 # Reconstruction context 0x00bb1340
 
 - Status: `partial`
-- Content SHA-256: `9eae49f884ed3270fc50aeaaa9018b7729294a078c7c1b54d4f17ba3010acf23`
+- Content SHA-256: `44849f6ab17d4a1a59e5ba7482b0261c9f6642d1d15373692c4e6353af02c278`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "5abfabd840ef0daa60531af540033c581acbbaa2143d29d70e35b776d63a39e7",
-  "live_attempts": [],
+  "content_sha256": "194791750d201c5b6d02ecdddf2fad577c6dafedd494abab0052287062b20f1f",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00bb1340 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,76 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-int * __thiscall FUN_00bb1340(int param_1,int param_2)
-
-{
-  int *piVar1;
-  char cVar2;
-  int iVar3;
-  int iVar4;
-  int *piVar5;
-  uint uVar6;
-  undefined4 uVar7;
-  undefined4 *puVar8;
-  bool bVar9;
-  int iVar10;
-  int local_4;
-  
-  iVar10 = param_2;
-  local_4 = param_1;
-  iVar3 = FUN_00b1fdb0();
-  iVar4 = FUN_00b1fdb0();
-  if (iVar4 == -1) {
-    uVar6 = *(uint *)(param_1 + 0x1d4);
-    *(uint *)(param_1 + 0x1d4) = uVar6 + 1;
-    FUN_00a16a90(uVar6 | 0x80000000);
-    iVar3 = FUN_00b1fdb0();
-  }
-  if (iVar3 != -1) {
-    param_2 = iVar3;
-    piVar5 = (int *)map_int_whatever_find(&local_4,&param_2);
-    if ((*piVar5 != param_1 + 0x154) && (piVar5 = *(int **)(*piVar5 + 0x14), piVar5 != (int *)0x0))
-    {
-      return piVar5;
-    }
-  }
-  param_2 = iVar3;
-  map_int_whatever_find(&local_4,&param_2);
-  if ((local_4 == param_1 + 0x130) ||
-     (iVar4 = *(int *)(local_4 + 0x14), *(int *)(local_4 + 0x14) == 0)) {
-    FUN_00baf630(iVar3,iVar10);
-    iVar4 = iVar10;
-  }
-  uVar6 = FUN_00c87040();
-  bVar9 = (uVar6 & 3) != 0;
-  param_2 = CONCAT31(param_2._1_3_,bVar9);
-  iVar10 = iVar3;
-  FUN_00b3d2a0(iVar3);
-  piVar5 = (int *)FUN_00baf0b0(iVar10);
-  FUN_00c359a0(iVar3,param_2);
-  FUN_00c341a0(iVar4);
-  FUN_00c30c10(iVar4);
-  if (bVar9) {
-    piVar1 = *(int **)(Simulator__sSpacePlayerData + 0x1c);
-    puVar8 = (undefined4 *)(Simulator__sSpacePlayerData + 0x1c);
-    if (piVar5 != piVar1) {
-      if (piVar5 != (int *)0x0) {
-        (**(code **)*piVar5)();
-      }
-      *puVar8 = piVar5;
-      if (piVar1 != (int *)0x0) {
-        (**(code **)(*piVar1 + 4))();
-      }
-    }
-  }
-  cVar2 = FUN_00c3
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -220,7 +160,7 @@ int * __thiscall FUN_00bb1340(int param_1,int param_2)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -248,11 +188,6 @@ int * __thiscall FUN_00bb1340(int param_1,int param_2)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

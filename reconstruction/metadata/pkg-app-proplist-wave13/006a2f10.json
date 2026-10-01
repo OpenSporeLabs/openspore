@@ -1,0 +1,263 @@
+{
+  "schema": "wave13-app-proplist.function-handoff.v1",
+  "package": "PKG-APP-PROLIST-WAVE13",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x006a2f10",
+  "address": "0x006a2f10",
+  "symbol": "App::PropertyList::AddPropertiesFrom",
+  "normalized_symbol": "app_property_list_add_properties_from_006a2f10",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented; CALLS adjudication resolved by the validator fix that excludes intra-body jumps (see validation.observed)",
+  "captured_on": "2026-09-26",
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "app_property_list_add_properties_from_006a2f10",
+    "declaration": "extern \"C\" void __thiscall app_property_list_add_properties_from_006a2f10(OpaquePropertyList *receiver, OpaquePropertyList *other);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX (aliased into EBP at 0x006a2f15); one ordinary stack dword at entry_ESP+0x4, read at 0x006a2f10 and never written; RET 0x4 at 0x006a2f51 pops it",
+    "return_type": "void",
+    "source": "reconstruction/staging/pkg-app-proplist-wave13/app_property_list_add_from_006a2f10.cpp",
+    "header": "reconstruction/staging/pkg-app-proplist-wave13/app_property_list_add_from_006a2f10.hpp",
+    "model_test": "reconstruction/staging/pkg-app-proplist-wave13/app_property_list_add_from_006a2f10_model_test.cpp",
+    "compile_gate": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -c <file> -o /dev/null; all three files compile clean and the model test passes"
+  },
+  "function_extent": {
+    "entry": "0x006a2f10",
+    "body_end_inclusive": "0x006a2f51",
+    "body_end_exclusive": "0x006a2f53",
+    "body_span_bytes": 68,
+    "instruction_count": 30,
+    "return_site": "0x006a2f51: RET 0x4"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_alias": "EBP (MOV EBP,ECX at 0x006a2f15; there is no MOV EBP,ESP, so EBP is a general register in this body and is the base of every receiver access)",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "read": true,
+        "written": false,
+        "sizes": [
+          4
+        ],
+        "read_at": "0x006a2f10 MOV EAX,dword ptr [ESP + 0x4]",
+        "role": "the source property list; its words at +0x18 and +0x1c are the iterated range"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics_machine_record": "unclassified_in_EAX (register_class aggregate_unknown, return.type null, void_possible false)",
+    "ghidra_prototype": "void App::PropertyList::AddPropertiesFrom(PropertyList * this, PropertyList * pOther)",
+    "ghidra_convention_note": "Live decompilation reports an unknown calling convention and no Ghidra convention signal exists for this binary (the pack records ghidra_calling_convention_signal=no_information, ghidra_parameter_count=2). __thiscall is derived from the ECX receiver dereference and from the callee-cleaned RET 0x4 terminator, which excludes cdecl and fastcall.",
+    "tail_call": "absent. The ABI record's tail_call block reads present=false, and the only unconditional jump in the body, 0x006a2f2b JMP 0x006a2f30, targets an address inside the body."
+  },
+  "mechanics": {
+    "guard": "if (receiver == other) return; -- CMP EBP,EAX at 0x006a2f17 with JZ 0x006a2f50. A self-copy exits before the range words are read and before the completion word is incremented. The test is pointer identity; no alias, offset or range test appears in the body.",
+    "range": "OpaquePropertyElement *first = list->word_018; OpaquePropertyElement *last = list->word_01c; -- 0x006a2f1c MOV ESI,[EAX+0x18] and 0x006a2f20 MOV EDI,[EAX+0x1c], read once each and held in registers (ESI, EDI) for the whole loop.",
+    "empty_range": "CMP ESI,EDI / JZ 0x006a2f4b at 0x006a2f23/0x006a2f25 skips the loop body and the POP EBX with it, and still reaches the completion increment. An empty source list therefore counts as one completed copy.",
+    "element_stride": "0x18 bytes (0x006a2f43 ADD ESI,0x18), so each element is 0x18 bytes; the body reads only an element's first 4-byte word.",
+    "iteration": "for (element = first; element != last; element = element + 0x18) -- 0x006a2f30..0x006a2f48. The loop is entered by the preheader jump 0x006a2f2b JMP 0x006a2f30, which targets the loop head inside this body, and the back edge is 0x006a2f48 JNZ 0x006a2f30.",
+    "loop_call_1": {
+      "callee": "0x006a2d30",
+      "name_in_source": "unresolved_006a2d30",
+      "receiver": "ECX = receiver + 0x18 (LEA EBX,[EBP+0x18] at 0x006a2f28, MOV ECX,EBX at 0x006a2f35)",
+      "stack_words_pushed": [
+        "0x006a2f33 PUSH EAX where EAX = element + 0x4 (LEA EAX,[ESI+0x4] at 0x006a2f30)",
+        "0x006a2f34 PUSH ESI, the element address"
+      ],
+      "callee_stack_consumption": "one dword. 0x006a2d30 ends in RET 0x4 (0x006a2e1a), so it consumes the word at [entry_ESP+4], which is element+0x4, and leaves the element word on the stack.",
+      "result": "EAX, moved straight into ECX at 0x006a2f3c and used there as the receiver of the second call. That use is the only evidence that the returned word is pointer-shaped; the type it points at is inferred from that use and is not established.",
+      "callee_shape": "78 instructions; installs an SEH frame (PUSH -1 / MOV EAX,FS:[0x0] / PUSH 0x120d6e0 at 0x006a2d30..0x006a2d3e)",
+      "semantics": "unknown. No evidence in this repository establishes what it does; it is declared, not defined."
+    },
+    "loop_call_2": {
+      "callee": "0x00542b80",
+      "name_in_source": "unresolved_00542b80",
+      "receiver": "ECX = the EAX result of 0x006a2d30 (MOV ECX,EAX at 0x006a2f3c)",
+      "stack_word_consumed": "the element address pushed at 0x006a2f34 and left there by 0x006a2d30's own RET 0x4",
+      "callee_stack_consumption": "one dword; 0x00542b80 ends in RET 0x4 (0x00542c24)",
+      "result": "unused. 0x006a2f43 overwrites EAX before anything can observe it.",
+      "callee_shape": "58 instructions",
+      "semantics": "unknown. No evidence in this repository establishes what it does; it is declared, not defined."
+    },
+    "completion": "++*word_034(receiver) -- INC dword ptr [EBP+0x34] at 0x006a2f4b, reached on every path that is not the self-copy refusal, including the empty-range path. This is the only receiver displacement the machine-derived receiver record enumerates for this target (offsets [52] = 0x34, register ECX, shape R-ALIAS, bounds_only true).",
+    "receiver_displacement_map": {
+      "0x18": "address of the range word, loaded into EBX once and passed in ECX to 0x006a2d30 for every iteration",
+      "0x34": "the completion word, incremented once"
+    },
+    "argument_displacement_map": {
+      "note": "these are displacements of the single stack argument, not of the receiver, so the machine-derived receiver record does not and should not cover them",
+      "0x18": "range begin, loaded into ESI",
+      "0x1c": "range end, loaded into EDI",
+      "0x04": "element + 0x4, the second stack dword of the loop's first call",
+      "0x18 (element)": "element stride, ADD ESI,0x18"
+    },
+    "globals": "none. The complete 30-instruction listing names no data-segment address, and the xref export carries no data-reference edge for this target.",
+    "indirect_transfers": "none. Both calls are immediate; the body contains no register-indirect or memory-indirect transfer, and the machine dispatch record agrees at 0 indirect calls.",
+    "null_behavior": "none. The body dereferences the stack argument unconditionally (0x006a2f1c/0x006a2f20); a null argument is not tested for.",
+    "aliasing": "only the exact self-comparison is excluded. Overlapping but distinct objects, or a receiver range that aliases the argument range, are not excluded by the body and are left to the callees to survive."
+  },
+  "return_semantics": {
+    "kind": "no value returned",
+    "source_return_type": "void",
+    "basis": "the decompiled body ends in a bare return, and no path in the listing writes EAX with a return value: the only EAX writes are the loop temporary LEA EAX,[ESI+0x4] at 0x006a2f30 and the callee result consumed at 0x006a2f3c, both dead at 0x006a2f51.",
+    "evidence_conflict": "The machine-derived ABI record does not agree and is recorded as unclassified_in_EAX with register_class aggregate_unknown and void_possible false, so the validator's RETURN SEMANTICS check reports WARN against the void return encoded here. The record's own abstained_because list explains the gap -- 'flow_not_modelled: the linear ESP walk ends at +8, so the listing is not one path' and 'untrusted_frame_stack_reads' -- so its classification is an abstention over an unmodelled control-flow graph, not a positive claim of a non-void return. The conflict is left standing rather than papered over; see unresolved_questions.",
+    "ownership": "No reference acquisition, publication or teardown is performed by this body; it returns nothing and the receiver's completion word is the only state it mutates."
+  },
+  "direct_transfers": {
+    "calls": [
+      {
+        "callsite": "0x006a2f37",
+        "target": "0x006a2d30",
+        "kind": "direct-call"
+      },
+      {
+        "callsite": "0x006a2f3e",
+        "target": "0x00542b80",
+        "kind": "direct-call"
+      }
+    ],
+    "jumps": [
+      {
+        "address": "0x006a2f2b",
+        "target": "0x006a2f30",
+        "kind": "intra-procedural loop preheader jump into the loop head at 0x006a2f30, which is inside the body span 0x006a2f10..0x006a2f51; NOT a tail call and 0x006a2f30 is NOT a callee"
+      }
+    ],
+    "conditional_branches": [
+      {
+        "address": "0x006a2f19",
+        "mnemonic": "JZ",
+        "target": "0x006a2f50",
+        "inside_body": true
+      },
+      {
+        "address": "0x006a2f25",
+        "mnemonic": "JZ",
+        "target": "0x006a2f4b",
+        "inside_body": true
+      },
+      {
+        "address": "0x006a2f48",
+        "mnemonic": "JNZ",
+        "target": "0x006a2f30",
+        "inside_body": true
+      }
+    ]
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "evidence_pack": "reconstruction/evidence/006a2f10/evidence.json",
+    "evidence_pack_content_sha256": "76ecbe0926272b690fbf1cee6ac6ff00d27f911a6d14038cac698f7505d4def1",
+    "binary_evidence_state": "LIVE",
+    "listing_instruction_count": 30,
+    "listing_parse_record": "parse.declared_count 30, degraded false, unparsed 0, flow_complete false",
+    "xref_export_out_edges": [
+      {
+        "callsite": "0x006a2f3e",
+        "other": "0x00542b80",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x006a2f37",
+        "other": "0x006a2d30",
+        "reference_type": "direct-call"
+      }
+    ],
+    "xref_export_edges_truncated": false,
+    "xref_export_data_reference_count": 0,
+    "xref_export_vtable_reference_count": 0,
+    "xref_to_address": {
+      "from": "0x01408850",
+      "note": "one xref into this body, from the address 0x30 bytes into the vtable the triage record associates at 0x01408820, i.e. the 12th four-byte slot; the pack's vtable_reference_count is 0 and no slot semantics are claimed here"
+    },
+    "decompilation": "void App::PropertyList::AddPropertiesFrom(PropertyList *this, PropertyList *pOther) { if (in_ECX != this) { for (ppVar2 = this->mProperties.mpBegin; ppVar2 != ppVar1; ppVar2 = ppVar2 + 1) { pPVar3 = &ppVar2->second; FUN_006a2d30(ppVar2); FUN_00542b80(pPVar3); } in_ECX->mnOperationsDone = in_ECX->mnOperationsDone + 1; } return; }",
+    "decompilation_caveat": "the decompiler output is evidence, not truth. Its parameter naming (in_ECX as the receiver, this as the stack argument) is inverted relative to the machine, and it drops the EAX->ECX dependency between the two calls. The reconstruction follows the listing, not the decompiler.",
+    "callee_terminators_verified_live": [
+      "0x006a2d30: 78 instructions, ... 0x006a2e10 MOV dword ptr FS:[0x0],ECX / 0x006a2e17 ADD ESP,0x38 / 0x006a2e1a RET 0x4",
+      "0x00542b80: 58 instructions, ... 0x00542c1e MOV EAX,[EBP-0x4] / 0x00542c21 MOV ESP,EBP / 0x00542c23 POP EBP / 0x00542c24 RET 0x4"
+    ]
+  },
+  "validation": {
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "FAIL",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "WARN",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "known_blockers": [
+      "RETURN SEMANTICS (WARN, real and deliberately not chased): the machine-derived ABI record classifies the return as unclassified_in_EAX / aggregate_unknown with void_possible false, while the live Ghidra prototype and the decompiled body say void, which is what this source encodes. The record's abstained_because attributes the gap to unmodelled flow ('flow_not_modelled: the linear ESP walk ends at +8, so the listing is not one path') and to untrusted frame-relative stack reads, not to an observed aggregate return. No positive machine fact closes it, so the disagreement stands and is reported rather than resolved."
+    ],
+    "observed": {
+      "captured_on": "2026-09-26",
+      "static": "WARN",
+      "runtime": "GATED",
+      "runtime_validated": 0,
+      "coverage": "0.778 (7 PASS, 2 WARN of 9)",
+      "checks": {
+        "ABI": "PASS",
+        "CALLS": "PASS",
+        "GLOBALS": "PASS",
+        "FIELDS/OFFSETS": "PASS",
+        "CONSTANTS": "PASS",
+        "CONTROL FLOW": "PASS",
+        "VIRTUAL DISPATCH": "PASS",
+        "RETURN SEMANTICS": "WARN",
+        "EVIDENCE COVERAGE": "WARN"
+      },
+      "calls_detail_verbatim": "the machine-vs-machine rule: the xref export and the complete 30-instruction listing name the same 2 direct transfer target(s); 1 intra-procedural jump(s) target inside the recovered body span 0x006a2f10..0x006a2f51 are excluded, because a jump that lands back in the body is control flow and not a transfer out of it: 0x006a2f30; the source span names 2 of them and no others",
+      "return_semantics_detail_verbatim": "return type differs or is semantically renamed; review required"
+    },
+    "resolved": [
+      "CALLS was FAIL because the validator's transfer reader counted every JMP immediate as a transfer, so 0x006a2f2b JMP 0x006a2f30 -- a loop preheader jump landing back inside the body span -- was scored as a third transfer absent from the xref export. That was a validator defect, and the finding that produced it has since been confirmed and the reader fixed: a JMP immediate whose target lies inside the recovered body span is now excluded from the transfer set and named in the detail, while a JMP outside the span still counts as a genuine tail call. CALLS is now PASS. Nothing in the source was changed to achieve it, and no false callee was named to force agreement."
+    ]
+  },
+  "provenance": [
+    "reconstruction/evidence/006a2f10/evidence.json (categories.disassembly, categories.abi, categories.decompilation, categories.ghidra_function)",
+    "GhidraMCP /disassemble_function?address=0x006a2f10 (live, 30 instructions, matches the pack listing byte for byte)",
+    "GhidraMCP /disassemble_function?address=0x006a2d30 (live, callee terminator RET 0x4 and SEH frame)",
+    "GhidraMCP /disassemble_function?address=0x00542b80 (live, callee terminator RET 0x4)",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__AddPropertiesFrom.c",
+    "knowledgegraph/triage/queue-f0e310e0-v6.json",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror compile of the three staging files; model test executed and passed"
+  ],
+  "unresolved_questions": [
+    "RESOLVED (no longer open) -- CALLS oracle disagreement. The xref export (dependencies.edges) records 2 callees -- 0x006a2d30 from callsite 0x006a2f37 and 0x00542b80 from callsite 0x006a2f3e, both reference_type direct-call -- while the complete 30-instruction listing holds 3 direct transfers: those same 2 CALLs plus 0x006a2f2b JMP 0x006a2f30. extra was {0x006a2f30}, absent {}. The briefing called the extra transfer a tail call; the machine says otherwise and the source follows the machine. The validator's reader has since been fixed to exclude a JMP immediate landing inside the recovered body span, so CALLS now reports PASS with this reconstruction naming only the two real callees.",
+    "SETTLED BY THE MACHINE, recorded because it is the load-bearing claim: 0x006a2f30 is not a callee. It is LEA EAX,[ESI+0x4], the first instruction of the loop body block; it lies inside the body span 0x006a2f10..0x006a2f51; control enters it from the preheader at 0x006a2f2b and re-enters it from the back edge 0x006a2f48 (JNZ 0x006a2f30), and it falls out of the loop at 0x006a2f4a (POP EBX). A tail call would transfer control out of the body and this one does not, so naming a callee at 0x006a2f30 would have been a false callee. This is now also the validator's own exclusion rule; the fix still treats a JMP outside the span as a genuine tail call.",
+    "STILL OPEN (unchanged by the fix): the export side of the disagreement is not independently checkable here. Nothing in the evidence pack records the export's own transfer extraction, so whether the export deliberately records calls only (and would therefore also miss a genuine tail call at some other target) or missed this one transfer specifically cannot be settled from the pack.",
+    "What 0x006a2d30 does. It takes the receiver's storage word (receiver+0x18) in ECX and one stack dword (element+0x4) and returns a pointer that becomes the next call's receiver. Whether that is a vector-style insert, an element factory, or a reallocator is not established; the Ghidra name is FUN_006a2d30 and no persisted decompilation for it was collected in this package.",
+    "What 0x00542b80 does. It takes the pointer returned by 0x006a2d30 in ECX and the element pointer on the stack, and its result is discarded. Whether it copies, initialises or releases the element is not established.",
+    "Whether the two calls are a copy or a move: the stride walk reads the argument's range while writing through the receiver's storage word, and the body does not test for overlap between the two ranges, so whether a same-object or overlapping-range call is safe is decided by the callees and is not established here.",
+    "The meaning of the word at receiver+0x34. It is incremented once per non-refused call, including for an empty range. It is consistent with a completed-copy counter (the decompiler names it mnOperationsDone) but the body alone cannot distinguish a counter from a generation or version field.",
+    "Return-type evidence conflict: the machine-derived ABI record classifies the return as unclassified_in_EAX / aggregate_unknown with void_possible false, while the live Ghidra prototype and the decompiled body say void. The source encodes void, which is why RETURN SEMANTICS is WARN. The record's abstained_because attributes the gap to unmodelled flow rather than to an observed aggregate return, but no positive machine fact closes it.",
+    "Whether the decompiler's mProperties.mpBegin/mpEnd and mnOperationsDone names carry real SDK field identity. The binary has no MSVC RTTI, so those names are the decompiler's inference from the offsets and are not used as evidence anywhere in this package."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "blocking_reason": "no original-process trace exists in this repository",
+    "conditions": [
+      "The original 0x006a2f10 is called with two live App::PropertyList instances and a non-empty source range.",
+      "A trace records the per-iteration argument pair of 0x006a2d30 and 0x00542b80, which is what would identify both callees.",
+      "A trace records whether receiver+0x34 is a monotonic completed-copy counter across repeated calls.",
+      "A trace records behaviour when the source range aliases the receiver's range."
+    ]
+  }
+}

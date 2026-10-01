@@ -2,9 +2,44 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `98cede05744ac2906f70157b6eb5a924b32ea110d98ffd1d8cf10cca8037ad69`
+- Content SHA-256: `9fa070f257b6fe2f09515e86de29e96a175ce1b8ae0af49c7fd025edc8246b7d`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "unread by the mask itself; the receiver's +0x5C field IS read, so the receiver must be non-null",
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_observation": "0x00bb9af7 NEG EAX sets CF from the operand's sign, 0x00bb9af9 SBB EAX,EAX yields 0 (CF clear) or 0xFFFFFFFF (CF set), and 0x00bb9afb NEG EAX maps those to 0 and 1. The full dword is therefore written and bits 8..31 are zero. Every consumer tests AL, never the full dword.",
+  "return_register": "EAX",
+  "return_semantics": "true iff at least one bit selected by `mask` is set in the receiver's +0x5C dword; the result is exactly 0 or 1, never a mask value",
+  "return_type": "bool",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [
+    {
+      "instruction": "0x00bb9af3: AND EAX,dword ptr [ESP + 0x4]",
+      "offset": "ESP+0x4",
+      "role": "bit mask",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x4 at 0x00bb9afd"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -65,23 +100,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "60804e2920cff6ed847c560727eb724ac9bf904cc8e2f4d25b36c8cc746fc65b",
+  "content_sha256": "68f7eae95b1d9ac013a4e64f1a0ada9fb072dc39493989e14574006ff5f4bbff",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -278,7 +313,7 @@
     },
     "confidence": "INFERRED",
     "register": "EAX",
-    "register_class": "a
+    "register_class":
 [TRUNCATED]
 ```
 
@@ -290,9 +325,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b93550"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b96d40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba6bb0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba6f20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba8830"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00badd10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb2070"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb21b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb2330"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb4100"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb6040"
+  },
+  {
+    "name": "FUN_00c47e20",
+    "reconstructed": false,
+    "va": "0x00c47e20"
+  },
+  {
+    "name": "FUN_00c59240",
+    "reconstructed": false,
+    "va": "0x00c59240"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c59540"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c5f770"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8b560"
+  }
+]
+```
 
 ## contradictions
 
@@ -302,13 +422,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nbool __thiscall FUN_00bb9af0(int param_1,uint param_2)\n\n{\n  return (*(uint *)(param_1 + 0x5c) & param_2) != 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -356,9 +472,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13660,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"unread by the mask itself; the receiver's +0x5C field IS read, so the receiver must be non-null\",\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"0x00bb9af7 NEG EAX sets CF from the operand's sign, 0x00bb9af9 SBB EAX,EAX yields 0 (CF clear) or 0xFFFFFFFF (CF set), and 0x00bb9afb NEG EAX maps those to 0 and 1. The full dword is therefore written and bits 8..31 are zero. Every consumer tests AL, never the full dword.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"true iff at least one bit selected by `mask` is set in the receiver's +0x5C dword; the result is exactly 0 or 1, never a mask value\",\n    \"return_type\": \"bool\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [\n      {\n        \"instruction\": \"0x00bb9af3: AND EAX,dword ptr [ESP + 0x4]\",\n        \"offset\": \"ESP+0x4\",\n        \"role\": \"bit mask\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4 at 0x00bb9afd\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b93550\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b96d40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba6bb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba6f20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba8830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00badd10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb2070\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb21b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb2330\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb4100\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb6040\"\n      },\n      {\n        \"name\": \"FUN_00c47e20\",\n        \"reconstructed\": false,\n        \"va\": \"0x00c47e20\"\n      },\n      {\n        \"name\": \"FUN_00c59240\",\n        \"reconstructed\": false,\n        \"va\": \"0x00c59240\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c59540\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c5f770\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8b560\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00df7f60\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0102daa0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x010463b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0106cc70\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -375,26 +498,26 @@
   "body_start": "00bb9af0",
   "callees": [],
   "callers": [
-    "FUN_00bb4100",
-    "FUN_0106cc70",
-    "FUN_00ba8830",
-    "FUN_00bb21b0",
-    "FUN_00badd10",
-    "FUN_00b93550",
-    "FUN_00c59540",
-    "FUN_00b96d40",
-    "FUN_010463b0",
-    "FUN_00ba6bb0",
-    "FUN_00ba6f20",
-    "FUN_00df7f60",
     "FUN_00c8b560",
-    "FUN_00c47e20",
-    "FUN_00c5f770",
+    "FUN_00ba8830",
+    "FUN_00df7f60",
     "FUN_0102daa0",
+    "FUN_00b96d40",
+    "FUN_00c59540",
+    "FUN_00bb21b0",
     "FUN_00bb2070",
-    "FUN_00bb6040",
+    "FUN_00badd10",
+    "FUN_00c5f770",
+    "FUN_00ba6f20",
+    "FUN_0106cc70",
+    "FUN_00b93550",
+    "FUN_00c59240",
+    "FUN_010463b0",
+    "FUN_00c47e20",
+    "FUN_00bb4100",
     "FUN_00bb2330",
-    "FUN_00c59240"
+    "FUN_00ba6bb0",
+    "FUN_00bb6040"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -405,19 +528,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "uint"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00bb9af0",
   "namespace": null,
@@ -552,9 +664,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b06/bb9af0_star_record_flag_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b06/00bb9af0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -564,9 +691,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential test would have to confirm the flag word's value for a known star system, which is the only way to attach a meaning to individual bits.",
+    "Because the function dereferences ECX with no null check, a runtime test that passes a null receiver would fault; that is a property of the original and must be preserved, not defended against.",
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -576,15 +715,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "bool"
+]
+```
 
 ## vtables
 

@@ -1,0 +1,386 @@
+{
+  "schema": "pkg-sim-toolstrategy-01059f20.function-handoff.v1",
+  "package": "PKG-SIM-TOOLSTRATEGY-01059F20",
+  "function_address": "0x01059f20",
+  "va": "0x01059f20",
+  "ghidra_name": "FUN_01059f20",
+  "normalized_symbol": "func_01059f20",
+  "reconstructed_symbol": "func_01059f20",
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "phase": "body-reconstruction",
+  "semantic_classification": "unconditional-success cToolStrategy virtual that copies the aim point, delegates to a base-class bridge slot on its own receiver, re-balances the intrusive_ptr beam at cSpaceToolData::mpBeam, optionally stamps the relationship manager, flags the beam, updates the tool position, and releases the beam",
+  "declaration": "bool __thiscall func_01059f20(OpaqueToolStrategy *strategy, cSpaceToolData *pTool, const Vector3 *aimPoint, int param_4);",
+  "source_files": [
+    "reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20.hpp",
+    "reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20.cpp",
+    "reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20_model_test.cpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "return_type": "bool",
+    "return_type_rationale": "AL only, and the machine writes it exactly once on the single return path: `mov al, 0x1` at 0x0105a03d executes on every reachable exit (0x01059f41, 0x01059f68, 0x0105a02f and the fall-through all converge on 0x0105a03a). No instruction other than that one writes AL after the last call, so the function returns the constant true. Every cToolStrategy virtual in the SDK symbol table carries the same bool return, which is the independent agreement.",
+    "return_width_bytes": 1,
+    "return_register": "AL",
+    "hidden_receiver": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "hidden_this_type": "OpaqueToolStrategy*",
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "ret 0xc",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"],
+    "termination": "Single return instruction at 0x0105a043, `C2 0C 00`.",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04 at function entry",
+        "register": "EBP",
+        "load_site": "0x01059f2d, `mov ebp, dword ptr [esp + 0x1c]` after `push ebp`",
+        "type": "cSpaceToolData*",
+        "width_bytes": 4,
+        "observed_use": "The SDK structure cSpaceToolData (size 0x2a0) supplies every field the body touches: +0x114 mpToolOwner, +0x120 mpArea, +0x124 mpBeam and +0x174 mFlags. The callee 0x010568b0 reads the same +0x114 and +0x120 words and the callee 0x01059170 reads the same three, so one object type is proven across three functions."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08 at function entry",
+        "register": "EBX",
+        "load_site": "0x01059f28, `mov ebx, dword ptr [esp + 0x1c]` after `push ebx`",
+        "type": "Vector3*",
+        "width_bytes": 4,
+        "observed_use": "Read as three consecutive floats at +0, +4 and +8 by `movss` at 0x01059f6e, 0x01059f7e and 0x01059f89, copied into a 12-byte stack local, and re-materialised by `flds`/`fstps` at 0x0105a00f-0x0105a022 for the call to 0x01059170. A by-value Vector3 would need four stack words at the call site; the direct caller at 0x0105aa5c-0x0105aa6e pushes exactly three dwords, so the argument is a pointer."
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0c at function entry",
+        "register": "EAX",
+        "load_site": "0x01059f23, `mov eax, dword ptr [esp + 0x1c]` after `sub esp, 0x10`",
+        "type": "int",
+        "width_bytes": 4,
+        "observed_use": "Pushed as the last argument to 0x010568b0 at 0x01059f33 and never read again, so it is forwarded unchanged and otherwise unused. The SDK spells the fourth parameter of every sibling virtual `int param_4`."
+      }
+    ],
+    "prologue_epilogue": "SUB ESP,0x10 / PUSH EBX / PUSH EBP / PUSH ESI / PUSH EDI, then three argument pushes, and POP EDI / POP ESI / POP EBP / MOV AL,1 / POP EBX / ADD ESP,0x10 / RET 0xC. The four callee-saved registers are restored after the last call, and the ESP0-relative spill of EBX at 0x01059fca reuses the caller's own fourth-argument slot, which the callee-owned 0xc cleanup then discards.",
+    "dead_guard_note": "The `test al, al` / `jz 0x0105a03a` at 0x01059f3f guards a call to 0x010568b0 whose every return in the 0x010568b0-0x01056b41 body returns the constant 1 (`mov al, 0x1` at 0x01056b39 is the shared tail). The zero branch is therefore unreachable in this build; it is preserved in the reconstruction rather than deleted."
+  },
+  "layout": {
+    "cSpaceToolData": {
+      "size_bytes": 672,
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml, STRUCTURE Simulator::cSpaceToolData, SIZE 0x2a0",
+      "fields": [
+        {"name": "mpToolOwner", "offset": "0x114", "type": "intrusive_ptr<Simulator::cSpatialObject>"},
+        {"name": "mpToolTarget", "offset": "0x118", "type": "intrusive_ptr<Simulator::cSpatialObject>"},
+        {"name": "mTargetDamagePointId", "offset": "0x11c", "type": "int"},
+        {"name": "mpArea", "offset": "0x120", "type": "intrusive_ptr<Simulator::cDefaultAoEArea>"},
+        {"name": "mpBeam", "offset": "0x124", "type": "intrusive_ptr<Simulator::cDefaultBeamProjectile>"},
+        {"name": "mFlags", "offset": "0x174", "type": "Simulator::cSpaceToolData::SpaceToolFlags"},
+        {"name": "mStrategy", "offset": "0x178", "type": "int"}
+      ],
+      "evidence": "The body reads 0x114 (`mov ecx, dword ptr [ebp + 0x114]` at 0x01059f47), 0x124 (`mov edi, dword ptr [ebp + 0x124]` at 0x01059f72 and 0x01059fc0) and, through the thiscall predicate 0x0104cd50, 0x174. The word at 0x174 is independently the SDK's mFlags, and 0x0104cd50 reads exactly bit 4 of it."
+    },
+    "cDefaultBeamProjectile": {
+      "size_bytes": 504,
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml, STRUCTURE Simulator::cDefaultBeamProjectile, SIZE 0x1f8",
+      "fields": [
+        {"name": "_vftable0", "offset": "0x00", "type": "cGameData__vftable*"},
+        {"name": "mnRefCount", "offset": "0x08", "type": "int"},
+        {"name": "mpTool", "offset": "0x134", "type": "intrusive_ptr<Simulator::cSpaceToolData>"},
+        {"name": "mBeamDirection", "offset": "0x160", "type": "Vector3"},
+        {"name": "field_154", "offset": "0x154", "type": "bool"},
+        {"name": "mbStopBeam", "offset": "0x155", "type": "bool"},
+        {"name": "mMaxBeamLength", "offset": "0x158", "type": "float"}
+      ],
+      "evidence": "The body stores 1 into the byte at +0x154 at 0x0105a008 (`mov byte ptr [esi + 0x154], 0x1`). The SDK places `bool field_154` at exactly 0x154 and `bool mbStopBeam` at 0x155; the sibling reconstruction reconstruction/staging/pkg-sim-beamtool-func4ch independently found the adjacent byte 0x155 written by the helper 0x00cb3c70 on the same +0x124 object, so the two packages agree on the type and on two distinct adjacent flag bytes."
+    },
+    "cGameData__vftable": {
+      "slots_used": [
+        {"offset": "0x00", "name": "AddRef", "evidence": "`mov eax, [edi]` / `mov edx, [eax]` / `mov ecx, edi` / `call eax` at 0x01059f98-0x01059f9e"},
+        {"offset": "0x04", "name": "Release", "evidence": "`mov eax, [ecx]` / `mov edx, [eax + 0x4]` / `call edx` at 0x0105a031-0x0105a038 and at 0x01059fe4-0x01059fe9"},
+        {"offset": "0x2c", "name": "SDK name IsDestroyed; the source models it neutrally as predicate_2c", "evidence": "`mov eax, [edx + 0x2c]` / `mov ecx, edi` / `call eax` at 0x01059fa2-0x01059fa9, whose AL is the branch condition at 0x01059fab. The listing shows the bridge path is taken when this call returns NON-ZERO, because `jz 0x0105a004` skips the middle on a zero result, which is the opposite of what the SDK IsDestroyed name suggests. The slot is therefore left neutrally named and the conflict is reported in unresolved_questions rather than resolved by assumption."}
+      ]
+    },
+    "cSpatialObject__vftable": {
+      "slots_used": [
+        {"offset": "0x2c", "name": "GetPosition", "evidence": "not dispatched by this body"},
+        {"offset": "0xb8", "name": "Cast", "evidence": "`mov edx, [ecx]` / `mov eax, [edx + 0xb8]` / `push 0x13f94d4` / `call eax` at 0x01059f51-0x01059f5e; the EAX result is null-tested at 0x01059f66"}
+      ]
+    },
+    "cDefaultBeamTool__vftable": {
+      "size_bytes": 80,
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml, STRUCTURE Simulator::cDefaultBeamTool__vftable, SIZE 0x50",
+      "slots_used": [
+        {"offset": "0x48", "name": "func48h", "evidence": "`mov edx, [ecx]` / `mov edx, [edx + 0x48]` / `lea eax, [esp + 0x14]` / `push eax` / `push ebp` / `call edx` at 0x01059fb3-0x01059fbe. The SDK prototype for cDefaultBeamTool::func48h is `bool func48h(cDefaultBeamTool *this, cSpaceToolData *pTool, Vector3 *param_2)`, which is the receiver plus the two pushed words, so the dispatch is a base-class bridge call with the receiver and pTool forwarded and a pointer to the local copy of the aim point."}
+      ]
+    },
+    "cRelationshipManager": {
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml, STRUCTURE Simulator::cRelationshipManager; reached through the SDK-named accessor Simulator::cRelationshipManager::Get at 0x00b3d3c0",
+      "fields": [
+        {"name": "mbIsInitialized", "offset": "0x20", "type": "bool", "note": "The SDK spells +0x20 as a bool, so only bit 0 is named; the callee at 0x00b7c160 additionally reads and rewrites bits 1 and 2 of the same dword, so the machine uses the word more widely than the SDK type declares."},
+        {"name": "mRelationships", "offset": "0x24", "type": "map<pair<unsigned int, unsigned int>, Simulator::cRelationshipData>"},
+        {"name": "unnamed_event_word", "offset": "0x55a0", "type": "uint32_t"}
+      ]
+    },
+    "SpaceToolFlags": {
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml, ENUM Simulator::cSpaceToolData::SpaceToolFlags",
+      "selected_bit": {
+        "mask": "0x10",
+        "name": "kFlagPicksFlora",
+        "evidence": "The whole predicate is four instructions at 0x0104cd50: `mov eax, [ecx + 0x174]` / `shr eax, 0x4` / `and al, 0x1` / `ret`. It is bit 4 of cSpaceToolData::mFlags and nothing else; the decompiler's two-bit 0xffffff01 reading is a zero-extension artifact of the byte-sized AND and is rejected."
+      }
+    }
+  },
+  "mechanics": {
+    "precheck": [
+      "0x01059f33-0x01059f36 push param_4, aimPoint and pTool in that order and spill ECX to 0x1c(%esp), so 0x010568b0 receives (pTool, aimPoint, param_4) and the strategy survives the call.",
+      "0x010568b0 ends in `mov al, 0x1` / `pop ebp` / `add esp, 0x40` / `ret 0xc` at 0x01056b39-0x01056b3f: it is a three-argument callee-cleanup function whose every return in 0x010568b0-0x01056b41 is the constant 1.",
+      "The `test al, al` / `jz 0x0105a03a` at 0x01059f3f-0x01059f41 is therefore a dead zero branch in this build."
+    ],
+    "owner_cast_gate": [
+      "0x01059f47 `mov ecx, dword ptr [ebp + 0x114]` loads cSpaceToolData::mpToolOwner; a null owner skips straight to 0x01059f62, which XORs EAX to zero, so the same null test serves both the owner and the Cast result.",
+      "0x01059f51-0x01059f5e dispatch cSpatialObject__vftable word 0xb8, which the SDK names Cast, with the single immediate 0x013f94d4 as its argument.",
+      "0x013f94d4 lies in a table of 4-byte entries; the words around it are 0x005e2d10, 0x005e2ec0, 0x005e4c90, 0x005e1fb0, 0x005e2be0, 0x005e2c30 and 0x005e4190, and 0x013f94d4 itself holds 0x005e3280.",
+      "The same slot and the same immediate appear in 0x010568b0 and 0x01059170, both called on the same cSpaceToolData, so the query is a shared type test on the tool owner rather than a local test.",
+      "0x01059f66-0x01059f68 `test eax, eax` / `jz 0x0105a03a`: a null Cast result returns true immediately, before the beam pointer is ever loaded."
+    ],
+    "aim_point_copy": [
+      "0x01059f6e, 0x01059f7e and 0x01059f89 read the three floats of the caller's Vector3 with MOVSS and 0x01059f78, 0x01059f83 and 0x01059f8e write them to 0x14(%esp), 0x18(%esp) and 0x1c(%esp), building a 12-byte local unconditionally, before any branch on the beam.",
+      "0x01059fb8 `lea eax, [esp + 0x14]` then pushes that local, so the bridge slot receives a pointer to the copy and not the caller's pointer; a callee that mutated the vector would not be observed by the caller.",
+      "0x0105a00f-0x0105a025 rebuild the same three floats with FLD/FSTP onto a fresh 12-byte frame slot and push pTool, then call 0x01059170, which is cdecl and whose caller-side `add esp, 0x10` at 0x0105a02a discards all sixteen bytes."
+    ],
+    "beam_rebalance": [
+      "0x01059f72 loads cSpaceToolData::mpBeam into EDI once, before the null test at 0x01059f94.",
+      "A non-null beam is AddRef'd through vtable word 0x00 at 0x01059f9e, and only then is ESI given the pointer at 0x01059fa7, so the acquire always precedes the keep-register copy.",
+      "0x01059fa9 dispatches vtable word 0x2c; its AL is tested at 0x01059fab and 0x01059fad jumps to the common tail 0x0105a004 when it is ZERO, so the bridge, the rebalance and the relationship stamp run exactly when that call returns non-zero. This polarity is read from the listing and corroborated by the decompiler's `if (cVar2 == 0) goto LAB_0105a004`; the opposite reading of the same branch was refuted by the model test, which caught the disagreement between the readable model and the naked body.",
+      "0x01059fc0 re-reads mpBeam after the bridge call, a genuine second load rather than a register reuse.",
+      "0x01059fca spills the previously held pointer to 0x2c(%esp), which is the caller's own fourth-argument slot, and reloads it at 0x01059fda; both survive the two virtual calls that clobber ECX.",
+      "When the reloaded pointer differs, the new one is AddRef'd through word 0x00 and the old one is Released through word 0x04, and ESI is overwritten with the new pointer at 0x01059fde, so the tail always operates on the beam the bridge left behind.",
+      "When the bridge cleared the field the new pointer is null, the acquire is skipped by 0x01059fd0, ESI becomes null, and only the old beam is released."
+    ],
+    "relationship_stamp": [
+      "0x01059feb-0x01059fed reload pTool into ECX and call 0x0104cd50, the four-instruction bit-4-of-mFlags predicate, so the gate is evaluated on the tool and not on the beam.",
+      "0x01059ff6 pushes the immediate 7, 0x00b3d3c0 is the SDK-named accessor Simulator::cRelationshipManager::Get whose two-instruction body is `mov eax, [0x0167eb14]` / `ret`, and its EAX result becomes the ECX receiver of 0x00b7c160.",
+      "0x00b7c160 is a callee-cleanup member (`ret 0x4`) that normalises bit 2 of the word at +0x20 from bit 0, stores its argument into the dword at +0x55a0 when that bit ends up set, and calls 0x00b7a710. It has no SDK name."
+    ],
+    "common_tail": [
+      "0x0105a004-0x0105a008 stores 1 into the byte at beam+0x154, which the SDK names cDefaultBeamProjectile::field_154, and only when a beam is held.",
+      "0x0105a02d-0x0105a038 releases the held beam through vtable word 0x04 when one is held, so every acquired beam is released exactly once on every path that acquired it.",
+      "0x0105a03d `mov al, 0x1` is the only write to AL after the final call, so the result is the constant true on all five reachable exits."
+    ],
+    "control_flow": {
+      "instructions": 106,
+      "basic_blocks": 12,
+      "branches": [
+        {"at": "0x01059f41", "condition": "0x010568b0 returned zero", "target": "0x0105a03a", "effect": "return true; unreachable, the callee always returns 1"},
+        {"at": "0x01059f4f", "condition": "cSpaceToolData::mpToolOwner is null", "target": "0x01059f62", "effect": "synthesise a null Cast result"},
+        {"at": "0x01059f68", "condition": "the Cast result is null", "target": "0x0105a03a", "effect": "return true before the beam is touched"},
+        {"at": "0x01059f96", "condition": "cSpaceToolData::mpBeam is null", "target": "0x01059faf", "effect": "run the bridge with no beam held"},
+        {"at": "0x01059fad", "condition": "the beam vtable word 0x2c returned zero", "target": "0x0105a004", "effect": "skip the bridge, the rebalance and the relationship stamp, but still flag, update and release"},
+        {"at": "0x01059fc8", "condition": "the reloaded beam equals the held beam", "target": "0x01059feb", "effect": "no acquire and no release"},
+        {"at": "0x01059fd0", "condition": "the reloaded beam is null", "target": "0x01059fda", "effect": "skip the acquire only"},
+        {"at": "0x01059fe2", "condition": "the previously held beam is null", "target": "0x01059feb", "effect": "skip the release only"},
+        {"at": "0x01059ff4", "condition": "bit 4 of cSpaceToolData::mFlags is clear", "target": "0x0105a004", "effect": "skip the relationship stamp"},
+        {"at": "0x0105a006", "condition": "no beam is held", "target": "0x0105a00f", "effect": "skip the flag store"},
+        {"at": "0x0105a02f", "condition": "no beam is held", "target": "0x0105a03a", "effect": "skip the final release"}
+      ],
+      "note": "Every path that reaches 0x0105a03a returns the same constant, so the bool result carries no information; the function's whole effect is the sequence of side effects, and the two early exits are the only ways to suppress them."
+    },
+    "virtual_dispatch": {
+      "indirect_call_sites": 6,
+      "sites": [
+        {"at": "0x01059f5e", "slot": "0xb8", "receiver": "cSpaceToolData::mpToolOwner", "class": "cSpatialObject", "slot_name": "Cast", "result_used": "null test only"},
+        {"at": "0x01059f9e", "slot": "0x00", "receiver": "cSpaceToolData::mpBeam", "class": "cDefaultBeamProjectile", "slot_name": "AddRef", "result_used": "discarded"},
+        {"at": "0x01059fa9", "slot": "0x2c", "receiver": "cSpaceToolData::mpBeam", "class": "cDefaultBeamProjectile", "slot_name": "predicate_2c, SDK name IsDestroyed with the polarity unresolved", "result_used": "branch condition; a non-zero result selects the bridge path"},
+        {"at": "0x01059fbe", "slot": "0x48", "receiver": "the strategy itself, from the ECX spill at 0x01059f36", "class": "OpaqueToolStrategy", "slot_name": "func48h in cDefaultBeamTool__vftable", "result_used": "discarded"},
+        {"at": "0x01059fd8", "slot": "0x00", "receiver": "the beam reloaded from mpBeam after the bridge", "class": "cDefaultBeamProjectile", "slot_name": "AddRef", "result_used": "discarded"},
+        {"at": "0x01059fe9", "slot": "0x04", "receiver": "the previously held beam", "class": "cDefaultBeamProjectile", "slot_name": "Release", "result_used": "discarded"}
+      ],
+      "note": "0x0105a038 is a seventh dispatch, again on the held beam's word 0x04. Every dispatch uses the callee-cleanup thiscall form: no site adjusts ESP after the call, and each pushes exactly the words its slot's SDK prototype declares."
+    }
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 1,
+      "sites": [
+        {"callsite": "0x0105aa6f", "from": "0x0105aa50", "observation": "The containing function is not defined in the live program, so the call was read by disassembling the region directly. It pushes EAX, ESI and EBP and calls with ECX untouched, which is the three-stack-word thiscall shape this target expects."}
+      ],
+      "note": "The function additionally appears only as a DATA pointer word, at 0x0149b80c, 0x0149b8ac, 0x0149b8fc and 0x0149ba2c, so it is also reachable purely by virtual dispatch."
+    },
+    "direct_callees": {
+      "ghidra_count": 5,
+      "entries": [
+        {"address": "0x010568b0", "name": "FUN_010568b0", "role": "Callee-cleanup three-argument precheck on (pTool, aimPoint, param_4); reads cSpaceToolData::+0x114 and +0x120; always returns 1; ends `mov al, 1` / `pop ebp` / `add esp, 0x40` / `ret 0xc`."},
+        {"address": "0x0104cd50", "name": "FUN_0104cd50", "role": "Thiscall predicate on cSpaceToolData; four instructions reading bit 4 of mFlags at +0x174, the SDK's kFlagPicksFlora."},
+        {"address": "0x00b3d3c0", "name": "Simulator::cRelationshipManager::Get", "role": "Cdecl singleton accessor returning the single global 0x0167eb14; the body therefore contains no direct global reference of its own."},
+        {"address": "0x00b7c160", "name": "FUN_00b7c160", "role": "Callee-cleanup member on the relationship manager taking the constant 7; normalises bit 2 of the word at +0x20, writes the argument to +0x55a0 and calls 0x00b7a710."},
+        {"address": "0x01059170", "name": "FUN_01059170", "role": "Cdecl four-argument position update on (pTool, x, y, z); reads cSpaceToolData::+0x114 and +0x120 and iterates a vector; caller cleans with `add esp, 0x10`."}
+      ]
+    },
+    "indirect_callees": [
+      {"dispatch_site": "0x01059f5e", "via": "cSpatialObject vtable word 0xb8", "receiver": "cSpaceToolData::mpToolOwner"},
+      {"dispatch_site": "0x01059f9e", "via": "cDefaultBeamProjectile vtable word 0x00", "receiver": "cSpaceToolData::mpBeam"},
+      {"dispatch_site": "0x01059fa9", "via": "cDefaultBeamProjectile vtable word 0x2c", "receiver": "cSpaceToolData::mpBeam"},
+      {"dispatch_site": "0x01059fbe", "via": "receiver vtable word 0x48", "receiver": "the strategy, spilled to 0x1c(%esp) at 0x01059f36"},
+      {"dispatch_site": "0x01059fd8", "via": "cDefaultBeamProjectile vtable word 0x00", "receiver": "the beam reloaded from mpBeam"},
+      {"dispatch_site": "0x01059fe9", "via": "cDefaultBeamProjectile vtable word 0x04", "receiver": "the previously held beam"},
+      {"dispatch_site": "0x0105a038", "via": "cDefaultBeamProjectile vtable word 0x04", "receiver": "the beam held at the tail"}
+    ]
+  },
+  "vtable_evidence": {
+    "pointer_sites": ["0x0149b80c", "0x0149b8ac", "0x0149b8fc", "0x0149ba2c"],
+    "observation": "ghidra_get_xrefs_to 0x01059f20 reports exactly five references: four DATA words in .rdata and one direct call. ghidra_read_memory confirms the little-endian encoding 20 9f 05 01 at 0x0149b80c, 0x0149b8ac, 0x0149b8fc and 0x0149ba2c, each in a table whose next word holds 0x01053db0, the SDK-named Simulator::cDefaultBeamTool::func4Ch.",
+    "caveat": "No slot index is claimed. The briefing lists vtable:0x0149b810 and vtable:0x0149b8b4, but 0x0149b810 holds 0x01053db0 and 0x0149b8b4 holds 0x01052f90, so neither word is a pointer to this function. Aligning the tables against cDefaultBeamTool__vftable would place 0x01059f20 at 0x48 and func4Ch at 0x4c, which fits the SDK table, but the same tables carry none of the other SDK-named cDefaultBeamTool members at their SDK offsets, and this body dispatches its own receiver's word 0x48, which would recurse if 0x01059f20 occupied that word. The alignment is therefore reported as unproven and left in unresolved_questions."
+  },
+  "sdk_corroboration": [
+    {
+      "fact": "0x01059ef0 is Simulator::cDefaultBeamTool::WhileFiring and 0x01059f20 is the very next function in .text, 0x30 bytes later.",
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml FUNCTION ADDRESS=\"01059ef0\" NAME=\"Simulator::cDefaultBeamTool::WhileFiring\""
+    },
+    {
+      "fact": "The address the SDK gives for Simulator::cDefaultBeamTool::OnHit, 0x0105a020, is not an instruction boundary: it falls inside the three-byte `fld dword ptr [ebx + 8]` at 0x0105a01f, so the SDK address table is demonstrably wrong in this immediate neighbourhood and cannot be used to align the vtable.",
+      "source": "ghidra_disassemble_function 0x01059f20, instruction at 0x0105a01f"
+    },
+    {
+      "fact": "Every cToolStrategy virtual the SDK declares has the same shape as this target, bool return with (cSpaceToolData*, Vector3*, int) after the receiver, and this body matches it exactly: one receiver in ECX, three stack words, `ret 0xc` and a bool in AL.",
+      "source": "Spore-ModAPI SDKtoGhidra/SporeGhidra_march2017.xml FUNCTION_DEF blocks for /Spore/Simulator/cToolStrategy and /Spore/Simulator/cDefaultBeamTool"
+    },
+    {
+      "fact": "0x01059f20 has no SDK name. Grepping the symbol table for 01059f returns only 0x010593b0, 0x01059ef0 and 0x01059010, so the function is unnamed in the image and no class name is asserted for it.",
+      "source": "grep ADDRESS=\"01059 over SporeGhidra_march2017.xml"
+    }
+  ],
+  "analogue_agreement": {
+    "package": "reconstruction/staging/pkg-sim-beamtool-func4ch",
+    "symbol": "func4_ch_01053db0",
+    "observation": "That package reconstructs the sibling cDefaultBeamTool virtual 0x01053db0 and independently established that the object at cSpaceToolData::+0x124 is the owned beam, that +0x174 is the gate word, that the gate is bit 4 of it via 0x0104cd50, and that the relationship singleton 0x0167eb14 is reached only through 0x00b3d3c0. This target uses all four facts identically, and both packages agree that the byte written on the beam is not the same one: 0x155 there, 0x154 here. Its rejection of the SDK's extra parameters on 0x01053db0 is not transferred to this target, whose three stack arguments are each independently loaded from the entry frame.",
+    "package_secondary": "reconstruction/staging/pkg11-sim-core",
+    "observation": "Read for layout convention only; it covers unrelated Simulator roots."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01059f20",
+      "observation": "106 instructions from 0x01059f20 to 0x0105a043, the complete basis of the control-flow and ABI claims above."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01059f20",
+      "observation": "Renders the receiver as param_1 and the three stack words as param_2, param_3 and param_4, types param_3 as a pointer and dereferences it three times, which is the Vector3* reading. Its `(**(code **)(*param_1 + 0x48))(param_2, &local_c)` is the bridge dispatch, and its trailing `return 1` agrees with the constant-true reading. Its `if (cVar2 == 0) goto LAB_0105a004` after the vtable word 0x2c call fixes the bridge-path polarity as non-zero and is the independent check on that branch. It shows no ABI object, which is why the listing and the SDK symbol table were used for the ABI."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0105a9f0",
+      "observation": "The only direct caller, at 0x0105aa6f, with its three pushes and the untouched ECX, establishing the thiscall receiver-plus-three-words shape from the caller's side."
+    },
+    {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x01059f20",
+      "observation": "Five references: four DATA words at 0x0149b80c, 0x0149b8ac, 0x0149b8fc and 0x0149ba2c and one UNCONDITIONAL_CALL at 0x0105aa6f."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0149b7f0",
+      "observation": "The four .rdata tables that hold the pointer, each followed by the word 0x01053db0, plus the surrounding pointer table whose entries 0x005e2d10, 0x005e2ec0, 0x005e4c90, 0x005e1fb0, 0x005e2be0, 0x005e2c30 and 0x005e4190 bracket the Cast type entry."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013f94d4",
+      "observation": "The Cast type entry sits in a run of 4-byte entries and holds 0x005e3280."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0104cd50",
+      "observation": "Four instructions: `mov eax, [ecx + 0x174]` / `shr eax, 0x4` / `and al, 0x1` / `ret`. The sole source of the gate bit, and the refutation of the decompiler's two-bit 0xffffff01 mask."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b3d3c0",
+      "observation": "Two instructions, `mov eax, [0x0167eb14]` / `ret`, which is the SDK-named Simulator::cRelationshipManager::Get and the only route to the relationship state."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b7c160",
+      "observation": "Twenty instructions ending `pop esi` / `ret 0x4`: bit 2 of the word at +0x20 is derived from bit 0, the argument is stored at +0x55a0 when bit 2 is set, and 0x00b7a710 is then called."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01059170",
+      "observation": "201 instructions taking four stack words, the first being the cSpaceToolData and the rest three floats, reading +0x114 and +0x120 and returning with a bare `ret`, which fixes it as cdecl and fixes my function's `add esp, 0x10` as the caller-side cleanup."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x01056b10",
+      "observation": "The tail of 0x010568b0: `mov al, 0x1` / `pop ebp` / `add esp, 0x40` / `ret 0xc`, which with its decompilation proves the callee always returns 1 and that the guard at 0x01059f41 is dead."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01059010",
+      "observation": "Simulator::cGlobalMindEraseToolStrategy::WhileFiring, carrying the SDK prototype `bool WhileFiring(cGlobalMindEraseToolStrategy *this, cSpaceToolData *pTool, Vector3 *aimPoint, int param_4)`, the identical receiver-plus-three-words shape this target exhibits."
+    },
+    {
+      "tool": "compile-and-run",
+      "address": "reconstruction/staging/pkg-sim-toolstrategy-01059f20",
+      "observation": "Builds with clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror and all 108 model checks pass, covering the dead precheck guard, the null-owner and null-Cast exits, the beam-free bridge path, the full live-beam path, both senses of the beam vtable word 0x2c branch, the clear-gate path, bridge-installed and bridge-cleared beam rebalsances, the unchanged-beam case, the ABI surface as static assertions, and a naked-body-versus-readable-model agreement test that runs the 106-instruction naked reconstruction and the readable model over the same scenario and compares every observable count. That test is what caught the inverted reading of the branch at 0x01059fad."
+    },
+    {
+      "tool": "objdump",
+      "address": "naked_body_01059f20 (staged naked rebuild)",
+      "observation": "The staged naked body disassembles to exactly 106 instructions and reproduces the listing of 0x01059f20 instruction for instruction, including the ESP0-relative spill at 0x1c(%esp) and 0x2c(%esp), the `push $0x013f94d4` and `push $0x7` immediates, the byte store at 0x154(%esi) and the terminating `mov $0x1,%al` / `ret $0xc`. Only the call and jump displacements differ, because the staged body is linked at a different address."
+    }
+  ],
+  "confidence": {
+    "overall": "high for the stack ABI, the control flow, the field identities, the vtable slot identities and the constant-true return; medium for the semantic role of each stage; low for the vtable slot index and for the meaning of the 0x013f94d4 type entry",
+    "high": [
+      "thiscall with the receiver in ECX, three stack words, `ret 0xc` and a bool in AL, matching the SDK prototype shape of every sibling cToolStrategy virtual",
+      "the return value is the constant true on every reachable path",
+      "the first stack argument is a cSpaceToolData and the second is a Vector3 pointer, both fixed by the entry-frame loads and by the caller's three pushes",
+      "the fourth argument is forwarded to 0x010568b0 and never used again",
+      "the owner query is cSpatialObject vtable word 0xb8, which the SDK names Cast",
+      "the beam is cSpaceToolData::mpBeam, a cDefaultBeamProjectile, and its flagged byte is +0x154",
+      "the bridge path is selected by a NON-ZERO result from the beam vtable word 0x2c, independently confirmed by the decompiler and by the naked-body-versus-model test",
+      "the gate is bit 4 of cSpaceToolData::mFlags, the SDK's kFlagPicksFlora, read through the four-instruction 0x0104cd50",
+      "the relationship manager is reached only through Simulator::cRelationshipManager::Get and the single global 0x0167eb14",
+      "every indirect dispatch uses the callee-cleanup thiscall form with exactly the words its SDK prototype declares",
+      "the precheck guard at 0x01059f41 is dead in this build because 0x010568b0 always returns 1"
+    ],
+    "medium": [
+      "that the receiver is a cDefaultBeamTool subclass, inferred from the word-0x48 dispatch matching cDefaultBeamTool::func48h's SDK prototype and from the function's .text adjacency to cDefaultBeamTool::WhileFiring; the class itself is not named anywhere",
+      "that the bridge slot is a base-class delegation rather than a sibling operation, which follows from the argument shape but not from any name",
+      "that 0x010568b0 is a precheck or filter rather than a side-effecting event handler; its body performs real work but always reports 1",
+      "that 0x01059170 is a proximity or interest update, from its use of +0x120 and its distance comparisons, not from a name"
+    ],
+    "low": [
+      "the slot index of 0x01059f20 in the four .rdata tables that hold its pointer",
+      "the meaning of the type entry at 0x013f94d4 and of the 0xb8 Cast convention that consumes it",
+      "the meaning of the word at cRelationshipManager+0x20 bits 1 and 2 and of the dword at +0x55a0",
+      "the behaviour of 0x00b7a710 and of the vtable callees behind words 0x00, 0x04, 0x2c and 0x48"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-sim-toolstrategy-01059f20 reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-sim-toolstrategy-01059f20 reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20.cpp reconstruction/staging/pkg-sim-toolstrategy-01059f20/tool_strategy_01059f20_model_test.cpp -o /tmp/opencode/pkg-sim-toolstrategy-01059f20-model && /tmp/opencode/pkg-sim-toolstrategy-01059f20-model",
+    "model_result": "passed; 108 of 108 checks green",
+    "abi_fidelity_command": "objdump -d /tmp/opencode/pkg-sim-toolstrategy-01059f20-model",
+    "abi_fidelity_result": "passed; the naked staged body is 106 instructions and matches the 0x01059f20 listing instruction for instruction",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-sim-toolstrategy-01059f20/01059f20.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The function is unnamed in the Spore-ModAPI symbol table, so no SDK class name is asserted for the receiver. The evidence supports a cToolStrategy-derived virtual whose receiver dispatches cDefaultBeamTool__vftable word 0x48, but the owning class is not identified.",
+    "The slot index of 0x01059f20 inside the four .rdata tables at 0x0149b80c, 0x0149b8ac, 0x0149b8fc and 0x0149ba2c is not established. Aligning on the neighbouring SDK-named 0x01053db0 would give 0x48, but the same tables carry none of the other SDK-named cDefaultBeamTool members at their SDK offsets, the SDK address for cDefaultBeamTool::OnHit is demonstrably wrong in this neighbourhood, and this body dispatches its own receiver's word 0x48, which would recurse. The briefing's vtable:0x0149b810 and vtable:0x0149b8b4 are reported as inaccurate: those words hold 0x01053db0 and 0x01052f90.",
+    "The type entry passed to cSpatialObject::Cast at 0x013f94d4 is a bare address into a table of 4-byte entries. Its type is not named in the SDK, so the query is described as a type test and not as any particular cast.",
+    "The behaviour of 0x010568b0 is not reconstructed here; only its ABI, its constant-true return and its use of cSpaceToolData::+0x114 and +0x120 are used. Because it always returns 1, this function's first branch is dead in this build, so the reconstruction cannot say what that branch would have suppressed.",
+    "The behaviour of 0x01059170 is not reconstructed here; only its four-argument cdecl ABI and its use of cSpaceToolData::+0x114 and +0x120 are used.",
+    "0x00b7c160 has no SDK name. Its effect on cRelationshipManager is described from its twenty instructions; the meaning of the word at +0x20 bits 1 and 2 and of the dword at +0x55a0, and the behaviour of 0x00b7a710, are unresolved. The SDK spells +0x20 as the bool mbIsInitialized, so only bit 0 is named.",
+    "The virtual callees behind cDefaultBeamProjectile words 0x00, 0x04 and 0x2c are not resolved to concrete functions. Their slot names come from the SDK's cGameData__vftable, and their receivers are the beam, but no concrete override was identified.",
+    "The virtual callee behind the receiver's word 0x48 is not resolved. The SDK's cDefaultBeamTool::func48h prototype matches the two pushed words, but the SDK address it carries for func48h, 0x01054e70, is not the function this body dispatches when the receiver's table is any of the four found, so the concrete override is unknown.",
+    "The meaning of vtable word 0x2c is not settled. The SDK names cGameData__vftable word 0x2c IsDestroyed, but the listing takes the bridge path precisely when that call returns NON-ZERO, which is the opposite of an IsDestroyed guard. Either the concrete override at 0x2c is not the SDK IsDestroyed, or the code deliberately acts on beams it considers destroyed. The source therefore names the slot predicate_2c and stages the branch in the listing's own sense rather than in the SDK name's sense.",
+    "No differential runtime corpus exists for this virtual, so every claim here is static evidence only."
+  ],
+  "blockers": [
+    "The owning class and the interface slot of this virtual are unresolved, so the function cannot be tied to a named SDK override even though its argument shape matches the cToolStrategy family.",
+    "The SDK address table is provably wrong immediately around this function, which blocks using it to align the vtable and therefore blocks naming the overridden method.",
+    "No differential runtime corpus is available for this virtual, so the beam rebalance ordering and the relationship stamp are static-only evidence."
+  ]
+}

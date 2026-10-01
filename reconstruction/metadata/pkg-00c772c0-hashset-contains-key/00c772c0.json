@@ -1,0 +1,258 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00C772C0-HASHSET-CONTAINS-KEY",
+  "subsystem": "Simulator",
+  "cluster": "unknown-fun-mass",
+  "queue_id": "",
+  "va": "0x00c772c0",
+  "address": "0x00c772c0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "hashset_contains_key_00c772c0",
+  "reconstructed_symbol": "hashset_contains_key_00c772c0",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0.hpp",
+    "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0.cpp",
+    "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0_model_test.cpp",
+    "reconstruction/staging/pkg-00c772c0-hashset-contains-key/mutation_test.sh"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0.hpp",
+    "source": "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0.cpp",
+    "model_test": "reconstruction/staging/pkg-00c772c0-hashset-contains-key/hashset_contains_key_00c772c0_model_test.cpp",
+    "mutation_test": "reconstruction/staging/pkg-00c772c0-hashset-contains-key/mutation_test.sh"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall, receiver in ECX, one 4-byte ordinary stack argument at entry_ESP+0x4, callee pops 4 bytes",
+    "calling_convention_evidence": "the body reads ECX as the base of both receiver-relative operands (0x00c772ca DIV dword ptr [ECX + 0x1124] and 0x00c772d0 MOV EAX,dword ptr [ECX + 0x1120]); the terminator is RET 0x4 at 0x00c772f5 (c2 04 00), so the callee removes its own stack argument, which rules out cdecl and fastcall. The single ordinary stack argument is the word loaded by 0x00c772c2 MOV EDI,dword ptr [ESP + 0xc]: after the two PUSHes at entry ESP is entry_ESP-8, so [ESP+0xc] is entry_ESP+0x4, which is exactly the one slot the ABI record enumerates.",
+    "calling_convention_alternatives": "__fastcall is not separable from __thiscall by callee-side evidence alone, since a one-ECX-argument fastcall places a single pointer in ECX. __cdecl and __stdcall ARE excluded, because both require the argument on the stack AND a caller-side pop, and RET 0x4 is an explicit callee-side pop. The receiver framing is chosen because the argument is demonstrably in ECX and 75 recorded direct call sites support it, not because the 24 instructions alone choose it.",
+    "receiver": "ECX, used as the base of exactly two reads, at +0x1120 and +0x1124",
+    "receiver_disposition": "The machine-derived receiver record is bounds_only: register=ECX, offsets=[0x1120, 0x1124], distinct_offsets=2, max_offset=0x1124, written_through=0, shape R-DIRECT. It enumerates displacements and does not say which member of any type occupies either word, so this package names them by displacement (kBucketBaseDisplacement, kBucketCountDisplacement) and asserts no member story the record does not carry. The container type is modelled as an opaque byte region through +0x111f followed by the two named words; the extent is a modelling bound, not a recovered allocation size.",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "read": true,
+        "written": false,
+        "size_inferred": false,
+        "sizes": [4],
+        "role": "the 32-bit key: it is the dividend of the DIV at 0x00c772ca and the value compared against every chain link at 0x00c772e0"
+      }
+    ],
+    "stack_arguments_evidence": "0x00c772c2 MOV EDI,dword ptr [ESP + 0xc] is the body's only ESP-relative operand, and at that point ESP is entry_ESP-8 because of the two PUSHes, so it resolves to entry_ESP+0x4. The ABI record independently enumerates exactly one ordinary stack slot at entry_ESP+0x4 and reports no gap.",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4 (0x00c772f5, bytes c2 04 00)",
+    "return_register": "EAX",
+    "return_semantics": "EAX provably holds 0 or 1 at the terminator, and the upper 24 bits are provably zero. 0x00c772ec XOR EAX,EAX is the last write to the whole register, and 0x00c772f1 SETNZ AL writes only AL. This is stronger than the ABI record's return_semantics=unclassified_in_EAX, which is a machine-derived label that does not model SETNZ. The match COUNT in ESI survives only as its own non-zeroness, so a chain holding the key twice answers 1, not 2.",
+    "return_type_declared_in_package": "bool",
+    "return_type_caveat": "The machine fixes the VALUE range (0 or 1), not the declared TYPE: an int-returning source that happened to return only 0 and 1 would compile to the same XOR/SETNZ pair. What narrows it is the call sites - all three sampled do TEST AL,AL on the result, the natural consumer of a boolean and a wasteful one for a general int - together with Ghidra's own decompilation, which types the entry `bool __thiscall`. The package declares bool on that basis and records that the type is an inference while the value range is OBSERVED.",
+    "sret": false,
+    "variadic": false,
+    "saved_registers": ["EDI", "ESI"],
+    "saved_registers_evidence": "0x00c772c0 PUSH ESI and 0x00c772c1 PUSH EDI, matched by 0x00c772f0 POP EDI and 0x00c772f4 POP ESI. The frame is never otherwise used: every memory operand in the body is ECX-relative or reached through EAX, and no ESP-relative operand other than the single argument read exists. The ABI record reports saved_registers [EDI, ESI], which agrees."
+  },
+  "body": {
+    "span": "0x00c772c0..0x00c772f7",
+    "size_bytes": 56,
+    "instruction_count": 24,
+    "bytes_hex": "56578b7c240c33d28bc7f7b1241100008b812011000033f68b149085d2740d903b3a7501468b520485d275f433c085f65f0f95c05ec20400",
+    "padding": "0xcc INT3 at 0x00c772f8..0x00c772ff, read live, excluded from the body",
+    "body_length_note": "The body is 56 bytes, not 54. A first read of 54 bytes truncates inside the terminator; SETNZ AL (0f 95 c0) is three bytes, POP ESI (5e) is one more at 0x00c772f4, and RET 0x4 (c2 04 00) is the last three at 0x00c772f5..0x00c772f7. Anyone reading this body must take all 56 bytes before the padding or the RET immediate will be misread.",
+    "listing": [
+      {"va": "0x00c772c0", "instruction": "PUSH ESI", "bytes": "56"},
+      {"va": "0x00c772c1", "instruction": "PUSH EDI", "bytes": "57"},
+      {"va": "0x00c772c2", "instruction": "MOV EDI,dword ptr [ESP + 0xc]", "bytes": "8b 7c 24 0c"},
+      {"va": "0x00c772c6", "instruction": "XOR EDX,EDX", "bytes": "33 d2"},
+      {"va": "0x00c772c8", "instruction": "MOV EAX,EDI", "bytes": "8b c7"},
+      {"va": "0x00c772ca", "instruction": "DIV dword ptr [ECX + 0x1124]", "bytes": "f7 b1 24 11 00 00"},
+      {"va": "0x00c772d0", "instruction": "MOV EAX,dword ptr [ECX + 0x1120]", "bytes": "8b 81 20 11 00 00"},
+      {"va": "0x00c772d6", "instruction": "XOR ESI,ESI", "bytes": "33 f6"},
+      {"va": "0x00c772d8", "instruction": "MOV EDX,dword ptr [EAX + EDX*0x4]", "bytes": "8b 14 90"},
+      {"va": "0x00c772db", "instruction": "TEST EDX,EDX", "bytes": "85 d2"},
+      {"va": "0x00c772dd", "instruction": "JZ 0x00c772ec", "bytes": "74 0d"},
+      {"va": "0x00c772df", "instruction": "NOP", "bytes": "90"},
+      {"va": "0x00c772e0", "instruction": "CMP EDI,dword ptr [EDX]", "bytes": "3b 3a"},
+      {"va": "0x00c772e2", "instruction": "JNZ 0x00c772e5", "bytes": "75 01"},
+      {"va": "0x00c772e4", "instruction": "INC ESI", "bytes": "46"},
+      {"va": "0x00c772e5", "instruction": "MOV EDX,dword ptr [EDX + 0x4]", "bytes": "8b 52 04"},
+      {"va": "0x00c772e8", "instruction": "TEST EDX,EDX", "bytes": "85 d2"},
+      {"va": "0x00c772ea", "instruction": "JNZ 0x00c772e0", "bytes": "75 f4"},
+      {"va": "0x00c772ec", "instruction": "XOR EAX,EAX", "bytes": "33 c0"},
+      {"va": "0x00c772ee", "instruction": "TEST ESI,ESI", "bytes": "85 f6"},
+      {"va": "0x00c772f0", "instruction": "POP EDI", "bytes": "5f"},
+      {"va": "0x00c772f1", "instruction": "SETNZ AL", "bytes": "0f 95 c0"},
+      {"va": "0x00c772f4", "instruction": "POP ESI", "bytes": "5e"},
+      {"va": "0x00c772f5", "instruction": "RET 0x4", "bytes": "c2 04 00"}
+    ],
+    "control_flow": "one loop. 0x00c772dd JZ 0x00c772ec skips the loop entirely when the selected bucket's head pointer is null. The loop head is 0x00c772e0 and its back edge is 0x00c772ea JNZ 0x00c772e0 (rel8 -12), reached only when the next-link word is non-null, so the loop terminates on a null link. 0x00c772e2 JNZ 0x00c772e5 (rel8 +1) skips the single INC ESI at 0x00c772e4 on a non-matching link. There is NO early exit on a match: the whole chain is walked to its end and the counter is never tested inside the loop. All three conditional branch targets lie inside the recovered body span, so the branch graph is closed inside it.",
+    "loop_terminates_only_on_a_null_link": "The loop's only exit is the null test at 0x00c772e8/0x00c772ea. There is no iteration cap, no pointer-identity check and no counter bound, so a cyclic chain would spin forever. Whether any real instance can be cyclic is NOT established here, and the model test deliberately does not build one, because a test that hangs is not a test.",
+    "calls": "none. The body contains no CALL opcode and the machine dispatch record agrees at 0 (call_offsets empty, indirect_calls 0, vtable_shaped_loads 0). This entry is a dispatch TARGET and never a dispatcher.",
+    "dispatch": "no indirect transfer through a register or a memory operand; the complete 24-instruction body names none.",
+    "globals": "none. The complete listing names no data-segment address, and the committed data-reference artifact records no data reference out of 0x00c772c0. Every operand is a register, a receiver-relative displacement (+0x1120, +0x1124) or a register-relative displacement ([ESP+0xc], [EAX+EDX*4], [EDX], [EDX+4]).",
+    "writes": "none. Every memory operand in the body is a read; the receiver record agrees at written_through=0. The function is a pure predicate over the container, the bucket table and the chain links.",
+    "divisor_is_untested": "The divisor at [ECX+0x1124] is read and divided by with no zero test anywhere in the body. On this machine a DIV by zero raises #DE and the function does not return, so the observed precondition is that word != 0. The reconstructed model does NOT reproduce the trap, because a C++ unsigned division by zero is undefined behaviour rather than an exception, and the model test never calls the entry with a zero count. The machine behaviour is the OBSERVED claim; the model's behaviour at count == 0 is NOT a claim of any kind."
+  },
+  "fields_offsets": {
+    "receiver_1120": {
+      "displacement": "0x1120",
+      "role": "read as a 32-bit base address; the DIV remainder scales it by four",
+      "proved_by": "0x00c772d0 MOV EAX,dword ptr [ECX + 0x1120] followed by 0x00c772d8 MOV EDX,dword ptr [EAX + EDX*0x4], whose SIB byte 0x90 gives scale 4, index EDX, base EAX",
+      "conclusion": "the base of an array of 4-byte head pointers; the model keeps the field a 32-bit word and casts once, mirroring the machine, rather than declaring a typed pointer"
+    },
+    "receiver_1124": {
+      "displacement": "0x1124",
+      "role": "the DIV divisor, and therefore the element count of that array",
+      "proved_by": "0x00c772ca DIV dword ptr [ECX + 0x1124], opcode f7 with ModRM 0xb1, i.e. reg field 6 = the unsigned DIV r/m32 form"
+    },
+    "link_00": {
+      "displacement": "0x0",
+      "role": "the compared word, a full 32-bit equality against the argument",
+      "proved_by": "0x00c772e0 CMP EDI,dword ptr [EDX] carries no displacement byte, so the address is exactly EDX+0"
+    },
+    "link_04": {
+      "displacement": "0x4",
+      "role": "the loop-carried next link",
+      "proved_by": "0x00c772e5 MOV EDX,dword ptr [EDX + 0x4]"
+    },
+    "link_shape": "a chain link is the two 4-byte words the body names, so the model is an 8-byte record. Whether a real allocation is larger is not established, and the model reads no third word of it.",
+    "field_naming_policy": "The receiver record is bounds_only and names displacements, not members, so every receiver word in this package is named by displacement. The two link displacements are named by role (compared word, next link) because the body itself states that role unambiguously: one is the operand of a CMP against the argument and the other is the operand of the pointer chase that forms the loop."
+  },
+  "constants": {
+    "claim": "The body names no literal constant. Its only literals are the two receiver displacements (0x1120, 0x1124), the two link displacements (0x0, 0x4), the SIB scale 4, the 0x4 cleanup immediate in RET, and the +13 / +1 / -12 branch displacements. The static CONSTANTS check passes at complete coverage because the machine listing is fully parsed (24 of 24 instructions, 0 unparsed).",
+    "evidence": "GhidraMCP /disassemble_function plus /read_memory at 0x00c772c0, and the validation record's FIELDS/OFFSETS and CONSTANTS rows, both PASS at complete coverage."
+  },
+  "semantics_claimed": {
+    "statement": "Boolean membership query over a chained bucket container: compute the unsigned 32-bit remainder of the 32-bit key modulo the container's bucket count, take the head pointer at that index, walk the singly linked chain, count the links whose first word equals the key, and return whether that count is non-zero. Nothing is written.",
+    "confidence": "OBSERVED",
+    "basis": "the complete 24-instruction listing read live, corroborated byte-for-byte by a 56-byte /read_memory, plus the decompilation's own modulo and chain-walk",
+    "component_claims": [
+      {"claim": "the index is the UNSIGNED remainder, not a mask, not the quotient, and not preceded by any mixing function", "confidence": "OBSERVED", "basis": "XOR EDX,EDX zeroes the high dividend half so the 64-bit dividend is 0:key; DIV r/m32 (f7 /6) is the unsigned form; the quotient lands in EAX and is discarded by the immediately following MOV EAX,[ECX+0x1120], while EDX holds the remainder and is what the SIB index uses"},
+      {"claim": "the key and the index are derived from the SAME 32 bits, with no hash function in between", "confidence": "OBSERVED", "basis": "the dividend is the argument itself and the compared word is the argument itself; the body contains no arithmetic between them"},
+      {"claim": "one bucket is one 4-byte head pointer, and the element read is a chain head, not a node", "confidence": "OBSERVED", "basis": "SIB scale 4 at 0x00c772d8, and the loaded value is immediately TEST-ed for null and then dereferenced at +0x0 and +0x4, which is the shape of a head pointer into a chain"},
+      {"claim": "the whole chain is walked with no early exit on a match", "confidence": "OBSERVED", "basis": "the counter at 0x00c772e4 is incremented but not tested inside the loop; the only loop exit is the null-link test at 0x00c772e8"},
+      {"claim": "the return is strictly 0 or 1 in EAX, with the upper 24 bits provably zero", "confidence": "OBSERVED", "basis": "XOR EAX,EAX at 0x00c772ec is the last whole-register write and SETNZ AL at 0x00c772f1 writes one byte"},
+      {"claim": "the match count is discarded and only its non-zeroness survives", "confidence": "OBSERVED", "basis": "TEST ESI,ESI feeds SETNZ AL; nothing moves ESI into EAX"},
+      {"claim": "the function writes nothing", "confidence": "OBSERVED", "basis": "every memory operand in the body is a read and the receiver record reports written_through=0"},
+      {"claim": "__thiscall with the receiver in ECX, one 4-byte stack argument, and a callee-side 4-byte pop", "confidence": "INFERRED", "basis": "RET 0x4 is an explicit callee pop and ECX is the base of both receiver operands; the convention is inferred from the terminator and register use, not stated by the bytes"}
+    ]
+  },
+  "semantics_not_claimed": {
+    "meaning_of_the_32_bit_values": "UNKNOWN. The argument arrives from callers as an immediate constant - 0x00ae9a29 pushes 0x4ac8010, 0x00cfa0f3 pushes 0x50a2e65, 0x00c8d060 pushes 0x6627823 - and the 31-bit magnitudes are consistent with a pre-computed identifier or hash. A packed enum, a resource id and a hashed token are indistinguishable to these 24 instructions. The package therefore calls the word a KEY, which is what the body does with it, and asserts nothing beyond that.",
+    "the_container_kind": "UNKNOWN beyond its shape. A chained hash SET, a multimap keyed on the same 32-bit word, and a hand-rolled sparse set all compile to this body. What the body proves is the structure - a bucket array, a modulo index, a singly linked chain whose first word is the key - and the package's names reflect that structure only.",
+    "owning_class": "UNKNOWN. SporeApp.exe has no MSVC RTTI, so the class that owns the words at +0x1120 and +0x1124 is not recoverable from these instructions. The identity record carries class_type null and the types/vtables categories are both absent from the evidence pack.",
+    "bucket_count_in_any_real_instance": "UNKNOWN. The body reads the count and never constrains it, so whether the count is a power of two, prime, or bounded in any way is not established. The model test deliberately uses a count of 5 in one fixture precisely because a non-power-of-two count separates a modulo from a mask.",
+    "whether_a_chain_can_be_cyclic": "UNKNOWN. The body has no iteration cap and no identity check, so a cyclic chain would not terminate. Nothing here establishes that one exists.",
+    "source_level_return_type": "PARTLY UNKNOWN, see observed_original_abi.return_type_caveat. The VALUE range is OBSERVED; the declared TYPE is inferred from the call sites' TEST AL,AL and from Ghidra's own bool, not proved by the bytes.",
+    "a_missing_sibling_semantics": "NOT CLAIMED. The sibling 0x00c77bf0 is called by two reconstructed callers on this entry's false path. That call pattern is used below as cross-body evidence about THIS entry's role, but 0x00c77bf0 is a separate target owned by another worker and this package asserts nothing about its body."
+  },
+  "cross_body_evidence": {
+    "kind": "reconstructed callers, cross-body, NOT stated by this target's own 56 bytes",
+    "artifact": "reconstruction/staging/wave13-w1-core-b11/00be92e0_arrival_bind_target.cpp and reconstruction/metadata/pkg13-e4-empire-wave3/00c8d060.json",
+    "observation_1": "0x00c8d060's committed metadata records the sequence verbatim: 'query 0x00c772c0(state, 0x6627823). A true query returns; a false query calls 0x00c77bf0(state, 0x6627823)'.",
+    "observation_2": "the 0x00be92e0 reconstruction records, for its probing path, that 'a zero answer calls c77bf0(trading, hash) and sets BL = 1, the fallback flag', after testing 'the hash ... with c772c0(trading, hash)'.",
+    "observation_3": "all three sampled call sites consume the result the same way: 0x00ae9a35 TEST AL,AL / JZ, 0x00cfa0ff TEST AL,AL / JNZ, and 0x00c8d060's own TEST AL,AL.",
+    "inference": "a membership test whose miss path immediately performs a second operation on the same receiver with the same key is a contains() followed by an add(); a uniform TEST AL,AL on the result is the consumer of a boolean predicate",
+    "confidence": "INFERRED",
+    "note": "this is what the local variable names in this package reflect. The 56 bytes above state the predicate and nothing about the miss path. The reviewer should discount the naming independently of the body evidence."
+  },
+  "test_observable_underdetermined": {
+    "early_exit_on_first_match": "An implementation that returned as soon as it found a match would return the same value as this one for every finite acyclic chain, so NO return-value test can refute it and none is claimed. The full walk is an OBSERVED property of the listing (no early exit in the branch graph), not a behaviour this test distinguishes. This is stated so the test is not read as evidence for something it cannot establish.",
+    "duplicated_key": "A chain holding the key twice answers 1, the same as a chain holding it once, so the duplicate fixture does not by itself separate 'return the count' from 'return the count's non-zeroness'. The upper-24-bit pin in the return group is what makes the value claim measured rather than assumed."
+  },
+  "callers": {
+    "direct_call_sites": 75,
+    "xref_types": {"incoming": {"direct-call": 75}, "outgoing": {}},
+    "sample_call_sites": [
+      {"callsite": "0x00ae9a30", "argument": "0x4ac8010 (pushed at 0x00ae9a29)", "receiver": "ECX from EBX at 0x00ae9a2e", "result_use": "0x00ae9a35 TEST AL,AL / 0x00ae9a37 JZ 0x00ae9a8b"},
+      {"callsite": "0x00cfa0fa", "argument": "0x50a2e65 (pushed at 0x00cfa0f3)", "receiver": "ECX from EDI at 0x00cfa0f8", "result_use": "0x00cfa0ff TEST AL,AL / 0x00cfa101 JNZ 0x00cfa110"},
+      {"callsite": "0x00bba0be", "argument": "not sampled", "receiver": "not sampled", "result_use": "not sampled"}
+    ],
+    "note": "The 75 direct-call count is from the committed research record. The three sites listed were read live through GhidraMCP /get_assembly_context solely to establish the push/return shape; no broad sweep was performed and no caller body was modified. The per-callsite argument values are what the PUSH immediates actually are, which is the direct evidence that the argument is a 32-bit word rather than a pointer."
+  },
+  "verification": {
+    "compiler": "clang++ -m32 -std=c++17 -O2",
+    "baseline": "the model test exits 0 on the unmutated sources",
+    "model_test_groups": [
+      "constants restated against the machine-derived receiver record",
+      "the bucket index is the unsigned remainder (key 0x80000000, count 3: unsigned remainder 2, signed remainder negative, quotient different)",
+      "the index is the remainder, not the quotient (key 7, count 3: quotient 2, remainder 1)",
+      "the index is a modulo, not a power-of-two mask (key 9, count 5: remainder 4, mask-by-4 0, mask-by-3 1, all three distinct)",
+      "only the selected bucket is examined, and the SIB scale is 4",
+      "the compared word is link+0x0 (the head's +0x4 word holds a pointer, not the key)",
+      "the next link is link+0x4 (a live link address planted at +0x0 with a null at +0x4 must be missed, and the same chain via +0x4 found)",
+      "the whole chain is walked, at head, middle and last depth of a three-link chain",
+      "the return is strictly 0 or 1 in EAX, sampled through an explicit asm block so the upper 24 bits are measured",
+      "nothing is written: a single memcmp over the container, the bucket table and every link",
+      "the ABI: ECX receiver, one 4-byte stack word, and a CALLEE pop measured by sampling ESP either side of the call at two stack depths 0x100 apart",
+      "the encoding: the 56 bytes re-asserted against the listing"
+    ],
+    "asm_harness_notes": [
+      "The argument is PUSHed by the asm block and there is no pop after the CALL, because the entry's own terminator is RET 0x4. Leaving the frame exactly as found is what makes `leave` correct.",
+      "The first ESP sample is taken BEFORE the push and the second AFTER the entry returns. An entry that left the word for the caller to pop would leave the second sample four bytes lower, so the pin discriminates the cleanup owner, which is the ABI claim under test.",
+      "The entry address and the ESP sample slots are file-scope objects read through `m` operands. Four register operands plus a memory-indirect call exhausted the available registers on i386 and the block failed to assemble until the entry pointer was moved to a `m` operand.",
+      "The result is sampled with a 32-bit `=a` output so the assertion reads the whole of EAX, not AL."
+    ],
+    "mutation_test": {
+      "harness": "reconstruction/staging/pkg-00c772c0-hashset-contains-key/mutation_test.sh",
+      "mutations": 21,
+      "refuted": 21,
+      "not_refuted_or_inconclusive": 0,
+      "result": "ALL MUTATIONS REFUTED, harness exit 0",
+      "self_containment": "each mutant is a self-contained directory holding the impl .cpp, the .hpp and the model test, and the TEST is compiled from that directory. `#include \"x.hpp\"` resolves relative to the INCLUDING file first, ahead of any -I path, so a test built from $PKG_DIR would silently pull in the ORIGINAL header and the header mutations would never be exercised.",
+      "archive_handling": "the archive is deleted before every link and created with `ar rc`, never `ar qc`. `ar qc` APPENDS, so without the rm a stale object from the previous mutant would win the link and every later mutation would report a bogus pass.",
+      "runtime_bounded": "each mutant runs under `timeout 20` and the harness sets `ulimit -c 0`. A mutant that never terminates is reported INCONCLUSIVE (exit 124), not counted as a refutation: a hang means the mutant never produced the observed value, but it is not a diagnostic. Core dumps are disabled because several mutants dereference a wild pointer deliberately and the system core handler is slow enough to dominate the run.",
+      "mechanisms": "17 mutants are refuted at runtime, by exit 1 with a diagnostic or by a fatal signal; 4 (H6, H7, H8 and the offsetof/layout asserts behind them) are refuted at compile time by a static_assert in the package, and `record` names that mechanism so the two kinds are not conflated.",
+      "coverage_of_the_hypotheses": [
+        "M1 signed modulo, M2 quotient instead of remainder, M3 mask instead of modulo, M4 no modulo at all - the four ways the DIV result can be misread",
+        "M5 SIB scale 8, M6 the base word read from the count displacement - the bucket load",
+        "M7 comparison inverted, M8 next link from +0x0, M9 null-head guard dropped, M10 walk skipping every second link - the chain walk",
+        "M11 count compared == 1, M12 counter incremented unconditionally, M13 result flag inverted - the return value",
+        "H1 SIB byte, H2 divisor displacement, H3 terminator, H4 SETNZ/SETZ, H5 EAX clear - the stated encoding",
+        "H6 next-link displacement, H7 bucket scale, H8 receiver extent - the header's layout constants, caught at compile time"
+      ],
+      "harness_defects_found_and_fixed": [
+        {
+          "defect": "M10 was originally `link = link->next_04 == nullptr ? link : nullptr;`, which makes the head its own successor and spins forever. The harness hung on it twice at 120 s and 600 s before the cause was identified.",
+          "fix": "M10 was replaced with a two-links-at-a-time advance that stays null-safe and terminates. The general lesson, and the reason the harness now bounds every run, is that a self-referential mutant is a HANG, not a refutation: the run never produced the observed value, so it cannot be counted as evidence either way."
+        },
+        {
+          "defect": "M12 was originally `(match_count & 0xff) != 0`, and the harness correctly reported it as NOT REFUTED.",
+          "fix": "That was a defect in the MUTATION, not in the test: for any chain shorter than 256 links that expression is identical to the observed TEST ESI,ESI / SETNZ AL, so it is not a wrong model at all. M12 was replaced with an unconditional counter increment, which IS a wrong model, and the substitution plus its reason are recorded in the harness so it is not later mistaken for a silently dropped case."
+        },
+        {
+          "defect": "H5's byte anchor spanned the line break in the header's constant table and matched nothing, which the harness reported as a missing anchor rather than as a refutation.",
+          "fix": "the anchor was confined to a single line. An anchor that does not match must never be allowed to look like a pass or a refutation, which is why `mutate_dir` checks for it explicitly and counts it as a failure."
+        }
+      ]
+    },
+    "static_validation_axes": {
+      "note": "the committed validation record for this target predates this package and reports ABI, CALLS and RETURN SEMANTICS as NOT_AVAILABLE because no canonical source span existed when it was produced. This package supplies source for the first two and pins the third, so those three axes are expected to become evaluable on the next regeneration, which the orchestrator performs centrally. This worker did not run `openspore integrate apply` and did not rebuild reconstruction/knowledge/index.json.",
+      "already_passing_on_the_binary": "GLOBALS, FIELDS/OFFSETS, CONSTANTS, CONTROL FLOW and VIRTUAL DISPATCH all pass at complete coverage against the machine listing alone, independently of this package."
+    }
+  },
+  "runtime": {
+    "status": "GATED",
+    "observations_validated": 0,
+    "note": "no original-process trace exists in this repository for this target. The gate is open, nothing was attempted, and nothing failed. No runtime claim of any kind is made in this package."
+  },
+  "unresolved_questions": [
+    "What the 32-bit values are: a hashed token, a packed enum and a resource id all index and compare identically here. Caller analysis narrowed them to 31-bit immediate constants but did not identify a kind.",
+    "The class that owns the words at +0x1120 and +0x1124. No MSVC RTTI in this binary, and the evidence pack's types and vtables categories are both absent.",
+    "Whether the count at +0x1124 is ever zero in a real instance. The body never tests it, so a zero would trap the machine with #DE, and nothing here shows whether the container can be constructed in that state.",
+    "Whether any real chain can be cyclic. The loop has no cap and no identity check, so a cycle would not terminate.",
+    "The semantics of the sibling 0x00c77bf0, which two reconstructed callers invoke on this entry's false path with the same receiver and key. That is a separate target owned by another worker; it is the natural next question for this family but it is not answered here."
+  ],
+  "do_not_touch": {
+    "sibling_va": "0x00c77bf0",
+    "reason": "a sibling in the same family, owned by another worker. This package neither reads its staging directory nor asserts anything about its body. Its only appearance here is as the far side of two callers' false paths, recorded as cross-body evidence about 0x00c772c0."
+  }
+}

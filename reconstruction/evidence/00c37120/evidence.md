@@ -2,9 +2,37 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `e948b985580e951ce38b1163ba5404d0a4f23fbc5559efda7a8a0997aed829e3`
+- Content SHA-256: `d8d01cec02832f292ee04055b93a3b27a54a2b341b452c61c09c51b57766a8ca`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this_register": "ECX, read exactly once at 0x00c37120 as the base of [ECX + 0x768]",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "receiver_register": "ECX",
+  "ret_form": "RET",
+  "return_observation": "0x00c37120 is a 32-bit memory FLD, so the value pushed is exactly the 4 bytes at +0x768. No rounding arithmetic precedes it in this body, so the value in ST(0) is that single widened without change.",
+  "return_register": "ST(0) (x87)",
+  "return_semantics": "the 32-bit IEEE-754 single at receiver+0x768, widened to the x87 80-bit register ST(0)",
+  "return_type": "float",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "callee pops nothing; caller owns all cleanup",
+  "termination": "RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -36,7 +64,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "a17f5164a34620cb5c565e8d90c86fb2f034cee064f34f702fe40909c180c59a",
+  "content_sha256": "e8f87f1df0193f117f3eb7f45974a1b9a19edf69205208c47ff3335e95496fc5",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -44,16 +72,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -233,9 +261,74 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00dc0230"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00dc1060"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00dc18e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fe0f40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ffe860"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01017bb0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0101b670"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0101ba10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0101d130"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x010251e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0105c7e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0105c9d0"
+  }
+]
+```
 
 ## contradictions
 
@@ -245,13 +338,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nfloat10 __fastcall FUN_00c37120(int param_1)\n\n{\n  return (float10)*(float *)(param_1 + 0x768);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -283,9 +372,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 9827,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this_register\": \"ECX, read exactly once at 0x00c37120 as the base of [ECX + 0x768]\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00c37120 is a 32-bit memory FLD, so the value pushed is exactly the 4 bytes at +0x768. No rounding arithmetic precedes it in this body, so the value in ST(0) is that single widened without change.\",\n    \"return_register\": \"ST(0) (x87)\",\n    \"return_semantics\": \"the 32-bit IEEE-754 single at receiver+0x768, widened to the x87 80-bit register ST(0)\",\n    \"return_type\": \"float\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"callee pops nothing; caller owns all cleanup\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dc0230\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dc1060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dc18e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fe0f40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ffe860\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01017bb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0101b670\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0101ba10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0101d130\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x010251e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0105c7e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0105c9d0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00dc0329\",\n        \"direction\": \"in\",\n        \"other\": \"0x00dc0230\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00dc03ea\",\n        \"direction\": \"in\",\n        \"other\": \"0x00dc0230\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00dc10d4\",\n        \"direction\": \"in\",\n        \"other\": \"0x00dc1060\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00dc1a9b\",\n        \"direction\": \"in\",\n        \"other\": \"0x00dc18e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00fe1540\",\n        \"direction\": \"in\",\n        \"other\": \"0x00fe0f40\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ffedf1\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ffe860\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x01017c37\",\n        \"direction\": \"in\",\n        \"other\": \"0x01017bb0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\"
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -303,17 +399,17 @@
   "callees": [],
   "callers": [
     "FUN_01017bb0",
+    "FUN_00ffe860",
     "FUN_010251e0",
     "FUN_0105c7e0",
-    "FUN_00dc18e0",
-    "FUN_0101d130",
-    "FUN_00fe0f40",
-    "FUN_00ffe860",
-    "FUN_00dc0230",
-    "FUN_0105c9d0",
-    "FUN_00dc1060",
     "FUN_0101b670",
-    "FUN_0101ba10"
+    "FUN_00dc18e0",
+    "FUN_0101ba10",
+    "FUN_00dc1060",
+    "FUN_00dc0230",
+    "FUN_00fe0f40",
+    "FUN_0101d130",
+    "FUN_0105c9d0"
   ],
   "classification": "stub",
   "dispatch": null,
@@ -324,14 +420,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 1,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00c37120",
   "namespace": null,
@@ -415,9 +505,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b11/00c37120_float_field_getter.cpp",
+    "reconstruction/staging/wave13-w1-core-b11/b11_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b11/b11_opaque_types.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b11/00c37120.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -427,9 +531,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace has been captured for 0x00c37120. A differential test must confirm that the shipping build still loads the float from +0x768 and that no runtime patch retargets the address.",
+    "The domain of the returned float can only be established by observing one call site in the original process with a known receiver, which no recorded run has done."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -439,15 +554,30 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "float",
+  "float (inferred from the FLD width; the domain is not established)"
+]
+```
 
 ## vtables
 

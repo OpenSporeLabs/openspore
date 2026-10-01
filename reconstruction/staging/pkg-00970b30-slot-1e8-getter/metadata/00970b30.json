@@ -1,0 +1,253 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00970B30-SLOT-1E8-GETTER",
+  "subsystem": "Simulator",
+  "cluster": "receiver-slot-pointer-accessors",
+  "queue_id": "",
+  "va": "0x00970b30",
+  "address": "0x00970b30",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "image_base": "0x00400000",
+  "sdk_symbol": null,
+  "normalized_symbol": "slot_1e8_00970b30",
+  "reconstructed_symbol": "slot_1e8_00970b30",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30.hpp",
+    "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30.cpp",
+    "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30.hpp",
+    "source": "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30.cpp",
+    "model_test": "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (ECX carries the receiver and is dereferenced through the single memory operand before any definite write; bare RET with no imm16; no stack word read as an argument)",
+    "receiver": "ECX, read at 0x00970b30 as the base of the single memory operand `dword ptr [ECX + 0x1e8]`; never copied to another register and never written",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (0x00970b36, byte 0xc3, no imm16)",
+    "return_register": "EAX",
+    "return_type": "void*",
+    "return_semantics": "the 32-bit word STORED at receiver+0x1e8, copied bit for bit into EAX and re-typed as a pointer; the sampled callers dereference it",
+    "return_type_rationale": "MODELLED AS A POINTER, ON THE CALLERS' EVIDENCE AND NOT ON THE DERIVED RECORD'S CLASS. The derived ABI record classifies the EAX value `register_class: pointer_like` on a single heuristic (the last value written to EAX) with `confidence: INFERRED` and `corroboration: not_available`, and that heuristic cannot distinguish a loaded word from a computed address - so it is NOT the reason for this type. The reason is that three independently sampled callers, decompiled live, use the result as an ADDRESS: 0x00c4b250 and 0x00c4c090 each load through it at displacement 0x13c, and 0x00c61070 tests it against 0 before loading through it. `void*` is the weakest C type that states that observed use; it names no pointee type, and the pointee's layout is not modelled. The declared return type is spelled `void*` with no space so the validator's declaration regex binds the span, and the machine width (4 bytes) and `void*` (4 bytes on x86-32) agree.",
+    "locals": "none; the body allocates no frame, saves no register and builds no record",
+    "outgoing_calls": "none; the body holds no CALL, no JMP and no indirect transfer"
+  },
+  "observed_mechanics": [
+    "0x00970b30 8b 81 e8 01 00 00 - MOV EAX,dword ptr [ECX + 0x1e8]: ModRM 0x81 is mod=10 (a disp32 follows), reg=000 (EAX), rm=001 (ECX); the disp32 is 0x000001e8.",
+    "0x00970b36 c3 - RET: single exit; the callee pops nothing, so stack cleanup is 0 bytes and owned by the caller.",
+    "The body is 7 bytes (0x00970b30..0x00970b36) and contains no branch, no call, no flag test, no register save and no loop: the read at +0x1e8 is unconditional, so every entry reads the same word.",
+    "The read happens on every entry: no lazy path, no cache, no publication check, no default and no refresh. A published null comes back as a published null.",
+    "Nothing is written. The word at +0x1e8 is not modified by this function and neither is any neighbouring word.",
+    "Raw bytes at 0x00970b30..0x00970b38, read live from the program database: 8b 81 e8 01 00 00 c3 cc. The 0xcc at 0x00970b37 is INT3 padding between this entry and the next and is NOT part of the body."
+  ],
+  "structural_neighbours": {
+    "note": "The entry immediately BELOW this one in the image decodes as this slot's SETTER. It is the strongest structural witness in the pack and the reason 0x1e8 is a real read/write slot rather than a displacement this body happens to compute. SCOPE: 0x00970b10 carries NO function in the program database (GhidraMCP /get_function_by_address returns 'No function found'), so it is cited as DECODED ADJACENT CODE, not as a second reconstructed function, and nothing in the model depends on it.",
+    "entries": [
+      {
+        "va": "0x00970b10",
+        "bytes": "8b 54 24 04 | b8 01 00 00 00 | 89 81 9c 00 00 00 | 89 91 e8 01 00 00 | c2 04 00",
+        "decoded": "MOV EDX,dword ptr [ESP + 0x4] ; MOV EAX,0x1 ; MOV dword ptr [ECX + 0x9c],EAX ; MOV dword ptr [ECX + 0x1e8],EDX ; RET 0x4",
+        "relation": "the SETTER for +0x1e8: one stack argument ([ESP+4]) stored into the SAME displacement this target reads, on the same ECX receiver, with 4 bytes of callee cleanup. Also writes +0x9c, which is BELOW this slot and therefore a different byte.",
+        "establishes": [
+          "0x1e8 is a WRITABLE slot, not a computed or constant displacement",
+          "the family shape: getter here, setter immediately below it",
+          "the contrast case for callee cleanup - RET 0x4 there, bare RET here"
+        ]
+      }
+    ]
+  },
+  "field_offsets": {
+    "note": "No field of any type is NAMED. The receiver record is bounds_only ('where the body was SEEN reaching', not a layout), so the one displacement below is a value and not a member identity. The displacement is spelled literally in the source.",
+    "receiver": [
+      {
+        "offset": "0x1e8",
+        "width_bytes": 4,
+        "access": "read",
+        "name": null,
+        "identity": "UNKNOWN - unnamed",
+        "confidence": "OBSERVED",
+        "listing_evidence": "0x00970b30 is `8b 81 e8 01 00 00`; the disp32 is 0x000001e8 and the ModRM byte selects ECX as the base",
+        "corroborated_by": "the adjacent setter at 0x00970b10 writes the same displacement (see structural_neighbours), and the two constants are pinned against each other by a static_assert and re-checked at run time by model test group 3",
+        "modelling_use": "the receiver fixture is sized to 0x1ec so the word at +0x1e8 is addressable; that extent is a MODELLING BOUND, not a recovered object size"
+      }
+    ],
+    "sibling_offsets_observed_but_not_claimed": [
+      "0x000",
+      "0x004",
+      "0x09c",
+      "0x1e4",
+      "0x13c"
+    ],
+    "sibling_note": "0x09c is written by the adjacent setter; 0x1e4 is a 4-byte-aligned neighbour below this slot, planted with a distinct sentinel in the model test only; 0x13c is a displacement the sampled CALLERS load through on the RETURNED POINTER, which is a different object from this receiver and is recorded without being modelled. No layout, field name or object size follows from any of this."
+  },
+  "globals": [],
+  "globals_note": "None. The body names no absolute data address; the only memory operand is receiver-relative through ECX. knowledgegraph/triage/datarefs-2540f2ca.tsv records no data reference out of 0x00970b30, which is a recorded absence and not a missing read.",
+  "vtables": [],
+  "vtables_note": "None recorded. knowledgegraph/triage/datarefs-2540f2ca.tsv contains ZERO rows for 0x00970b30 - neither as a referencER nor as a referencEE - so on this pinned snapshot this target is not the target of any recorded data reference. Consistent with the 142/142 direct-call edges in xrefs-2540f2ca.tsv (every inbound reference_type is `direct-call`; not one `vtable-ref` row) and with the body's zero indirect dispatch. A function reached only through a vtable would appear as the target of a data reference from its table; this is a recorded absence, not an exhaustive proof that no table exists.",
+  "types": [
+    {
+      "name": "OpaqueReceiver",
+      "kind": "opaque fixture",
+      "size": "0x1ec",
+      "note": "sized to the single reached displacement 0x1e8 plus its four bytes; no member is declared and no class is asserted. The word at 0x1e8 is UNNAMED."
+    },
+    {
+      "name": "PointeeFixture",
+      "kind": "model-test-only fixture",
+      "size": "0x148",
+      "note": "exists in the model test alone so the sampled callers' load at displacement 0x13c can be reproduced byte for byte. It is NOT a claim about the pointee's type, size or layout; the production header declares no pointee type at all."
+    }
+  ],
+  "type_scope": "The reconstructed symbol takes an opaque receiver pointer and returns `void*`. That the returned word is used as an ADDRESS is OBSERVED (three sampled callers load through it, one null-tests it). The receiver's class, the slot's name, and the pointee's type are all UNKNOWN and are not claimed.",
+  "analogues": [
+    {
+      "va": "0x00970b10",
+      "symbol": "(no function record)",
+      "relation": "immediate preceding entry in the image - this slot's SETTER. Same receiver, same displacement 0x1e8, one stack argument, RET 0x4. See structural_neighbours."
+    }
+  ],
+  "sampled_callers": [
+    {
+      "va": "0x00c4b250",
+      "use": "iVar3 = FUN_00970b30(); uVar6 = *(undefined4 *)(iVar3 + 0x13c); - a load THROUGH the result"
+    },
+    {
+      "va": "0x00c4c090",
+      "use": "iVar1 = FUN_00970b30(); ... *(undefined4 *)(iVar1 + 0x13c) ... - a load THROUGH the result"
+    },
+    {
+      "va": "0x00c61070",
+      "use": "iVar2 = FUN_00970b30(); if (iVar2 == 0) { iVar2 = 0; } else { iVar2 = *(int *)(iVar2 + 0x13c); } - an explicit NULL TEST followed by a load through the result"
+    }
+  ],
+  "semantic_findings": [
+    "The entry is a receiver-slot getter returning a pointer: one 32-bit load at displacement 0x1e8, one return, no validation, no transformation, no write.",
+    "142 direct callsites across 69 distinct caller functions in the committed xrefs export, every one `direct-call`, and 0 edges out of the target. High fan-in of a leaf accessor.",
+    "The returned word is used by all three sampled callers as an ADDRESS: two load through it at displacement 0x13c of the pointee and one null-tests it first. That is the evidence for the `void*` return type, and it is independent of the derived record's heuristic `pointer_like` class.",
+    "The immediately adjacent entry at 0x00970b10 is this slot's SETTER - one stack argument stored at [ECX+0x1e8] - which makes 0x1e8 a demonstrated read/write slot and fixes the family's thiscall shape on both ends (bare RET here, RET 0x4 there).",
+    "knowledgegraph/triage/datarefs-2540f2ca.tsv records no data reference out of 0x00970b30 in either direction, so on this pinned snapshot the target is not reached through a vtable; that matches the body's zero indirect dispatch and the 142/142 direct-call edges.",
+    "The derived ABI record's `pointer_like` return class is INFERRED with `corroboration: not_available`; it is consistent with the callers here but is explicitly NOT the reason the model declares a pointer type."
+  ],
+  "not_claimed": [
+    "Any name for the word at receiver+0x1e8, and any name for the receiver's class. UNKNOWN; the receiver record is bounds_only and the type above is opaque.",
+    "The pointee's type, size or layout. The callers reach at least displacement 0x13c of it; the production header declares no pointee type and the model stops at the pointer. The PointeeFixture is a model-test device, not a recovered layout.",
+    "Any writer of the word at +0x1e8 beyond the adjacent setter, and any immutability or publication claim for it.",
+    "The receiver's size or layout. 0x1ec is a modelling bound through the one word the body reads, not a recovered allocation size.",
+    "Nullability, ownership, AddRef/Release or thread-safety of either the receiver or the returned pointer. The body has no room for a reference call.",
+    "Any calling convention other than __thiscall, and any ordinary stack argument for this target. The neighbouring setter's one stack argument belongs to that entry, not this one.",
+    "That 0x00970b10 is a separate reconstructed function. It carries no function record in the program database and is cited as decoded adjacent code only.",
+    "Any runtime, Wine, trace, differential or OBSERVED-behaviour claim. No runtime evidence exists for this VA: the runtime axis is GATED and unattempted."
+  ],
+  "confidence": "high for the mechanism (two instructions, one displacement, one bare RET, a demonstrated setter for the same slot, and three callers agreeing on pointer use); none for the receiver's class, the slot's name, or the pointee's type",
+  "unresolved_questions": [
+    "Which class is the receiver? Nothing in the pack names it; the record has no namespace, no SDK association and no type. The 142 callers all supply their own ECX and the pack does not say from where.",
+    "What does the pointer at receiver+0x1e8 point to, and what is at its displacement 0x13c? Three callers load there and one SDK-independent note names nothing; the pointee's type is UNKNOWN.",
+    "Is 0x00970b10 the only writer of the slot, and is the adjacent setter the only such accessor pair? The setter is adjacent in the image, which is an adjacency and not an enumeration of writers elsewhere in the binary.",
+    "Why does the adjacent setter also write [ECX+0x9c] with the constant 1 in the same call? That coupling is observed but its meaning is not recoverable from this target's evidence.",
+    "Do the 69 distinct callers share one receiver class, or is this slot reachable from more than one type? The fan-in is high and uniform but no witness names the receiver's origin."
+  ],
+  "evidence_provenance": [
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_function @ 0x00970b30 (2 instructions, complete) and /read_memory @ 0x00970b30 (8b 81 e8 01 00 00 c3 cc)"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /decompile_function @ 0x00970b30: `undefined4 __fastcall FUN_00970b30(int param_1) { return *(undefined4 *)(param_1 + 0x1e8); }`"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_bytes @ 0x00970b10 length 56 - the adjacent setter's bytes, decoded as noted, and the 0xcc padding after this body"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /decompile_function on the three sampled callers 0x00c4b250, 0x00c4c090 and 0x00c61070 - the pointer-use evidence for the declared return type"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /get_function_by_address @ 0x00970b10 - returns 'No function found', which bounds the scope of the setter claim to decoded adjacent code"
+    },
+    {
+      "mode": "derived",
+      "source_class": "evidence_pack",
+      "ref": "reconstruction/evidence/00970b30/evidence.json categories: disassembly (OBSERVED, listing_state complete), decompilation, ghidra_function, abi (ABI_INFERRED, receiver bounds_only)"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/xrefs-2540f2ca.tsv - 142 direct-call edges into 0x00970b30 from 69 distinct callers, 0 edges out, every inbound reference_type `direct-call`"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/datarefs-2540f2ca.tsv - zero rows for 0x00970b30 in either column"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-00970b30-slot-1e8-getter/slot_1e8_00970b30_model_test.cpp",
+    "groups": 8,
+    "assertion_style": "abort on the first failure; each group names the hypothesis it refutes",
+    "coverage": [
+      "the return is the word STORED at +0x1e8 re-typed as a pointer: not the ADDRESS of that word (the LEA form), not the receiver, not the displacement, not a mask/shift/increment of the value",
+      "0x1e8 is a byte displacement and not an index: the planted word at +0x1e4 and the words at +0x000/+0x004 are all different and none is returned, and the disp32-as-element-count reading lands at byte 0x7a0, past the modelled extent",
+      "the getter and the adjacent setter name ONE address: pinned at compile time and re-checked at run time, and the setter's OTHER displacement (+0x9c) is shown to be a different byte",
+      "the body reads: the whole 0x1ec-byte receiver is byte-identical before and after the call",
+      "the bits cross verbatim: 0, 1, 2, 0x7f, 0x80000000, 0xfffffffe, 0xffffffff and a 4x4 sweep of the byte pattern all come back unchanged, so no default, mask, sign-extension or saturation survives; and the sampled callers' POINTER use reproduces - a published null comes back null, and a non-null value is the address the caller then loads through at displacement 0x13c",
+      "the ABI is measured, not asserted: ESP is sampled before the call and after the return and must agree (the callee pops nothing), contrasted against the adjacent setter's RET 0x4; the receiver arrives in ECX with nothing pushed; a second receiver at a different address yields a different answer; and the sidecar's 142/69/0 edge counts are pinned",
+      "the encoding is the observed seven bytes, ModRM 0x81 decodes as mod=10/reg=EAX/rm=ECX, the disp32 equals the header's displacement, the opcode is 0x8b and not 0x8d (LEA), the tail is a bare 0xc3 and not 0xc2, and the 0xcc pad is named",
+      "the entry's literal displacement and the header's kFieldDisplacement name one and the same address"
+    ],
+    "build_matrix": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 with the package linked as a static archive: passes, exit 0. g++ -std=c++17 -Wall -Wextra -Werror -m32 at -O0, -O1 and -O2: all pass, exit 0.",
+    "mutation_tests": [
+      {"id": "M1", "perturbation": "read the neighbouring word at receiver+0x1e4 instead of +0x1e8", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M2", "perturbation": "LEA form: return the ADDRESS receiver+0x1e8 instead of the stored word", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M3", "perturbation": "mask the loaded word with 0xffff", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M4", "perturbation": "store the value back through the receiver (+1) before returning it", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M5", "perturbation": "halve the modelled word width (kFieldWidth 4 -> 2)", "expected": "FAILS", "observed": "killed: two static_asserts fire at compile time"},
+      {"id": "M6", "perturbation": "double the displacement 0x1e8 -> 0x328", "expected": "FAILS", "observed": "killed: two static_asserts fire at compile time"},
+      {"id": "M7", "perturbation": "substitute a non-null default for a published null (return the receiver when the slot reads 0)", "expected": "test FAILS", "observed": "killed at compile time under the first formulation; re-expressed so it compiles, killed at runtime (exit 134) as M16"},
+      {"id": "M8", "perturbation": "perturb the value (XOR 1) while keeping the displacement and width", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M12", "perturbation": "return the receiver itself instead of the stored word", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M13", "perturbation": "off-by-one pointer arithmetic on the loaded word (+1)", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M14", "perturbation": "read 16 bits instead of 32 (mask to a short)", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M15", "perturbation": "write a zero back through the slot before returning it", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M16", "perturbation": "substitute a non-null default for a published null", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "M9", "perturbation": "header: neighbouring-setter displacement 0x1e8 -> 0x1ec, so the getter/setter pair stops naming one address", "expected": "FAILS", "observed": "killed: static_assert fires at compile time"},
+      {"id": "M10", "perturbation": "header: sampled-caller pointee displacement 0x13c -> 0x140", "expected": "FAILS", "observed": "killed: static_assert fires at compile time"},
+      {"id": "M11", "perturbation": "header: recorded direct-call edge count 142 -> 7", "expected": "test FAILS", "observed": "killed (runtime abort, exit 134)"},
+      {"id": "H1", "perturbation": "header encoding opcode 0x8b -> 0x8d (LEA)", "expected": "FAILS", "observed": "killed: static_assert fires at compile time"},
+      {"id": "H2", "perturbation": "header encoding ModRM 0x81 -> 0x41 (disp8, no SIB byte)", "expected": "FAILS", "observed": "killed: two static_asserts fire at compile time"},
+      {"id": "H3", "perturbation": "header encoding disp32 0x000001e8 -> 0x000001ec", "expected": "FAILS", "observed": "killed: static_assert fires at compile time"},
+      {"id": "H4", "perturbation": "header encoding tail 0xc3 (RET) -> 0xc2 (RET imm16)", "expected": "FAILS", "observed": "killed: two static_asserts fire at compile time"},
+      {"id": "H5", "perturbation": "header INT3 pad byte 0xcc -> 0x90", "expected": "FAILS", "observed": "killed: static_assert fires at compile time"},
+      {"id": "H6", "perturbation": "header modelled body length 7 -> 8", "expected": "FAILS", "observed": "killed (runtime abort, exit 134)"}
+    ],
+    "mutation_summary": "16 of 16 behavioural and constant mutations and 6 of 6 encoding/boundary mutations are detected - 22 of 22 overall, with no survivor. The unmutated reconstruction passes under the clang++ gate and under g++ at -O0/-O1/-O2, exit 0 each time.",
+    "mutation_method": "Each mutation was applied to a throwaway copy of the package under /tmp/opencode/w18 (never to the staging files), built with clang++ -std=c++17 -Wall -Wextra -Werror -m32 into a static archive, and run. A mutation counts as detected only when the build fails or the binary aborts. The unmutated baseline was rebuilt and re-run before the batch and passes."
+  },
+  "runtime_validation": "none",
+  "runtime_validation_status": "not-run",
+  "runtime_gates": [],
+  "review_status": "pending",
+  "integration_status": "staging only; not promoted, not committed",
+  "worker_ownership": {
+    "implementer_id": "w18/0x00970b30",
+    "staging_dir": "reconstruction/staging/pkg-00970b30-slot-1e8-getter",
+    "note": "This worker claims only 0x00970b30. The adjacent entry at 0x00970b10 and the three sampled callers (0x00c4b250, 0x00c4c090, 0x00c61070) are read-only references; no other worker's staging package or metadata record is touched."
+  }
+}

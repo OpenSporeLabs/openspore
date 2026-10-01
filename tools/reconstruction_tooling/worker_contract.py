@@ -26,9 +26,10 @@ Two halves, both machine-readable, both deterministic:
 
     ``extract_result_document(text, blocks)``
         Locates exactly one candidate result inside that text, or refuses.
-        Strictest signal first -- an explicit fence, then the final assistant
-        text block, then the whole reply -- and at every step *ambiguity is a
-        failure*, never a pick.
+        Where the text is read from is structural: the whole reply when the
+        envelope carries a single text block, the final block when it carries
+        several. Within that region the rule is strict and unarbitrated -- at
+        every step *ambiguity is a failure*, never a pick.
 
 The outcome vocabulary is explicit about the difference between "I did it" and
 "I could not": ``STILL_UNKNOWN`` is a legitimate, non-failing answer, and the
@@ -96,6 +97,26 @@ def _claims_result(document):
                                                for key in _CLAIM_KEYS)
 
 
+def _is_event(value):
+    # type: (object) -> bool
+    """Is this dict one OpenCode stream event rather than a document?
+
+    The same structural test serves both places it is needed: recognising a
+    stream, and refusing to mistake the *single* event of a one-line JSONL
+    reply for a bare result document. A one-event reply is a bare JSON object,
+    so without this test the json_document channel would claim it, ``document``
+    would become the event, and a result sitting in that event's ``text`` part
+    would never be looked at.
+
+    The ``part`` key is what makes the trade safe rather than a guess on
+    ``type`` alone: a result document would have to carry a ``part`` field as
+    well, and ``part`` is not one of the result schema's fields, so a payload
+    that trips this is a payload no real worker emits.
+    """
+    return (isinstance(value, dict) and isinstance(value.get("type"), str)
+            and "part" in value)
+
+
 def _balanced_spans(text):
     # type: (str) -> list
     """Every balanced ``{...}`` span in ``text``, outermost first, in order.
@@ -108,26 +129,60 @@ def _balanced_spans(text):
     wrapper as a *second* candidate: a reply holding a quoted example plus a
     real answer must come out ambiguous, and a scanner that only reported
     outermost spans would silently pick one of the two.
+
+    Prose before the payload is the other half of the problem. A single
+    unbalanced ``"`` in prose (``He said "hello``) used to put the scanner in
+    string mode for the whole reply, so no ``{`` ever opened a span and a
+    perfectly valid result was rejected as ``candidates=0``. Recovery is
+    therefore allowed at a line boundary, under one narrow rule: *on a newline,
+    while inside a string, with no ``{``-opened span and an odd number of
+    unescaped quotes on the line just ended, the string is not JSON -- it is
+    prose.* Both halves of that rule are load-bearing. A raw newline cannot
+    occur inside a JSON string, and requiring ``starts`` to be empty means the
+    ambiguous case (an odd quote inside an object being scanned) is left alone.
+
+    This cannot invent a candidate. Recovery only ever clears ``in_string``; it
+    never sets it, so it can only make spans visible that a runaway string was
+    hiding, and every span it exposes still has to survive ``json.loads`` *and*
+    claim a result before ``_candidates`` will report it. And it cannot split a
+    string that legitimately contains braces, because a brace inside a
+    string-bearing object is never in string mode at the time: the object's own
+    ``{`` already pushed a span.
     """
     spans = []
     starts = []
     in_string = False
     escaped = False
+    line_quotes = 0
     for index, char in enumerate(text):
         if in_string:
             if escaped:
                 escaped = False
+                if char == "\n":
+                    # A trailing backslash consumed this newline, so the
+                    # recovery test below did not run. The string itself is left
+                    # alone -- a continuation is a continuation -- but the count
+                    # is per line, so it still restarts here.
+                    line_quotes = 0
             elif char == "\\":
                 escaped = True
             elif char == '"':
                 in_string = False
+                line_quotes += 1
+            elif char == "\n":
+                if not starts and line_quotes % 2:
+                    in_string = False
+                line_quotes = 0
             continue
         if char == '"':
             in_string = True
+            line_quotes += 1
         elif char == "{":
             starts.append(index)
         elif char == "}" and starts:
             spans.append((starts.pop(), index + 1))
+        elif char == "\n":
+            line_quotes = 0
     # Outermost first, so a caller that cares about order sees the container
     # before the thing it contains.
     spans.sort(key=lambda span: (span[0], -span[1]))
@@ -235,7 +290,10 @@ def unwrap_reply(raw, max_bytes=4 * 1024 * 1024):
     Returns ``{"text", "channel", "blocks", "tool_calls", "document",
     "oversized", "bytes"}``. ``blocks`` is the ordered list of assistant text
     blocks when the channel exposes them, because "which block is the answer"
-    is only answerable if the blocks are kept separate. Never raises.
+    is only answerable if the blocks are kept separate. ``text`` is the
+    newline-joined view of those blocks and is for location and provenance; the
+    block list is what a *selection* decision is made from, so a join can never
+    cost a reply its structure. Never raises.
     """
     if raw is None:
         return {"text": "", "channel": CHANNEL_TEXT, "blocks": [],
@@ -259,11 +317,16 @@ def unwrap_reply(raw, max_bytes=4 * 1024 * 1024):
     # Channel 1: the whole reply is one JSON object. This is the contract a
     # plain subprocess worker (tests/fixtures/fake_worker.py) speaks, and it
     # stays first so that channel is never perturbed by the heuristics below.
+    # The exception is a single *event*: one JSONL line parses as a bare object,
+    # and reading it as a document would hide the result carried in its text
+    # part behind an envelope the extractor never sees. So an event-shaped
+    # object is deferred to the event-stream channel below, which reads it
+    # exactly as it would read the same line inside a longer stream.
     try:
         document = json.loads(stripped)
     except ValueError:
         document = None
-    if isinstance(document, dict):
+    if isinstance(document, dict) and not _is_event(document):
         return {"text": text, "channel": CHANNEL_JSON_DOCUMENT, "blocks": [text],
                 "tool_calls": 0, "document": document, "oversized": False,
                 "bytes": size, "empty": False}
@@ -289,8 +352,7 @@ def unwrap_reply(raw, max_bytes=4 * 1024 * 1024):
         except ValueError:
             stream = False
             break
-        if not isinstance(event, dict) or not isinstance(event.get("type"), str) \
-                or "part" not in event:
+        if not _is_event(event):
             stream = False
             break
         events += 1
@@ -302,6 +364,10 @@ def unwrap_reply(raw, max_bytes=4 * 1024 * 1024):
                 and isinstance(part.get("text"), str):
             blocks.append(part["text"])
     if stream and events:
+        # ``text`` is a convenience join; ``blocks`` is the authority. A reply
+        # that narrates before it answers therefore keeps its two blocks apart
+        # here, and ``_searchable_span`` is what decides which of them a result
+        # may be read from.
         return {"text": "\n".join(blocks) if blocks else "",
                 "channel": CHANNEL_EVENT_STREAM, "blocks": blocks,
                 "tool_calls": tool_calls, "document": None,
@@ -314,30 +380,75 @@ def unwrap_reply(raw, max_bytes=4 * 1024 * 1024):
             "bytes": size, "empty": False}
 
 
+def _searchable_span(text, blocks):
+    # type: (str, object) -> tuple
+    """The only region of ``text`` a result may be read from.
+
+    Returns ``(start, end, stage)``. ``stage`` is ``"final_text_block"`` when the
+    search was restricted to the last assistant text block, ``"whole_reply"``
+    when it was not.
+
+    The restriction applies when, and only when, the envelope carries more than
+    one text block -- which today means an event stream. That is a structural
+    property of the channel rather than a guess about prose: OpenCode emits one
+    ``text`` event per assistant message, a worker narrates before it calls a
+    tool, and the answer to a turn is its last message. A single block has no
+    such structure (it is the ``text`` channel, or a stream with one message),
+    so the whole reply is searched exactly as before and nothing about the
+    default-format blob or the bare-document channel changes.
+
+    An earlier block is never read as a fallback. It is not merely less likely
+    to be the answer, it is *untrusted* by construction: a worker that answers,
+    then keeps talking, has produced a superseded answer, and recording that as
+    the conclusion of the run is the precise failure this restriction exists to
+    prevent. A bounded false reject is the acceptable price (see
+    ``extract_result_document``), and a worker that wants its earlier block read
+    can make it the final one by ending its turn with it.
+    """
+    if not isinstance(blocks, (list, tuple)) or len(blocks) < 2:
+        return 0, len(text), "whole_reply"
+    # Blocks that are empty or cannot be located carry no text to search, so the
+    # last *located* block is the last block that has content -- an empty
+    # leading narration must not make the answer unreadable.
+    located = _block_offsets(text, blocks)
+    if not located:
+        return 0, len(text), "whole_reply"
+    start, end = located[-1]
+    return start, end, "final_text_block"
+
+
 def extract_result_document(text, blocks=None):
     # type: (str, object) -> dict
     """Find the one worker result in ``text``, or explain why there isn't one.
 
     One decision rule, and it is deliberately the strictest one available:
-    **exactly one object in the whole reply may claim to be a worker result.**
+    **exactly one object may claim to be a worker result.** Where "may claim" is
+    read is decided by ``_searchable_span``: the whole reply when the envelope
+    has a single text block, the *final* block when it has several.
 
     Two claims is an unconditional refusal. It is not resolved by preferring a
-    fence, by preferring the last text block, by preferring the object whose VA
-    matches, or by preferring the one that validates -- because each of those is
-    a guess, and a guess here is how a worker gets recorded against the wrong
-    function or how a quoted template gets recorded as the worker's answer. The
-    asymmetry decides it: a false accept is unrecoverable, while a false reject
-    is a counted, bounded retry the worker can fix by obeying the contract it
-    was handed.
+    fence, by preferring the object whose VA matches, or by preferring the one
+    that validates -- because each of those is a guess, and a guess here is how
+    a worker gets recorded against the wrong function or how a quoted template
+    gets recorded as the worker's answer. The asymmetry decides it: a false
+    accept is unrecoverable, while a false reject is a counted, bounded retry
+    the worker can fix by obeying the contract it was handed.
+
+    Restricting the search to the final block is not a tie-break, so it does not
+    contradict the rule above: it changes *which text is a candidate at all*,
+    before any counting. A decoy in a narration block is no longer a second
+    claim to be arbitrated; it is text the reply never offered as its answer.
+    The flip side -- a result that only an earlier block carries is not read --
+    is a false reject, and it is the safe direction for the same reason.
 
     Nesting does not hide a claim. A result buried inside a wrapper is still a
-    claim, so a reply carrying a quoted example *and* a real answer is
-    ambiguous rather than quietly resolved in favour of whichever one the
-    scanner happened to reach first.
+    claim, so a reply carrying a quoted example *and* a real answer in the same
+    searched region is ambiguous rather than quietly resolved in favour of
+    whichever one the scanner happened to reach first.
 
     Where the single accepted result was found -- a result-marker fence, the
     final assistant text block, or anywhere in the reply -- is recorded as
-    ``stage`` for provenance, and never used to break a tie.
+    ``stage`` for provenance.
     """
     text = text or ""
     if not text.strip():
@@ -345,7 +456,16 @@ def extract_result_document(text, blocks=None):
                 "candidates": 0, "stage": "empty",
                 "reason": "no text to search for a result document"}
 
-    found = _candidates(text)
+    start, end, stage = _searchable_span(text, blocks)
+    where = ("" if stage == "whole_reply"
+             else " in the final assistant text block")
+    found = _candidates(text[start:end])
+    for candidate in found:
+        # Offsets are reported against the whole reply, so the fence and
+        # block-locator provenance still resolves without knowing about the
+        # window the scan ran in.
+        candidate["offset"] += start
+        candidate["end"] += start
     if len(found) == 1:
         return {"found": True, "ambiguous": False,
                 "document": found[0]["document"], "candidates": 1,
@@ -353,12 +473,17 @@ def extract_result_document(text, blocks=None):
                 "nested": bool(found[0].get("nested"))}
     if len(found) > 1:
         return {"found": False, "ambiguous": True, "document": None,
-                "candidates": len(found), "stage": "ambiguous",
-                "reason": "%d objects claim to be a worker result; refusing to "
-                          "choose between them" % len(found)}
+                "candidates": len(found),
+                "stage": ("ambiguous" if stage == "whole_reply"
+                          else "ambiguous_in_final_text_block"),
+                "reason": "%d objects claim to be a worker result%s; refusing to "
+                          "choose between them" % (len(found), where)}
     return {"found": False, "ambiguous": False, "document": None,
-            "candidates": 0, "stage": "no_result",
-            "reason": "no object claiming to be a worker result was found"}
+            "candidates": 0,
+            "stage": ("no_result" if stage == "whole_reply"
+                      else "no_result_in_final_text_block"),
+            "reason": ("no object claiming to be a worker result was found%s"
+                       % where)}
 
 # Sections the worker is expected to fill in its result. Kept in one place so
 # the briefing, the result schema, and the docs cannot drift.
@@ -655,9 +780,11 @@ def parse_result(raw, va=None, inv_id=None, max_bytes=4 * 1024 * 1024):
     # type: (object, object, object, int) -> dict
     """Parse and validate a worker reply.
 
-    Returns ``{"accepted": bool, ...}``. Never raises for a bad payload: the
-    orchestrator routes on the failure, and an unparseable reply is a normal,
-    countable outcome rather than an exception that loses the claim.
+    Returns ``{"accepted": bool, ...}``. Never raises, for a bad payload *or* a
+    bad argument: the orchestrator routes on the failure, and an unparseable
+    reply is a normal, countable outcome rather than an exception that loses the
+    claim. ``va`` in particular is normalized exactly once, here, and an
+    unusable one is a typed refusal like any other -- see below.
 
     Strictness is unchanged, only *reach* is. Extraction decides which object
     is the result; every check below is the same check the single-document
@@ -668,12 +795,33 @@ def parse_result(raw, va=None, inv_id=None, max_bytes=4 * 1024 * 1024):
     import hashlib
 
     if raw is None:
-        return _fail("worker produced no output")
+        # A missing reply has no bytes of its own, so it is audited as the
+        # empty reply: a failure with no digest is a failure nobody can tie back
+        # to a run, and this one is the most common failure there is.
+        return _fail("worker produced no output",
+                     raw_sha256=hashlib.sha256(b"").hexdigest())
     if isinstance(raw, (bytes, bytearray)):
         text = bytes(raw).decode("utf-8", errors="replace")
     else:
         text = str(raw)
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    # ``va`` is the orchestrator's own claim, and from here on it is trusted
+    # blindly: it is the value every cross-check compares against and the value
+    # the accepted result is stamped with. So it is normalized once, before it
+    # is used, and a value that cannot be normalized is refused rather than
+    # raising. Leaving it to raise is the same class as pinned defect C27 --
+    # ``orchestrate.ingest`` is called with no guard, so a ValueError escaping
+    # here leaves the queue row active with a live lease held, and the refusal
+    # is a bounded, countable retry instead.
+    target_va = None
+    if va is not None:
+        try:
+            target_va = normalize_va(va)
+        except (TypeError, ValueError):
+            return _fail("assigned target va is not a valid address: %r" % (va,),
+                         raw_sha256=digest, va=va)
+
     envelope = unwrap_reply(text, max_bytes=max_bytes)
     if envelope.get("oversized"):
         return _fail("worker result exceeds the size bound", raw_sha256=digest,
@@ -691,59 +839,63 @@ def parse_result(raw, va=None, inv_id=None, max_bytes=4 * 1024 * 1024):
         extraction = extract_result_document(envelope.get("text", ""),
                                              envelope.get("blocks"))
         document = extraction.get("document")
+    # Filled in before the first refusal, not after the document is accepted:
+    # "which channel, which stage, how many candidates" is what makes a
+    # validation failure diagnosable, and a refusal that omits it is the failure
+    # an operator most needs to read.
+    provenance["extraction_stage"] = extraction.get("stage")
+    provenance["candidates"] = extraction.get("candidates", 0)
+    provenance["nested_result"] = bool(extraction.get("nested"))
     if document is None:
         if extraction.get("ambiguous"):
             return _fail("ambiguous worker output: %s"
                          % extraction.get("reason"),
-                         raw_sha256=digest, extraction_stage=extraction["stage"],
-                         candidates=extraction.get("candidates", 0), **provenance)
+                         raw_sha256=digest, **provenance)
         return _fail("no worker result document found: %s"
                      % extraction.get("reason"),
-                     raw_sha256=digest, extraction_stage=extraction.get("stage"),
-                     candidates=extraction.get("candidates", 0), **provenance)
-    provenance["extraction_stage"] = extraction.get("stage")
-    provenance["nested_result"] = bool(extraction.get("nested"))
+                     raw_sha256=digest, **provenance)
     if not isinstance(document, dict):
         return _fail("worker result must be a JSON object, got %s"
-                     % type(document).__name__, raw_sha256=digest)
+                     % type(document).__name__, raw_sha256=digest, **provenance)
 
     missing = [field for field in REQUIRED_RESULT_FIELDS if field not in document]
     if missing:
         return _fail("worker result is missing required field(s): %s"
                      % ", ".join(missing), raw_sha256=digest,
-                     missing=missing)
+                     missing=missing, **provenance)
     if document.get("schema") != RESULT_SCHEMA:
         return _fail("worker result schema must be %r, got %r"
                      % (RESULT_SCHEMA, document.get("schema")),
-                     raw_sha256=digest)
+                     raw_sha256=digest, **provenance)
     outcome = document.get("outcome")
     if outcome not in OUTCOMES:
         return _fail("unknown outcome %r; expected one of: %s"
                      % (outcome, ", ".join(OUTCOMES)), raw_sha256=digest,
-                     outcome=outcome)
+                     outcome=outcome, **provenance)
 
     reported = document.get("va")
     try:
         reported = normalize_va(reported) if reported is not None else None
     except (TypeError, ValueError):
         return _fail("worker result 'va' is not a valid address: %r" % reported,
-                     raw_sha256=digest, va=reported)
-    if reported is not None and va is not None and reported != normalize_va(va):
+                     raw_sha256=digest, va=reported, **provenance)
+    if reported is not None and target_va is not None and reported != target_va:
         # A worker that answers for a different function is not recoverable by
         # guessing; refuse rather than misattribute the artifacts.
         return _fail("worker result va %s does not match the assigned target %s"
-                     % (reported, normalize_va(va)), raw_sha256=digest,
-                     reported_va=reported, expected_va=normalize_va(va))
+                     % (reported, target_va), raw_sha256=digest,
+                     reported_va=reported, expected_va=target_va, **provenance)
 
     for field in ("source_files", "unresolved_questions", "evidence_refs"):
         value = document.get(field)
         if value is not None and not isinstance(value, list):
             return _fail("worker result %r must be a list" % field,
-                         raw_sha256=digest, field=field)
+                         raw_sha256=digest, field=field, **provenance)
     mechanics = document.get("observed_mechanics")
     if mechanics is not None and not isinstance(mechanics, list):
         return _fail("worker result 'observed_mechanics' must be a list",
-                     raw_sha256=digest, field="observed_mechanics")
+                     raw_sha256=digest, field="observed_mechanics",
+                     **provenance)
 
     # A hostile payload must be refused, never raised on. ``validation`` is
     # read with an explicit type check because an unchecked ``.get`` here used
@@ -753,15 +905,15 @@ def parse_result(raw, va=None, inv_id=None, max_bytes=4 * 1024 * 1024):
     if validation is not None and not isinstance(validation, dict):
         return _fail("worker result 'validation' must be an object, got %s"
                      % type(validation).__name__, raw_sha256=digest,
-                     field="validation")
+                     field="validation", **provenance)
     verdict = (validation or {}).get("status")
     if verdict is not None and verdict not in VALIDATION_VERDICTS:
         return _fail("worker reported an unknown validation verdict %r" % verdict,
-                     raw_sha256=digest, verdict=verdict)
+                     raw_sha256=digest, verdict=verdict, **provenance)
 
     # The VA the orchestrator recorded is authoritative; the payload is only
     # cross-checked above.
-    document["va"] = normalize_va(va) if va is not None else reported
+    document["va"] = target_va if target_va is not None else reported
     document["queue_id"] = inv_id
     return {
         "accepted": True,
@@ -770,6 +922,7 @@ def parse_result(raw, va=None, inv_id=None, max_bytes=4 * 1024 * 1024):
         "result": document,
         "channel": provenance["channel"],
         "extraction_stage": provenance.get("extraction_stage"),
+        "candidates": provenance["candidates"],
         "text_blocks": provenance["text_blocks"],
         "tool_calls": provenance["tool_calls"],
         "nested_result": provenance["nested_result"],

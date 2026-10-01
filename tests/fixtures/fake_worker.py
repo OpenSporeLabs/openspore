@@ -13,7 +13,13 @@ reproducible from this file alone is worth more than one that shares the
 implementation with the thing under test.
 
 Exit codes: 0 for a well-formed reply, 1 when the variant deliberately emits
-something the contract parser must reject (``--variant malformed_json``).
+something the contract parser must reject (``--variant malformed_json``), and
+whatever ``--exit-code`` says otherwise.
+
+``--exit-code`` exists so a test can produce the shape the orchestrator has to
+have a policy for: a worker that printed a contract-valid result and *then*
+exited nonzero. The two facts are independent, and conflating them is how a
+launch failure ends up reported as a malformed answer.
 """
 from __future__ import print_function
 
@@ -112,6 +118,8 @@ def main(argv=None):
     parser.add_argument("--variant", choices=VARIANTS, default="ok")
     parser.add_argument("--briefing", default=None,
                         help="read the briefing from this path instead of stdin")
+    parser.add_argument("--exit-code", type=int, default=None,
+                        help="exit with this code after writing the reply")
     args = parser.parse_args(argv)
     try:
         if args.briefing:
@@ -123,6 +131,8 @@ def main(argv=None):
         sys.stderr.write("fake_worker: %s\n" % exc)
         return 2
     sys.stdout.write(build_result(briefing, args.variant))
+    if args.exit_code is not None:
+        return args.exit_code
     return 1 if args.variant == "malformed_json" else 0
 
 

@@ -1,0 +1,141 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-007F8D10-REGISTRY-ENSURE-ENTRY",
+  "subsystem": "Simulator",
+  "cluster": "container-registry",
+  "queue_id": "",
+  "va": "0x007f8d10",
+  "address": "0x007f8d10",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "normalized_symbol": "registry_ensure_entry_007f8d10",
+  "reconstructed_symbol": "registry_ensure_entry_007f8d10",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10.hpp",
+    "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10.cpp",
+    "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10.hpp",
+    "source": "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10.cpp",
+    "model_test": "reconstruction/staging/pkg-007f8d10-registry-ensure-entry/registry_ensure_entry_007f8d10_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall; receiver in ECX, three callee-cleaned 4-byte stack arguments",
+    "receiver": "ECX, spilled to E0-0x8c at 0x007f8d1e and reloaded into EAX at 0x007f8edb to write [EAX+0x1c]; read through `LEA ESI,[ECX+0x4]` at 0x007f8d3f",
+    "ordinary_stack_argument_slots": 3,
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0xc",
+    "return_register": "none",
+    "return_type": "void",
+    "return_type_rationale": "The ABI record in the evidence pack carries return_semantics float_or_x87_in_ST0, which is a heuristic artifact of the FLDZ at 0x007f8d3c. Traced opcode by opcode (D9EE = FLDZ and DDD8 = FSTP ST0, both read back from the image) the x87 stack is empty at every RET: the two early exits at 0x007f8d24 and 0x007f8d35 run before the FLDZ; the count==0 path pops it at 0x007f8dc1; the null-key and scan-exhausted paths pop it at 0x007f8e4f; the matched path peeks and pops it at 0x007f8e2a/0x007f8e31 and then jumps past 0x007f8dc1 via 0x007f8e43; and every path pushes a second 0.0 at 0x007f8ec5 and drains it with FST/FSTP at 0x007f8ed1/0x007f8ed5. No value survives in ST0.",
+    "frame": "SUB ESP,0x8c then PUSH EBP/EBX/ESI/EDI; the receiver is spilled at E0-0x8c and a 0x88-byte prototype occupies E0-0x88..E0-0x01",
+    "outgoing_calls": "0x007f6d90, 0x007f8820, 0x007f6ff0 direct; six indirect transfers (0x007f8e35, 0x007f8e72, 0x007f8e81, 0x007f8e98, 0x007f8ea7, 0x007f8ed9)"
+  },
+  "observed_mechanics": [
+    "0x007f8d22 TEST EBP,EBP / JZ 0x007f8ee9: argument 2 (the key handle) is tested for null and a null key is a clean no-op.",
+    "0x007f8d31 CMP dword ptr [EAX+0x4],0 / JZ 0x007f8ee9: only argument 1's word at +0x04 is tested. The pointer itself is never tested, so a null argument 1 faults at this load rather than returning. 0x007f6ff0 copies that same word into the element's dispatch word and the body calls it twice, so the gate is 'the template carries a callback'.",
+    "0x007f8d47/0x007f8d4c/0x007f8d53/0x007f8d59/0x007f8d5c: (end-begin) times the magic 0x78787879, SAR EDX by 6, then SHR 0x1f / ADD to round toward zero. That is a signed division by 0x88: 0x78787879*0x88 = 0x400000038 >= 2^38 while 0x78787879*0x89 = 0x4000000B1 > 2^38+0x88, so the magic is exact for 0x88 and for nothing else. The sequence is recomputed at 0x007f8d9e, 0x007f8da3 and 0x007f8dc8 because the count is not kept live across the loop.",
+    "0x007f8d75/0x007f8d78/0x007f8d7a: a null key in a slot terminates the scan without a match.",
+    "0x007f8d80 and 0x007f8d90: the match requires BOTH element+0x00 == argument 2 AND element+0x04 == argument 3.",
+    "0x007f8e1c..0x007f8e43: the matched element is dispatched through its word at +0x0c with (0.0f, 0.0f, 1, 0) and the receiver is element+0x08; the path then jumps to 0x007f8dc3, PAST the FSTP ST0 at 0x007f8dc1, because it already drained the FLDZ at 0x007f8e2a/0x007f8e31.",
+    "0x007f8dc3..0x007f8ddb: the count is recomputed and index == count routes to the append at 0x007f8de1; any other index reuses that slot in place.",
+    "0x007f8de6/0x007f8dea/0x007f8df2/0x007f8dfa: the prototype is initialised with exactly four words, at prototype+0x00 = 0, +0x08 = 0x013f6400, +0x10 = 0x013f63fc, +0x14 = 0. The remaining 0x80 bytes are never written by this body.",
+    "0x007f8dfe CMP ECX,[ESI+0x8] / JNC 0x007f8e58: end >= capacity (unsigned) selects the grow route 0x007f8820; otherwise end is advanced by 0x88 and, when the old end pointer is non-null, 0x007f6d90 copies the prototype over the new slot.",
+    "0x007f8e65..0x007f8e72 and 0x007f8e74..0x007f8e81: the prototype's +0x14 handle is released through its vtable slot 1 before its +0x00 handle.",
+    "0x007f8e83 IMUL EDI,EDI,0x88 / 0x007f8e89 ADD EDI,[ESI]: the target slot is begin + index*0x88.",
+    "0x007f8e8b..0x007f8ea7: if the slot's key is not already argument 2, argument 2 is dispatched through its vtable slot 0, stored, and a non-null displaced handle is released through slot 1.",
+    "0x007f8ebd MOV [EDI+0x4],EAX: the selector is stored before the refresh.",
+    "0x007f6ff0, read back from its body: sub+0x04 = arg1+0x04; the word at sub+0x0c is retain-swapped from arg1+0x0c (slot 0 on the incoming value, slot 1 on the displaced one, and only when the two differ); 0x70 bytes are copied from arg1+0x10 to sub+0x10. So the element's dispatch word, its retained word and its whole 0x70-byte body come from argument 1, and the prototype's indeterminate words never survive to a read.",
+    "0x007f6d90, read back from its 34-instruction body: EBX = ECX is the destination and ESI = [ESP+0xc] the source; it copies source+0x00 (dispatching slot 0 when non-null), +0x04, forces +0x08 = 0x013f6400, copies +0x0c, forces +0x10 = 0x013f63fc, copies +0x14 (dispatching slot 0 when non-null), then REP MOVSD copies 0x1c dwords from +0x18. Forcing its own two constants into the destination is the shape of an MSVC assignment operator re-establishing its vptrs, which is what fixes the copy direction.",
+    "0x007f8ed9 CALL EDX with EDX = slot+0x0c and ECX = slot+0x08, args (slot+0x08, 0.0f, 0.0f, 0, 0).",
+    "0x007f8ee4 MOV byte ptr [EAX+0x1c],0x1: the only write to the receiver, and the only state published to the caller."
+  ],
+  "field_offsets": [
+    {"owner": "receiver", "offset": "0x00", "meaning": "allocation base, freed through 0x00f47380 by 0x007f8820"},
+    {"owner": "receiver", "offset": "0x04", "meaning": "begin of the element array"},
+    {"owner": "receiver", "offset": "0x08", "meaning": "end of the live range"},
+    {"owner": "receiver", "offset": "0x0c", "meaning": "capacity end"},
+    {"owner": "receiver", "offset": "0x10..0x1b", "meaning": "untouched by this body"},
+    {"owner": "receiver", "offset": "0x1c", "meaning": "byte set to 1 at 0x007f8ee4"},
+    {"owner": "element", "offset": "0x00", "meaning": "key handle; matched against argument 2 and released through vtable slot 1 when displaced"},
+    {"owner": "element", "offset": "0x04", "meaning": "32-bit selector; matched against argument 3 and overwritten with it"},
+    {"owner": "element", "offset": "0x08", "meaning": "constant 0x013f6400, forced by the prototype constructor and by 0x007f6d90"},
+    {"owner": "element", "offset": "0x0c", "meaning": "the dispatch word; copied from argument 1 + 0x04 and called twice"},
+    {"owner": "element", "offset": "0x10", "meaning": "constant 0x013f63fc, forced by the prototype constructor and by 0x007f6d90"},
+    {"owner": "element", "offset": "0x14", "meaning": "retain-swapped word, copied from argument 1 + 0x0c"},
+    {"owner": "element", "offset": "0x18..0x87", "meaning": "0x70 bytes copied from argument 1 + 0x10"},
+    {"owner": "element", "offset": "stride", "meaning": "0x88 (136)"}
+  ],
+  "virtual_dispatch": [
+    {"site": "0x007f8e35", "kind": "element dispatch word", "offset": "element+0x0c", "receiver": "element+0x08", "args": "0.0f, 0.0f, 1, 0"},
+    {"site": "0x007f8ed9", "kind": "element dispatch word", "offset": "element+0x0c", "receiver": "element+0x08", "args": "0.0f, 0.0f, 0, 0"},
+    {"site": "0x007f8e98", "kind": "handle vtable slot 0", "receiver": "argument 2", "args": "none"},
+    {"site": "0x007f8ea7", "kind": "handle vtable slot 1", "receiver": "the displaced key", "args": "none"},
+    {"site": "0x007f8e72", "kind": "handle vtable slot 1", "receiver": "prototype+0x14", "args": "none"},
+    {"site": "0x007f8e81", "kind": "handle vtable slot 1", "receiver": "prototype+0x00", "args": "none"}
+  ],
+  "vtable_words": [
+    {
+      "address": "0x013f63fc",
+      "role": "stored as a data word at element+0x10 by 0x007f8df2 and re-forced there by 0x007f6d90",
+      "callsite_rows": ["0x007f8df2"],
+      "slot_count": 15,
+      "slot_count_source": "/tmp/opencode/vt-ranges.tsv"
+    },
+    {
+      "address": "0x013f6400",
+      "role": "stored as a data word at element+0x08 by 0x007f8dea and re-forced there by 0x007f6d90",
+      "callsite_rows": ["0x007f8dea"],
+      "slot_count": 15,
+      "slot_index_within_0x013f63fc": 1,
+      "slot_index_derivation": "0x013f6400 - 0x013f63fc = 4, and slots are 4 bytes, so it is slot 1 of the same table. Both immediates are visible in the listing and the table size is in the committed range file; no slot pointer was read and no callee is claimed."
+    }
+  ],
+  "model_test": {
+    "build": "g++ -m32 -std=c++17 -O2 -Wall -Wextra -o mt registry_ensure_entry_007f8d10_model_test.cpp",
+    "result": "pass",
+    "also_passes_at": ["-O0", "-O1", "-O2", "-O3", "clang++ -m32 -O2"],
+    "cases": 13,
+    "mutation_sweep": {
+      "attempted": 28,
+      "killed": 27,
+      "killed_by": "behavioural assertion, or a struct-layout static_assert for the stride constant",
+      "survivors": [
+        "swapping the two leading pure-return guards (0x007f8d22 before 0x007f8d31) is unobservable without fault injection, because it is only distinguishable when argument 1 is null and the original faults on that path anyway"
+      ]
+    },
+    "note": "The model test includes registry_ensure_entry_007f8d10.cpp directly so the two dispatch ports can be recorded; the source also compiles standalone as its own translation unit."
+  },
+  "not_established": [
+    "the meaning of argument 1 beyond its size and layout: it is at least 0x80 bytes, its +0x04 word is a function pointer that is copied and called, its +0x0c word is a retain-counted handle, and 0x70 bytes are copied from its +0x10, but no class is identified",
+    "the meaning of argument 3, which is only ever compared against element+0x04 and stored there as a 32-bit word",
+    "the concrete class behind the two constant words 0x013f6400 and 0x013f63fc, and the contents of the slots of that table",
+    "the concrete callee of any of the six indirect transfers",
+    "0x007f7c00 and 0x007f7920, the two calls inside 0x007f8820 that initialise the new element on the grow route; and 0x007f6ee0 / 0x007f6f80, the two range movers on its reallocation branch",
+    "the two calls inside 0x007f8820 that reach Ghidra as one-argument calls, `FUN_007f6d90(this->end - 0x88)` and `FUN_007f6d90(param_3)`, so their second argument is not recoverable",
+    "the class of the receiver and the 0x0c bytes at receiver+0x10..+0x1b",
+    "byte-for-byte agreement with the original codegen: the reconstruction claims semantics, not an opcode sequence"
+  ],
+  "unresolved_questions": [
+    "On the grow route (0x007f8e58 -> 0x007f8820) the new element is initialised by 0x007f7c00 from the LAST live element, whereas on the in-place route (0x007f8e15 -> 0x007f6d90) it is initialised from the prototype, whose +0x00 is null. Whether 0x007f8ea7 releases a displaced handle therefore depends on a callee that was not resolved. Resolving 0x007f7c00 and 0x007f7920 would settle it.",
+    "0x007f8e0c (`CMP ECX,EBX` on the old end pointer) is only reachable when end is a null pointer with capacity still ahead. For a self-consistent container that cannot happen: end == 0 forces begin == 0, which forces capacity == 0, which routes to the grow branch instead. The branch is reproduced verbatim but no test can reach it.",
+    "The two constants at element+0x08 and element+0x10 have the shape of a multiple-inheritance vptr pair, but the word the body dispatches through sits between them at element+0x0c and is a runtime value copied from argument 1, not a vtable. Whether +0x08 and +0x10 are vptrs of two bases or plain constants is not settled by this body.",
+    "No caller was inspected. The seventeen-plus recorded callers pass the same three arguments, and one of them would settle what argument 1 and argument 3 mean, but that is outside this target's budget."
+  ],
+  "provenance": [
+    {"mode": "live", "ref": "GhidraMCP /disassemble_function @ 0x007f8d10 (158 instructions, 0x007f8d10..0x007f8ef0)"},
+    {"mode": "live", "ref": "GhidraMCP /disassemble_function @ 0x007f6d90 (34 instructions) - fixes the prototype copy direction"},
+    {"mode": "live", "ref": "GhidraMCP /read_memory @ 0x007f8dc1, 0x007f8e4f, 0x007f8d3c, 0x007f8ec5 - DDD8 / D9EE, the x87 balance"},
+    {"mode": "live", "ref": "GhidraMCP /read_memory @ 0x007f8de1 (35 bytes) - confirms exactly four prototype stores"},
+    {"mode": "live", "ref": "GhidraMCP /decompile_function @ 0x007f6d90, 0x007f8820, 0x007f6ff0"},
+    {"mode": "persisted", "ref": "/tmp/opencode/vt-ranges.tsv - 0x013f63fc has 15 slots"},
+    {"mode": "persisted", "ref": "reconstruction/evidence/007f8d10/evidence.json and context.md"},
+    {"mode": "persisted", "ref": "knowledgegraph/triage/xrefs-2540f2ca.tsv - two vtable-ref rows at 0x007f8dea and 0x007f8df2 collapsing to base 0x013f63fc"}
+  ]
+}

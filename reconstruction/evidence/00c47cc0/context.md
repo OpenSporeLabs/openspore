@@ -1,7 +1,7 @@
 # Reconstruction context 0x00c47cc0
 
 - Status: `partial`
-- Content SHA-256: `eae1cec4409b7840acba5e604c09e9a6f0ad99914fbf2e9f24bec93b6435a6bf`
+- Content SHA-256: `ed38e77f5dc809412d5cd8a4487becd78ba99229418ba15402fc0c1bda4660e7`
 
 ## 01_assignment
 
@@ -19,7 +19,7 @@
 
 ## 02_function_identity
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
@@ -34,16 +34,16 @@
 
 ## 03_current_status
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "blocked": null,
-  "reconstructed": null,
-  "runtime_gated": null,
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
-  "status": null
+  "status": "unresolved"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "318690febaf1eac218bcc6e6f7e843b7e2b2471dc793a5b4f0c437f9131df4d1",
-  "live_attempts": [],
+  "content_sha256": "e62e82e3094b5b86f1040cd9564c1016a352caf0f26760b21f69d711b5d53575",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00c47cc0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,102 +71,281 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-void __thiscall FUN_00c47cc0(string16 *param_1,wchar16 *param_2)
-
-{
-  IAppSystem *pIVar1;
-  CommandLine local_40;
-  undefined4 local_8;
-  
-  if (param_1[8].mpEnd != param_2) {
-    param_1[8].mpEnd = param_2;
-    if ((wchar16 *)param_1[0x14].mAllocator != param_1[0x15].mpBegin) {
-      *(wchar16 *)param_1[0x14].mAllocator = L'\0';
-      param_1[0x15].mpBegin = (wchar16 *)param_1[0x14].mAllocator;
-    }
-    if ((wchar16 *)param_1[0x15].mAllocator != param_1[0x16].mpBegin) {
-      *(wchar16 *)param_1[0x15].mAllocator = L'\0';
-      param_1[0x16].mpBegin = (wchar16 *)param_1[0x15].mAllocator;
-    }
-    if (param_1[8].mpEnd == (wchar16 *)0x3) {
-      local_40.field_28.mpCapacity = (wchar16 *)0x38cf2fd;
-      LOCK();
-      local_40.mSplits.mpBegin = (string16 *)0x0;
-      UNLOCK();
-      local_40._vftable0 = (CommandLine__vftable *)&PTR_FUN_013eb844;
-      local_8 = 0;
-      local_40.mSplits.mpEnd = param_1;
-      pIVar1 = App__IAppSystem__Get();
-      (*pIVar1->_vftable0->Init)((IAppSystem *)local_40.field_28.mpCapacity,&local_40);
-      FUN_00421cf0();
-    }
-  }
-  return;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
-
-```json
-{
-  "original_bytes": 12876,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x4\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4\"\n  },\n  \"abstained_because\": [\n    \"flow_not_modelled: the linear ESP walk ends at +12, so the listing is not one path\",\n    \"sret_vs_out_param: entry slot 0 is written through a pointer\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 4,\n    \"confidence\": \"OBSERVED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret 0x4\",\n    \"side\": \"callee\"\n  },\n  \"completeness\": \"CORE_RESOLVED\",\n  \"conflicts\":
-[TRUNCATED]
-```
-
-## 07_callers_callees
-
-- State: `missing`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "callees": [],
-  "callers": [],
-  "edge_rows": [],
-  "external_callees": []
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall with one callee-cleaned stack dword",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX, read directly, never copied or modified",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_register": null,
+  "return_semantics": "no return value; EAX is left holding the argument on exit",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [],
+  "stack_arguments": [
+    {
+      "meaning": "the new state/phase value",
+      "observed_values": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        "one dynamic value forwarded from a virtual slot +0x7c"
+      ],
+      "offset_at_entry": "[ESP + 0x4]",
+      "read_at": "0x00c47cc0",
+      "slot": 0,
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x4"
 }
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    }
+  ],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c48470"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c484e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c5a0b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fef3b0"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00c484cb",
+      "direction": "in",
+      "other": "0x00c48470",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c48595",
+      "direction": "in",
+      "other": "0x00c484e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c485b2",
+      "direction": "in",
+      "other": "0x00c485b0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c485c2",
+      "direction": "in",
+      "other": "0x00c485c0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c485d2",
+      "direction": "in",
+      "other": "0x00c485d0",
+      "reference_type":
+[TRUNCATED]
 ```
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "dword",
+    "pointer",
+    "void",
+    "vtable pointer",
+    "wchar_t* cursor (head)",
+    "wchar_t* cursor (tail)"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
-  "runtime": {},
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "A differential fixture would need a real receiver plus a populated app-system singleton, neither of which static evidence supplies.",
+      "No original-process trace exists for this address. In particular 0x015fd890 was never observed populated, so the app-system slot +0x14 callee is unknown at runtime as well as statically.",
+      "The Cell stage has never been entered in any recorded run, so the real distribution of state values and the real contents of the two wide buffers are unverified."
+    ],
+    "validated": 0
+  },
   "semantic": {}
 }
 ```
 
 ## 10_dependencies
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x0067dcc0"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c48470"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c484e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485c0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485d0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485e0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c485f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c5a0b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fef3b0"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00c484cb",
+      "direction": "in",
+      "other": "0x00c48470",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c48595",
+      "direction": "in",
+      "other": "0x00c484e0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c485b2",
+      "direction": "in",
+      "other": "0x00c485b0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c485c2",
+      "direction": "in",
+      "other": "0x00c485c0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c
+[TRUNCATED]
+```
 
 ## 11_related_functions
 
@@ -167,8 +354,24 @@ void __thiscall FUN_00c47cc0(string16 *param_1,wchar16 *param_2)
 
 ## 12_existing_reconstruction
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/b09_opaque_ports.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b09/00c47cc0.json"
+  ]
+}
+```
 
 ## 13_semantic_hypotheses
 
@@ -183,28 +386,28 @@ void __thiscall FUN_00c47cc0(string16 *param_1,wchar16 *param_2)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "A differential fixture would need a real receiver plus a populated app-system singleton, neither of which static evidence supplies.",
+    "Is the dead store at 0x00c47d28 (0x013eb90c) meaningful to any runtime patching or vtable interposition scheme, or is it plain compiler residue?",
+    "No original-process trace exists for this address. In particular 0x015fd890 was never observed populated, so the app-system slot +0x14 callee is unknown at runtime as well as statically.",
+    "No original-process trace exists, so the state-value distribution and the buffer contents are unverified.",
+    "The Cell stage has never been entered in any recorded run, so the real distribution of state values and the real contents of the two wide buffers are unverified.",
+    "What are the two wide buffers at receiver+0x14c/+0x150 and +0x15c/+0x160, and what populates them? Only the reset shape is observed; no producer of their contents was located in this batch.",
+    "What class is the stack temporary? Its vtable 0x013eb844 has three dwords and is followed by the 'queuing %ls for bake' format string, and its destructor walks 32 masked pairs, but no class name is asserted.",
+    "What class owns this function? 18 live references, all UNCONDITIONAL_CALL, and no DATA reference, so it is not a vtable slot and no owner can be named.",
+    "What do the state values mean? Values 1, 2, 3, 5, 6, 7, 8, 9 and one dynamically forwarded value are attested; 0, 4 and negatives are not excluded. No enum name is claimed.",
+    "What is 0x038cf2fd? It is be
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-core-b09/00c47cc0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b09/b09_opaque_ports.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -222,11 +425,6 @@ void __thiscall FUN_00c47cc0(string16 *param_1,wchar16 *param_2)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -239,21 +437,29 @@ void __thiscall FUN_00c47cc0(string16 *param_1,wchar16 *param_2)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-core-b09/00c47cc0.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b09/b09_opaque_ports.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b09/sim_setphase_00c47cc0.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-c
+[TRUNCATED]
 ```

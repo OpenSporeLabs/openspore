@@ -1,0 +1,12 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test.dir/link.d"
+  "CMakeFiles/pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test.dir/pkg_direct_property_clear_wave14/006a2b20_direct_property_list_clear_model_test.cpp.o"
+  "CMakeFiles/pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test.dir/pkg_direct_property_clear_wave14/006a2b20_direct_property_list_clear_model_test.cpp.o.d"
+  "pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test"
+  "pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/pkg_direct_property_clear_wave14_006a2b20_direct_property_list_clear_model_test.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

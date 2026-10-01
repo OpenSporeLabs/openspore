@@ -2,9 +2,37 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `b7d7aa44bad61bcd0f89656745ac298da9a5ecb4cc44a6792f7b819767905abc`
+- Content SHA-256: `545a4d10d907946f14c6e267eee3397c222b3a78c14f7265361c23bc1c64064d`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is the receiver; 0x007b86e3 ADD ECX,4 biases it to the embedded sub-object and it stays biased for the indirect call at 0x007b86fb",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x007b86e6 ADD EAX,-1 leaves the new count in EAX and 0x007b86ec JNZ branches to 0x007b86ff (RET) with EAX untouched, so the non-zero path returns the decremented count. The zero path ends at 0x007b86fd XOR EAX,EAX, so it returns exactly 0. Both paths write the full 32-bit register.",
+  "return_register": "EAX",
+  "return_semantics": "the decremented reference count, or 0 when the zero arm ran and the object was destroyed",
+  "return_type": "std::int32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single RET at 0x007b86ff; the JNZ at 0x007b86ec targets it directly"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -38,7 +66,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "a7fc653e73d27eda207f38e9d44c25eb44cc12c298cb1f94f49330b4818b385d",
+  "content_sha256": "466f0671a17c1ea7c1ad110ad3c99fe54e23fbbd077b1bdb4b6a36003820c2db",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -55,7 +83,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall (receiver in ECX), no stack arguments"
   },
   "dispatch": {
     "call_offsets": [],
@@ -269,7 +297,7 @@
   "seh_or_cookie_frame": false,
   "sret": {
     "ambiguity": null,
-    "basis": "entry slot 0 is not written through a pointer; DERIVED abse
+    "basis": "entry slot 0 
 [TRUNCATED]
 ```
 
@@ -378,13 +406,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint __fastcall FUN_007b86e0(int param_1)\n\n{\n  int iVar1;\n  \n  iVar1 = *(int *)(param_1 + 8) + -1;\n  *(int *)(param_1 + 8) = iVar1;\n  if (iVar1 == 0) {\n    *(undefined4 *)(param_1 + 8) = 1;\n    (*(code *)**(undefined4 **)(param_1 + 4))(1);\n    iVar1 = 0;\n  }\n  return iVar1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -462,8 +486,8 @@
 
 ```json
 {
-  "original_bytes": 17346,
-  "preview": "{\n  \"abi\": {},\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x014542e8,vtable:0x014626b8\"\n      ],\n      \"package\": \"PKG-WAVE6-CONTAINERS-MEMORY\",\n      \"score\": 4,\n      \"symbol\": \"wave6_reference_00432a50\",\n      \"va\": \"0x00432a50\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_005737d0\",\n      \"va\": \"0x005737d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00585890\",\n      \"va\": \"0x00585890\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00585d10\",\n      \"va\": \"0x00585d10\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00588570\",\n      \"va\": \"0x00588570\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_0058ac10\",\n      \"va\": \"0x0058ac10\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_0058b650\",\n      \"va\": \"0x0058b650\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x0147c9e8,vtable:0x0147cc14\"\n      ],\n      \"package\": \"PKG-16-SPOREPEDIA-ONLINE\",\n      \"score\": 4,\n      \"symbol\": \"Sporepedia_cSPAssetDataOTDB_IsEditable_00641400\",\n      \"va\": \"0x00641400\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"editor-core\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00650190\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00658c70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0065e110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0076dee0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00782660\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007bb670\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007bced0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007c1c10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00801230\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aeb3e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b60d80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e642a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ed8a30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f33bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fffdd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01070290\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00650349\",\n        \"direction\": \"in\",\n        \"other\": \"0x00650190\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x00658de3\",\n        \"direction\": \"in\",\n        \"other\": \"0x00658c70\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0065e1ee\",\n        \"direction\": \"in\",\n        \"other\": \"0x0065e110\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0065e4fc\",\n        \"direction\": \"in\",\n        \"other\": \"0x0065e110\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0065e546\",\n        \"direction\": \"in\",\n        \"other\": \"0x0065e110\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0065e55a\",\n        \"direction\": \"in\",\n        \"other\": \"0x0065e110\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0076e025\",\n        \"direction\": \"in\",\n        \"other\": \"0x0076dee0\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x00782725\",\n        \"direction\": \"in\",\n        \"other\": \"0x00782660\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x007bbdba\",\n        \"direction\": \"in\",\n        \"other\": \"0x007bb670\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x007bd496\",\n        \"direction\": \"in\",\n        \"other\": \"0x007bced0\",\n        \"reference_type\
+  "original_bytes": 21137,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall (receiver in ECX), no stack arguments\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is the receiver; 0x007b86e3 ADD ECX,4 biases it to the embedded sub-object and it stays biased for the indirect call at 0x007b86fb\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x007b86e6 ADD EAX,-1 leaves the new count in EAX and 0x007b86ec JNZ branches to 0x007b86ff (RET) with EAX untouched, so the non-zero path returns the decremented count. The zero path ends at 0x007b86fd XOR EAX,EAX, so it returns exactly 0. Both paths write the full 32-bit register.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the decremented reference count, or 0 when the zero arm ran and the object was destroyed\",\n    \"return_type\": \"std::int32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single RET at 0x007b86ff; the JNZ at 0x007b86ec targets it directly\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x014542e8,vtable:0x014626b8\"\n      ],\n      \"package\": \"PKG-WAVE6-CONTAINERS-MEMORY\",\n      \"score\": 4,\n      \"symbol\": \"wave6_reference_00432a50\",\n      \"va\": \"0x00432a50\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_005737d0\",\n      \"va\": \"0x005737d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00585890\",\n      \"va\": \"0x00585890\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00585d10\",\n      \"va\": \"0x00585d10\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_00588570\",\n      \"va\": \"0x00588570\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_0058ac10\",\n      \"va\": \"0x0058ac10\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x013f57f8\"\n      ],\n      \"package\": \"PKG-EDITOR-INPUT-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"editor_input_0058b650\",\n      \"va\": \"0x0058b650\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x0147c9e8,vtable:0x0147cc14\"\n      ],\n      \"package\": \"PKG-16-SPOREPEDIA-ONLINE\",\n      \"score\": 4,\n      \"symbol\": \"Sporepedia_cSPAssetDataOTDB_IsEditable_00641400\",\n      \"va\": \"0x00641400\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"editor-core\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00650190\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00658c70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0065e110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0076dee0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00782660\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007bb670\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007bced0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x007c1c10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00801230\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aeb3e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b60d80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e642a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ed8a30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f33bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fffdd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01070290\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00650349\",\n        \"direction\": \"in\",\n        \"other\": \"0x00650190\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x00658de3\",\n        \"direction\": \"in\",\n        \"other\": \"0x00658c70\",\n        \"reference_type\": \"computed-call\"\n      },\n      {\n        \"callsite\": \"0x0065e1ee\",\n        \"direction\": \"in\",\n        \"other\": \"0x0065e110\",\n        \"reference_type\": \"compute
 [TRUNCATED]
 ```
 
@@ -482,21 +506,21 @@
   "body_start": "007b86e0",
   "callees": [],
   "callers": [
-    "FUN_007bb670",
-    "FUN_00658c70",
-    "FUN_007bced0",
-    "FUN_0065e110",
-    "thunk_FUN_007b86e0",
-    "FUN_00782660",
-    "FUN_00aeb3e0",
     "FUN_00e642a0",
-    "FUN_00650190",
+    "FUN_00ed8a30",
     "FUN_00fffdd0",
     "FUN_007c1c10",
-    "FUN_00ed8a30",
-    "FUN_00f33bf0",
+    "FUN_00650190",
+    "thunk_FUN_007b86e0",
+    "FUN_0065e110",
+    "FUN_007bced0",
     "FUN_0076dee0",
+    "FUN_00aeb3e0",
+    "FUN_00782660",
     "FUN_01070290",
+    "FUN_00658c70",
+    "FUN_007bb670",
+    "FUN_00f33bf0",
     "FUN_00b60d80"
   ],
   "classification": "leaf",
@@ -508,19 +532,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar1",
-      "storage": "register:00000000:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_007b86e0",
   "namespace": null,
@@ -861,8 +874,15 @@
     },
     {
       "from": "0140ffe4"
-  
-[TRUNCATED]
+    },
+    {
+      "from": "01410198"
+    },
+    {
+      "from": "014106b4"
+    }
+  ]
+}
 ```
 
 ## globals
@@ -879,9 +899,15 @@
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/007b86e0_object_release.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b04/007b86e0.json"
+  ]
 }
 ```
 
@@ -900,7 +926,11 @@
 ```json
 {
   "blocking_reason": null,
-  "gates": [],
+  "gates": [
+    "No original-process trace has been captured for 0x007b86e0. A differential run must confirm that the decrement, the restore-to-1 and the destructor call happen in that order on a real receiver, and that no runtime patch retargets the address.",
+    "The 417 vtable slots need at least one resolved concrete receiver before any owning class can be named.",
+    "The zero arm has never been observed executing. Whether the delete-on-zero path is reachable in the shipping build, and what the caller does with the 0 return, needs a trace."
+  ],
   "validated": 0
 }
 ```
@@ -919,7 +949,7 @@
 
 ```json
 {
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "candidate"
 }
@@ -927,9 +957,15 @@
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::int32_t"
+]
+```
 
 ## vtables
 

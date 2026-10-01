@@ -1,0 +1,169 @@
+{
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "package": "PKG-00C12310-CREATE-CACHE-OBJECT",
+ "subsystem": "Simulator",
+ "cluster": "unknown-fun-mass",
+ "queue_id": "",
+ "va": "0x00c12310",
+ "address": "0x00c12310",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "sdk_symbol": null,
+ "normalized_symbol": "create_cached_object_00c12310",
+ "reconstructed_symbol": "create_cached_object_00c12310",
+ "target_state": "implemented in staging; integrator review pending",
+ "captured_on": "2026-10-01",
+ "canonical_source_path": "",
+ "source_files": [
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.hpp",
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.cpp",
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310_model_test.cpp"
+ ],
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.hpp",
+  "source": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.cpp",
+  "model_test": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310_model_test.cpp"
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "thiscall; receiver in ECX (0x00c12314 `8b f1` MOV ESI,ECX), three callee-popped stack words",
+  "receiver": "ECX, copied to ESI at 0x00c12314 and used as the base register of every receiver access; the only receiver words touched are +0xb54 (read, seven times) and +0xe88 (written once)",
+  "ordinary_stack_argument_slots": 3,
+  "ordinary_stack_arguments": [
+   {
+    "address_at_entry": "entry_ESP+0x4",
+    "listing_reads": "0x00c12324 `8b 6c 24 14` MOV EBP,[ESP+0x14]; 0x00c12342 `8b 7c 24 14` MOV EDI,[ESP+0x14]; 0x00c12328 `8d 44 24 14` LEA EAX,[ESP+0x14]",
+    "width_bytes": 4,
+    "use": "read twice before any call; the LEA hands its ADDRESS to 0x00c0c5b0, which may write through it; the re-read at 0x00c12342 feeds the manager's +0x40 and the prototyper's +0x08, while the pre-call copy in EBP feeds the prototyper's +0x40 at 0x00c123b1"
+   },
+   {
+    "address_at_entry": "entry_ESP+0x8",
+    "listing_reads": "0x00c123c5 `8b 4c 24 18` MOV ECX,[ESP+0x18]",
+    "width_bytes": 4,
+    "use": "read once, late, and pushed as the THIRD argument of 0x00c10250 (0x00c123ca)"
+   },
+   {
+    "address_at_entry": "entry_ESP+0xc",
+    "listing_reads": "0x00c1237d `80 7c 24 1c 00` CMP byte ptr [ESP+0x1c],0x0",
+    "width_bytes": 1,
+    "use": "a ONE-BYTE compare against zero; when non-zero the prototyper's +0x14 slot is called with a 4-byte float zero built by FLDZ/FSTP at 0x00c1238a/0x00c12392"
+   }
+  ],
+  "stack_cleanup_bytes": 12,
+  "stack_cleanup_owner": "callee",
+  "ret_form": "RET 0xc (0x00c12358 and 0x00c123e7)",
+  "return_register": "EAX",
+  "return_type": "opaque 32-bit object pointer",
+  "return_semantics": "the created object, or zero on the two early exits",
+  "return_type_rationale": "OBSERVED FROM THE LISTING, NOT FROM THE SIDECAR. Every exit materialises a 32-bit word in EAX: 0x00c123e1 `8b c7` MOV EAX,EDI on the success path (unconditional, whether or not the +0xe88 store happened), and zero on the two early paths -- 0x00c1231e jumps to 0x00c123e1 with EDI still zero from `33 ff` XOR EDI,EDI, and 0x00c12354 falls into the epilogue with EAX holding the null the +0x40 call returned. The x87 pair is balanced (FLDZ at 0x00c1238a pushes, FSTP float ptr [ESP] at 0x00c12392 pops), so nothing travels in ST0. The sidecar's `return_register: ST0` and `return_semantics: float_or_x87_in_ST0` are refuted by that pairing; see unresolved_questions.",
+  "saved_registers": ["EBX", "EBP", "ESI", "EDI"],
+  "frame": "no frame pointer; PUSH EBP at 0x00c12311 is a plain register save, and there is no MOV EBP,ESP anywhere, so ESP sits at entry_ESP-0x10 for the whole body"
+ },
+ "observed_mechanics": [
+  "four register saves and no locals: the largest stack displacement is 0x20 and it is a caller's own argument word (see the alias below)",
+  "one null guard, on the receiver's own +0xb54 word: 0x00c12318 `CMP dword ptr [ESI+0xb54],EDI` / 0x00c1231e `JZ 0x00c123e1`",
+  "0x00c1232f `MOV [ESP+0x20],EBP` writes the just-read argument word back over ITS OWN slot (with three pushes outstanding ESP is entry_ESP-0x1c, so [ESP+0x20] is entry_ESP+0x4), and 0x00c12328's LEA hands the callee that same address: the third argument of 0x00c0c5b0 is an out-parameter ALIASING the first argument",
+  "receiver+0xb54 is RE-READ before every one of the six prototyper dispatches (0x00c1235b, 0x00c1236b, 0x00c12384, 0x00c12398, 0x00c123a6, 0x00c123b5); the listing never hoists it, so a callee that replaced the pointer changes which table the NEXT call goes through",
+  "the prototyper's +0x40 slot is reached with the PRE-call argument (EBP) while every other dispatch uses the POST-call re-read (EDI); the model test proves the two are different by having the helper write through the aliasing out-parameter",
+  "the prototyper's slot order is 0x08, 0x0c, [0x14], 0x18, 0x40, 0x3c -- 0x40 BEFORE 0x3c, which is not sorted order",
+  "one store through the receiver, at +0xe88, conditional on a byte of the MANAGER'S +0x40 RESULT: `CMP byte ptr [EBX+0x1c],0x1` / `JZ` stores for every value EXCEPT one",
+  "the created object is returned UNCONDITIONALLY on the success path; the cache store is the conditional half, not the return",
+  "caller-side cleanup after the two direct calls with arguments: ADD ESP,0xc after 0x00c0c5b0 and ADD ESP,0x10 after 0x00c10250"
+ ],
+ "field_offsets": [
+  {
+   "owner": "receiver",
+   "displacement": "0xb54",
+   "width_bytes": 4,
+   "access": "read",
+   "instructions": ["00c12318", "00c1235b", "00c1236b", "00c12384", "00c12398", "00c123a6", "00c123b5"],
+   "note": "reached through the ESI alias, which is why the derived receiver record lists it while a scan of ECX's own operands would not"
+  },
+  {
+   "owner": "receiver",
+   "displacement": "0xe88",
+   "width_bytes": 4,
+   "access": "write",
+   "instructions": ["00c123db"],
+   "note": "the body's only store through its receiver"
+  },
+  {
+   "owner": "manager's +0x40 result (NOT the receiver)",
+   "displacement": "0x1c",
+   "width_bytes": 1,
+   "access": "read",
+   "instructions": ["00c123d5"],
+   "note": "under EBX, one level out from anything the receiver owns, and outside the receiver's displacement bounds {[0xb54, 0xe88]}"
+  }
+ ],
+ "layout": "no field names are claimed anywhere in this package: the derived receiver record is bounds_only, so the receiver is an opaque byte run reached through displacement accessors and a wrong displacement lands on a planted decoy",
+ "globals": [],
+ "vtables": [
+  {
+   "table": "the object 0x0067cb20 returns",
+   "slots_reached": ["0x40"],
+   "instructions": ["00c12340", "00c12348", "00c1234c"]
+  },
+  {
+   "table": "the object at receiver+0xb54",
+   "slots_reached": ["0x08", "0x0c", "0x14", "0x18", "0x40", "0x3c"],
+   "instructions": ["00c12361", "00c12363", "00c12369", "00c12371", "00c12375", "00c1237b", "00c12384", "00c1238c", "00c1238e", "00c12396", "00c12398", "00c1239e", "00c123a0", "00c123a4", "00c123a6", "00c123ac", "00c123ae", "00c123b3", "00c123b5", "00c123bb", "00c123bd", "00c123c3"],
+   "note": "six distinct displacements, and evidence_dispatch.classify_sites reads all seven indirect transfers in the body as VTABLE_SLOT with exactly this slot set"
+  }
+ ],
+ "types": [],
+ "type_scope": "every callee-facing object is opaque; the two vtable structs declare members whose names ARE their displacement and nothing else",
+ "analogues": [],
+ "semantic_findings": [
+  "The body is a guarded object-construction sequence: read a prototyper pointer out of the receiver, resolve one argument word through 0x00c0c5b0, obtain a per-call result from a manager obtained from 0x0067cb20, bail out twice, otherwise walk six virtual slots of the prototyper in a fixed order to build and configure an object, hand it to 0x00c10250, and conditionally cache it at receiver+0xe88.",
+  "The two stack words are used DIFFERENTLY and the difference is observable: entry_ESP+0x4 is passed by value to 0x00c0c5b0 AND by address, so the resolved value reaches the manager's +0x40 and the prototyper's +0x08 while the original reaches the prototyper's +0x40; entry_ESP+0x8 is only ever the third argument of 0x00c10250.",
+  "The third stack word is a one-byte flag whose only effect is whether the prototyper's +0x14 slot is called with a 4-byte float zero."
+ ],
+ "not_claimed": [
+  "a class name: the triage record says subsystem Simulator and cluster unknown-fun-mass, and no MSVC RTTI survives in this binary, so OpaqueOwner is this package's name for the receiver and nothing more",
+  "the size of the receiver: 0xe88+4 is a floor from the store, not a measurement",
+  "what the prototyper at receiver+0xb54 IS, or what any of the thirteen callees DOES",
+  "whether 0x0067cb20's return is ever null: the body dereferences it at 0x00c12340 with no test, so none is invented",
+  "the value 0x00c0c5b0 writes through the aliasing out-parameter",
+  "whether the two +0x40 dispatches are the same method on two objects or two different methods: the listing shows two different tables and says nothing else"
+ ],
+ "confidence": "the body is recovered completely from a fully parsed 87-instruction listing; every displacement, width, argument vector, branch condition and exit word is OBSERVED, and only the NAMES of the objects and the meaning of the callees are absent",
+ "unresolved_questions": [
+  "THE SIDECAR'S STACK_ARGUMENTS ENUMERATION IS WRONG AND THE LISTING IS RIGHT. `stack_arguments` lists two slots totalling 8 bytes (entry_ESP+0x4 size 4, entry_ESP+0x8 size 1) while its own `cleanup.bytes` says 12, and it records why in `abstained_because`: the linear ESP walk is not one path. Its slot keys come from that walk, which mis-attributes 0x00c1237d's `CMP byte ptr [ESP+0x1c]` to entry_ESP+0x8 instead of entry_ESP+0xc. Four PUSHes is 0x10, so [ESP+0x14]/[ESP+0x18]/[ESP+0x1c] are entry_ESP+0x4/0x8/0xc, and `RET 0xc` independently says 12 bytes. This package models three arguments and names the disagreement rather than adopting either side silently.",
+  "THE SIDECAR'S RETURN REGISTER IS WRONG. `return_register: ST0` and `return_semantics: float_or_x87_in_ST0` are derived from the presence of an x87 instruction, but the FLDZ at 0x00c1238a is matched by `FSTP float ptr [ESP]` at 0x00c12392, so the x87 stack is empty before either RET and the value travels in EAX. The record's `return.type` is null, so it makes no competing type claim. Consequence for the validator: evidence_returns.classify reads the non-GPR register and returns UNCLASSIFIED, so RETURN SEMANTICS is NOT_AVAILABLE whatever the source declares. This is a fact about the evidence, not a defect in the source.",
+  "THE COMMITTED DECOMPILATION MISBINDS 0x00c10250's THIRD ARGUMENT. It renders `FUN_00c10250(param_1,uVar4,uVar5,iVar3)` with uVar5 already bound to the constant 1 from `PUSH 0x1` at 0x00c12378, while the listing's 0x00c123c5 `MOV ECX,[ESP+0x18]` reads entry_ESP+0x8. The decompilation also renders 0x00c1237d's byte flag as `unaff_BP`, a register it had saved at 0x00c12311. The listing is authoritative and this package follows it; no decompiler output is imported as a claim.",
+  "NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game."
+ ],
+ "evidence_provenance": [
+  "reconstruction/evidence/00c12310/evidence.json category disassembly (LIVE, 87 instructions, listing_state complete)",
+  "reconstruction/evidence/00c12310/evidence.json category abi_derived (openspore-abi-inference-1: parse declared_count 87 degraded false unparsed 0; receiver ECX bounds_only offsets [2900,3720]; dispatch indirect_calls 7; cleanup bytes 12 owner callee)",
+  "GhidraMCP disassemble_function @ 0x00c12310 and disassemble_bytes length 218, re-read for this package to pin the 87 instruction encodings the model test asserts on",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv: the three outgoing direct-call edges out of 0x00c12310 (0x0067cb20, 0x00c0c5b0, 0x00c10250) and 102 incoming",
+  "tools/reconstruction_tooling/evidence_dispatch.classify_sites over the complete listing: 7 indirect transfers, all VTABLE_SLOT, slot set {0x8,0xc,0x14,0x18,0x3c,0x40}",
+  "tools/reconstruction_tooling/evidence_fields._scan over the complete listing with the ESI alias: one aliased displacement, 0xb54",
+  "docs/tooling/reconstruction-failure-modes.md rules 1, 2, 3, 4, 7 and 8, each applied and each visible in the source"
+ ],
+ "focused_test": {
+  "cases": 17,
+  "checks": 844,
+  "mutants": 7,
+  "mutant_catch_counts": [5, 8, 9, 12, 6, 7, 6],
+  "perturbations_of_the_reconstruction_itself_tried": [
+   "guard displacement 0xb54 -> 0xb58: the test aborts on the null (SIGSEGV), which is a refutation it cannot count but which is still a failure",
+   "swap the two 32-bit stack arguments in the signature: 5 named checks fail",
+   "route the +0x18 slot through +0x0c: 4 named checks fail"
+  ],
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32, static archive, link, run: 844 checks, 0 failures. Identical under g++."
+ },
+ "runtime_validation": 0,
+ "runtime_validation_status": "not performed",
+ "runtime_gates": [
+  "observe a real caller and record which stack word the third argument of 0x00c10250 actually receives, since the decompilation and the listing disagree about it",
+  "record what 0x00c0c5b0 writes through its third argument, which decides whether the two +0x40 dispatches are ever reached with different values",
+  "identify the concrete subtypes behind the prototyper at receiver+0xb54 and the object 0x0067cb20 returns"
+ ],
+ "review_status": "staged_static_review",
+ "integration_status": "not promoted",
+ "worker_ownership": "w28/0x00c12310"
+}

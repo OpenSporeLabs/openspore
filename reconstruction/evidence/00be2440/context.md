@@ -1,7 +1,7 @@
 # Reconstruction context 0x00be2440
 
-- Status: `complete`
-- Content SHA-256: `395bbbf0eea8089e2881ad0c179597c32d814882ce630b1d05b4c6278a15012f`
+- Status: `partial`
+- Content SHA-256: `1c1186398ea3da28beed7669ab422568bf17ec6d79b8eb9e9f0fb99fc1015c8b`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "0d3da0537dab6eae62e4856b48870ab54e410226a76bd9473d78016d30d3214f",
-  "live_attempts": [],
+  "content_sha256": "a86e1e473bbefc677e19b988d58849bf82d22dd0fe4631ecc3913e743311976d",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00be2440 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,90 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-void FUN_00be2440(int *param_1,int param_2,undefined4 param_3)
-
-{
-  int iVar1;
-  int iVar2;
-  int iVar3;
-  bool bVar4;
-  char cVar5;
-  int iVar6;
-  int iVar7;
-  int *piVar8;
-  undefined1 *puVar9;
-  uint uVar10;
-  uint uVar11;
-  uint uStack_210;
-  int iStack_20c;
-  int iStack_208;
-  char local_204 [16];
-  undefined4 uStack_1f4;
-  undefined4 uStack_1f0;
-  int local_1ec [14];
-  float fStack_1b4;
-  int local_1a4 [56];
-  undefined1 local_c4 [196];
-  
-  local_1a4[0xe] = 0;
-  local_1a4[0xf] = 0;
-  local_1a4[0x10] = 0;
-  local_1a4[0x11] = 0;
-  local_1a4[0x12] = 0;
-  local_1a4[0x13] = 0;
-  local_1a4[0x14] = 0;
-  local_1a4[0x15] = 0;
-  local_1a4[0x16] = 0;
-  local_1a4[0x17] = 0;
-  local_1a4[0x18] = 0;
-  local_1a4[0x19] = 0;
-  local_1a4[0x1a] = 0;
-  local_1a4[0x1b] = 0;
-  local_1a4[0] = 0;
-  local_1a4[1] = 0;
-  local_1a4[2] = 0;
-  local_1a4[3] = 0;
-  local_1a4[4] = 0;
-  local_1a4[5] = 0;
-  local_1a4[6] = 0;
-  local_1a4[7] = 0;
-  local_1a4[8] = 0;
-  local_1a4[9] = 0;
-  local_1a4[10] = 0;
-  local_1a4[0xb] = 0;
-  local_1a4[0xc] = 0;
-  local_1a4[0xd] = 0;
-  local_1a4[0x1c] = 0;
-  local_1a4[0x1d] = 0;
-  local_1a4[0x1e] = 0;
-  local_1a4[0x1f] = 0;
-  local_1a4[0x20] = 0;
-  local_1a4[0x21] = 0;
-  local_1a4[0x22] = 0;
-  local_1a4[0x23] = 0;
-  local_1a4[0x24] = 0;
-  local_1a4[0x25] = 0;
-  local_1a4[0x26] = 0;
-  local_1a4[0x27] = 0;
-  local_1a4[0x28] = 0;
-  local_1a4[0x29] = 0;
-  local_1a4[0x2a] = 0;
-  local_1a4[0x2b] = 0;
-  local_1a4[0x2c] = 0;
-  local_1a4[0x2d] = 0;
-  local_1a4[0x2e] = 0;
-  local_1a4[0x2f] = 0;
-  local_1a4[0x30] = 0;
-  local_1a4[0x31] = 0;
-  local_1a4[0x32] = 0;
-  local_1a4[0
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -542,7 +468,7 @@ void FUN_00be2440(int *param_1,int param_2,undefined4 param_3)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/integrated/batch-2026-09-25-sim-social-world-wave3/handoff.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg13-c4-civ-wave3/00be2440.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-sim-social-world-wave3/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg13-c4-civ-wave3/00be2440.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg13_c4_civ_wave3/civ_wave3_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -560,11 +486,6 @@ void FUN_00be2440(int *param_1,int param_2,undefined4 param_3)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {
@@ -599,6 +520,11 @@ void FUN_00be2440(int *param_1,int param_2,undefined4 param_3)
     },
     {
       "mode": "persisted",
-      "ref": "src/reconstruction/pkg13_c4_civ_wave3/civ_wave
+      "ref": "src/reconstruction/pkg13_c4_civ_wave3/civ_wave3.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg13_c4_civ_wave
 [TRUNCATED]
 ```

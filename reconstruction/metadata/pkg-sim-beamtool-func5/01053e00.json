@@ -1,0 +1,362 @@
+{
+  "schema": "pkg-sim-beamtool-func5.function-handoff.v1",
+  "package": "PKG-SIM-BEAMTOOL-FUNC5",
+  "function_address": "0x01053e00",
+  "ghidra_name": "FUN_01053e00",
+  "normalized_symbol": "func_01053e00",
+  "source_files": [
+    "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.cpp",
+    "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.hpp",
+    "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00_model_test.cpp"
+  ],
+  "implementation": {
+    "source": "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.cpp",
+    "header": "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.hpp",
+    "model_test": "reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00_model_test.cpp"
+  },
+  "phase": "body-reconstruction",
+  "semantic_classification": "virtual update step that returns false when it has just released a completed owned target, and otherwise resolves a world position from the receiver's position source, pushes it into the owned target's emitter and commits an anchor position on the owned target before returning true",
+  "declaration": "bool __cdecl func_01053e00(OpaqueBeamToolState *tool_state, void *update_context);",
+  "observed_original_abi": {
+    "return_type": "bool",
+    "return_type_rationale": "AL only. The success exit writes AL=1 with MOV AL,0x1 at 0x01053ec4 and the failure exit writes AL=0 with XOR AL,AL at 0x01053ecd; the upper three bytes of EAX are never written on either path, so the machine produces a one-byte zero or one. The live Ghidra prototype is the placeholder `undefined FUN_01053e00(void)` and the SDK symbol table has no name for this address, so no declared return type exists to corroborate bool; bool is chosen because it is the type the machine's AL-only production supports and the type the staged span declares.",
+    "logical_return_type": "bool",
+    "staged_return_type": "bool",
+    "calling_convention": "Observed MSVC x86 virtual-member convention already established for this table by the sibling reconstruction of 0x01053db0: the receiver is NOT in ECX but is the first callee-popped stack argument, read as MOV ESI,[ESP+0x20] at 0x01053e04 after SUB ESP,0x18 / PUSH ESI. ECX is used only to carry the receiver of each inner virtual.",
+    "hidden_this": false,
+    "stack_arguments": [
+      {
+        "index": 0,
+        "offset_hex": "0x04",
+        "role": "receiver; the object whose fields at +0x114 and +0x124 are read",
+        "evidence": "MOV ESI,[ESP+0x20] at 0x01053e04 with the prologue already applied, and MOV ECX,[ESP+0x24] at 0x01053eb4 reloading the same word"
+      },
+      {
+        "index": 1,
+        "offset_hex": "0x08",
+        "role": "second callee-popped stack word; never read by this body",
+        "evidence": "no instruction in the 65-instruction body reads [ESP+0x08] relative to the entry stack pointer, yet RET 0x8 at 0x01053eca and 0x01053ed3 clean eight bytes"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "AL",
+    "return_width_bytes": 1,
+    "frame": "SUB ESP,0x18 / PUSH ESI at 0x01053e00-0x01053e03; POP ESI / ADD ESP,0x18 / RET 0x8 on both exits at 0x01053ec6-0x01053eca and 0x01053ecf-0x01053ed3. ESI is the only callee-saved register touched.",
+    "callee_cleanup_convention": "The single POP ESI / ADD ESP,0x18 epilogue is only stack-balanced if all four inner calls remove their own pushed argument. That is the reading adopted here: the two zero-argument virtuals (words at +0x2c and +0x04 of the owned target, and the word at +0x2c of the position source) are entered with no push, and the four one-argument calls each push exactly one dword. Any other assignment leaves ESP off by four or eight bytes at the RET, which would fault on return.",
+    "correction_of_live_prototype": "The live signature `undefined FUN_01053e00(void)` is a placeholder with no parameters; the body demonstrably consumes two callee-popped stack words and returns a byte in AL."
+  },
+  "layout": {
+    "note": "Hex offsets are reproduced here only. The staged source expresses each one as a named constant with a decimal value so that no displacement is restated as a hex literal inside the source span.",
+    "receiver": {
+      "type": "OpaqueBeamToolState",
+      "hex_offset": "0x114",
+      "decimal_offset": 276,
+      "staged_field": "position_source_114",
+      "type_staged": "OpaquePositionSource*",
+      "access": "read; the only reads are the null test at 0x01053e4b and the reload at 0x01053e72"
+    },
+    "receiver_owned_slot": {
+      "hex_offset": "0x124",
+      "decimal_offset": 292,
+      "staged_field": "owned_beam_target_124",
+      "type_staged": "OpaqueBeamTarget*",
+      "access": "read at 0x01053e08, re-read at 0x01053e1d, written with 0 at 0x01053e27, tested at 0x01053e38, re-read at 0x01053e99 and 0x01053eb9",
+      "corroboration": "identical offset and identical release idiom in the landed sibling package reconstruction/staging/pkg-sim-beamtool-func4ch"
+    },
+    "receiver_extent": {
+      "hex_size": "0x178",
+      "decimal_size": 376,
+      "note": "sized to keep the sibling's gate word at 0x174; this function never touches it"
+    },
+    "owned_target": {
+      "type": "OpaqueBeamTarget",
+      "hex_size": "0x148",
+      "decimal_size": 328,
+      "fields": [
+        {
+          "hex_offset": "0x00",
+          "staged_field": "vtable_00",
+          "use": "base of the two dispatched slots +0x2c and +0x04"
+        },
+        {
+          "hex_offset": "0x34",
+          "decimal_offset": 52,
+          "staged_field": "emitter_34",
+          "type_staged": "OpaqueBeamEmitter*",
+          "use": "LEA ECX,[EAX+0x34] at 0x01053e9f then MOV EAX,[ECX] / MOV EAX,[EAX+0x38] / CALL EAX; the object whose vtable word at +0x38 receives the resolved vector"
+        },
+        {
+          "hex_offset": "0x134",
+          "decimal_offset": 308,
+          "staged_field": "anchor_134",
+          "type_staged": "OpaqueAnchor*",
+          "use": "read only inside the direct callee 0x00cb5930, not by this body"
+        },
+        {
+          "hex_offset": "0x13c",
+          "decimal_offset": 316,
+          "staged_field": "anchor_position_13c",
+          "type_staged": "OpaqueVec3",
+          "use": "written only inside the direct callee 0x00cb5930, not by this body"
+        }
+      ]
+    },
+    "dispatched_slot_offsets": {
+      "owned_target_completion_query": "0x2c",
+      "owned_target_release": "0x04",
+      "position_source_position_pointer": "0x2c",
+      "position_source_position_out": "0x30",
+      "position_source_lookup_by_table": "0xb8",
+      "emitter_set_position": "0x38",
+      "anchor_provider_resolver": "0x118",
+      "anchor_provider_position": "0x2c"
+    },
+    "keyed_global": {
+      "address": "0x013f94d4",
+      "pushed_at": "0x01053e57",
+      "form": "PUSH 0x13f94d4 passes the address of a .rdata word, not the word's value",
+      "observed_contents": [
+        "0x005e3280",
+        "0x005e2d10",
+        "0x005e2ec0",
+        "0x005e4c90",
+        "0x005e1fb0",
+        "0x005e2be0",
+        "0x005e2c30",
+        "0x005e4190"
+      ],
+      "observation": "the eight consecutive words all lie in one code range, so the global is a table of code pointers; the address is nevertheless passed opaquely and the lookup at slot +0xb8 is the only consumer, so the staged source declares it as an opaque 8-word table and leaves its contents unspecified"
+    }
+  },
+  "mechanics": {
+    "completion_gate_and_release": [
+      "0x01053e08 reads the owned target from receiver+0x124 and 0x01053e0e/0x01053e10 skip the block when it is null.",
+      "0x01053e14/0x01053e17/0x01053e19 dispatch the owned target vtable word at +0x2c and test AL; a false result skips the release.",
+      "0x01053e1d re-reads the same slot and 0x01053e23/0x01053e25 re-tests it, so the release is guarded twice.",
+      "0x01053e27 stores 0 into receiver+0x124 BEFORE the release call at 0x01053e36, which dispatches the owned target vtable word at +0x04 with the target in ECX."
+    ],
+    "post_release_null_test": [
+      "0x01053e38/0x01053e3f re-test receiver+0x124 and jump to the false exit at 0x01053ecd.",
+      "Consequence proven by the listing: the success path is reachable only when the owned target was absent or its completion query answered false. A target that has just been released always yields the false return."
+    ],
+    "position_resolution": [
+      "0x01053e45/0x01053e4b load receiver+0x114 and jump to the fallback block at 0x01053e72 when it is null.",
+      "0x01053e51/0x01053e57/0x01053e5c dispatch the position source vtable word at +0xb8 with the address 0x013f94d4 as the single stack argument.",
+      "0x01053e5e/0x01053e60 fall through to the fallback block when the lookup answers null.",
+      "0x01053e64 dispatches the found object vtable word at +0x30 with ECX set to the found object and a 12-byte frame buffer at [ESP+0x10] pushed as its argument; 0x01053e70 then jumps over the fallback.",
+      "0x01053e72/0x01053e7a/0x01053e7d are the fallback: the position source vtable word at +0x2c is dispatched with no argument and its EAX result is the position pointer."
+    ],
+    "position_consumption": [
+      "0x01053e7f, 0x01053e89 and 0x01053e94 read three consecutive floats from the pointer in EAX and store them to [ESP+0x4], [ESP+0x8] and [ESP+0xC].",
+      "The vector is taken from the pointer the call RETURNED, not from the buffer passed to the slot +0x30 call: the machine never reads back the frame bytes written at [ESP+0x10], [ESP+0x14] or [ESP+0x18].",
+      "The three stores form a 12-byte copy; 0x01053ead re-takes its address with LEA EDX,[ESP+0x4] and passes it to the emitter."
+    ],
+    "emitter_dispatch": [
+      "0x01053e99 reloads the owned target and 0x01053e9f forms ECX = target+0x34.",
+      "0x01053ea8/0x01053eaa load the object stored at that field and take its vtable word at +0x38 into EAX; 0x01053eb1/0x01053eb2 call it with the copied vector as the single stack argument."
+    ],
+    "commit_call": [
+      "0x01053eb4 reloads the receiver word and 0x01053eb8 pushes it, 0x01053eb9 loads the owned target into ECX and 0x01053ebf calls 0x00cb5930 directly.",
+      "So the commit helper receives the owned target as its thiscall receiver and the receiver of this function as its single stack argument; the same word is used as a pointer to three floats by the callee, which is anomalous and is staged verbatim."
+    ],
+    "returns": [
+      "success: MOV AL,0x1 at 0x01053ec4 on the only path that reaches the update sequence",
+      "failure: XOR AL,AL at 0x01053ecd, reached when receiver+0x124 is null at 0x01053e3f"
+    ]
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 0,
+      "observation": "The briefing and ghidra_get_xrefs_to report no call xref; the only references to 0x01053e00 are five DATA references from .rdata, so the function is reached exclusively through the tool class dispatch region and the empty caller set is expected."
+    },
+    "direct_callees": {
+      "ghidra_count": 1,
+      "entries": [
+        {
+          "address": "0x00cb5930",
+          "name": "FUN_00cb5930",
+          "role": "thiscall on the owned target with the receiver word as its stack argument. Decompiles to: read the pointer at target+0x134, dispatch its vtable word at +0x118, and if that yields a non-null object dispatch its vtable word at +0x2c to obtain a position pointer, otherwise keep the passed pointer; then store three dwords at target+0x13c, target+0x140 and target+0x144 from it."
+        }
+      ]
+    },
+    "indirect_callees": [
+      {
+        "dispatch_site": "0x01053e17",
+        "via": "owned target vtable word at +0x2c",
+        "receiver": "ECX = the object at receiver+0x124",
+        "arguments": "none",
+        "observed_result": "AL tested at 0x01053e19"
+      },
+      {
+        "dispatch_site": "0x01053e36",
+        "via": "owned target vtable word at +0x04",
+        "receiver": "ECX = the object previously at receiver+0x124",
+        "arguments": "none",
+        "observed_result": "none"
+      },
+      {
+        "dispatch_site": "0x01053e5c",
+        "via": "position source vtable word at +0xb8",
+        "receiver": "ECX = the object at receiver+0x114",
+        "arguments": "one stack dword, the address 0x013f94d4",
+        "observed_result": "EAX tested at 0x01053e5e"
+      },
+      {
+        "dispatch_site": "0x01053e6e",
+        "via": "found object vtable word at +0x30",
+        "receiver": "ECX = the object the +0xb8 lookup returned",
+        "arguments": "one stack dword, a 12-byte frame buffer",
+        "observed_result": "EAX dereferenced at 0x01053e7f"
+      },
+      {
+        "dispatch_site": "0x01053e7d",
+        "via": "position source vtable word at +0x2c",
+        "receiver": "ECX = the object at receiver+0x114",
+        "arguments": "none",
+        "observed_result": "EAX dereferenced at 0x01053e7f"
+      },
+      {
+        "dispatch_site": "0x01053eb2",
+        "via": "emitter vtable word at +0x38",
+        "receiver": "ECX = target+0x34, dispatching the vtable of the object stored there",
+        "arguments": "one stack dword, the address of the 12-byte copy",
+        "observed_result": "none"
+      }
+    ]
+  },
+  "vtable_evidence": {
+    "pointer_sites": [
+      {
+        "address": "0x0149b824",
+        "block": ".rdata",
+        "delta_from_site_holding_sdk_named_func4ch": "0x14"
+      },
+      {
+        "address": "0x0149b8c4",
+        "block": ".rdata",
+        "delta_from_site_holding_sdk_named_func4ch": "unestablished, the briefing base 0x0149b8b4 holds 0x01052f90"
+      },
+      {
+        "address": "0x0149b914",
+        "block": ".rdata",
+        "delta_from_site_holding_sdk_named_func4ch": "0x14"
+      },
+      {
+        "address": "0x0149b964",
+        "block": ".rdata",
+        "delta_from_site_holding_sdk_named_func4ch": "0x34"
+      },
+      {
+        "address": "0x0149ba44",
+        "block": ".rdata",
+        "delta_from_site_holding_sdk_named_func4ch": "0x14"
+      }
+    ],
+    "observation": "ghidra_get_xrefs_to reports exactly five DATA references and no code reference. Three of the enclosing words, 0x0149b810, 0x0149b900 and 0x0149ba30, each hold the little-endian encoding of 0x01053db0, which the SDK import names Simulator::cDefaultBeamTool::func4Ch, and at each of those three words 0x01053e00 follows exactly five words (0x14 bytes) later. The 0x0149ba30 image additionally repeats 0x01053e00 thirty-four bytes after its own func4Ch word.",
+    "class_attribution": "The owning class is attributed to Simulator::cDefaultBeamTool on this evidence and no other: ghidra_list_class_members reports exactly two functions carrying the cDefaultBeamTool this type, 0x01053d00 (Simulator::cDefaultBeamTool::OnMouseDown) and 0x01053db0 (Simulator::cDefaultBeamTool::func4Ch), and 0x01053db0 is the SDK-named word at the base of the three tables that also hold this target. The function itself is UNNAMED in the image: the live Ghidra name is FUN_01053e00, ghidra_search finds no SDK symbol at this address, and the Spore-ModAPI symbol table has no entry for it, so no interface or member name is invented here.",
+    "caveat": "The region interleaves non-code words among the code pointers (0x00c6a960 at 0x0149b828 and 0x007b86e0 at 0x0149b82c, both confirmed by ghidra_read_memory), and SporeApp.exe carries no MSVC RTTI, so no complete-object locator confirms a base and no exact slot index is claimed. The briefing's four vtable addresses are reported as pointers to the function rather than as verified vtable bases."
+  },
+  "structure_and_global_evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01053e00",
+      "observation": "The live function spans 0x01053e00 through 0x01053ed5 and is named FUN_01053e00 with the placeholder signature `undefined FUN_01053e00(void)`."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01053e00",
+      "observation": "65 instructions, all accounted for: one guarded release block, one null gate, a two-way position resolution, a three-float copy, an emitter dispatch and one direct call. No instruction outside those groups exists."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01053e00",
+      "observation": "The raw bytes 83ec18568b7424208b8e24010000...c2080032c05e83c418c20800 followed by cccccccccc confirm the SUB ESP,0x18 / PUSH ESI prologue, the MOV ESI,[ESP+0x20] receiver load, the two RET 0x8 exits and the 0xCC int3 padding Ghidra reports as the body end."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01053e00",
+      "observation": "Renders the whole body as pointer arithmetic on param_1 with the virtual calls collapsed into (**(code **)(...)) and reads the 12-byte local as unaff_retaddr. Usable for control flow, useless for types; the return is rendered `undefined4` and the second stack word is lost, which is why the listing governs the ABI."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00cb5930",
+      "observation": "Establishes the commit helper exactly: the pointer at this+0x134, the vtable words at +0x118 and +0x2c, and the three separate dword stores at this+0x13c, this+0x140 and this+0x144. It also shows that the passed stack argument is replaced by the resolved pointer whenever the anchor chain succeeds, and used verbatim otherwise."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013f94d4",
+      "observation": "The eight consecutive words are all code-range pointers, confirming that PUSH 0x13f94d4 passes a pointer to a service table."
+    },
+    {
+      "tool": "ghidra_list_class_members",
+      "class_name": "cDefaultBeamTool",
+      "observation": "Only 0x01053d00 and 0x01053db0 carry the cDefaultBeamTool this type, which is the sole basis for the class attribution recorded above."
+    }
+  ],
+  "analogue_agreement": {
+    "package": "reconstruction/staging/pkg-sim-beamtool-func4ch",
+    "symbol": "func4_ch_01053db0",
+    "observation": "That package reconstructs the SDK-named virtual that occupies the base word of the same three tables and independently establishes the two facts this package relies on: the receiver is a callee-popped stack argument rather than an ECX this, and the owned target pointer at +0x124 is nulled immediately before its vtable word at +0x04 is dispatched. Both idioms are reproduced here verbatim, and this function reuses the very same +0x04 release slot."
+  },
+  "evidence": [
+    "reconstruction/metadata/pkg-sim-beamtool-func5/01053e00.json",
+    "ghidra:disassemble:0x01053e00",
+    "ghidra:decompile:0x01053e00",
+    "ghidra:read_memory:0x01053e00",
+    "ghidra:function_by_address:0x01053e00",
+    "ghidra:xrefs_to:0x01053e00",
+    "ghidra:read_memory:0x0149b810",
+    "ghidra:read_memory:0x0149b900",
+    "ghidra:read_memory:0x0149ba30",
+    "ghidra:read_memory:0x0149b8b4",
+    "ghidra:read_memory:0x013f94d4",
+    "ghidra:decompile:0x00cb5930",
+    "ghidra:list_class_members:cDefaultBeamTool",
+    "analogue:0x01053db0 (pkg-sim-beamtool-func4ch)"
+  ],
+  "confidence": {
+    "overall": "high for control flow, stack ABI, every field and slot offset, the two return values and the single direct callee; medium for the semantic role of each dispatched slot; low for the vtable slot index and the name of the interface this virtual overrides",
+    "high": [
+      "the receiver is the first of two callee-popped stack words and RET 0x8 is the epilogue on both exits",
+      "all four inner calls clean their own single pushed dword, which is the only assignment that balances ESP at the RET",
+      "the owned target lives at receiver+0x124 and the position source at receiver+0x114",
+      "the owned target slot is written with 0 before the virtual word at +0x04 is dispatched",
+      "the success return is reachable only when the owned target was absent or its +0x2c query answered false",
+      "the consumed vector is the pointer returned in EAX and not the buffer handed to the +0x30 call",
+      "the commit call passes the owned target in ECX and this function's own receiver word on the stack",
+      "the return is a one-byte value, 1 on the update path and 0 on the null-gate path"
+    ],
+    "medium": [
+      "that the +0x2c word on the owned target is a completion or finished query; the null-then-release shape and the false return that follows the release support it, but the slot body is not resolved",
+      "that the +0xb8 word is a service lookup keyed by the table at 0x013f94d4; the keyed argument and the null answer falling back are proven, the key's meaning is not",
+      "that the +0x30 and +0x2c words both yield a world position; three consecutive floats are copied, the semantics of the floats are not established"
+    ],
+    "low": [
+      "the exact vtable slot index and the interface this virtual overrides, because the region interleaves non-code words and the image has no RTTI",
+      "whether the 12-byte buffer passed to the +0x30 call is a second output the callee fills for its own purposes, since this body never reads it back",
+      "the meaning of the eight code pointers stored at 0x013f94d4"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-sim-beamtool-func5 reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-sim-beamtool-func5 reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00.cpp reconstruction/staging/pkg-sim-beamtool-func5/beam_tool_func5_01053e00_model_test.cpp -o /tmp/opencode/pkg-sim-beamtool-func5-model",
+    "model_result": "passed; 22 of 22 checks green",
+    "abi_fidelity_command": "objdump -d -w /tmp/opencode/pkg-sim-beamtool-func5-model --disassemble=func_01053e00",
+    "abi_fidelity_result": "passed; the staged naked entry assembles to 214 bytes, the exact length of the original body, and matches the ghidra_read_memory image of 0x01053e00 byte for byte apart from the link-time rel32 of the direct call and two semantically identical opcode selections: 89 c1 staged against 8b c8 original for MOV ECX,EAX at 0x01053e6c, and 30 c0 staged against 32 c0 original for XOR AL,AL at 0x01053ecd. No mnemonic, operand, displacement, immediate or branch target differs.",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false, ColumnLimit: 80}\" reconstruction/staging/pkg-sim-beamtool-func5/*.hpp reconstruction/staging/pkg-sim-beamtool-func5/*.cpp",
+    "format_result": "passed; namespace comments disabled to honor the no-comments constraint",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-sim-beamtool-func5/01053e00.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The function is unnamed in the image. FUN_01053e00 is the live Ghidra name, the Spore-ModAPI symbol table has no entry for this address, and the two SDK-named neighbours 0x01053d00 and 0x01053db0 are the only members carrying the cDefaultBeamTool this type. The class attribution is therefore evidence-based but the member or interface name is not recoverable and has not been invented.",
+    "The slot index of this entry is not established. It sits five words after the SDK-named func4Ch word in the tables based at 0x0149b810, 0x0149b900 and 0x0149ba30, but those regions interleave non-code words and the image has no RTTI, so the deltas are reported rather than a slot number.",
+    "Whether the second callee-popped stack word is a distinct 4-byte argument or the low half of a single 8-byte argument cannot be decided from `ret 8` alone. No instruction reads it, so it is staged as an opaque void* and never dereferenced.",
+    "The 12-byte buffer passed to the found object's vtable word at +0x30 is written by the callee but never read back by this body, which consumes the returned pointer instead. Whether that buffer is a genuine second output or a compiler artifact of the callee's prototype is not resolvable from this function alone.",
+    "The semantic role of each dispatched slot is inferred from shape only: the +0x2c query on the owned target, the +0xb8 keyed lookup, the +0x30 and +0x2c position accessors and the +0x38 emitter setter. No slot body is resolved in this package.",
+    "The commit helper 0x00cb5930 uses this function's own receiver word as a fallback pointer to three floats, which reads the first twelve bytes of the receiver object. That is what the listing does and it is staged verbatim, but it looks like an argument mix-up in the original; whether the caller ever reaches that fallback is unknown.",
+    "The eight code pointers stored at 0x013f94d4 are recorded as observed bytes but are deliberately left unspecified in the staged table, so no constant is asserted that the listing for this VA does not contain."
+  ],
+  "blockers": []
+}

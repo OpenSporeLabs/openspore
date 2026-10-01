@@ -197,3 +197,11 @@ add_test(
 add_subdirectory(assets)
 add_subdirectory(sim)
 add_subdirectory(replace)
+
+# Promoted reconstruction packages (auto-discovered from */promotion.json).
+# Each target is x86-32: reconstructed code uses __attribute__((thiscall)).
+# Configure with -DCMAKE_CXX_COMPILER=clang++ for the promoted set.
+option(OPENSPORE_RECONSTRUCTION "Build promoted reconstruction packages" ON)
+if(OPENSPORE_RECONSTRUCTION)
+  add_subdirectory(reconstruction)
+endif()

@@ -103,6 +103,43 @@ resolved to a category in v5); the 4,398-row anonymous-family pool is
 ENGINE_IMPLEMENTATION (4,384) + GAMEPLAY_LOGIC (14) debt, tracked in
 `attribution-f0e310e0.json`, not in the debt map.
 
+## The data-reference sidecar
+
+`tools/ghidra/ExportXrefs.java` takes an optional **8th parameter**
+(`outData`). With it, the same run also writes a sidecar carrying the references
+the edge file cannot represent:
+
+```
+knowledgegraph/triage/datarefs-2540f2ca.tsv
+knowledgegraph/triage/datarefs-2540f2ca.summary.json
+```
+
+Columns: `caller_va, target_va, access_mode, segment, callsite_va, source,
+snapshot_sha256`. `access_mode` is Ghidra's own `RefType` (`read` / `write` /
+`readwrite` / `other`); `segment` is the memory block and its permissions, which
+is what separates a global from a jump-table entry in `.text`.
+
+It is a **separate file** rather than more rows in the edge TSV because
+`export_xrefs.py` proves on the edge file that every non-EXT/non-VT endpoint is a
+member of the pinned function universe, and a data address is by construction not
+a member of it. Folding the rows in would weaken a check that catches real
+corruption, to carry evidence that needs no such check.
+
+Canonicalize with:
+
+```bash
+python3 tools/triage/export_datarefs.py --data RAW.tsv [--out DIR] [--dry-run]
+```
+
+The canonical key is the **full** row, not `(caller, target, callsite)` as for
+edges: a read and a write of one address from one instruction are two different
+facts about the body, and collapsing them would lose one.
+
+Measured on the canonical image: 157,640 emitted rows → 157,633 after dedupe
+(7 genuinely duplicated Ghidra `Reference` objects), 29,943 callers, 52,198
+targets, `errors=0`. The edge TSV is **byte-identical** with and without the
+sidecar, which is the property that makes the extension behaviour-preserving.
+
 ## Validation log (all PASS)
 
 1. Frozen artifact hashes re-verified: all 2540f2ca artifacts + v5

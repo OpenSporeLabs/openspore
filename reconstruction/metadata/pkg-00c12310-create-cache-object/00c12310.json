@@ -1,0 +1,60 @@
+{
+ "address": "0x00c12310",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "reconstruction/evidence/00c12310/evidence.json#disassembly -- LIVE, 87 instructions, listing_state complete",
+  "reconstruction/evidence/00c12310/evidence.json#abi_derived -- parse declared_count 87 / degraded false / unparsed 0; receiver ECX / R-ALIAS / bounds_only / offsets [2900,3720] / written_through 1; dispatch indirect_calls 7; cleanup 12 bytes owner callee; ret_form RET 0xc",
+  "GhidraMCP disassemble_function @ 0x00c12310 and disassemble_bytes 0x00c12310 length 218, re-read for this package to pin the 87 encodings the model test asserts on (d9ee FLDZ, d91c24 FSTP, c20c00 RET 0xc, 39be/89be displacement immediates)",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv -- three outgoing direct-call edges from 0x00c12310 (0x0067cb20, 0x00c5b0, 0x00c10250 at their exact VAs) and 102 incoming",
+  "tools/reconstruction_tooling/evidence_dispatch.classify_sites over the complete listing -- 7 indirect transfers, every one VTABLE_SLOT, slot set {0x8, 0xc, 0x14, 0x18, 0x3c, 0x40}",
+  "tools/reconstruction_tooling/evidence_fields._scan over the complete listing with the ESI alias -- one aliased displacement, 0xb54, which is why the source states it as a displacement rather than a member name",
+  "tools/reconstruction_tooling/validate._hex_tokens / _field_declarations / _callee_addresses / _function_spans run directly on the staged source against the live listing -- see unresolved_questions for the results",
+  "docs/tooling/reconstruction-failure-modes.md rules 1 (zero displacement is an absence, so table_of is a bare load), 2 (bounds_only forbids member names), 3 and 4 (return semantics is a register class, not a type), 7 (exactly one symbol may embed the VA) and 8 (a static_assert message is source text, so no 0x-prefixed address appears in one) -- each applied and each visible in the source"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.hpp",
+  "model_test": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310_model_test.cpp",
+  "source": "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.cpp"
+ },
+ "normalized_symbol": "create_cached_object_00c12310",
+ "package": "PKG-00C12310-CREATE-CACHE-OBJECT",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "FUN_00c12310",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  "The body is a guarded object-construction sequence: resolve one argument word through a helper that may write it back, obtain a per-call result from a manager obtained from a zero-argument accessor, bail out twice, otherwise build and configure an object through six virtual slots of a pointer the receiver holds, hand it to a second helper, and conditionally cache it in the receiver.",
+  "The two 32-bit stack words are used DIFFERENTLY and the difference is observable: entry_ESP+0x4 is passed by value to 0x00c0c5b0 AND by address, so the resolved value reaches the manager's +0x40 and the prototyper's +0x08 while the original reaches the prototyper's +0x40; entry_ESP+0x8 is only ever the third argument of 0x00c10250.",
+  "evidence_dispatch.classify_sites reads all seven indirect transfers as VTABLE_SLOT and the source's six declared slot displacements are byte-identical to the machine's six, so the two sides of VIRTUAL DISPATCH are directly comparable rather than merely adjacent.",
+  "The two +0x40 dispatches are provably on TWO DIFFERENT tables (0x00c12340 reads the table of what 0x0067cb20 returned; 0x00c123ac reads the table of receiver+0xb54), so the reconstruction declares two distinct vtable types rather than collapsing them.",
+  "PACK CONFLICT, RESOLVED IN FAVOUR OF THE LISTING: the derived ABI's stack_arguments enumerates two slots totalling 8 bytes while its own cleanup.bytes says 12, and it records the cause in abstained_because ('flow_not_modelled: the linear ESP walk ends at +32'). Its slot keys come from that walk, which mis-attributes 0x00c1237d's CMP byte ptr [ESP+0x1c] to entry_ESP+0x8 instead of +0xc. Four PUSHes is 0x10 and RET 0xc says 12 bytes independently, so three arguments is the reading the bytes support.",
+  "PACK CONFLICT, RESOLVED IN FAVOUR OF THE LISTING: the derived ABI's return_register is ST0 with return_semantics float_or_x87_in_ST0, derived from the mere presence of an x87 instruction. The FLDZ at 0x00c1238a is matched by FSTP float ptr [ESP] at 0x00c12392, so the x87 stack is empty before either RET and EAX carries the result on every exit. The record's return.type is null, so it makes no competing type claim.",
+  "DECOMPILATION CORRECTED: the committed decompilation renders 0x00c10250's third argument as uVar5, a local it had already bound to the constant 1 from PUSH 0x1 at 0x00c12378, while the listing's 0x00c123c5 MOV ECX,[ESP+0x18] reads entry_ESP+0x8. It also renders 0x00c1237d's byte flag as unaff_BP, the register saved at 0x00c12311. No decompiler output is imported as a claim in this package."
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.cpp",
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310.hpp",
+  "reconstruction/staging/pkg-00c12310-create-cache-object/create_cache_object_00c12310_model_test.cpp"
+ ],
+ "staging_package": "pkg-00c12310-create-cache-object",
+ "subsystem": "Simulator",
+ "summary": "Full 87-instruction body reconstructed from the complete listing: __thiscall, ECX receiver, three callee-popped stack words (RET 0xc), two receiver displacements (0xb54 read, 0xe88 written) and one non-receiver displacement (0x1c on the manager's +0x40 result), seven proven VTABLE_SLOT dispatches across two distinct tables, and three direct callees with caller-side cleanup. The call sequence, every argument vector, both early exits and the one conditional store are pinned by 844 checks and seven caught mutants. PARTIAL rather than IMPLEMENTED because the pack's own derived ABI and decompilation contradict the listing on the stack-argument count and the return register (resolved in favour of the listing, with the disagreement recorded), because no callee's meaning is knowable from this body, and because there is no runtime evidence of any kind for this target.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "Nothing has run the original process for this target: there is no trace, no differential capture and no runtime evidence anywhere in this repository, so the model test is a static model of the listing and not a comparison against the game.",
+  "What 0x00c0c5b0 writes through its aliasing out-parameter is not knowable from this body. The reconstruction models the alias and proves the two +0x40 dispatches are reached with different values when it writes, but the value itself is the callee's.",
+  "Whether the two +0x40 dispatches are the same method on two objects or two unrelated methods: the listing shows two tables and a shared displacement, and nothing more.",
+  "The concrete subtypes behind receiver+0xb54 and behind 0x0067cb20's return, and the sizes of either. No MSVC RTTI survives in this binary and no record names a class.",
+  "Whether 0x0067cb20's return is ever null. The body dereferences it at 0x00c12340 with no test, so this package invents no null case for it.",
+  "The exact receiver size. 0xe88+4 is a floor from the store, not a measurement, and the model test only asserts that nothing past it is written.",
+  "VALIDATION WIRING IS THE INTEGRATOR'S STEP: the metadata record is at reconstruction/staging/pkg-00c12310-create-cache-object/metadata/00c12310.json rather than in the shared reconstruction/metadata/, because I was told not to edit outside my own staging directory. Until it is moved, validate._source() finds no artifact for this VA and every dimension reports NOT_AVAILABLE. The source-side facts the checks read were verified directly against the tooling and are all clean: exactly one definition embeds the VA, no source hex token is absent from the listing, no member name is declared, the three named callees are exactly the xref export's three outgoing edges, and the source's six slot offsets equal the machine's six.",
+  "A package-local .clang-format pins PointerAlignment: Left. With the LLVM default the formatter rewrites `OpaqueCreated* PKG_00C12310_THISCALL create_cached_object_00c12310(` into a form validate.RETURN_DECL cannot parse -- the convention token stops being a convention and the target span cannot be bound at all, so every dimension reports NOT_AVAILABLE for a correct source. The repository has no top-level .clang-format, so --style=file run from inside the package falls back to LLVM; the file is scoped to this directory and changes nothing else."
+ ],
+ "va": "0x00c12310",
+ "version": "3.1.0.22",
+ "worker_outcome": "PARTIAL"
+}

@@ -1,7 +1,7 @@
 # Reconstruction context 0x00b25fe0
 
 - Status: `partial`
-- Content SHA-256: `5177543fd71c9d73795c728393f001a0698191b057d938fb3d688318edd5422f`
+- Content SHA-256: `434a9ad6206aa1ac5aa9cdb14aad92b3f10cd609dbd51be5a271194a2ea57523`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "7ed0bd48b88f2da2e3c693a0a8f44ddec552f0f417f9d4cf8ffa946d5c38e786",
-  "live_attempts": [],
+  "content_sha256": "09d1460b76e70d56a88d4648e39876c25b81714ffc7690877fe72cf944a16f79",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00b25fe0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,68 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-void __fastcall FUN_00b25fe0(int param_1)
-
-{
-  undefined4 uVar1;
-  int iVar2;
-  int iVar3;
-  int *piVar4;
-  int *piVar5;
-  int *piStack_1c;
-  int *piStack_18;
-  int *piStack_14;
-  
-  FUN_00b22960();
-  FUN_00b22650(0x18eb45e);
-  FUN_00b22650(0x2c9cc91);
-  FUN_00b22650(0x2e96892);
-  FUN_00b22650(&DAT_018c84a9);
-  FUN_00b22650(0x1be418e);
-  piVar4 = *(int **)(param_1 + 0x58);
-  if (piVar4 != (int *)0x0) {
-    *(undefined4 *)(param_1 + 0x58) = 0;
-    (**(code **)(*piVar4 + 4))();
-  }
-  FUN_00b22650(0x2a8fb3f);
-  FUN_00b22650(0x2a034cd);
-  FUN_00b22650(&DAT_018c6de8);
-  FUN_00b22650(&DAT_018c88e4);
-  FUN_00b22650(0x3a2511e);
-  FUN_00b22650(0x403df5c);
-  FUN_00b22650(0x61494be);
-  FUN_00b22650(0x629bafe);
-  FUN_00b3d2b0();
-  uVar1 = FUN_00ac79d0();
-  FUN_00b3d2b0(uVar1);
-  FUN_00ac7a40(uVar1);
-  iVar2 = FUN_00b21340(&LAB_00cd7d10,&LAB_00d3d420,&LAB_00ad48b0,&LAB_00b1e500,0x18ebadc);
-  FUN_00b93c60(*(int *)(iVar2 + 8) - *(int *)(iVar2 + 4) >> 2,iVar2 + 0x10);
-  piVar4 = piStack_14;
-  FUN_00829110(&piStack_1c,*(undefined4 *)(iVar2 + 4),*(undefined4 *)(iVar2 + 8),piStack_14,
-               piStack_18);
-  piVar5 = piStack_1c;
-  for (; piVar4 != piVar5; piVar4 = piVar4 + 1) {
-    iVar2 = *(int *)(*piVar4 + 0x714);
-    if (((iVar2 != 0) && (iVar2 != 8)) && (iVar2 != 3)) {
-      FUN_0102c340(*piVar4,0);
-    }
-  }
-  FUN_00b22650(0x2dd8c42);
-  FUN_00b22650(0x4e3fab5);
-  FUN_00b22650(&DAT_018c6d19);
-  FUN_00b22650(0x24270c9);
-  FUN_00b22650(&DAT_018c43e8);
-  FUN_00b22650(0x18eb4b7);
-  FUN_00b25ee0();
-  iVar2 = FUN_00b21340(&LAB_00cd7d10,&LAB_00ae7060,&LAB_00ae7080,&LAB_00b1e520,&DAT_0142d
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -133,8 +81,8 @@ void __fastcall FUN_00b25fe0(int param_1)
 
 ```json
 {
-  "original_bytes": 21244,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"unparsed_lines_present: 4 line(s) matched no grammar rule\",\n    \"esp_alignment_unknown: the entry-relative ESP offset is unknown and there is no frame pointer to fall back on\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"PARTIAL\",\n  \"conflicts\": [],\n  \"content_sha256\": \"9cd19b16808ec86ca3e5c28155a57d7d66c138c33c07fe7c5ad070e3131d9914\",\n  \"conventions\": {\n    \"ambiguities\": [\n      \"esp_alignment_unknown\"\n    ],\n    \"calling_convention\": null,\n    \"candidate_conventions\": [\n      \"__cdecl\",\n      \"__stdcall\",\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"UNKNOWN\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \
+  "original_bytes": 20482,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"esp_alignment_unknown: the entry-relative ESP offset is unknown and there is no frame pointer to fall back on\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"PARTIAL\",\n  \"conflicts\": [],\n  \"content_sha256\": \"d835b62d29eee287f3b618e805cedee9cf83ee0ca139d1587502e5e585240cac\",\n  \"conventions\": {\n    \"ambiguities\": [\n      \"esp_alignment_unknown\"\n    ],\n    \"calling_convention\": null,\n    \"candidate_conventions\": [\n      \"__cdecl\",\n      \"__stdcall\",\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"UNKNOWN\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 0,\n    \"persisted\": \"no_information\"
 [TRUNCATED]
 ```
 
@@ -212,7 +160,7 @@ void __fastcall FUN_00b25fe0(int param_1)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -240,11 +188,6 @@ void __fastcall FUN_00b25fe0(int param_1)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

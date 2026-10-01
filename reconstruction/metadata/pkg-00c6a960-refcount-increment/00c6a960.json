@@ -1,0 +1,134 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00C6A960-RECOUNT-INCREMENT",
+  "subsystem": "Editor",
+  "cluster": "editor-core",
+  "queue_id": "",
+  "va": "0x00c6a960",
+  "address": "0x00c6a960",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "refcount_increment_00c6a960",
+  "reconstructed_symbol": "refcount_increment_00c6a960",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960.hpp",
+    "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960.cpp",
+    "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960_model_test.cpp",
+    "reconstruction/staging/pkg-00c6a960-refcount-increment/mutation_test.sh"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960.hpp",
+    "source": "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960.cpp",
+    "model_test": "reconstruction/staging/pkg-00c6a960-refcount-increment/refcount_increment_00c6a960_model_test.cpp",
+    "mutation_test": "reconstruction/staging/pkg-00c6a960-refcount-increment/mutation_test.sh"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall, receiver in ECX, zero stack arguments, callee pops nothing",
+    "calling_convention_evidence": "the body reads only ECX, as the base of both memory operands (0x00c6a960 `8b 41 08` = MOV EAX,[ECX+8] and 0x00c6a964 `89 41 08` = MOV [ECX+8],EAX); the terminator is a bare RET at 0x00c6a967 (`c3`) with no immediate, so no callee cleanup; and the body reads no ESP-relative operand at all, so it consumes no stack argument whether or not one is pushed",
+    "calling_convention_alternatives": "__fastcall is not distinguishable from __thiscall on this body: a one-ECX-argument fastcall and a __thiscall both place a single pointer argument in ECX, and callee-side evidence cannot separate them. __cdecl and __stdcall ARE excluded, because both require the argument on the stack and ECX is read as the base of both memory operands. The receiver framing is chosen because the 35 direct callers and the 342 recorded dispatch tables support it, not because the eight bytes alone choose it.",
+    "receiver": "ECX, used as the base of the read at +0x8 and the write at +0x8, and of nothing else",
+    "receiver_disposition": "The machine-derived receiver record is bounds_only: register=ECX, offsets=[0x8], distinct_offsets=1, max_offset=8, written_through=1, shape R-DIRECT. It enumerates a displacement and does not say which member of any type occupies that word, so this package names the word by displacement (kCounterDisplacement) and asserts no member story the record does not carry.",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_arguments_evidence": "the four-instruction body contains no ESP-relative operand of any kind, so there is no entry slot to read",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (0x00c6a967 `c3`), no immediate",
+    "return_register": "EAX",
+    "return_semantics": "EAX holds the post-increment value at the RET: INC EAX at 0x00c6a963 is the last write to EAX and the store at 0x00c6a964 goes through ECX, so the value survives to the terminator. This is a statement about machine state, not about the source-level signature.",
+    "return_type_declared_in_package": "std::int32_t",
+    "return_type_caveat": "Ghidra types the entry `void __fastcall FUN_00c6a960(int)`; the derived ABI record reports return_semantics=unclassified_in_EAX, return type null, register_class aggregate_unknown and void_possible=false; none of the 35 sampled call sites reads EAX after the call. A void-returning declaration compiles to the same eight bytes, so which one the original source used is NOT established. The package declares std::int32_t because that is the value EAX provably carries.",
+    "sret": false,
+    "variadic": false
+  },
+  "body": {
+    "span": "0x00c6a960..0x00c6a967",
+    "size_bytes": 8,
+    "instruction_count": 4,
+    "bytes_hex": "8b410840894108c3",
+    "padding": "0xcc INT3 at 0x00c6a968..0x00c6a96b, read live, excluded from the body",
+    "listing": [
+      {"va": "0x00c6a960", "instruction": "MOV EAX,dword ptr [ECX + 0x8]", "bytes": "8b 41 08"},
+      {"va": "0x00c6a963", "instruction": "INC EAX", "bytes": "40"},
+      {"va": "0x00c6a964", "instruction": "MOV dword ptr [ECX + 0x8],EAX", "bytes": "89 41 08"},
+      {"va": "0x00c6a967", "instruction": "RET", "bytes": "c3"}
+    ],
+    "control_flow": "straight-line; the complete four-instruction listing contains no conditional branch, which is itself the evidence that there is no compare, clamp or saturation in the body",
+    "calls": "none",
+    "dispatch": "the body names no indirect transfer through a register or a memory operand; the machine dispatch record agrees at 0. This entry is a dispatch TARGET and never a dispatcher.",
+    "globals": "none; the complete listing names no data-segment address and the committed data-reference artifact records no data reference out of 0x00c6a960"
+  },
+  "semantics_claimed": {
+    "statement": "post-increment of the 32-bit receiver word at displacement 0x8 by 1, with the post-increment value returned in EAX",
+    "confidence": "OBSERVED",
+    "basis": "the complete four-instruction listing, read live"
+  },
+  "semantics_not_claimed": {
+    "meaning_of_the_plus_8_word": "UNKNOWN. A reference count, a generation counter, an access tally and a use count all increment identically, and nothing in these eight bytes distinguishes them. The package names the word by displacement only.",
+    "legal_entry_range": "UNKNOWN. The body tests nothing, so a receiver whose word is already 0x7fffffff wraps to 0x80000000. That the model reproduces the wrap is an OBSERVED claim; whether any caller can reach that state is NOT established here.",
+    "owning_class": "UNKNOWN. SporeApp.exe has no MSVC RTTI, so the class that owns the vtable slot this entry fills is not recoverable from these instructions.",
+    "source_level_return_type": "UNKNOWN, see observed_original_abi.return_type_caveat."
+  },
+  "cross_body_evidence": {
+    "kind": "vtable export, cross-body, not stated by this target's own listing",
+    "artifact": ".spore-analysis/ghidra-exports/vtables.json",
+    "tables_containing_this_entry": 342,
+    "table_confidence": "HIGH",
+    "slot_index_range": "0 through 36 across the 342 tables; the index is a property of the owning class, not of this entry",
+    "partner_body": "0x007b86e0",
+    "tables_containing_both": 341,
+    "partner_slot_delta": "+1 in 338 tables, -1 in 3 tables; '+1 in every table' is FALSE and is not claimed",
+    "partner_body_listing": "mov eax,[ecx+8]; add ecx,4; add eax,-1; mov [ecx+4],eax; ... - a decrement of the same word at the same +0x8 displacement",
+    "inference": "an entry that increments and an immediately following entry that decrements the same receiver word is a retain/release pair",
+    "confidence": "INFERRED",
+    "note": "this is what the package's variable names reflect; it is NOT stated by this target's own four instructions and is recorded here so the reviewer can discount it independently"
+  },
+  "thunk": {
+    "va": "0x00801220",
+    "name": "thunk_FUN_00c6a960",
+    "listing": "JMP 0x00c6a960",
+    "note": "a bare jump with no register fixup and no stack adjustment; declared in the header only so the model test can dispatch through it. Not a separate target."
+  },
+  "callers": {
+    "direct_call_sites": 35,
+    "xref_count": 100,
+    "note": "no caller consumes the returned EAX in the sampled sites"
+  },
+  "verification": {
+    "compiler": "clang++ -m32 -std=c++17 -O2",
+    "model_test_result": "PASS (exit 0)",
+    "byte_identity": "at -O2 the compiler-generated body of refcount_increment_00c6a960 is byte-identical to the eight bytes read at 0x00c6a960 (8b 41 08 40 89 41 08 c3)",
+    "mutation_test": "14 of 14 mutations refuted: 11 by a runtime diagnostic in the model test, 3 by a compile-time static_assert in the package. Baseline passes. The harness deletes the archive before each link and uses `ar rc`, never `ar qc`."
+  },
+  "unresolved_questions": [
+    "What the 32-bit word at receiver+0x8 means. The retain/release reading rests on the partner body at 0x007b86e0, not on this entry's own instructions.",
+    "Whether the original source declared this entry void or returning the incremented value. Both compile to the same eight bytes.",
+    "Which class owns the virtual slot. No MSVC RTTI in this binary, and the slot index varies per table (0..36 across 342 HIGH-confidence tables).",
+    "Whether any caller can present a receiver whose +0x8 word is already at the top of the range, i.e. whether the observed wrap is reachable in practice."
+  ],
+  "runtime_status": "GATED",
+  "runtime_validation": {
+    "status": "GATED",
+    "validated": 0,
+    "reason": "no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed",
+    "gates": [
+      "Wine/original-process trace for this entry is not available; no runtime promotion is claimed."
+    ]
+  },
+  "provenance": [
+    {"mode": "live", "ref": "GhidraMCP /disassemble_function @ 0x00c6a960", "source_class": "ghidra"},
+    {"mode": "live", "ref": "GhidraMCP /read_memory @ 0x00c6a960 len 12", "source_class": "ghidra"},
+    {"mode": "live", "ref": "GhidraMCP /read_memory @ 0x0147c9e8 and @ 0x014106a4 (vtable images)", "source_class": "ghidra"},
+    {"mode": "live", "ref": "GhidraMCP /disassemble_function @ 0x00801220 (thunk)", "source_class": "ghidra"},
+    {"mode": "live", "ref": "GhidraMCP /get_assembly_context at three sampled call sites", "source_class": "ghidra"},
+    {"mode": "derived", "ref": "tools/reconstruction_tooling/abi_infer.py", "source_class": "derived"},
+    {"mode": "persisted", "ref": ".spore-analysis/ghidra-exports/vtables.json", "source_class": "committed_artifact"},
+    {"mode": "persisted", "ref": "reconstruction/evidence/00c6a960/evidence.json", "source_class": "committed_artifact"}
+  ]
+}

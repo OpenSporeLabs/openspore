@@ -1,0 +1,477 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "pkg-w2-0052e640",
+  "va": "0x0052e640",
+  "address": "0x0052e640",
+  "function_address": "0x0052e640",
+  "entry_address": "0x0052e640",
+  "ghidra_name": "FUN_0052e640",
+  "normalized_symbol": "reconstruct_0052e640",
+  "reconstructed_symbol": "reconstruct_0052e640",
+  "declaration": "extern \"C\" std::uint8_t PKG_52E640_NAKED_THISCALL reconstruct_0052e640(std::uint32_t receiver_word, std::uint32_t first, std::uint32_t second, std::uint32_t third);",
+  "source_files": [
+    "reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp",
+    "reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.hpp",
+    "reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero_model_test.cpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall, with callee stack cleanup: THREE 4-byte stack words, 12 bytes in all, popped by the callee. The machine-derived ABI record (evidence pack reconstruction/evidence/0052e640/evidence.json, category abi_derived) DETERMINES the convention rather than abstaining: conventions.calling_convention = __thiscall, conventions.confidence = INFERRED, conventions.candidate_conventions = [__thiscall], conventions.ambiguities = []. It does so in two steps it records separately. R1-VFT (INFERRED) puts the receiver in ECX: 0x0052e640 is slot 8 of the sound vptr-backed vftable at 0x013f2194, one of 25 such tables, so it is a virtual member of some class, and the body reads the incoming ECX before writing it; the rule also records why that read decides the matter, because the callee pops its own stack arguments - the COM/__stdcall interface form - which is the one shape in which a virtual member takes its receiver from the first popped stack word instead and never reads its incoming ECX. C6B (INFERRED) then names __thiscall from the callee-side cleanup, which rules out cdecl and fastcall, together with the receiver register. The confidence is INFERRED and is reported as such, not upgraded to OBSERVED. The reconstructed entry is a naked __thiscall member, so the source span carries a __thiscall token, and its own `ret $12` performs the callee-side cleanup the machine performs.",
+    "calling_convention_observation": "The determination is INFERRED, not OBSERVED, and the two are kept apart throughout. What the machine observes is the stack discipline: cleanup.bytes = 12, cleanup.side = \"callee\", cleanup.evidence = \"ret 0xc\", at OBSERVED confidence, corroborated independently from the caller side because both direct call sites (0x0050a468 and 0x0050a5d6) push exactly three dwords and issue no ADD ESP after the CALL. What the machine infers is the convention and the receiver register, and it does so from the vftable membership plus the callee-side cleanup, at INFERRED confidence with no ambiguities left open. The __thiscall claim is corroborated from the caller side as well, independently of the vftable rule: both call sites load ECX from the caller's own captured receiver (its entry capture MOV [EBP-0x2c],ECX at 0x0050a0a9) immediately before the call, which is what __thiscall requires. The sibling predicate 0x0050a920, called from the same block, has the same shape with four popped words and does dereference its ECX, so the ECX-capture prologue is a receiver idiom in this neighbourhood. __stdcall is now excluded as well: it is the form that would take the receiver from the first popped stack word, and this body reads its incoming ECX instead, which is exactly the discriminator rule R1-VFT records. Ghidra cross-validation remains no_information (ghidra_calling_convention null, parameter_count 0) and is not relied on.",
+    "ret_form": "RET 0xc",
+    "termination": "RET 0xc",
+    "return_register": "EAX",
+    "return_width_observation": "XOR AL,AL at 0x0052e647 writes the low byte of EAX only, so bits 8..31 of EAX are undefined on exit. Both observed consumers read the AL byte alone (MOVZX EAX,AL at 0x0050a46d and 0x0050a5db), so the byte is the contract and the dword is not. The machine return record carries register EAX, register_class integral, void_possible false and no C type; the one-byte type used in the source is a source-side choice among the one-byte types, not a recovered type, and the record still carries no canonical return_type so that the source-side C type is not presented as a machine observation.",
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments_observation": "Three dwords of entry_ESP+0x4 / +0x8 / +0xc are popped by the callee. The derived record marks all three observed=false, read=false, source=ret_immediate, and inference A1-IMM records them at APPROXIMATION: they are the popped area, not a read parameter count. Both call sites push exactly three dwords, which corroborates the count from the caller side. The reconstruction keeps exactly three, because `ret 0xc` pops exactly three, and the model test checks that count as well as the twelve bytes and the callee side.",
+    "saved_registers": [
+      "EBP"
+    ],
+    "receiver_observation": "ECX is read at 0x0052e643 (PUSH ECX) and written to the frame slot [EBP-0x4] at 0x0052e644. The slot is never reloaded, so the capture is dead: no instruction in the body can make the incoming ECX influence the answer. The machine's receiver record now names ECX as the receiver register at INFERRED confidence with provenance vftable_slot_dispatch, so ECX IS the receiver; what remains open is what the receiver IS, and nothing about that is claimed. See the `receiver` field for the full statement and for what is deliberately left unclaimed.",
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX, local_extent 4, MOV ESP,EBP / POP EBP. parse.frame.fp true, degraded false, local_extent 4.",
+    "receiver": "ECX carries the receiver, at INFERRED confidence, with the machine's own label for how it determined that: receiver.provenance = vftable_slot_dispatch. The record states receiver.present = true, receiver.register = ECX, receiver.bounds_only = true, receiver.shape = null, receiver.distinct_offsets = 0, receiver.written_through = 0. What the body itself shows is only the WIDTH of the receiver: one 4-byte word, the width of PUSH ECX at 0x0052e643. It is read (PUSH ECX, and then MOV dword ptr [EBP + -0x4],ECX at 0x0052e644) and never dereferenced, so the capture is dead in this body and no instruction in it can make the incoming ECX influence the answer. Because the body never dereferences the word, no field offset is claimed in either direction: the only memory operand in the whole listing is the callee's own frame slot at [EBP + -0x4], based on EBP, and that is a frame slot and not a field of anything. The earlier record said of this that \"the engine declines to call ECX a receiver\" and \"this reconstruction does not call it one either\"; that is no longer true and is withdrawn. What is still NOT claimed, and is not claimed by the convention either, is the receiver's identity: no owning class, no receiver type, no object shape, no object size, no vtable-pointer offset, no SDK method name. R1-VFT names ONE table and slot (0x013f2194, slot 8) as the evidence for the receiver and counts 25 tables holding this address; a slot index is not a class, the binary has no MSVC RTTI, and the other 24 tables are not individually attributed here. The reconstructed entry therefore carries the receiver as the plain 4-byte word the machine proves and names nothing beyond that width.",
+    "receiver_confidence": "INFERRED (receiver.confidence)",
+    "receiver_register": "ECX",
+    "receiver_present": true,
+    "receiver_bounds_only": true,
+    "receiver_shape": null,
+    "receiver_written_through": 0,
+    "receiver_dereference_count": 0,
+    "calling_convention_confidence": "INFERRED (conventions.confidence). Not OBSERVED and not UNKNOWN; the distinction is carried in the source as an enumerator and pinned by a static_assert so that a package which upgraded the claim to an observed one, or dropped it back to unknown, fails to build rather than overstating it.",
+    "calling_convention_provenance": "vftable_slot_dispatch (receiver.provenance) for the receiver, which is what supplies the register the convention is then named from; convention C6B supplies the convention itself.",
+    "ordinary_stack_argument_slots": 3,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "sizes": [
+          4
+        ],
+        "observed": false,
+        "read": false,
+        "written": false,
+        "size_inferred": false,
+        "source": "ret_immediate"
+      },
+      {
+        "ordinal": 2,
+        "entry_offset": "entry_ESP+0x8",
+        "sizes": [
+          4
+        ],
+        "observed": false,
+        "read": false,
+        "written": false,
+        "size_inferred": false,
+        "source": "ret_immediate"
+      },
+      {
+        "ordinal": 3,
+        "entry_offset": "entry_ESP+0xc",
+        "sizes": [
+          4
+        ],
+        "observed": false,
+        "read": false,
+        "written": false,
+        "size_inferred": false,
+        "source": "ret_immediate"
+      }
+    ],
+    "cleanup_confidence": "OBSERVED (cleanup.confidence = OBSERVED, cleanup.evidence = \"ret 0xc\", cleanup.corroboration = not_available), and separately corroborated from the caller side by the two direct call sites.",
+    "return_semantics": "unclassified_in_EAX;void_possible"
+  },
+  "layout": {
+    "entry_address": "0x0052e640",
+    "body_start": "0x0052e640",
+    "body_end": "0x0052e64e",
+    "body_span_bytes": 15,
+    "body_bytes_hex": "558bec51894dfc32c08be55dc20c00",
+    "instruction_count": 8,
+    "instructions": [
+      {
+        "address": "0x0052e640",
+        "bytes": "55",
+        "mnemonic": "PUSH",
+        "operands": "EBP"
+      },
+      {
+        "address": "0x0052e641",
+        "bytes": "8b ec",
+        "mnemonic": "MOV",
+        "operands": "EBP,ESP"
+      },
+      {
+        "address": "0x0052e643",
+        "bytes": "51",
+        "mnemonic": "PUSH",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x0052e644",
+        "bytes": "89 4d fc",
+        "mnemonic": "MOV",
+        "operands": "dword ptr [EBP + -0x4],ECX"
+      },
+      {
+        "address": "0x0052e647",
+        "bytes": "32 c0",
+        "mnemonic": "XOR",
+        "operands": "AL,AL"
+      },
+      {
+        "address": "0x0052e649",
+        "bytes": "8b e5",
+        "mnemonic": "MOV",
+        "operands": "ESP,EBP"
+      },
+      {
+        "address": "0x0052e64b",
+        "bytes": "5d",
+        "mnemonic": "POP",
+        "operands": "EBP"
+      },
+      {
+        "address": "0x0052e64c",
+        "bytes": "c2 0c 00",
+        "mnemonic": "RET",
+        "operands": "0xc"
+      }
+    ],
+    "padding_after": "0x0052e64f is cc (INT3), the standard inter-function pad",
+    "frame": "one dword of locals, the captured ECX at [EBP-0x4]; no SEH or security cookie (seh_or_cookie_frame false)",
+    "reads": "ECX only, once, and the frame slot is never read back; no other memory operand exists in the body",
+    "writes": "the frame slot [EBP-0x4] and AL",
+    "callees": [],
+    "globals": [],
+    "branches": "none: the body is straight-line, so the CONTROL FLOW verdict that the 8-instruction listing contains no conditional branch is also the evidence that the source declares no branch keyword"
+  },
+  "observed_mechanics": [
+    "0x0052e640: 55 - PUSH EBP, the frame prologue",
+    "0x0052e641: 8b ec - MOV EBP,ESP; parse.frame.mov_ebp_esp true, fp true",
+    "0x0052e643: 51 - PUSH ECX, the only register read in the body (obs-0005, REG_READ ECX count 2: the push and the spill source)",
+    "0x0052e644: 89 4d fc - MOV dword ptr [EBP + -0x4],ECX, a four-byte stack-slot write flagged reason=local, resolved=false (obs-0006, STACK_SLOT_WRITE base EBP disp -4)",
+    "0x0052e647: 32 c0 - XOR AL,AL, write_kind=zero (obs-0008); the low byte of EAX only, so the return value is the byte 0 and the upper 24 bits of EAX are whatever the caller left",
+    "0x0052e649: 8b e5 - MOV ESP,EBP, the frame teardown",
+    "0x0052e64b: 5d - POP EBP (obs-0010, REG_RESTORE)",
+    "0x0052e64c: c2 0c 00 - RET 0xc (obs-0011, imm 12); inference C3 records the callee-side pop of 12 bytes at OBSERVED confidence",
+    "Live read_memory at 0x0052e640 returns 558bec51894dfc32c08be55dc20c00cc, which is the 15 body bytes followed by the cc pad at 0x0052e64f",
+    "0x0050a456/0x0050a459/0x0050a45a/0x0050a45d/0x0050a45e/0x0050a461/0x0050a462/0x0050a468: the caller pushes exactly three dwords, loads ECX from its own captured receiver at [EBP-0x2c] (its entry MOV [EBP-0x2c],ECX at 0x0050a0a9) and issues e8 d3 41 02 00, a direct CALL to 0x0052e640; there is no ADD ESP after it, so the callee cleans up",
+    "0x0050a46d/0x0050a470/0x0050a472: 0f b6 c0 / 85 c0 / 75 37 -- MOVZX EAX,AL then TEST EAX,EAX then JNZ 0x0050a4ab, so the answer is read as one byte and the JNZ is statically dead because the answer is always 0",
+    "0x0050a5c4..0x0050a5e0: the second call site repeats the same three-push, ECX-from-receiver, MOVZX EAX,AL, TEST EAX,EAX, JNZ 0x0050a61b shape",
+    "0x0050a434..0x0050a44a: the sibling predicate 0x0050a920 is called from the same block with four pushes and the same ECX-from-receiver setup, and 0x0050a9d1 ends it with RET 0x10; 0x0050a920 captures ECX at [EBP-0x1c] and dereferences it at [EDX+0x6c], and returns MOV AL,byte ptr [EBP-0x20]. This is the same port shape -- this in ECX, arguments on the stack, callee cleanup, predicate in AL -- from a body that does use the receiver",
+    "0x0052e650: the immediately following function has the identical prologue (PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX) and ends at RET 0x4 with no return write",
+    "0x0052e620: the preceding function has the same prologue and ends at RET 0xc with no return write",
+    "0x0052e680: a 218-instruction neighbour with the same prologue whose captured ECX is dereferenced as a receiver throughout ([EAX+0xc], [ECX+0x68], [EDX+0x0c] ...) and which ends at RET 0xc after a virtual call at 0x0052e95f. The ECX-spill prologue is therefore the local idiom of a family of member-shaped functions, and 0x0052e640 is the empty-bodied member of that family",
+    "Ghidra records 27 xrefs, of which 2 are the direct calls above and 25 are data references: the address 0x0052e640 is stored as a little-endian dword inside .rdata tables",
+    "Live read_memory at 0x013f21a0: 0x013f21b4 and 0x013f21b8 both hold 0x0052e640, and 0x013f21f0 and 0x013f21f4 both hold it again; the 20-byte block from 0x013f21a0 repeats at 0x013f21b4 and again at 0x013f21bc, so the pointer occupies two adjacent slots of a repeating record",
+    "Live read_memory at 0x0148e720: 0x0148e734 holds 0x0052e640 as a single slot of a different table",
+    "Live read_memory at 0x01458030: 0x01458044 holds 0x0052e640 as a single slot of a third table",
+    "Ghidra's referenced_by_vtables for this function lists 18 vtable addresses; the raw pointer sites are not a proven count of distinct vtables, and no table base or slot offset is claimed here because none was measured",
+    "The persisted xref export records only the two direct calls (0x0050a468 and 0x0050a5d6) and no outgoing edge, and the 8-instruction listing names no transfer at all",
+    "abi_derived R1-VFT (INFERRED): 0x0052e640 is slot 8 of the sound vptr-backed vftable at 0x013f2194, one of 25 such tables, and the body reads the incoming ECX before writing it; the rule records that the callee pops its own stack arguments - the COM/__stdcall interface form - which is the one shape in which a virtual member takes its receiver from the first popped stack word and never reads its incoming ECX. The receiver is therefore in ECX. This is an INFERENCE from the vftable membership, not an observation of a dereference, and the body supplies no dereference to observe: it reads the word, stores it, and discards it.",
+    "abi_derived C6B (INFERRED): the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX, so the calling convention is __thiscall. conventions.candidate_conventions is [__thiscall] and conventions.ambiguities is [], so no candidate survived but the one. confidence is INFERRED and is not upgraded to OBSERVED here."
+  ],
+  "data_pointer_evidence": {
+    "summary": "The address of this function is stored as a dword in .rdata at five measured sites, four of them verified by live memory read in this session. That is machine evidence of participation in a data table; it is NOT evidence of a class, a slot offset, or a virtual dispatch, none of which is claimed.",
+    "sites_read_live": [
+      {
+        "address": "0x013f21b4",
+        "holds": "0x0052e640"
+      },
+      {
+        "address": "0x013f21b8",
+        "holds": "0x0052e640"
+      },
+      {
+        "address": "0x013f21f0",
+        "holds": "0x0052e640"
+      },
+      {
+        "address": "0x013f21f4",
+        "holds": "0x0052e640"
+      },
+      {
+        "address": "0x0148e734",
+        "holds": "0x0052e640"
+      },
+      {
+        "address": "0x01458044",
+        "holds": "0x0052e640"
+      }
+    ],
+    "xref_count_reported": 27,
+    "referenced_by_vtables_reported": 18,
+    "not_asserted": "no owning class, no table base, and no SDK method name. Two adjacent equal slots in one repeating record and single slots in two other tables is the shape a shared folded default body has, and it is equally the shape a per-class default has; the record does not separate the two. The derived record's own 25-table membership count and its naming of 0x013f2194 slot 8 are the RULE's bookkeeping - the evidence it used to place the receiver in ECX - and are not adopted here as an attribution of a slot offset or a class. No field offset is claimed in either direction for the same reason: the body never dereferences the receiver, and the only memory operand in the listing is the callee's own frame slot at [EBP + -0x4]."
+  },
+  "body_reconstruction": {
+    "source": "reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp",
+    "status": "implemented",
+    "claim_scope": "The 15-byte body is reconstructed in full and the entry is a naked __thiscall member, so the source span carries the __thiscall token the machine-derived ABI record names at INFERRED confidence. Claimed: the calling convention (__thiscall, INFERRED), the receiver register (ECX, INFERRED, provenance vftable_slot_dispatch), the callee-side cleanup of three 4-byte words (12 bytes, OBSERVED), the one-byte zero return, the single frame-local store, and the straight-line control flow - all of which the 8-instruction listing and the derived record support. NOT claimed: any semantic name, any owning class, any receiver type, any field name, any field offset, and any vtable slot offset beyond the single slot the derivation itself names as its evidence (0x013f2194 slot 8). The convention says where the receiver arrives, not what it is.",
+    "confidence": {
+      "body_bytes": 1.0,
+      "control_flow": 1.0,
+      "return_semantics": 0.95,
+      "stack_cleanup_bytes": 1.0,
+      "stack_cleanup_side": 1.0,
+      "receiver_capture": 1.0,
+      "receiver_is_a_receiver": 0.9,
+      "receiver_identity": 0.15,
+      "calling_convention": 0.9,
+      "semantic_identity": 0.15
+    },
+    "preserved_semantics": [
+      "the answer is the byte 0 and only the byte 0; bits 8..31 of EAX are left as the caller left them, which is why the declared return type is one byte and why the model test compares the high 24 bits against the sentinel it pushed",
+      "the callee pops 12 bytes of stack arguments, so the entry declares a receiver plus three dword parameters and its own `ret $12` performs the pop; the model test drives it through a bare-assembly __thiscall call site and requires the stack pointer to land back exactly where it started",
+      "ECX is read and captured to a frame slot, and never dereferenced, so any receiver word including null and including an unreadable one is accepted; the model test passes the word 1 and the word at the top of the address space",
+      "the three popped argument words are read by nothing, so the answer is 0 for every argument triple; the model test sweeps a spread of all three",
+      "no callee, no global, no branch, no memory operand outside its own frame"
+    ],
+    "byte_exactness": "Not claimed for the model: the reconstruction is not an MSVC build. The entry is spelled as a naked __thiscall body and the emitted sequence is instruction for instruction the original 15 bytes, but three encodings differ because each pair of spellings denotes the same operation: the original encodes the two frame-pointer moves as 8b ec / 8b e5 (mov r32,r/m32) where GAS picks 89 e5 / 89 ec (mov r/m32,r32), and it encodes the zeroing as 32 c0 (XOR r8,r/m8) where GAS picks 30 c0. A default position-independent build additionally prepends a ten-byte __x86.get_pc_thunk.ax PC anchor (g++ -m32 -fPIC; clang++ -m32 emits none), which is a toolchain artifact and not part of the reconstruction. The model test pins this rather than papering over it: the nine bytes with a single spelling must match 0x0052e640's bytes exactly, each divergent pair must be one of the two encodings of the same operation, and an anchor is recognised by its exact opcode pair and the target bytes are then required immediately after it. A toolchain emitting some other form of anchor fails rather than passes. A second, independent witness carries the literal original encodings as .byte directives and is compared against the same 15 bytes with no allowance at all.",
+    "validation": {
+      "syntax_command_gxx": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -fno-pie -I reconstruction/staging/pkg-w2-0052e640 -fsyntax-only reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero_model_test.cpp",
+      "syntax_command_clangxx": "clang++ -m32 -std=c++17 -Wall -Wextra -Werror -fno-pie -I reconstruction/staging/pkg-w2-0052e640 -fsyntax-only reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero_model_test.cpp",
+      "model_test_command_gxx": "g++ -m32 -std=c++17 -O2 -Wall -Wextra -Werror -fno-pie -no-pie -I reconstruction/staging/pkg-w2-0052e640 reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero_model_test.cpp -o build/t-g++ && ./build/t-g++",
+      "model_test_command_clangxx": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Werror -fno-pie -no-pie -I reconstruction/staging/pkg-w2-0052e640 reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero.cpp reconstruction/staging/pkg-w2-0052e640/52e640_spill_zero_model_test.cpp -o build/t-clang++ && ./build/t-clang++",
+      "syntax": "passed under both toolchains",
+      "model_test": "passed under both toolchains, exit 0, and additionally passed at -O0, -O1, -O2 and -O3 under both g++ 16.2.1 and clang++ 22.1.8 - eight combinations in total",
+      "note": "-fno-pie -no-pie are required by the model test only, because its bare-assembly probe addresses globals and the target with absolute operands. clang++ rejects -no-pie on a compile-only link, so the -fsyntax-only clang++ command omits it."
+    },
+    "mutation_testing": {
+      "method": "each mutant was applied to a fresh copy of the package under /tmp, built with both toolchains at -m32 -std=c++17 -O2 -Wall -Wextra -Werror -fno-pie -no-pie, and run. A mutant dies if it fails to build OR the test binary exits non-zero under EITHER toolchain; nothing is required to die under both, so the recorded result is the weaker of the two.",
+      "results": [
+        {
+          "id": "M1",
+          "mutation": "the answer constant 0 becomes 1 in the reconstruction source",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M2",
+          "mutation": "the header's return constant becomes 1",
+          "died": "BUILD-FAIL: the static_assert pinning kReturnConstant == 0, under both toolchains"
+        },
+        {
+          "id": "M3",
+          "mutation": "the entry's cleanup amount RET 0xc becomes RET 0x8",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M4",
+          "mutation": "the entry's frame slot displacement -4 becomes -8",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M5",
+          "mutation": "the entry's zeroing becomes MOV AL,1, a constant the listing has no instruction for",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M6",
+          "mutation": "the entry's receiver capture reads EDX instead of ECX",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M7",
+          "mutation": "the assembled machine_body twin's frame slot offset is perturbed, -4 to -8",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M8",
+          "mutation": "the literal twin's RET 0xc becomes RET 0x4",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M9",
+          "mutation": "the literal twin's XOR AL,AL becomes MOV AL,1",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M10",
+          "mutation": "the derived convention is repointed away from __thiscall, which is the old abstention",
+          "died": "BUILD-FAIL: the static_assert pinning the convention, under both toolchains"
+        },
+        {
+          "id": "M11",
+          "mutation": "the derived receiver register is repointed away from ECX",
+          "died": "BUILD-FAIL: the static_assert pinning receiver.register, under both toolchains"
+        },
+        {
+          "id": "M12",
+          "mutation": "the observed cleanup side is repointed from callee to caller",
+          "died": "BUILD-FAIL: the static_assert pinning cleanup.side, under both toolchains"
+        },
+        {
+          "id": "M13",
+          "mutation": "the three callee-popped stack words are re-declared as one",
+          "died": "BUILD-FAIL: the static_assert pinning the word count, under both toolchains"
+        },
+        {
+          "id": "M14",
+          "mutation": "the behavioural twin dereferences the receiver word",
+          "died": "SIGSEGV, exit -11, under both toolchains, on the undereferenceable receiver word 1"
+        },
+        {
+          "id": "M15",
+          "mutation": "the behavioural twin's answer uses a popped argument word",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M16",
+          "mutation": "the behavioural twin adds a discriminator the listing has no branch for: 'if (receiver_word != 0) return 1'",
+          "died": "abort, exit -6, under both toolchains; the machine listing contains no conditional branch at all"
+        },
+        {
+          "id": "M17",
+          "mutation": "the assembled machine_body twin's zeroing becomes MOV AL,1",
+          "died": "abort, exit -6, under both toolchains"
+        },
+        {
+          "id": "M18",
+          "mutation": "the probe reads a caller's pushed word back from B-80, a slot neither the call nor the callee wrote",
+          "died": "abort, exit -6, under both toolchains - the canary check has teeth about where the words really are"
+        },
+        {
+          "id": "M19",
+          "mutation": "the receiver is re-declared absent AND both its guards are removed: the runtime presence check is deleted and the static_assert is short-circuited",
+          "died": "SURVIVED, exit 0, under both toolchains. This is the one survivor and it is reported as such: it is not a wrong reconstruction but a test that has deleted its own two guards for the same fact. No self-contained check can detect the removal of every check guarding it, and the honest reading is that the fact is then unguarded rather than that the mutant is equivalent. M24 below is the same repointing with the guards intact, and M26 is the repointing with only one of the two guards removed; both die."
+        },
+        {
+          "id": "M20",
+          "mutation": "the declared return width of one byte is widened to four",
+          "died": "BUILD-FAIL: the static_assert pinning the return width, under both toolchains"
+        },
+        {
+          "id": "M21",
+          "mutation": "the convention confidence is upgraded from INFERRED to OBSERVED",
+          "died": "BUILD-FAIL: the static_assert pinning the confidence, under both toolchains. The record's confidence is INFERRED and this package must not overstate it."
+        },
+        {
+          "id": "M22",
+          "mutation": "the receiver provenance is repointed away from vftable_slot_dispatch",
+          "died": "BUILD-FAIL: the static_assert pinning the provenance, under both toolchains"
+        },
+        {
+          "id": "M23",
+          "mutation": "the candidate-convention count is widened to two, re-opening the ambiguity the record closed",
+          "died": "BUILD-FAIL: the static_assert pinning the count, under both toolchains"
+        },
+        {
+          "id": "M24",
+          "mutation": "the receiver is re-declared absent, guards intact",
+          "died": "BUILD-FAIL: the static_assert on receiver.present, under both toolchains"
+        },
+        {
+          "id": "M25",
+          "mutation": "the receiver is re-declared as having a shape, a claim the record's null shape forbids",
+          "died": "BUILD-FAIL: the static_assert on receiver.shape, under both toolchains"
+        },
+        {
+          "id": "M26",
+          "mutation": "the convention is repointed AND its runtime check short-circuited: a weakened check must not be able to hide a repointed record",
+          "died": "BUILD-FAIL: the static_assert on the convention still holds it, under both toolchains"
+        }
+      ],
+      "unmutated": "M0 (the unmutated copy) passes under both toolchains at -O0, -O1, -O2 and -O3, exit 0",
+      "survivors": "1 of 26 (M19), and it is a guard-removal rather than a wrong reconstruction. Every mutant that changes WHAT the package claims, rather than deleting the evidence that it claims it, dies under both toolchains."
+    }
+  },
+  "semantic_findings": [
+    "The whole observable contract is 'answer the byte 0'. There is no input that reaches the answer: ECX is captured and dropped, the three popped argument words are never read, and there is no branch, callee, global or memory access outside the frame.",
+    "Bits 8..31 of EAX are undefined on exit, because the body writes AL alone. Both observed consumers read AL alone, so the byte is the contract and the dword is not. The model test pins this by pushing a sentinel into EAX and requiring its high 24 bits to come back unchanged.",
+    "The JNZ at 0x0050a472 and the JNZ at 0x0050a5e0 that follow the two direct calls are statically dead. Both call sites are asking a predicate whose answer is always no.",
+    "The port is fixed from the caller side: both call sites push exactly three dwords, set ECX from the caller's own captured receiver and do not adjust ESP afterwards, which is three popped words, a register-carried receiver and callee cleanup. The machine-derived record now reaches the same conclusion independently and at INFERRED confidence, naming __thiscall (rule C6B) on the strength of the receiver rule R1-VFT, and it excludes __stdcall on the recorded ground that a body in that form takes its receiver from the first popped stack word and never reads its incoming ECX - which is what this body does. The two routes agree, which is the point: neither rests on the other.",
+    "The immediate neighbours 0x0052e620 (RET 0xc) and 0x0052e650 (RET 0x4) share the prologue PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX and have no body at all, and 0x0052e680 shares it and uses the captured ECX as a receiver throughout. The prologue is the local idiom of a family of member-shaped functions, and 0x0052e640 is one of its empty-bodied members that still answers. That the same idiom appears on a body that uses the receiver and on one that does not is what keeps the receiver's IDENTITY open here while its REGISTER is not: the prologue is shared, the use is not.",
+    "Its address is stored as a dword at six measured .rdata sites, twice as a pair of adjacent equal slots inside a repeating 20-byte record, and the derived record independently places it in 25 sound vptr-backed vftables. Combined with the empty body, that is the shape of a shared default body; a per-class default body would store it the same way, and the record does not separate the two.",
+    "The convention narrows what the answer is not asked about. __thiscall is a claim about how the function is REACHED, and it fixes the receiver's register and the stack discipline completely; it says nothing about what the receiver is, and nothing in the body or the record identifies it. The reconstruction therefore claims the port and declines the identity, and the two are kept in separate fields so that neither can be read as the other."
+  ],
+  "unresolved_questions": [
+    "What predicate does this answer, and to which question? The body is a constant no; nothing in the evidence names the question. The two direct callers both discard the answer into a statically dead branch, so even the callers do not say. The __thiscall determination does not help: it fixes how the function is called, not what it is for.",
+    "Which class, if any, owns the vftable slots that point here? Six .rdata sites were read live and no table base and no slot offset was derived by this package. R1-VFT names 0x013f2194 slot 8 as the evidence FOR the receiver and counts 25 tables holding this address; that is the rule's own bookkeeping, not an attribution of an owning class, and the other 24 tables are not individually attributed. Ghidra's referenced_by_vtables list of 18 addresses is a classifier association, not a measured table base, and is not used as one.",
+    "Is the address a compiler-folded COMDAT shared by several unrelated 'return false' defaults, or one class's default emitted once? Both fit every observation, including the two adjacent equal slots and the 25-table membership count.",
+    "What IS the receiver? The convention fixes that ECX carries it and the record fixes that it is present, one 4-byte word wide, and never dereferenced here - so no field offset is claimed in either direction. But the receiver's type, object size, shape and owning class are all unproven, and the body cannot show them because it never looks. That is now the sharpest open question rather than the register, and it stays open.",
+    "Are the three popped dwords really three parameters? The derived record marks all three observed=false and the caller corroborates the count by pushing three, but the body reads none of them, so the count is the popped area rather than a read parameter count. The reconstruction keeps three because `ret 0xc` pops three, not because three parameters were proven.",
+    "Is the C return type bool, unsigned char or std::uint8_t? The machine fixes only the width (one byte of EAX, upper 24 bits undefined) and the value (0). The reconstruction uses std::uint8_t; the choice is source-side and is not verified.",
+    "Does the JNZ that follows each call site ever get a live value? Both are statically dead in this build, so no differential trace of the original process exists that could show the answer being used.",
+    "Why does a 218-instruction neighbour (0x0052e680) with the same prologue dereference its ECX while this one does not? Both shapes are observed here; which one the original author wrote for this slot is not recorded anywhere in the evidence. The determination that this one is a __thiscall member does not answer it, since the neighbour is a member too."
+  ],
+  "runtime_gates": [
+    "No original-process trace exists in this repository for 0x0052e640, so every claim in this record is static. A differential run under Wine must confirm the answer is still 0 in the shipping build and that no runtime patch retargets the address.",
+    "One of the .rdata slots that point here must be observed being called with a concrete receiver before any owning class or slot offset can be named. The __thiscall determination does not satisfy this gate: it fixes the register the receiver arrives in, not the object behind it.",
+    "The INFERRED confidence of the convention and of the receiver register must not be reported as OBSERVED without a runtime observation of one of these vftable slots being called with a concrete receiver, which is the evidence the R1-VFT rule names as its own basis and the evidence a trace would supply directly."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/0052e640/evidence.json",
+    "reconstruction/evidence/0052e640/context.json",
+    "/tmp/opencode/briefs/0052e640.json",
+    "knowledgegraph/triage/queue-f0e310e0-v6.json",
+    "GhidraMCP /disassemble_function at 0x0050a0a0, 0x0052e620, 0x0052e640, 0x0052e650, 0x0052e680, 0x0050a920",
+    "GhidraMCP /read_memory at 0x0052e640, 0x0050a456, 0x013f21a0, 0x0148e720, 0x01458030"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0052e640",
+      "observation": "558bec51894dfc32c08be55dc20c00cc -- the 15 body bytes plus the cc pad"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0050a456",
+      "observation": "8b45f8 50 8b4db4 51 8b55b8 52 8b8dd4fdffff e8d3410200 0fb6c0 85c0 7537 -- three pushes, MOV ECX,[EBP-0x2c], CALL 0x0052e640, MOVZX EAX,AL, TEST EAX,EAX, JNZ +0x37, and no ADD ESP after the call"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013f21a0",
+      "observation": "0x013f21b4 and 0x013f21b8 hold 0x0052e640; the 20-byte block from 0x013f21a0 repeats at 0x013f21b4 and 0x013f21bc, and 0x013f21f0/0x013f21f4 hold 0x0052e640 again"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0148e720",
+      "observation": "0x0148e734 holds 0x0052e640 as a single slot"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01458030",
+      "observation": "0x01458044 holds 0x0052e640 as a single slot"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0050a0a0",
+      "observation": "the caller of both direct call sites; MOV [EBP-0x2c],ECX at 0x0050a0a9 captures its own receiver, and both call sites reload it into ECX immediately before the call"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0052e650",
+      "observation": "the identical prologue with RET 0x4 and no return write"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0052e620",
+      "observation": "the identical prologue with RET 0xc and no return write"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0052e680",
+      "observation": "the identical prologue, then repeated use of the captured ECX as a receiver ([EAX+0xc], [ECX+0x68], [ECX+0x10], [EDX+0x20] ...), ending at RET 0xc"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0050a920",
+      "observation": "the sibling predicate: four popped words (RET 0x10), ECX captured and dereferenced at [EDX+0x6c], answer returned with MOV AL,byte ptr [EBP-0x20]"
+    },
+    {
+      "tool": "objdump",
+      "observation": "g++ -m32 -O2 emits sub $0x10,%esp / mov %ecx,0xc(%esp) / mov 0xc(%esp),%eax / xor %eax,%eax / add $0x10,%esp / ret $0xc; clang++ -m32 -O2 emits push %eax / mov %ecx,(%esp) / mov (%esp),%eax / xor %eax,%eax / pop %ecx / ret $0xc. Both read ECX, zero the result and pop 12 bytes; neither reproduces the MSVC 15 bytes, and none is claimed to."
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "reason": "All eight structural checks PASS. The ABI arm is the one that changed, and it changed because the machine-derived record now DETERMINES the convention instead of abstaining: conventions.calling_convention = __thiscall at INFERRED confidence with candidate_conventions = [__thiscall] and ambiguities = [], so the arm that used to read 'the derived ABI record abstained (ABI_UNKNOWN): receiver_not_determinable: ecx_read_without_deref' no longer applies. The reconstruction meets the determination on its own terms: the entry is a naked __thiscall member, so the target source span carries a __thiscall token the validator can read, and it keeps the machine-proven stack behaviour exactly - three callee-popped 4-byte words, RET 0xc, cleanup.side = callee, 12 bytes - rather than trading one for the other.",
+    "notes": "FIELDS/OFFSETS passes on the evidenced absence, which is the arm that applies now that the receiver record names a register: the complete 8-instruction listing names no displacement through ECX, and the source span declares no field offset either. Nothing there is claimed about the receiver's identity, and no offset is claimed in either direction. RETURN SEMANTICS passes on the machine-width route (WIDTH_1_IN_EAX against the declared std::uint8_t) rather than on a string comparison, because no canonical return_type claim exists in either ABI layer; the persisted record deliberately carries none so that the source-side C type is not presented as a machine observation. The EVIDENCE COVERAGE arm is a coverage count over the seventeen static categories and is independent of this record's claims; it is reported here as the validator reports it and is not a statement about any single check."
+  },
+  "confidence": "high for the 15 bytes, the port's observable shape and the callee-side cleanup; high for the calling convention and the receiver register as the machine states them, at INFERRED rather than OBSERVED confidence and reported at that confidence; low for the receiver's identity and for the semantic identity of the function, neither of which is claimed",
+  "related_records": [
+    "reconstruction/metadata/pkg-shared-default-true-wave12/00b1fbf0.json"
+  ]
+}

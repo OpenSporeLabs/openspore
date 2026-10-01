@@ -1,0 +1,231 @@
+{
+  "schema": "pkg-cheat-dispatch-0067e6f0.function-handoff.v1",
+  "package": "PKG-CHEAT-DISPATCH-0067E6F0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "image_base": "0x00400000",
+  "va": "0x0067e6f0",
+  "address": "0x0067e6f0",
+  "symbol": "App::cCheatManager::func40h",
+  "normalized_symbol": "cCheatManager_func40h_0067e6f0",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-26",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-cheat-dispatch-0067e6f0/cheat_dispatch_0067e6f0.cpp",
+      "reconstruction/staging/pkg-cheat-dispatch-0067e6f0/cheat_dispatch_0067e6f0.hpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "cCheatManager_func40h_0067e6f0",
+    "declaration": "extern \"C\" void __thiscall cCheatManager_func40h_0067e6f0(OpaqueWord* manager, OpaqueWord event_argument);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX plus one observed 4-byte ordinary stack argument at entry_ESP+0x4, read once at 0x0067e703 and forwarded to every indirect call",
+    "return_type": "void",
+    "source": "reconstruction/staging/pkg-cheat-dispatch-0067e6f0/cheat_dispatch_0067e6f0.cpp",
+    "header": "reconstruction/staging/pkg-cheat-dispatch-0067e6f0/cheat_dispatch_0067e6f0.hpp",
+    "addressing_rule": "every receiver word is addressed by its machine displacement; no struct and no member name is declared anywhere in the reconstruction",
+    "model_test": null
+  },
+  "function_extent": {
+    "entry": "0x0067e6f0",
+    "body_end_inclusive": "0x0067e726",
+    "body_span_bytes": 57,
+    "instruction_count": 26,
+    "return_site": "0x0067e726: RET 0x4",
+    "terminal_observation": "obs-0020"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "convention_confidence": "INFERRED",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_shape": "R-DIRECT",
+    "receiver_written_through": 0,
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "size": 4,
+        "read": true,
+        "written": false,
+        "read_at": "0x0067e703: MOV EBX,dword ptr [ESP + 0x10] (three register saves already pushed, so +0x10 resolves to entry_ESP+0x4)"
+      }
+    ],
+    "saved_registers": ["EBX", "EDI", "ESI"],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4",
+    "return_register": "EAX",
+    "return_type": "void",
+    "return_type_basis": "Ghidra resolves return_type 'void' with return_type_resolved true, and the decompiled C is void; EAX is never written for the caller: its last write is the table word at 0x0067e70a or the stepper's return at 0x0067e715, and 0x0067e71a consumes it into ESI",
+    "machine_record_disagreement": "abi_derived.value.return_semantics reads 'unclassified_in_EAX' with register_class aggregate_unknown; that is the inference's label for an unwritten-at-exit EAX, not a claim that a value is produced, and the sidecar records void because the resolved Ghidra prototype and the decompilation agree on it",
+    "ghidra_prototype": "void App::cCheatManager::func40h(cCheatManager * this, int param_2)",
+    "ghidra_convention_note": "Live decompilation reports an unknown calling convention and Ghidra placed the receiver on the stack; the machine record (RET 0x4 with ECX dereferenced before any write to it) is what establishes __thiscall, and the sidecar follows the machine."
+  },
+  "mechanics": {
+    "gate": {
+      "instruction": "0x0067e6f0: CMP byte ptr [ECX + 0x64],0x0 / 0x0067e6f4: JZ 0x0067e726",
+      "displacement": 100,
+      "width_bytes": 1,
+      "read_count": 1,
+      "write_count": 0,
+      "effect": "when the byte is clear the function returns immediately, touching nothing else; the whole body is behind this one test"
+    },
+    "terminator": {
+      "instruction": "0x0067e6fb: LEA EDI,[ECX + 0x4c]",
+      "displacement": 76,
+      "address_taken": true,
+      "value_loaded": false,
+      "effect": "the chain end marker is the ADDRESS of the receiver word at +0x4c, not its contents; no instruction in the body loads those four bytes, so the marker is an embedded sub-object and needs no separate sentinel pointer"
+    },
+    "chain_start": {
+      "instruction": "0x0067e6f7: MOV ESI,dword ptr [ECX + 0x50]",
+      "displacement": 80,
+      "read_count": 1,
+      "effect": "the first link is loaded once, before the pre-test"
+    },
+    "loop_shape": {
+      "pre_test": "0x0067e6fe: CMP ESI,EDI / 0x0067e700: JZ 0x0067e724 -- an empty chain exits before the loop body, so the EBX save is not executed",
+      "post_test": "0x0067e71f: CMP ESI,EDI / 0x0067e721: JNZ 0x0067e707 -- back edge stays inside the body span",
+      "form": "while (node != terminator) with the condition tested on entry and again at the bottom"
+    },
+    "indirect_dispatch": {
+      "site_count": 1,
+      "sites": [
+        {
+          "address": "0x0067e712",
+          "text": "CALL EDX",
+          "shape": "register transfer",
+          "receiver_load": "0x0067e707: MOV ECX,dword ptr [ESI + 0x10] -- ECX carries the node's own receiver word",
+          "table_pointer_load": "0x0067e70a: MOV EAX,dword ptr [ECX] -- the first word of that receiver is a table pointer",
+          "slot_load": "0x0067e70c: MOV EDX,dword ptr [EAX + 0x1c] -- the eighth word of that table is the call target",
+          "slot_displacement": 28,
+          "arguments": "0x0067e710: PUSH 0x1 then 0x0067e70f: PUSH EBX, so the callee takes (leading_word = 1, event_argument) on the stack with the receiver in ECX",
+          "slot_identity": "UNKNOWN -- no machine record names the slot, and nothing in the body proves the table is a dispatch table in the strict sense"
+        }
+      ],
+      "machine_record": "abi_derived.value.dispatch.indirect_calls = 1, vtable_shaped_loads = 0",
+      "cleanup_inference": "each iteration pushes 4 bytes for this call and 4 for 0x00921580 and drops only 4 with ADD ESP,0x4, so the loop is stack-balanced only if this callee removes its own 8 bytes (RET 8). That is an inference from the frame arithmetic, not an observation of the callee."
+    },
+    "direct_call": {
+      "instruction": "0x0067e715: CALL 0x00921580",
+      "target": "0x00921580",
+      "argument": "0x0067e714: PUSH ESI -- the current node",
+      "cleanup": "0x0067e71c: ADD ESP,0x4 -- the caller drops the argument, so the callee returns through a plain RET (cdecl)",
+      "result": "0x0067e71a: MOV ESI,EAX -- the returned word becomes the next node",
+      "storage": "not shown by this body; modelled as an unresolved function-pointer slot, and no global is invented for it"
+    },
+    "writes": "none: no instruction in the 26-instruction body stores through any register, so the receiver, the chain nodes and the dispatched receivers are all left exactly as they were found",
+    "null_behavior": "a null first link is not special-cased; it is compared against the terminator address like any other word, and the indirect call dereferences whatever the node holds without a null test"
+  },
+  "return_semantics": {
+    "kind": "void",
+    "ownership": "The body performs no reference acquisition, no publication and no release; it only forwards one stack argument to each dispatched receiver.",
+    "lifetime": "The chain links, the terminator sub-object and the dispatched receivers are owned by the manager; this body establishes nothing about their creation or destruction.",
+    "eax_at_exit": "clobbered, not meaningful: 0x0067e70a or 0x0067e715 last wrote it and 0x0067e71a consumed it into ESI"
+  },
+  "receiver_displacement_conflict": {
+    "status": "RESOLVED as a property of the record, not a defect in the reconstruction: the record is bounds-only and structurally cannot list 0x4c",
+    "would_a_bounds_only_record_have_listed_0x4c": "NO -- and this is settled from the collector, not inferred. The receiver offsets set is built by _receiver_evidence at abi_infer.py:1820 as sorted({item['offset'] for item in incoming}) over state.ecx_derefs, and state.ecx_derefs is appended to in exactly one place, _record_ecx_access at abi_infer.py:1275-1295, which abi_infer.py:1238 calls only under 'if not is_lea'. A LEA operand therefore cannot enter the set at ANY displacement, for any function; 0x4c is not merely unobserved here, it is unreachable in this field. Recomputing the pack locally reproduces the record byte for byte and shows ecx_derefs holding exactly four entries -- offsets 100 (R-DIRECT), 80 (R-DIRECT), 96 (R-ALIAS) and 0 (incoming=False, filtered out) -- with no 76 anywhere, while ecx_addr_taken is True.",
+    "bounds_only_is_not_a_reach_claim": "bounds_only is the hardcoded literal True at abi_infer.py:2095, set unconditionally on every receiver record and never computed from anything. It therefore carries no per-function information and is not a statement about how far the body reached; it marks the record as a sample of observed dereferences rather than an enumeration of the receiver's extent. max_offset 100 is likewise just incoming_offsets[-1] (abi_infer.py:1828), the largest OBSERVED offset, so it is an observation ceiling and not a layout bound.",
+    "0x4c_is_inside_the_record_window_numerically": "76 < max_offset 100, so the access lies within the record's own observed span. The FIELDS/OFFSETS warning's word 'outside' means absent from the enumerated sample, never beyond the bound.",
+    "record": "abi_derived.value.receiver: bounds_only true, offsets [80, 96, 100], max_offset 100, distinct_offsets 3, written_through 0, shape R-DIRECT",
+    "listing_displacements_through_ecx": [76, 80, 100],
+    "why_0x4c_is_absent_from_the_record": "0x0067e6fb: LEA EDI,[ECX + 0x4c] computes an address and dereferences nothing. The engine records receiver displacements only for load/store memory operands -- abi_infer.py:1238 gates the call on 'if not is_lea' before abi_infer.py:1275 _record_ecx_access appends to state.ecx_derefs. An address-taken field is therefore not a field access, and the same run sets state.ecx_addr_taken = True, which is the record's own acknowledgement that the body address-takes the receiver at +0x4c.",
+    "not_a_different_base": "the base register at 0x0067e6fb is literally ECX, the incoming receiver; the displacement is not on a stack slot and not on a sub-object pointer",
+    "not_out_of_bounds": "76 is below the record's own max_offset of 100, so it lies inside the record's bounds; 'outside' in the FIELDS/OFFSETS warning means absent from the enumerated sample, not beyond the bound",
+    "why_0x60_is_in_the_record_but_not_the_listing": "96 is not a displacement used through ECX's own operands at all; it is composed. 0x0067e6f7: MOV ESI,dword ptr [ECX + 0x50] registers ESI as a receiver-rooted alias at +0x50 (abi_infer.py:1700 _propagate_ecx_alias, line 1720 stores source['disp']), and 0x0067e707: MOV ECX,dword ptr [ESI + 0x10] is then read through that alias, so abi_infer.py:1286-1291 records 0x50 + 0x10 = 0x60 with shape R-ALIAS. Recomputing locally shows state.ecx_alias is {} once the run ends, because the MOV to ECX pops the alias again (abi_infer.py:1008) after its single use. The record's scalar shape field says R-DIRECT because abi_infer.py:1824 takes the shape of the EARLIEST incoming access only, and line 1820 collapses per-offset shape into a bare sorted set of integers. The per-offset shapes are therefore lost in aggregation, which is why offset 96 carries a mislabelling that no field in the record can express.",
+    "consequence": "the two sides measure different things: the record is a receiver-rooted displacement set that follows pointer aliases but is blind to address arithmetic, while validate.py:545 _receiver_displacements reads only literal ECX memory operands, counts LEA, and is blind to alias composition. Their difference is 0x4c (record blind to address arithmetic) and 0x60 (scan blind to alias composition). Neither is a defect in the reconstruction and neither is a refutation: validate.py:1015 requires bounds_only is not True before a declared offset can FAIL, which is the correct guard for a non-enumerating record, and the check's own comment at validate.py:1016-1019 says a declared member outside that window is 'uncorroborated rather than contradicted'.",
+    "static_warn_is_structurally_forced": "This FIELDS/OFFSETS WARN cannot be cleared by any honest source for this function. validate.py:1012 computes outside = (displacements | declared_numbers) - bounds, and displacements comes from validate.py:545 _receiver_displacements over the MACHINE LISTING TEXT, not over the reconstruction. The LEA at 0x0067e6fb is literally an ECX-named memory operand with displacement 0x4c, so displacements is {0x4c, 0x50, 0x64} straight out of the binary no matter what the source says, and 0x4c is in outside no matter what the source declares. Deleting the 0x4c declaration would not clear the check; it would leave the WARN in place and make the source less faithful to the listing. The WARN is evidence-shaped, not a source defect."
+  },
+  "virtual_dispatch_warn_is_structurally_forced": {
+    "site": "0x0067e712 CALL EDX -- one real indirect site; validate.py:1160 _indirect_sites on the 26-instruction listing returns exactly ['CALL EDX']",
+    "record_agrees": "abi_derived.value.dispatch.indirect_calls = 1, so the two machine sources agree and the 'sources disagree / probably a slice' clause at validate.py:1173-1174 does not fire",
+    "no_pass_branch_exists": "The only PASS arm is proven_empty at validate.py:1161, which requires 'not sites and dispatch_count == 0'. This body has a real site, so proven_empty is unreachable and every remaining path with sites non-empty falls to the WARN at validate.py:1179. VIRTUAL DISPATCH is therefore WARN for any function that genuinely dispatches, whatever the source says.",
+    "why_the_source_does_not_trip_the_slot_clause": "validate.py:1148 sets virtual_source only on the literal tokens load_slot, object_slot, shell_slot, vtable or slot[. This reconstruction deliberately uses none of them, because the machine record reports vtable_shaped_loads = 0 and nothing in the body proves the table is a dispatch table in the strict sense; naming a vtable would assert more than the evidence supports. The consequence is the validate.py:1178 wording 'that the source span does not describe' rather than the validate.py:1176 slot-boundary wording. The source does model the site -- a DispatchEntry function-pointer type, a kCallTableEntryOffset of 0x1c and the call at 0x0067e712 -- it simply declines to call the table a vtable. Both wordings are WARN, so the honest choice is the one that claims less."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "evidence_pack": "reconstruction/evidence/0067e6f0/evidence.json",
+    "pack_content_sha256": "318fbaac1e9495dbc9736f7cc2db6971fc051cd8e03722ded5dd0f997e085eaf",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "assembly": [
+      "0067e6f0: CMP byte ptr [ECX + 0x64],0x0",
+      "0067e6f4: JZ 0x0067e726",
+      "0067e6f6: PUSH ESI",
+      "0067e6f7: MOV ESI,dword ptr [ECX + 0x50]",
+      "0067e6fa: PUSH EDI",
+      "0067e6fb: LEA EDI,[ECX + 0x4c]",
+      "0067e6fe: CMP ESI,EDI",
+      "0067e700: JZ 0x0067e724",
+      "0067e702: PUSH EBX",
+      "0067e703: MOV EBX,dword ptr [ESP + 0x10]",
+      "0067e707: MOV ECX,dword ptr [ESI + 0x10]",
+      "0067e70a: MOV EAX,dword ptr [ECX]",
+      "0067e70c: MOV EDX,dword ptr [EAX + 0x1c]",
+      "0067e70f: PUSH EBX",
+      "0067e710: PUSH 0x1",
+      "0067e712: CALL EDX",
+      "0067e714: PUSH ESI",
+      "0067e715: CALL 0x00921580",
+      "0067e71a: MOV ESI,EAX",
+      "0067e71c: ADD ESP,0x4",
+      "0067e71f: CMP ESI,EDI",
+      "0067e721: JNZ 0x0067e707",
+      "0067e723: POP EBX",
+      "0067e724: POP EDI",
+      "0067e725: POP ESI",
+      "0067e726: RET 0x4"
+    ],
+    "decompiler": "if (*(char *)(in_ECX + 100) != '\\0') { for (iVar1 = *(int *)(in_ECX + 0x50); iVar1 != in_ECX + 0x4c; iVar1 = FUN_00921580(iVar1)) { (**(code **)(**(int **)(iVar1 + 0x10) + 0x1c))(1,this); } }",
+    "decompiler_caveat": "the decompiled C names the dispatched receiver's second argument 'this', which is Ghidra's confused placement of the cCheatManager receiver on the stack; the machine shows the stack argument is the entry_ESP+0x4 word, forwarded unchanged",
+    "direct_callees": 1,
+    "direct_callee_targets": ["0x00921580"],
+    "indirect_call_sites": 1,
+    "direct_callers": 0,
+    "function_xrefs": 1,
+    "function_xref_detail": "one reference, from 0x01401bb4, a data address inside the triage-associated vtable region vtable:0x01401b74; the xref export carries no call edge into this function",
+    "vtable_reference_count": 0,
+    "sibling_contrast": "0x0067e730 (App::cCheatManager::func44h) is the same walk with the leading word 0 and without the +0x64 gate"
+  },
+  "provenance": [
+    "reconstruction/evidence/0067e6f0/evidence.json categories.disassembly (GhidraMCP /disassemble_function, 26 instructions)",
+    "reconstruction/evidence/0067e6f0/evidence.json categories.abi (openspore-abi-inference-1, INFERRED, recomputed locally and reproduced byte for byte)",
+    "reconstruction/evidence/0067e6f0/evidence.json categories.decompilation (GhidraMCP REST /decompile_function, LIVE)",
+    "reconstruction/evidence/0067e6f0/evidence.json categories.ghidra_function (return_type void, resolved)",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCheatManager__func40h.c",
+    "tools/reconstruction_tooling/abi_infer.py:1238,1275-1295,1700-1720,1817-1829,2095 (receiver displacement collection, the is_lea gate, alias composition, _receiver_evidence and the hardcoded bounds_only literal; read to resolve the 0x4c and 0x60 findings)",
+    "tools/reconstruction_tooling/validate.py:545-563,1011-1026,1138-1179 (_receiver_displacements, the bounds_only FAIL guard, and the VIRTUAL DISPATCH arms; read to establish that both WARNs are structurally forced)",
+    "local recomputation: abi_infer.parse_listing + abi_infer.extract over the 26-instruction listing, which reproduces categories.abi.value.receiver byte for byte and exposes state.ecx_derefs and state.ecx_addr_taken"
+  ],
+  "unresolved_questions": [
+    "What does the byte at receiver+0x64 gate, and which code path sets it? Nothing in this 26-instruction body writes it.",
+    "Is the table reached through the node word at +0x10 and then +0x1c a dispatch table (a vtable) in the strict sense? Nothing in the machine record says so, so the reconstruction calls it a call table and names no slot.",
+    "Which concrete receiver types are stored at node+0x10, and which concrete function is at table+0x1c for each of them?",
+    "What are the two stack arguments at the indirect call? The leading word is the literal 1 and the trailing one is this function's own stack argument; their meaning is not established.",
+    "What is 0x00921580, where does it live, and what link does it read to return the next node? The body only shows one node in, one word out, caller-cleaned.",
+    "Is the chain intrusive (each node embedding the link word) or does 0x00921580 walk an external structure? The link word is not read by this body either way.",
+    "What is the entry_ESP+0x4 argument semantically, and who supplies it? The xref export records no call edge into this function, so the only known reference is the data reference at 0x01401bb4.",
+    "Does the dispatched receiver mutate the chain during the walk? This body holds no lock, re-reads nothing, and compares the link it was handed, so a mutation would be its own problem."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The manager is live and the byte at +0x64 is set, so the walk is actually entered.",
+      "At least one chain node exists between the link at +0x50 and the terminator address at +0x4c.",
+      "A runtime trace records which concrete table and slot each node dispatches through, and what 0x00921580 does with a node."
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 # Reconstruction context 0x00587a20
 
 - Status: `partial`
-- Content SHA-256: `3ae8ca8c57750802f4d7dd81b7b44dbc34f571b358682fe24e92835ebc47e410`
+- Content SHA-256: `5688b24a4416d05306712fc54cd2bc5ea04b93b51144c080923257a8c0b7d772`
 
 ## 01_assignment
 
@@ -54,10 +54,18 @@
 
 ```json
 {
-  "content_sha256": "97c7b54b901bc382e52a0e284c3c7508a50295049b85549ed535108c04d3f3d2",
-  "live_attempts": [],
-  "live_requested": false,
-  "overall": "PERSISTED"
+  "content_sha256": "0374bc8f05f05ad95dc661e7410508ec79daaeff1886114dd7489843dfffdbb0",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00587a20 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
 }
 ```
 
@@ -327,77 +335,79 @@
 [
   {
     "match_basis": [
-      "shared_types:void*",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "property_record_assign_pair_004279d0",
-    "va": "0x004279d0"
+    "package": "pkg-swarm-w2-00586700",
+    "score": 12,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
   },
   {
     "match_basis": [
-      "shared_types:Byte",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "editor_paint_commit_0043ac40",
-    "va": "0x0043ac40"
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 12,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
   },
   {
     "match_basis": [
-      "shared_types:Byte",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "editor_bake_select_004c4a30",
-    "va": "0x004c4a30"
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 12,
+    "symbol": "re_005ba0d0",
+    "va": "0x005ba0d0"
   },
   {
     "match_basis": [
-      "shared_types:void*",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8"
+    ],
+    "package": "pkg-editor-child-007f30d0",
+    "score": 10,
+    "symbol": "FUN_007f30d0",
+    "va": "0x007f30d0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
       "same_calling_convention"
     ],
-    "package": "PKG-PALETTE-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "palette_safe_wave11_fill_node_array_005c7ff0",
-    "va": "0x005c7ff0"
+    "package": "pkg-vft-preinc-0051e340",
+    "score": 8,
+    "symbol": "vft_preinc_0051e340",
+    "va": "0x0051e340"
   },
   {
     "match_basis": [
-      "shared_types:void*",
+      "same_subsystem",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005fa8d0",
-    "va": "0x005fa8d0"
+    "package": "subobject-forward-0051e380",
+    "score": 8,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
   },
   {
     "match_basis": [
-      "shared_types:void*",
+      "same_subsystem",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_0060ee90",
-    "va": "0x0060ee90"
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 8,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
   },
   {
-    "match_basis": [
-      "same_calling_convention",
-      "direct_xref_neighbor"
-    ],
-    "package": "PKG-SIMULATOR-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "release_child_0062c910",
-    "va": "0x0062c910"
-  },
-  {
-    "match_basis": [
-      
+    "match_basis"
 [TRUNCATED]
 ```
 
@@ -444,7 +454,7 @@
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-dogfood-00587a20-a1/00587a20.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-editor-onexit-smoke01/00587a20.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-dogfood-00587a20-a1/00587a20.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-editor-onexit-smoke01/00587a20.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.hpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -453,6 +463,21 @@
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
       "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
     },
     {
       "mode": "persisted",
@@ -486,16 +511,6 @@
     },
     {
       "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp",
-      "source_class": "committed_artifact"
-    },
-    {
-      "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.cpp",
-      "source_class": "committed_artifact"
-    },
-    {
-      "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.
+      "ref": "rec
 [TRUNCATED]
 ```

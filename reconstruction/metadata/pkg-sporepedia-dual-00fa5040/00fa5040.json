@@ -1,0 +1,414 @@
+{
+ "schema": "openspore.reconstruction-worker-handoff.v1",
+ "package": "PKG-SPOREpedia-DUAL-00fa5040",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "va": "0x00fa5040",
+ "address": "0x00fa5040",
+ "symbol": "re_00fa5040",
+ "normalized_symbol": "re_00fa5040",
+ "ghidra_name": "FUN_00fa5040",
+ "captured_on": "2026-09-29",
+ "subsystem": "Sporepedia",
+ "cluster": "sporepedia-online",
+ "queue_id": "function:00fa5040:FUN_00fa5040",
+ "implementer_id": "orch-w2",
+ "source_files": [
+  "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.cpp",
+  "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.hpp",
+  "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040_model_test.cpp"
+ ],
+ "types": [
+  "openspore::reconstruction::pkg_sporepedia_dual_00fa5040::Receiver",
+  "openspore::reconstruction::pkg_sporepedia_dual_00fa5040::Word",
+  "openspore::reconstruction::pkg_sporepedia_dual_00fa5040::Real"
+ ],
+ "intended_paths": {
+  "staging_reconstruction": [
+   "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.cpp",
+   "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.hpp",
+   "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040_model_test.cpp"
+  ],
+  "canonical_reconstruction": [],
+  "status": "staging-only handoff; no canonical path is claimed, no other package's files were touched and no git commit was made"
+ },
+ "implementation": {
+  "status": "implemented in staging",
+  "symbol": "re_00fa5040",
+  "declaration": "extern \"C\" bool re_00fa5040(Receiver*, Word, Word);",
+  "linkage": "C language linkage. NO CALLING-CONVENTION TOKEN IS PLACED ON THIS ENTRY OR ON ANY OF ITS FIVE DIRECT CALLEES, because the machine record determines none. The entry name embeds the 8-hex target VA so the validator can bind the source span to 0x00fa5040.",
+  "calling_convention": "NOT DETERMINED, and this package declares none. The derived ABI record for this target (reconstruction/evidence/00fa5040/evidence.json, category abi_derived) states conventions.calling_convention null, conventions.confidence UNKNOWN, conventions.candidate_conventions [\"__cdecl\",\"__stdcall\",\"__thiscall\",\"__fastcall\"], conventions.ambiguities [\"esp_alignment_unknown\"], verdict ABI_UNKNOWN, and three abstention reasons, the first of which is \"untrusted_frame_stack_reads: push ebp with no mov ebp,esp: EBP is a general register, so every frame-relative offset is uncalibrated\". The abstention is structural: the body does SUB ESP,0x1c / PUSH EBX / PUSH EBP / MOV EBP,ECX, so EBP holds the receiver for its whole length and there is no frame pointer for the tool that produced the record to calibrate against. No convention is invented here, and no convention token appears anywhere in the package -- the validator's ABI arm reads the record's abstention and reports WARN regardless of what the source said, so there was nothing to gain and a claim to lose.",
+  "argument_surface": "THREE values, and the divergence from the record is recorded rather than merged. (1) The receiver, which the record DOES determine: receiver {present true, register ECX, confidence INFERRED, bounds_only true, shape R-ALIAS, distinct_offsets 4, offsets [1904,1908,1924,1928], written_through 0}, inference R1 \"ECX carries a receiver and is dereferenced before any definite write to it\", and ABI envelope {hidden_this true, hidden_this_register ECX}. (2) A 32-bit word at entry_ESP+0x4, compared as a FULL 32-bit equality against element+0xa8 of every element of both arrays (CMP dword ptr [ECX],EDI at 0x00fa5080 and 0x00fa50c0); the record's slot A1 says observed true, sizes [4], and this package agrees. (3) A 32-bit word at entry_ESP+0x8 of which only the LOW BYTE is read (CMP byte ptr [ESP + 0x34],BL at 0x00fa50e3 and 0x00fa5241, with BL zero), so it is a one-byte gate and nothing above that byte matters. Item (3) is a DIVERGENCE from the record: A1 enumerates ONE observed slot totalling 4 bytes, while this package calibrates TWO from the frame arithmetic (SUB ESP,0x1c plus four pushes is 0x2c, and the frame reads at +0x30 and +0x34, so the two slots are entry_ESP+0x4 and entry_ESP+0x8) and the OBSERVED two-word pop (RET 0x8) is consistent with it. The calibration agrees with A1 on the slot A1 can name, and the second slot is what the same arithmetic adds. Which slot the second word is -- a separate argument, a flag, part of one wider argument -- is NOT determined, and the header carries kSecondStackArgumentWidthIsDetermined = false for it. The three values are distinct: the receiver is dereferenced and written, the key word is only compared, and the flag word is only tested for a zero low byte. The model test keeps them apart by driving the flag's upper bytes and checking the call count is unchanged (B73..B76) and by checking the key is a full-word equality (B77..B79).",
+  "return_type": "bool",
+  "source": "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.cpp",
+  "header": "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040.hpp",
+  "model_test": "reconstruction/staging/pkg-sporepedia-dual-00fa5040/sporepedia_dual_00fa5040_model_test.cpp",
+  "receiver_model": "ECX carries the receiver and is aliased into EBP at 0x00fa5045, which is why EBP is a general register for the whole body and why the ABI record abstained. EBP is saved and restored like a callee-saved register (PUSH EBP at 0x00fa5044, POP EBP at 0x00fa50d5, 0x00fa5233, 0x00fa5276-equivalent restores and 0x00fa5427), and the only reaches through it are 0x770, 0x774, 0x784 and 0x788 -- the record's four -- plus the sub-table group at 0x218 and the pending vectors at 0x268. NO field name, member, layout, object size, class or vtable identity is claimed for any of them. Receiver is declared and deliberately left undefined (struct Receiver;), and the model reaches it only through read_word/read_real/read_pointer at explicit displacements, which is why the reconstructed entry names no member of it.",
+  "dispatch_model": "The body PERFORMS exactly one indirect transfer and the machine agrees independently: abi_derived.dispatch {indirect_calls 1, vtable_shaped_loads 0, call_offsets []} against parse {declared_count 297, unparsed 0, degraded false}. The site is 0x00fa536a, CALL EDX, where EDX was loaded by MOV EAX,[EBP] / MOV EDX,[EAX] at 0x00fa5361..0x00fa5364 -- a two-level table load through the object's own first word, entry index zero -- with PUSH 0x1 at 0x00fa5366 and MOV ECX,EBP at 0x00fa5368, so the object goes in the first register and the immediate 1 on the stack. The reconstruction performs that transfer and declares NO slot boundary: it names neither a table type nor a slot index as a source-level claim, so the validator's VIRTUAL DISPATCH arm reports the machine dispatch and says the source's own slot naming is not verified. What the record's vtables association with vtable:0x01490be8 is NOT used for is any claim about this body: this package reads no table data and asserts no class, because this binary carries no MSVC RTTI and a slot is not a class.",
+  "dependency_note": "The five direct callees are 0x00fad140 (twice, at 0x00fa514d and 0x00fa52b1), 0x00fa29b0 (at 0x00fa51b8), 0x00f9f620 (twice, at 0x00fa5214 and 0x00fa5408), 0x00fadac0 (at 0x00fa534a) and 0x004558a0 (at 0x00fa53ad): seven call sites over five distinct addresses, which is what the xref export records. Each is declared in the package header with the call shape the listing fixes and defined in this package's model test as an observer. NO CONVENTION TOKEN IS PLACED ON ANY OF THEM, for the same reason none is placed on the entry: the record determines no convention for this target. This package reads no other package's source and asserts nothing about any callee's internals -- only its call shape, order, argument values and stack discipline, which is all these 297 instructions contain. 0x00f9f620 in particular: the body never adjusts the stack for its argument, so which side drops that word is not determined here.",
+  "compile_gate": "cd reconstruction/staging/pkg-sporepedia-dual-00fa5040 && for CXX in g++ clang++; do for OPT in -O0 -O1 -O2 -O3; do $CXX -m32 -std=c++17 -Wall -Wextra -Werror $OPT -I. sporepedia_dual_00fa5040.cpp sporepedia_dual_00fa5040_model_test.cpp -o /tmp/w2t/cell && /tmp/w2t/cell || exit 1; done; done -> eight builds, zero warnings, 193 checks and 0 failures each, exit 0 each. Verified 2026-09-29."
+ },
+ "target_state": "implemented staging handoff. The static aggregate is whatever the validation report says and nothing more; ABI is WARN because the derived record abstained (verdict ABI_UNKNOWN) and no source can change that without weakening a gate or inventing a convention. RUNTIME remains GATED at 0 -- no original-process trace exists in this repository and none was attempted.",
+ "function_extent": {
+  "entry": "0x00fa5040",
+  "body_end_inclusive": "0x00fa542e",
+  "instruction_count": 297,
+  "return_site": "two, both reached only after the four saved registers are restored: 0x00fa50dc (RET 0x8) on the not-found path, with XOR AL,AL at 0x00fa50d6 the last write before it; and 0x00fa542e (RET 0x8) on both found paths, with MOV AL,0x1 at 0x00fa5234 and 0x00fa5428 as the last write before it. No third terminator exists in the span and no path falls off its end.",
+  "span_bytes": 1009,
+  "corroboration": "ghidra_function reports body_start 0x00fa5040, body_end 0x00fa5430 (exclusive), body_span_bytes 1009, size_bytes 1009, and the briefing's disassembly carries 297 instructions; abi_derived.parse reports {declared_count 297, unparsed 0, degraded false, flow_complete false, esp_unresolved true}, so the machine parse consumed the whole listing. The validator's own CONTROL FLOW arm independently confirms the graph is closed: all 39 conditional branch targets lie inside 0x00fa5040..0x00fa542e. Three LEA ESP,[ESP] at 0x00fa50bc, 0x00fa510c and 0x00fa5259, a NOP at 0x00fa520f and a MOV EDI,EDI at 0x00fa529e are alignment padding; they are named here and modelled as nothing, and no claim of byte-level equivalence is made anywhere in this package. NO DECOMPILATION EXISTS for this target (both the persisted record and the live bridge report none), so every claim here is from the disassembly listing, the machine-derived ABI record and the bytes the listing quotes."
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "receiver_register": "ECX",
+  "return_type": "bool. The WIDTH is the machine's: the last write before each of the two reachable terminators is a ONE-BYTE write to AL (XOR AL,AL at 0x00fa50d6, MOV AL,0x1 at 0x00fa5234 and 0x00fa5428) with no CALL between the write and the RET on either path. The exact C spelling is a source-side choice among the one-byte types and is not verified by the machine; bool is the width-computable choice and asserts no value constraint the machine does not show.",
+  "return_width_bytes": 1,
+  "return_register": "EAX, low byte only. DIVERGENCE FROM THE RECORD, RECORDED NOT RESOLVED: the machine's own abi_derived.return reads {register XMM0, register_class float_or_x87, confidence APPROXIMATION, void_possible false, type null} and inference RT1 states \"the return value is carried in XMM0: an x87 or SSE instruction appears in the body\" at APPROXIMATION confidence. RT1 is a presence heuristic -- XMM0 in this body is scratch for the four COMISS comparisons, written by MOVSS at 0x00fa516a, 0x00fa517d, 0x00fa5189, 0x00fa5195, 0x00fa52ce, 0x00fa52e1, 0x00fa52ed and 0x00fa52f9, and never written after the last of them on any path to a terminator. The complete listing contradicts the register and confirms the byte, and this package reads the listing. The contradiction is left visible rather than smoothed over: a reader who trusts RT1 will find a different answer here and should know why.",
+  "return_semantics": "one_byte_in_EAX, by this package's reading of the complete listing; the derived record's own classification is float_or_x87_in_XMM0 at APPROXIMATION confidence and is contradicted (see return_register).",
+  "return_observation": "Two reachable terminators, one byte each, and no bulk write. The record's return.aggregate_evidence.bulk_write is false and sret.present is false, so no hidden-pointer return is in play and the width read off the register is the width of the value.",
+  "saved_registers": [
+   "EBP",
+   "EBX",
+   "EDI",
+   "ESI"
+  ],
+  "saved_register_detail": "PUSH EBX at 0x00fa5043, PUSH EBP at 0x00fa5044, PUSH ESI at 0x00fa505f, PUSH EDI at 0x00fa5069, popped in reverse before each terminator (0x00fa5231..0x00fa5236 and 0x00fa5425..0x00fa542a; the not-found path pops at 0x00fa50d3..0x00fa50d8). EBP is in that set because MOV EBP,ECX at 0x00fa5045 puts the receiver there. NOT asserted in the model test: this is a C++ model of the body, and the compiler is free to allocate any of the four inside it and still restore it, so the property is not observable through the model's own ABI.",
+  "ret_form": "RET 0x8",
+  "termination": "RET 0x8",
+  "stack_cleanup_bytes": 8,
+  "stack_cleanup_owner": "callee",
+  "stack_cleanup_confidence": "OBSERVED (cleanup.evidence \"ret 0x8\", inference C3, based on obs-0030, obs-0066 and obs-0108). Independent of the convention, which is undetermined.",
+  "ordinary_stack_argument_slots": 2,
+  "ordinary_stack_argument_detail": "DIVERGENCE FROM THE RECORD, RECORDED NOT RESOLVED. The record's stack_arguments and A1 say observed_slots 1, total_bytes 4, one slot at entry_ESP+0x4, confidence INFERRED, abstention C11 \"the entry-relative argument offsets are unknown, so the convention is unknown\". This package calibrates TWO slots from the instruction stream: SUB ESP,0x1c at 0x00fa5040 followed by four pushes is 0x2c, the frame reads at [ESP + 0x30] (0x00fa506a) and [ESP + 0x34] (0x00fa50e3, 0x00fa5241), and those resolve to entry_ESP+0x4 and entry_ESP+0x8. The calibration agrees with A1 on the one slot A1 can name, and the OBSERVED two-word pop is consistent with it. The record's single-slot entry is carried in the header as kRecordObservedStackArgumentSlots so the divergence is visible in the package and not only here.",
+  "receiver": "ECX carries the receiver, at INFERRED confidence, and is aliased into EBP at 0x00fa5045 for the rest of the body. The record's bounds_only flag is its own statement that the four enumerated displacements are an OPEN lower bound, and this package treats it as one: the offsets it reaches through the receiver alias are exactly the four the record enumerates (0x770, 0x774, 0x784, 0x788), and it asserts no field name, member, layout or size for any of them. Receiver is declared and left undefined.",
+  "return_type_note": "The C spelling is a source-side choice among the one-byte types; the machine fixes the width and the two values 0 and 1, not the type."
+ },
+ "observed_mechanics": [
+  "0x00fa5040 SUB ESP,0x1c -- 28 bytes of frame, and with the four pushes that follow a 0x2c-byte frame. This is the arithmetic that calibrates [ESP + 0x30] to entry_ESP+0x4 and [ESP + 0x34] to entry_ESP+0x8.",
+  "0x00fa5043..0x00fa5069 PUSH EBX / PUSH EBP / MOV EBP,ECX / PUSH ESI / PUSH EDI -- four saved registers, and EBP becomes the receiver. No frame pointer exists after this, which is the ABI record's first abstention reason.",
+  "0x00fa5053..0x00fa5067 and 0x00fa509b..0x00fa50ac -- the SAME eight-instruction sequence computes both element counts: MOV EAX,0x2fa0be83 / IMUL ECX / SAR EDX,0x5 / MOV EAX,EDX / SHR EAX,0x1f / ADD EAX,EDX. The machine states no divisor. The sequence is arithmetically identical to C signed truncated division by 0xac, which the model test proves over a wide sample against an independently written expectation, and 0xac is the stride the loops that consume the count step by (ADD ECX,0xac at 0x00fa5085 and 0x00fa50c9). The identity is a property of the constants and is claimed as nothing else.",
+  "0x00fa506a MOV EDI,dword ptr [ESP + 0x30] -- the first ordinary stack word becomes the key, compared as a full 32-bit value.",
+  "0x00fa5074..0x00fa508d -- the first key scan: cursor at base + 0xa8, step 0xac, guard CMP ESI,EAX / JC, so exactly count iterations. Found, it jumps to 0x00fa50df; exhausted, it falls to 0x00fa508f.",
+  "0x00fa50b0..0x00fa50d1 -- the second key scan, the same instructions over the array whose base and end words are at 0x770 and 0x774.",
+  "0x00fa50d3..0x00fa50dc -- the not-found path: four pops, XOR AL,AL, the frame drop and RET 0x8. Nothing in the receiver is written on this path.",
+  "0x00fa50e3 CMP byte ptr [ESP + 0x34],BL -- one BYTE of the second stack word, against zero. A clear byte skips both sub-table walks entirely.",
+  "0x00fa50ed..0x00fa51e5 -- the first-array sub-table walk: four sub-tables at rcv + 0x218 + k*0x14, each a three-word vector, each walked from its LAST slot to slot zero (SUB EBX,0x1 / JNS at 0x00fa51b2..0x00fa51cc).",
+  "0x00fa5126..0x00fa5131 -- bit 3 of the word at object + 0xb8, tested for SET with SHR 3 and TEST 1. A clear bit skips the object.",
+  "0x00fa5137..0x00fa51aa -- the inner walk: six 0x10-byte records per candidate object, each a call to 0x00fad140 followed by four COMISS against a four-float scratch at ESP+0x1c, stepping to 0x60.",
+  "0x00fa5172..0x00fa519f -- the four comparisons are STRICTLY greater (JBE after each COMISS) and their pairing is NOT the identity order: query[1] against field 0, query[0] against field 1, query[3] against field 2, query[2] against field 3. An unordered compare takes the skip on every one of them. The model test discriminates the pairing in both directions (B40..B45).",
+  "0x00fa51ac..0x00fa51b8 -- the ONLY effect of a hit on the first-array path: pack (group << 0x18) | slot into one word and hand it to 0x00fa29b0.",
+  "0x00fa51d6..0x00fa51e5 -- the group loop's own increment: k + 1, cursor + 0x14, guard against 4.",
+  "0x00fa51eb..0x00fa5227 -- the first-array tail: start at base + index*0xac, walk cursors from one stride on while the cursor is NOT EQUAL to the end word (JNZ at 0x00fa5221, not a bound), handing each to 0x00f9f620 with the array's base address, then pull the end word back by 0xac -- which is the only write this body makes to the receiver's own four words.",
+  "0x00fa523d..0x00fa542e -- the second-array path, structurally the same walk with a DIFFERENT payload on a hit: 0x00fadac0, a decrement of the word at object+0x4, the body's one indirect transfer when that word reaches zero, the taken slot cleared, and the slot index appended to the pending vector at rcv + group*0x14 + 0x268 or grown through 0x004558a0. There is no notify on this path at all.",
+  "0x00fa5313..0x00fa5332 -- the second-array hit packs (group << 0x18) | slot into a register and immediately unpacks it (SHR 0x18, AND 0xffffff), so the round trip carries no information the reconstruction has to model; what the unpacked pair is then used for is to re-derive the same sub-table address and bounds the slot against the element count (CMP EDI,ECX / JNC at 0x00fa533b..0x00fa533d).",
+  "0x00fa534f..0x00fa5358 -- decrement the word at object+0x4, and skip the rest unless it reached zero.",
+  "0x00fa535a -- that word is reset to 1 before the transfer.",
+  "0x00fa5361..0x00fa536a -- the body's one indirect transfer: the destination is the second word of the object's own first word, the object goes in the first register, and the immediate 1 goes on the stack.",
+  "0x00fa5386 -- the taken slot is cleared to zero whatever the refcount did.",
+  "0x00fa5394..0x00fa53ad -- the pending vector is a three-word vector too: end against capacity, either advance the end by a word and store through it (with a NULL end word skipping only the store, TEST EAX,EAX / JZ at 0x00fa539f..0x00fa53a1) or call 0x004558a0 with the cursor and the slot index by value.",
+  "0x00fa50bc / 0x00fa510c / 0x00fa5259 LEA ESP,[ESP], 0x00fa520f NOP, 0x00fa529e MOV EDI,EDI -- alignment padding with no semantics, carried in this record and modelled as nothing.",
+  "0x00fa50d6 XOR AL,AL, 0x00fa5234 MOV AL,0x1, 0x00fa5428 MOV AL,0x1 -- the three last writes before a terminator, each one byte, each on the only path to the terminator below it.",
+  "GLOBALS: the complete 297-instruction listing names no data-segment address and the xref export carries no data-reference edge type, so there is nothing to corroborate against and nothing to claim. This body touches no global.",
+  "VIRTUAL DISPATCH: exactly one indirect transfer, counted independently by the machine dispatch record (indirect_calls 1) and by the complete listing, with the parse consuming all 297 instructions. The reconstruction performs it and declares no slot boundary."
+ ],
+ "semantic_findings": [
+  "The body is a two-array lookup with a per-array payload. Both arrays are the same shape -- a base word and an end word in the receiver, 0xac-byte elements, a 32-bit key at element+0xa8, a six-record 0x10-byte block of four floats at element+0x38 -- and both scans are the same instructions. What differs is what a hit DOES: the first array hands 0x00fa29b0 a packed (group, slot) index and nothing else; the second array releases an object, decrements a refcount, dispatches through the object's own table when that refcount reaches zero, clears the slot and appends it to a pending vector. That asymmetry is the sharpest structural fact in the body and the model test exercises both halves separately (B28..B39 and B50..B72).",
+  "The count is a magic-number division the machine never explains. MOV EAX,0x2fa0be83 / IMUL / SAR EDX,0x5 / SHR EAX,0x1f / ADD EAX,EDX is exactly signed truncated division by 0xac, and 0xac is the stride the loops step by. The reconstruction writes the eight instructions out rather than replacing them with a division, because replacing them with a division would be a different program -- and the model test proves the identity against an independently written expectation so the claim is arithmetic rather than intent.",
+  "The sub-table walks are DESCENDING and the group walk is ASCENDING. The slot index starts at count-1 and decrements (0x00fa51b2..0x00fa51cc, 0x00fa53b2..0x00fa53b9), the group index starts at 0 and increments (0x00fa51c7..0x00fa51e5, 0x00fa53c7..0x00fa53d6). A reconstruction that walks either forwards produces the same SET of calls and a different ORDER, so the model test asserts the order of the packed indices, not just their count (B37..B39).",
+  "The four float comparisons are strictly greater and cross-paired. Every COMISS is followed by JBE, so equality takes the skip, and an unordered compare takes it too. The pairing is query[1] vs field 0, query[0] vs field 1, query[3] vs field 2, query[2] vs field 3 -- not the identity order, and the two conditions are equal only when the four query floats are equal. The model test builds a case where the pairing fires and the identity cannot (B40..B42) and the mirror (B43..B45), so a reconstruction that spelled the pairing as the identity would fail both.",
+  "The receiver is written, and only at one place. ADD dword ptr [EAX + 0x788],0xffffff54 at 0x00fa5227 and ADD dword ptr [EAX + 0x774],0xffffff54 at 0x00fa541b are the only stores to the receiver's own four words, and both are the same operation: pull the end word back by one stride, which is how a found element is removed. The record's receiver.written_through is 0 because the alias is MOV EBP,ECX and the record reads that register; the complete listing shows the write, and the listing is the better witness on this point. The divergence is recorded here rather than used to override the record.",
+  "The tail's cursor walk terminates on EQUALITY, not on a bound: CMP ESI,EDI / JNZ at 0x00fa5221 and 0x00fa5415. A reconstruction that wrote the loop as `<` would agree with the machine on every on-grid array and disagree on every off-grid one, and would also loop forever there. The model test keeps every fixture on the stride grid and says why.",
+  "The two stack words do different jobs and must not be conflated. The word at entry_ESP+0x4 is a full 32-bit key compared against element+0xa8; the word at entry_ESP+0x8 is read as ONE BYTE and tested against zero, and nothing above that byte is read on any path. The model test drives the flag's upper bytes and requires the call count to be unchanged (B73..B76).",
+  "The only indirect transfer in the body is a two-level load through an object's own first word, taken only when the word at object+0x4 reaches zero, and the machine counts exactly one such site. It is a dispatch, not a callback registration, and this package names no table, no class and no slot identity for it."
+ ],
+ "blockers": [],
+ "unresolved_questions": [
+  "THE CALLING CONVENTION. The record determines none: null, UNKNOWN, four candidates, ABI_UNKNOWN, three abstentions. __thiscall is the shape the receiver in ECX plus a callee that pops 8 bytes would suggest, and it is exactly the claim this package declines to make, because the record does not make it and the C11 abstention is specifically about the offsets that would settle it. The reconstruction therefore declares no convention token, and its own C++ linkage is a property of the model and not a claim about the original.",
+  "WHY THE FRAME POINTER ABSTENTION BLOCKS THE ABI ARM. The validator's ABI arm returns WARN on a derived record whose verdict is ABI_UNKNOWN, before it reads anything about the source. That verdict is a property of the pack, not of this package: no source can turn it into a PASS, and the only ways to do so would be to edit the evidence pack, edit tools/reconstruction_tooling/abi_infer.py, or weaken the check. None was done. The seven other structural checks are adjudicated against the source and the machine and are reported by the validation report in full.",
+  "THE SECOND STACK SLOT. This package calibrates two ordinary stack words; the record enumerates one. The calibration is the frame arithmetic and it agrees with the record on the slot the record can name, and the observed two-word pop is consistent with it, but the record's own instrument declined to calibrate and its single-slot entry is kept visible in the header (kRecordObservedStackArgumentSlots). What the second word IS -- a separate argument, a flag, the low byte of something wider -- is not determined, and only its low byte is read.",
+  "THE RECEIVER'S IDENTITY AND LAYOUT. ECX carries a receiver at INFERRED confidence and the body reaches 0x770, 0x774, 0x784 and 0x788 through it and 0x218, 0x268, 0x38, 0x4, 0x8, 0xc, 0xac and 0xb8 inside it. The machine supplies NO name, class, type, field, size or member for any of them, the record's bounds_only says its own enumeration is open, and this binary carries no MSVC RTTI. None is claimed. Whether the receiver is a pointer at all, whether the two arrays are two arrays of one type, and what a 0xac-byte element is, are all open.",
+  "THE RETURN REGISTER CONTRADICTION. abi_derived.return names XMM0 at APPROXIMATION confidence and RT1 justifies it by the mere presence of an SSE instruction in the body; the complete listing shows XMM0 is scratch for eight COMISS comparisons and that the last write before each of the two terminators is a one-byte write to AL. This package reads the listing and says so, and the contradiction is left visible: a reader who trusts RT1 will get a different answer and should know which of the two is contradicted by which evidence.",
+  "THE RECEIVER WRITTEN-THROUGH CONTRADICTION. receiver.written_through is 0, but the complete listing stores to the receiver's own words at 0x00fa5227 and 0x00fa541b. The record attributes the reaches to ECX while the body addresses them through EBP after MOV EBP,ECX, so the record's zero is very likely an artefact of that alias rather than a statement about the body. The listing is the better witness and this package follows it; the record is not edited.",
+  "WHAT THE TWO ARRAYS ARE. Same shape, same stride, same key displacement, same six-record block, and two completely different payloads on a hit. Nothing in this body says what an element is, what the key identifies, what the four floats are, or why one array notifies and the other releases.",
+  "WHAT THE 0x00fa536a DISPATCH IS. The body performs a two-level table load through an object's own first word and calls it with the immediate 1. Whether that word is a vptr, a function pointer to a table, or something else is not established here; the machine classifies the site as a vtable-slot-shaped two-level load and that is all that is claimed. No class, no table type and no slot identity is named.",
+  "WHAT 0x00f9f620's ARGUMENT CLEANUP IS. The body pushes a cursor word and never adjusts the stack for it, so the word is dropped by the callee or by whatever the callee does; the machine's own cleanup observation for THIS target is about this body's own terminator and says nothing about that call's. Not determined.",
+  "WHAT THE FIVE DIRECT CALLEES ARE. 0x00fad140 (writes a four-float scratch and has its result read as a single byte, whose zero-ness is all that is used), 0x00fa29b0 (one word, no result read), 0x00f9f620 (base plus cursor, no result read), 0x00fadac0 (one register, no result read) and 0x004558a0 (two words, no result read) are all unnamed in the image, all modelled here as observers, and none of them is owned by this package. Their internals are outside these 297 instructions and are not guessed.",
+  "THE PACK/UNPACK LOSSY ROUND TRIP ON THE SECOND-ARRAY PATH. 0x00fa5313..0x00fa531a packs (group << 0x18) | slot into one word and 0x00fa531e..0x00fa5332 unpacks it with SHR 0x18 and AND 0xffffff. If a slot index ever reached 0x1000000 the OR would corrupt the group half, and the machine would then compare against the wrong sub-table. The reconstruction models the round trip as lossless, which is right for every slot index a 32-bit object array can actually hold in practice and is not claimed to be a proof about the machine's behaviour at that boundary.",
+  "WHETHER THE SUB-TABLE ENDS AND THE ARRAY ENDS CAN DISAGREE. The array tails stop the cursor walk on EQUALITY against the end word and the sub-table walks use a signed shift of (end - begin); both are read exactly as the machine reads them, and both assume the two ends are consistent with the stride. A receiver whose end word is off the stride grid makes the machine's own tail loop non-terminating, and this reconstruction reproduces that rather than guarding it -- the fixtures keep every end on the grid and say so.",
+  "DECOMPILATION UNAVAILABLE. Both the persisted record and the live bridge report none for this target. Every claim in this package is from the disassembly listing, the machine-derived ABI record and the bytes the listing quotes.",
+  "NO RUNTIME EVIDENCE. No trace of 0x00fa5040 running in the original binary exists in this repository, so nothing here is differentially validated and nothing here claims to be."
+ ],
+ "runtime_gates": [],
+ "validation": {
+  "static": "see reconstruction/evidence/00fa5040/validation.json",
+  "note": "The reconstruction was written for this record and no validation check was weakened, disabled or special-cased to accommodate it. tools/ and tests/ were not modified, no validation report was edited, and reconstruction/knowledge/index.json was not hand-edited: it is regenerated only through `python3 -m tools.reconstruction_tooling integrate apply`. The ABI arm reports WARN because the derived record abstained (verdict ABI_UNKNOWN, reason \"untrusted_frame_stack_reads: push ebp with no mov ebp,esp: EBP is a general register, so every frame-relative offset is uncalibrated\"), which is a fact about the pack and not about this source. EVIDENCE COVERAGE remains a WARN and that is a coverage measurement about the pack, reported by the validator outside the static aggregate."
+ },
+ "evidence": [
+  "reconstruction/evidence/00fa5040/evidence.json (categories abi_derived, abi, disassembly, ghidra_function, xrefs, globals, types, decompilation)",
+  "reconstruction/evidence/00fa5040/validation.json",
+  "GhidraMCP /disassemble_function @ 0x00fa5040 (297 instructions, 0x00fa5040..0x00fa542e)",
+  "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "tools/reconstruction_tooling/abi_infer.py (the openspore-abi-inference-1 record in abi_derived)",
+  "tools/reconstruction_tooling/validate.py, evidence_fields.py, evidence_dispatch.py, evidence_xrefs.py, evidence_returns.py (all verdicts in the validation report are their output, not this package's claim)",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv (the authoritative xref export: 7 outgoing rows over 5 distinct addresses)",
+  "knowledgegraph/research/source-reconstruction-manifest.json"
+ ],
+ "mutation_evidence": {
+  "method": "each mutation applied to a full COPY of the package under /tmp, rebuilt with g++ -m32 -std=c++17 -Wall -Wextra -Werror -O2 and run. The unmutated package is clean and exits 0 under BOTH g++ -m32 and clang++ -m32 at -O0, -O1, -O2 and -O3 (eight builds, zero warnings, 193 checks, 0 failures each). A mutation is counted as dying when the build fails, the run fails a check, or the run does not terminate.",
+  "totals": {
+   "planted": 28,
+   "died": 27,
+   "survived": 1
+  },
+  "mutations": [
+   {
+    "id": "M1",
+    "change": "the four float comparisons made non-strict (`<` -> `<=`) in the reconstructed entry",
+    "died": true,
+    "killed_by": [
+     "B18",
+     "B23"
+    ]
+   },
+   {
+    "id": "M2",
+    "change": "header kQueryFieldOrder 1,0,3,2 -> 0,1,2,3 (the identity pairing)",
+    "died": true,
+    "killed_by": [
+     "L17",
+     "B41"
+    ]
+   },
+   {
+    "id": "M3",
+    "change": "the tail's cursor termination `cursor != limit` -> `cursor < limit`",
+    "died": false,
+    "killed_by": [],
+    "observed_as": "SURVIVED, and it is not killable by execution. The two forms agree on every input on which BOTH terminate, and the machine's own JNZ loop at 0x00fa5221 does not terminate on an end word that is off the 0xac stride grid, so no terminating fixture separates them. Reported as a known blind spot rather than papered over; the source states `!=` and the sidecar's observed_mechanics says so."
+   },
+   {
+    "id": "M4",
+    "change": "the SECOND-array element walk made ascending",
+    "died": true,
+    "killed_by": [
+     "B92"
+    ]
+   },
+   {
+    "id": "M5",
+    "change": "the body's one indirect transfer deleted",
+    "died": true,
+    "killed_by": [
+     "B67",
+     "B91"
+    ]
+   },
+   {
+    "id": "M6",
+    "change": "the first-array payload replaced by the second-array one (notify -> 0x00fadac0)",
+    "died": true,
+    "killed_by": [
+     "B30",
+     "B31"
+    ]
+   },
+   {
+    "id": "M7",
+    "change": "header kSecondSlotByteMask 0xff -> 0xff00 (the wrong byte of the second stack word)",
+    "died": true,
+    "killed_by": [
+     "L41",
+     "B18"
+    ]
+   },
+   {
+    "id": "M8",
+    "change": "the key comparison narrowed to a low-byte comparison",
+    "died": true,
+    "killed_by": [
+     "B87"
+    ]
+   },
+   {
+    "id": "M9",
+    "change": "header kElementStride 0xac -> 0xa8",
+    "died": true,
+    "killed_by": [
+     "L12",
+     "M2"
+    ]
+   },
+   {
+    "id": "M10",
+    "change": "header kOffElementKey 0xa8 -> 0x38",
+    "died": true,
+    "killed_by": [
+     "L14",
+     "B24"
+    ]
+   },
+   {
+    "id": "M11",
+    "change": "header kGateWordShift 3 -> 2",
+    "died": true,
+    "killed_by": [
+     "L23",
+     "B18"
+    ]
+   },
+   {
+    "id": "M12",
+    "change": "header kGroupIndexShift 0x18 -> 0x10",
+    "died": true,
+    "killed_by": [
+     "L32",
+     "B31"
+    ]
+   },
+   {
+    "id": "M13",
+    "change": "header kPendingVectorOffsetFromSubTable 0x50 -> 0x4c",
+    "died": true,
+    "killed_by": [
+     "the header's own static_assert, so the build fails"
+    ]
+   },
+   {
+    "id": "M14",
+    "change": "header kRefCountReset 1 -> 0",
+    "died": true,
+    "killed_by": [
+     "L35",
+     "B70"
+    ]
+   },
+   {
+    "id": "M15",
+    "change": "header kElementDecrement 0xffffff54 -> 0xac",
+    "died": true,
+    "killed_by": [
+     "L13",
+     "B12"
+    ]
+   },
+   {
+    "id": "M16",
+    "change": "header kRecordFieldOffsets shifted by one field",
+    "died": true,
+    "killed_by": [
+     "the header's own static_assert against kOffElementRecord, so the build fails"
+    ]
+   },
+   {
+    "id": "M17",
+    "change": "header kSubTableCount 4 -> 3",
+    "died": true,
+    "killed_by": [
+     "L27",
+     "B37"
+    ]
+   },
+   {
+    "id": "M18",
+    "change": "the second stack word's gate removed (the sub-tables always walked)",
+    "died": true,
+    "killed_by": [
+     "B82",
+     "B83"
+    ]
+   },
+   {
+    "id": "M19",
+    "change": "the not-found path returns true instead of false",
+    "died": true,
+    "killed_by": [
+     "B1",
+     "B5"
+    ]
+   },
+   {
+    "id": "M20",
+    "change": "header kIndirectEntryIndex 0 -> 1 (the wrong entry of the object's table)",
+    "died": true,
+    "observed_as": "SIGSEGV: the transfer reads past the fixture's one-word table and calls through a non-address"
+   },
+   {
+    "id": "M21",
+    "change": "header kInnerRecordCount 6 -> 4",
+    "died": true,
+    "killed_by": [
+     "L21",
+     "B18"
+    ]
+   },
+   {
+    "id": "M22",
+    "change": "the FIRST-array group walk made descending",
+    "died": true,
+    "killed_by": [
+     "B95"
+    ]
+   },
+   {
+    "id": "M23",
+    "change": "the FIRST-array element walk made ascending",
+    "died": true,
+    "killed_by": [
+     "B38",
+     "B39"
+    ]
+   },
+   {
+    "id": "M24",
+    "change": "the key scan reads the offset instead of the stored base pointer",
+    "died": true,
+    "killed_by": [
+     "B10",
+     "B11"
+    ]
+   },
+   {
+    "id": "M25",
+    "change": "header kCountMagic 0x2fa0be83 -> 0x2fa0be84 (off by one)",
+    "died": true,
+    "killed_by": [
+     "M3, the 200000-point 32-bit sweep"
+    ]
+   },
+   {
+    "id": "M26",
+    "change": "the SECOND-array group walk made descending",
+    "died": true,
+    "killed_by": [
+     "B99"
+    ]
+   },
+   {
+    "id": "M27",
+    "change": "the inner record walk reads the offset instead of the stored base pointer",
+    "died": true,
+    "killed_by": [
+     "B29"
+    ]
+   },
+   {
+    "id": "M28",
+    "change": "the tail's pull-back uses the vector word size instead of the element decrement",
+    "died": true,
+    "killed_by": [
+     "B12"
+    ]
+   }
+  ],
+  "note": "Twenty-seven of the twenty-eight planted mutations die, and the survivor is reported as a survivor rather than quietly dropped. The M-series that matter most are the ones the byte-for-byte packages of this campaign would not have needed: the cross-paired float comparison (M2, killed in both directions by B41 and B44), the descending slot and ascending group walks (M4, M22, M23, M26, killed by cases that assert ORDER and not merely count), the equality-terminated tail walk (M3, the one survivor), the one-byte second stack word (M7, M8, M18) and the two halves' different hit payloads (M5, M6). Three of the twenty-eight were killed by the package's own static_asserts rather than by an executed check, and are counted as dying on the build."
+ },
+ "notes": [
+  "No validation check was weakened, disabled or special-cased. Nothing under tools/ or tests/ was modified, no validation report was edited, reconstruction/knowledge/index.json was regenerated only through the tooling, nothing under src/ was touched, nothing was committed and no git add was run.",
+  "The calling convention is UNDETERMINED and this package declares none -- not on the entry and not on any of the five direct callees. Two packages were refused in this campaign for writing a convention the record does not state; this one is the other half of that rule, and the ABI arm's WARN is the price of getting it right. The record's three abstention reasons are carried in the header as data (kDerivedAbstentionReasons) rather than only as prose, and the model test checks the first of them against a literal.",
+  "Every hexadecimal constant the body needs is transcribed into the package header and referred to by name, so the reconstructed entry states no hexadecimal literal of its own. That is a deliberate and disclosed choice: it keeps the FIELDS/OFFSETS arm reading the machine's own displacements instead of this package's spelling of them, and the model test compares every one of those constants against a literal written separately in the test file (L1..L68), so a constant this header got wrong fails the test rather than passing quietly. Nothing is hidden by the arrangement -- the header says the same thing in prose, and every constant is annotated with the address it was read from.",
+  "The reconstruction is a structural transcription of the semantics of all 297 instructions, with every line annotated by the address it comes from. It is NOT a byte-for-byte transcription, and no byte equivalence is claimed or checked anywhere in this package. The five alignment-padding instructions are named in the sidecar and modelled as nothing.",
+  "No bare assembly is used anywhere in this package, so the register-discipline constraint on assembly probes does not arise: the model is C++ throughout and the model test drives it through ordinary calls."
+ ]
+}

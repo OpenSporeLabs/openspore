@@ -2,9 +2,40 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `c5b8f96bcc5b851d50a126c5da79598933e3e6a61f23e2044429be06bc3751e8`
+- Content SHA-256: `a47fcfc66207c1c5460d0d6b692fce2a581e320c370b69e94c7c98cfa403df9f`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this_register": "ECX, moved to ESI at 0x005dd7a5 and reloaded into ECX at 0x005dd833 for the tail call",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "JMP (tail transfer)",
+  "return_observation": "0x005dd83a is JMP 0x005dc800, not RET. The three POPs and the ADD ESP,0x8 run first, so the callee-clean convention and the frame are already resolved when control leaves.",
+  "return_register": "none",
+  "return_semantics": "no value. The body ends with a tail transfer, so there is no return address to unwind to this function's caller and no result is produced.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EBX",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single exit, a tail jump to 0x005dc800 with ECX reloaded to the receiver at 0x005dd833"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -38,7 +69,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "3166581cfa98fd5d7e364413be508f9da5d5d57c4cba76456b31a9426be4f5d3",
+  "content_sha256": "0153a4e6cefa6c442f73e8498e372b367adc37d7690687af5ef02cf2ce2d1cbb",
   "conventions": {
     "ambiguities": [
       "tail_call"
@@ -59,7 +90,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -285,7 +316,7 @@
       "id": "obs-0015",
       "index": 14,
       "kind": "JMP_INDIRECT",
-      "raw": "JMP dword ptr [EAX*
+      "raw": "JMP dword p
 [TRUNCATED]
 ```
 
@@ -297,9 +328,69 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057ea30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057ed00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057f6c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00586410"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00586690"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058a1e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058a5a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058a950"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0058d1c0"
+  },
+  {
+    "name": "Editors::cEditor::HandleMessage",
+    "reconstructed": false,
+    "va": "0x00591fa0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005de690"
+  }
+]
+```
 
 ## contradictions
 
@@ -309,13 +400,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __fastcall FUN_005dd7a0(int param_1)\n\n{\n  undefined4 uVar1;\n  int *piVar2;\n  undefined4 unaff_ESI;\n  undefined4 local_4;\n  \n  uVar1 = FUN_0057aaa0();\n  local_4 = 0;\n  if (*(char *)(param_1 + 0x102) != '\\0') {\n    switch(uVar1) {\n    case 0:\n    case 1:\n    case 2:\n      break;\n    case 3:\n    case 4:\n      break;\n    default:\n      goto switchD_005dd7c7_default;\n    }\n    local_4 = 1;\n  }\nswitchD_005dd7c7_default:\n  piVar2 = (int *)FUN_008105b0(0x5b6e484,1);\n  if (piVar2 == (int *)0x0) {\n    piVar2 = (int *)FUN_008105b0(0x5b6e484,1);\n  }\n  if (piVar2 != (int *)0x0) {\n    (**(code **)(*piVar2 + 0x7c))(1,local_4);\n    (**(code **)(*piVar2 + 0x7c))(2,unaff_ESI);\n  }\n  FUN_005dc800();\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -559,9 +646,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 11108,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this_register\": \"ECX, moved to ESI at 0x005dd7a5 and reloaded into ECX at 0x005dd833 for the tail call\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"JMP (tail transfer)\",\n    \"return_observation\": \"0x005dd83a is JMP 0x005dc800, not RET. The three POPs and the ADD ESP,0x8 run first, so the callee-clean convention and the frame are already resolved when control leaves.\",\n    \"return_register\": \"none\",\n    \"return_semantics\": \"no value. The body ends with a tail transfer, so there is no return address to unwind to this function's caller and no result is produced.\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EBX\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single exit, a tail jump to 0x005dc800 with ECX reloaded to the receiver at 0x005dd833\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057ea30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057ed00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057f6c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00586410\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00586690\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058a1e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058a5a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058a950\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0058d1c0\"\n      },\n      {\n        \"name\": \"Editors::cEditor::HandleMessage\",\n        \"reconstructed\": false,\n        \"va\": \"0x00591fa0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005de690\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0057eb9b\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057ea30\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057ed3c\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057ed00\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0057f7bd\",\n        \"direction\": \"in\",\n        \"other\": \"0x0057f6c0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00586654\",\n        \"direction\": \"in\",\n        \"other\": \"0x00586410\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x005866f9\",\n        \"direction\": \"in\",\n        \"other\": \"0x00586690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0058a33c\",\n        \"direction\": \"in\",\n        \"other\": \"0x0058a1e0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0058a787\",\n        \"direction\": \"in\",\n        \"other\": \"0x0058a5a0\",\n        \"reference_type\": \"direct-call\"\n    
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -577,22 +671,22 @@
   "body_span_bytes": 159,
   "body_start": "005dd7a0",
   "callees": [
-    "FUN_005dc800",
     "FUN_0057aaa0",
-    "FUN_008105b0"
+    "FUN_008105b0",
+    "FUN_005dc800"
   ],
   "callers": [
-    "FUN_005de690",
-    "FUN_0058a1e0",
-    "Editors::cEditor::Undo",
-    "FUN_0057f6c0",
-    "Editors::cEditor::HandleMessage",
-    "FUN_0058d1c0",
     "Editors::cEditor::CommitEditHistory",
-    "FUN_0057ea30",
+    "FUN_005de690",
+    "FUN_0057f6c0",
+    "FUN_0058d1c0",
+    "FUN_0058a1e0",
+    "FUN_00586690",
+    "Editors::cEditor::Undo",
+    "Editors::cEditor::HandleMessage",
     "FUN_0057ed00",
-    "Editors::cEditor::Redo",
-    "FUN_00586690"
+    "FUN_0057ea30",
+    "Editors::cEditor::Redo"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -610,27 +704,12 @@
       "type": "undefined4"
     },
     {
-      "name": "piVar2",
-      "storage": "register:00000000:4",
-      "type": "int *"
-    },
-    {
-      "name": "unaff_ESI",
-      "storage": "register:00000018:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "uVar1",
-      "storage": "register:00000000:4",
-      "type": "undefined4"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:1",
+      "type": "undefined1"
     }
   ],
-  "locals_count": 5,
+  "locals_count": 2,
   "mode": "live",
   "name": "FUN_005dd7a0",
   "namespace": null,
@@ -711,9 +790,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_ui_paint_toggle_publish.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_ui_paint_toggle_publish.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_ui_paint_toggle_publish_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b03/005dd7a0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -723,9 +816,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential test must confirm that the two layouts at +0x14 and +0x2c really are alternatives rather than complementary, i.e. that the fallback path is ever taken.",
+    "A trace must record the live value of the +0x102 enable byte and the +0xd1 inhibit byte, since either can suppress the whole publish step.",
+    "A trace must resolve the provider that virtual slot +0x7c belongs to, which is the only way to turn 'two named toggle states' into a semantic claim.",
+    "No original-process trace exists for this function. Static analysis cannot show which of the five classification values actually occurs in a live editor session, so the frequency of each published state is unknown."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -735,21 +841,41 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "vtable:0x005dd840"
+]
+```
 
 ## Conflicts
 

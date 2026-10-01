@@ -1,0 +1,135 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-VFT-SLOT-006E64F0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x006e64f0",
+  "address": "0x006e64f0",
+  "symbol": "re_006e64f0",
+  "normalized_symbol": "re_006e64f0",
+  "ghidra_name": "FUN_006e64f0",
+  "target_state": "Clean reconstruction of an unnamed vftable slot, staged in its own package. Four bytes, two instructions: LEA EAX,[ECX + 0x4] / RET. The body computes the receiver's address plus 0x4 and returns it; it performs no memory access, no transfer and no stack effect. The receiver convention is INFERRED from vftable slot membership (rule V1-VFT: 66 vptr-backed tables, caller cleanup, no stack-argument read), not observed in the body, which never dereferences ECX. The receiver is modelled as void* and no struct or member name is invented: the machine-derived receiver record is bounds_only with an empty offset set.",
+  "captured_on": "2026-09-28",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0.cpp",
+      "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_types.hpp",
+      "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_006e64f0",
+    "declaration": "extern \"C\" void* PKG_VFT_SLOT_006E64F0_THISCALL re_006e64f0(void* self);",
+    "linkage": "C language linkage (extern \"C\"), so the inline-assembly call site in the model test can name the symbol directly",
+    "calling_convention": "__thiscall, receiver in ECX -- INFERRED, not observed. See observed_original_abi.convention_basis.",
+    "argument_surface": "the receiver in ECX and nothing else. No ordinary stack argument, because the body never reads a stack slot and its terminator is a bare RET with no immediate; a thiscall declaration with one ordinary argument would compile to ret $4, which this body does not have.",
+    "return_type": "void*",
+    "return_type_note": "The machine fact is one 32-bit word in EAX whose value is the receiver's address plus 0x4 (derived return record: register EAX, width 4, void_possible). void* is four bytes on this target and is the most literal spelling of an address computation's result; the width is what the machine evidence corroborates, and the exact C type spelling remains a source-side choice among the types of that width. No return_type is claimed in observed_original_abi for the same reason: the engine's own return.type is null.",
+    "source": "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0.cpp",
+    "header": "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_types.hpp",
+    "model_test": "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_model_test.cpp",
+    "receiver_model": "opaque. Declared void*; the body never dereferences it (LEA takes its address without a memory access through it), and the machine-derived receiver record is bounds_only with an empty offset set. No struct is typedef'd and no member is named.",
+    "dispatch_model": "none declared in the body. The function has no indirect transfer, so no slot boundary, index or dispatch table appears in pkg_vft_slot_006e64f0.cpp. The vtable membership is recorded in the header as observed data about the data segment, not as a model of the body.",
+    "extern_callees": "none. dependencies.callees = [], the xref export records no outgoing edge of any reference type for this VA, and the machine dispatch record counts indirect_calls = 0. There is therefore no extern callee for the model test to define as an observer; that absence is part of what the test asserts, since a reconstruction that acquired a callee would need a symbol the test does not define and the link would fail.",
+    "compile_gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 on both translation units, ar qc + ranlib into a static archive, linked and run: clean, exit 0, all checks passed.",
+    "byte_identity_check": "clang++ -std=c++17 -O2 -m32 -c pkg_vft_slot_006e64f0.cpp then objdump -d on the object emits, for re_006e64f0, exactly `8d 41 04  c3` -- the original four bytes of 0x006e64f0..0x006e64f3 in order, and nothing else. This is reported as a check, not as a claim that the model was written to match bytes: it is what the compiler produced from the declared convention and arity."
+  },
+  "function_extent": {
+    "entry": "0x006e64f0",
+    "body_end_inclusive": "0x006e64f3",
+    "body_span_bytes": 4,
+    "instruction_count": 2,
+    "return_site": "0x006e64f3: RET",
+    "raw_bytes": "8d 41 04 c3",
+    "raw_bytes_provenance": "read_memory @ 0x006e64f0, 16 bytes: 8d 41 04 c3 cc cc cc cc cc cc cc cc cc cc. The trailing 0xcc is inter-function padding and belongs to no function body here. The bridge's /disassemble_function listing agrees instruction for instruction."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "receiver_register": "ECX",
+    "receiver_observed_in_body": false,
+    "convention_basis": "PLACEMENT, NOT OBSERVATION. The body never dereferences ECX -- the machine-derived ABI record's receiver evidence is 'ecx_address_taken_without_memory_access', because LEA takes the receiver's address without any memory access through it -- so the listing alone cannot name a receiver register. The derived record reaches __thiscall through rule V1-VFT: 0x006e64f0 is the value of a slot in 66 vptr-backed vftables (predicate P of tools/reconstruction_tooling/vftables.py, measured on this image), the callee pops nothing, no stack word is read as an argument, and no incoming EDX read exists -- so the receiver is in a register, and ECX is the only one that carries one. This package models the receiver for arity and flags the inference rather than presenting it as a reading of the body.",
+    "ordinary_stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (bare, no immediate)",
+    "termination": "RET",
+    "return_register": "EAX",
+    "return_semantics": "one 32-bit word in EAX, value receiver + 0x4; the engine's own classification is unclassified_in_EAX with void_possible, and the width route of the return-evidence module measures WIDTH_4_IN_EAX over the complete listing",
+    "saved_registers": [],
+    "ghidra_prototype": "undefined FUN_006e64f0(void)",
+    "ghidra_convention_note": "Ghidra reports no calling convention (ghidra_calling_convention = null, parameter_count = 0): without a known convention the decompiler does not recognise ECX as a receiver. That silence is consistent with, not evidence for, the V1-VFT inference.",
+    "dispatch": "the machine dispatch record counts indirect_calls = 0, call_offsets = [] and vtable_shaped_loads = 0, which agrees with a listing containing no transfer at all",
+    "evidence_level": "ABI_INFERRED (derived record: ABI_INFERRED via V1-VFT, confidence INFERRED; the listing-derived receiver evidence abstains)"
+  },
+  "mechanics": {
+    "body_shape": "one address computation into the return register, then the function's single exit. No prologue, no epilogue, no saved register, no stack adjustment, no frame.",
+    "transfers": "none. No CALL, no JMP, no computed transfer, no indirect transfer through a register or a memory operand. The complete 2-instruction listing and the xref export (no outgoing edge of any reference type) agree on zero outgoing transfers.",
+    "memory": "no memory access of any kind in the complete 2-instruction listing. LEA computes an address; it does not read or write the bytes at it. Therefore no displacement is read and none is written, no field is accessed through any register, and no data-segment address is named. This is what the FIELDS/OFFSETS and GLOBALS checks read, and it is the direct test for in the model test (poisoned receiver snapshot, plus a receiver on a PROT_NONE page).",
+    "control_flow": "none. The complete listing contains no conditional branch, so the body is straight-line with exactly one path and one exit. There is no input that selects a different outcome.",
+    "stack": "the RET carries no immediate and no stack slot is ever read, so zero ordinary stack arguments, zero bytes of callee cleanup, caller owns the stack. Checked behaviourally: the model test pushes a canary before the raw call and requires it to be intact on return.",
+    "return_word": "EAX holds the receiver's address plus 0x4. The LEA is a 3-byte address computation with an 8-bit displacement, so the return register word is exactly ECX + 0x4 for every receiver.",
+    "globals": "none. The complete 2-instruction listing names no data-segment address. The record's globals entry says the same.",
+    "vtable_placement": {
+      "membership_count": 66,
+      "first_table_base": "0x013faea0",
+      "first_table_slot_index": 12,
+      "first_table_slot_byte_offset": "0x30",
+      "first_table_slot_word": "0x013faed0",
+      "bound_below_by": "the dword at 0x013fae9c is 0x00000000 (read_memory @ 0x013faea0, 64 bytes, and @ 0x013fae90, 16 bytes)",
+      "recorded_words": "0x00608080, 0x00608060, 0x00608020, 0x00608000, 0x006087b0, 0x00607190, 0x00608550, 0x00608590, 0x00607290, 0x00801400, 0x00606d50, 0x00606d60, 0x006e64f0, 0x009892e0, 0x00a09f50, 0x006c10e0 at +0x00..+0x3c of 0x013faea0",
+      "extent_claim": "none. Only the sixteen words actually read are recorded. The image's true end is not established here, and no claim about the other 65 tables is made beyond their count.",
+      "use": "recorded in the header as observed data about the data segment, and asserted in the model test. It is not used in the body: the body has no indirect transfer and performs no dispatch."
+    }
+  },
+  "return_semantics": {
+    "kind": "receiver address plus a fixed displacement in EAX",
+    "value": "ECX + 0x4. Unconditional, the same computation for every receiver, on the only path the body has.",
+    "ownership": "Not applicable and not claimed. The body computes an address; it acquires, releases and stores nothing.",
+    "lifetime": "The value is an address into the receiver's storage. Whether it is a member, a byte past the vptr, or something else is not established by two instructions that never dereference it, and no claim is made."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "persisted_pack": "reconstruction/evidence/006e64f0/evidence.json",
+    "assembly": [
+      "006e64f0: LEA EAX,[ECX + 0x4]",
+      "006e64f3: RET"
+    ],
+    "decompiler": "unavailable (the bridge's decompilation endpoint returned no text for this function; the listing and the function card are the machine evidence)",
+    "direct_callees": [],
+    "indirect_transfers": [],
+    "direct_callers": [],
+    "caller_note": "The xref export records 14 incoming call edge rows and no outgoing row. The incoming rows are the call sites that reach this body directly; a virtual slot is also reached indirectly through the 66 tables, which the export does not record as edges.",
+    "machine_abi_record": "derivation openspore-abi-inference-1, verdict ABI_INFERRED, completeness CORE_RESOLVED, convention __thiscall via V1-VFT (66 memberships, first table 0x013faea0 slot 12), receiver ECX provenance vftable_slot, cleanup caller/0 bytes",
+    "live_bridge_reverification": [
+      "GET /disassemble_function?address=0x006e64f0 -> 2 instructions, LEA EAX,[ECX + 0x4] then RET",
+      "GET /read_memory?address=0x006e64f0 -> 8d 41 04 c3 cc ...",
+      "GET /read_memory?address=0x013faea0 -> the sixteen recorded table words",
+      "vftables.scan_file(SPORE/SporeBin/SporeApp.exe) -> 66 memberships for 0x006e64f0"
+    ]
+  },
+  "source_files": [
+    "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0.cpp",
+    "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_types.hpp",
+    "reconstruction/staging/pkg-vft-slot-006e64f0/pkg_vft_slot_006e64f0_model_test.cpp"
+  ],
+  "unresolved_questions": [
+    "What the returned address denotes. The body computes receiver + 0x4 and returns it; whether that address is a member, a byte past the vptr, or something else is not established by two instructions that never dereference it.",
+    "The receiver's class. V1-VFT proves the function is a virtual member of some class; with no MSVC RTTI in this binary and a bounds_only receiver record, no class name and no layout are claimed.",
+    "The extent of the vftable images. Only the first table's sixteen words were read; the other 65 memberships are counted, not transcribed."
+  ],
+  "runtime_gate": {
+    "status": "not attempted",
+    "runtime_validation": 0,
+    "conditions": [
+      "A trace of the original process reaches this slot through a receiver in ECX and captures EAX at 0x006e64f3.",
+      "The capture shows EAX equal to the receiver's address plus 0x4."
+    ]
+  }
+}

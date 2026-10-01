@@ -1,0 +1,54 @@
+# Validation 0x00c30cc0
+
+- Static reconstruction: `FAIL`
+- Runtime (original process): `GATED`
+- Source: `src/reconstruction/pkg13_e3_empire_state_wave2/empire_state_wave2.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `WARN` | `partial` | derived calling-convention confidence is UNKNOWN; the oracle is not proven |
+| CALLS | `FAIL` | `partial` | the source-vs-xref rule: 1 address-named source call(s) have no call edge in the xref export: 0x00c30e20; the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 0 outgoing call edge row(s) over 0 distinct address(es) for 0x00c30cc0; 1 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees |
+| GLOBALS | `PASS` | `complete` | the complete 110-instruction listing names no data-segment address and the source span names none, which is positive evidence that this target touches no global; the xref export carries no data-reference edge type to corroborate against, and none is needed for an absence |
+| FIELDS/OFFSETS | `NOT_AVAILABLE` | `none` | the source span declares no field offset, and no machine-derived receiver evidence is collected for this target (the listing is absent or the ABI record names no receiver register); the record names 2 type(s) |
+| CONSTANTS | `PASS` | `complete` | the machine listing is fully parsed (110 of 110 instruction(s), 0 unparsed) and the source span states no hexadecimal constant for it to lack |
+| CONTROL FLOW | `WARN` | `partial` | 9 of 25 conditional branch target(s) fall outside the recovered body span 0x00c30cc0..0x00c30e1f, so the listing is a slice and flow continues past it; the source span declares if |
+| VIRTUAL DISPATCH | `WARN` | `partial` | the complete 110-instruction body names 1 indirect transfer(s): 0x00c30cd9 is INDIRECT_NON_VTABLE; the machine parse consumed 110 of 110 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 1, so the dispatch is visible in the machine listing but is not proven: 1 of the 1 indirect transfer(s) classify as INDIRECT_NON_VTABLE (0x00c30cd9), so the dispatch's identity is not established: the target is the memory operand [ECX*0x4 + 0xc30e48], so no register chain exists to read; a scaled operand such as [EAX*0x4 + 0x5dd840] is a jump table and a plain [ESP + 0x30] is a frame slot, and neither is a virtual dispatch |
+| RETURN SEMANTICS | `WARN` | `partial` | return type differs or is semantically renamed; review required |
+
+Static evidence basis: 7 of 8 static checks evaluated, 2 passed, 1 had no evidence to evaluate; 10 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 10 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `9db3d64561a0adee719655765ca9f474d810a9b11849c9b2b42e2b741efda01f`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `33c311aa3f9ffe1f7bcabf176ecfbbf219f1d1963e9a7860264ce8414a1c55d0`
+- Pack digest quoted by the briefing: `9db3d64561a0adee719655765ca9f474d810a9b11849c9b2b42e2b741efda01f`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `gate-species-profile-selector-00c30cc0`, `runtime validation not run`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- gate-species-profile-selector-00c30cc0
+- runtime validation not run

@@ -1,7 +1,7 @@
 # Reconstruction context 0x007d9410
 
-- Status: `partial`
-- Content SHA-256: `fc974003aa17d65a5e92641b52d3e712213dc3e9dc5c89252caad35a176b7211`
+- Status: `complete`
+- Content SHA-256: `04b4e76a6ae16f82e18268ae245c6d6d27b0321537d65114710a01df6f6b9f28`
 
 ## 01_assignment
 
@@ -54,7 +54,7 @@
 
 ```json
 {
-  "content_sha256": "da1399010878f6a58b561d8dc85f488307a920914ccdffd0080f1018e88de31e",
+  "content_sha256": "b1f792d20c11922aace3a8ba0b2bdf070d7d7df3b93efd01bfdf3aecc1492769",
   "live_attempts": [],
   "live_requested": true,
   "overall": "LIVE"
@@ -87,80 +87,32 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "abi": {
-    "architecture": "x86-32",
-    "receiver": false
-  },
-  "abstained_because": [
-    "no_terminal_ret: the only exit observed is a tail jump"
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX holds a pointer to the subobject that carries the OnKeyDown virtual; the entry rewinds it to the cMouseCamera start",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 1,
+  "receiver_register": "ECX",
+  "ret_form": [
+    "none in this body - the entry tail-jumps; the callee at 0x007d9bb0 ends with `POP ESI` / `RET 0x4`",
+    "none in this body (tail transfer)"
   ],
-  "cleanup": {
-    "bytes": null,
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available",
-    "evidence": null,
-    "side": null
-  },
-  "completeness": "EMPTY",
-  "conflicts": [],
-  "content_sha256": "75460e8fe539e2aeb7bfafcf47d788519eecaf09da848d2c2f68460514b9d630",
-  "conventions": {
-    "ambiguities": [
-      "tail_call"
-    ],
-    "calling_convention": null,
-    "candidate_conventions": [
-      "__cdecl",
-      "__stdcall",
-      "__thiscall",
-      "__fastcall"
-    ],
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available"
-  },
-  "cross_validation": {
-    "agreement": false,
-    "ghidra": "no_information",
-    "ghidra_calling_convention": null,
-    "ghidra_parameter_count": 3,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
-  },
-  "dispatch": {
-    "call_offsets": [],
-    "indirect_calls": 0,
-    "vtable_shaped_loads": 0
-  },
-  "inferences": [
-    {
-      "based_on": [
-        "obs-0002"
-      ],
-      "claim": "no terminal return is present in the listing",
-      "confidence": "UNKNOWN",
-      "id": "C2"
-    },
-    {
-      "based_on": [
-        "obs-0002"
-      ],
-      "claim": "ECX is never read in any form, so there is no register receiver",
-      "confidence": "OBSERVED",
-      "id": "R2",
-      "value": {
-        "present": false
-      }
-    },
-    {
-      "based_on": [
-        "obs-0002"
-      ],
-      "claim": "entry slot 0 is not written through a pointe
-[TRUNCATED]
+  "return_note": "unclassified in this model; the persisted record and the SDK/Ghidra prototype both say bool at the declaration site",
+  "return_register": [
+    "EAX",
+    "EAX per the persisted ABI record; the derived record names none (return.register null, register_class unknown, confidence UNKNOWN)"
+  ],
+  "return_type": "bool",
+  "saved_registers": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "the tail target: the body pushes nothing and pops nothing, and the persisted record describes 0x007d9bb0 as ending in POP ESI / RET 0x4, which is what drops the caller's one word and returns to this body's caller",
+  "termination": "JMP 0x007d9bb0 at 0x007d9413"
+}
 ```
 
 ## 07_callers_callees
@@ -191,10 +143,20 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
 
 ```json
 {
-  "globals": [],
-  "types": [],
+  "globals": [
+    "global:PASS",
+    "global:none: the complete two-instruction listing names no data-segment address"
+  ],
+  "types": [
+    "DATA",
+    "bool",
+    "unclassified in this model; the persisted record and the SDK/Ghidra prototype both say bool at the declaration site",
+    "unclassified_in_EAX (a std::uint32_t alias)"
+  ],
   "vtables": [
-    "vtable:0x01412890"
+    "vtable:0x007d93a0",
+    "vtable:0x01412890",
+    "vtable:0x01412894"
   ]
 }
 ```
@@ -243,7 +205,7 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
   "manifest_callers": [],
   "nearby_reconstructed": [],
   "scc": {
-    "id": "scc-0214",
+    "id": "scc-0248",
     "size": 1
   },
   "vtable_reference_count": 0
@@ -252,8 +214,87 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
 
 ## 11_related_functions
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_types:DATA"
+    ],
+    "package": "pkg-app-imessage-manager-dtor",
+    "score": 9,
+    "symbol": "get_0067dc80",
+    "va": "0x0067dc80"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-cheat-func3ch-0067e6b0",
+    "score": 8,
+    "symbol": "func3_ch_0067e6b0",
+    "va": "0x0067e6b0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-cheat-dispatch-0067e6f0",
+    "score": 8,
+    "symbol": "cCheatManager_func40h_0067e6f0",
+    "va": "0x0067e6f0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "cheat-func44h-0067e730",
+    "score": 8,
+    "symbol": "func44h_0067e730",
+    "va": "0x0067e730"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-app-proplist-copyall-wave16",
+    "score": 8,
+    "symbol": "all_copy_from_properties_006a14d0",
+    "va": "0x006a14d0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-proplist-dispatch-wave14",
+    "score": 8,
+    "symbol": "app_property_list_add_all_properties_from_006a1510",
+    "va": "0x006a1510"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-dfw-006a1540",
+    "score": 8,
+    "symbol": "proplist_write_006a1540",
+    "va": "0x006a1540"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_
+[TRUNCATED]
+```
 
 ## 12_existing_reconstruction
 
@@ -264,10 +305,18 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
 {
   "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
   "files": [
-    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c"
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.cpp",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.hpp",
+    "reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410_model_test.cpp",
+    "reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410.cpp",
+    "reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410_types.hpp"
   ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/pkg-app-mouse-camera-keydown/007d9410.json",
+    "reconstruction/metadata/pkg-dfw-007d9410/007d9410.json"
+  ]
 }
 ```
 
@@ -284,28 +333,23 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "Ordinary-argument arity and identity. The SDK/Ghidra prototype stored on this symbol declares two four-byte stack slots, (int virtualKey, KeyModifiers modifiers), while the machine shows one word being dropped by the tail target's RET 0x4. The model implements the single machine-observed word and types it as an opaque Word. Whether a preceding virtualKey argument exists in the original source and is simply unconsumed, and which declared parameter this word is, is not established by anything in this pack.",
+    "Ordinary-argument arity conflict: the SDK/Ghidra prototype stored on this symbol declares (int virtualKey, KeyModifiers modifiers) - two four-byte stack slots - but the callee reached through the tail jump ends in `RET 0x4` and reads only [ESP+0x4]. The model implements the machine-observed single argument and names it after the SDK parameter that bit 0 is tested against. Whether a preceding virtualKey argument exists in the original source and is simply unconsumed is unresolved.",
+    "The class and interface identities behind the three associated vtable words 0x007d93a0, 0x01412890 and 0x01412894, and the meaning of the single data-segment xref at 0x01412894. The binary carries no MSVC RTTI and the word at 0x014128a8 is not a code address in this image.",
+    "The class names and interface identities behind the three vtable pointers at +0x00, +0x04 and +0x08; the binary carries no MSVC RTTI and the word at 0x014128a8 is not a code address in this image.",
+    "The concrete routines behind the IAT words 0x013cc2d
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-app-mouse-camera-keydown/007d9410.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-dfw-007d9410/007d9410.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-app-mouse-camera-keydown/mouse_camera_on_key_down_007d9410_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dfw-007d9410/dfw_007d9410_types.hpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -345,10 +389,19 @@ bool App__cMouseCamera__OnKeyDown(cMouseCamera *this,int virtualKey,KeyModifiers
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json",
-    ".spore-analysis/ghidra-exports/deco
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-app-mouse-camera-keydown/007d9410.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-dfw-007d9410/007d9410.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-app-mous
 [TRUNCATED]
 ```

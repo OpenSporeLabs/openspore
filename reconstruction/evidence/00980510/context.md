@@ -1,7 +1,7 @@
 # Reconstruction context 0x00980510
 
 - Status: `partial`
-- Content SHA-256: `b5f1219d88684083508117f2a2d7e887fc0bd712448579909b0263b609f8a486`
+- Content SHA-256: `42fb355686169dc18e92f2d118fcb5041c6873734d348930cbc5ad030d85ca97`
 
 ## 01_assignment
 
@@ -26,7 +26,7 @@
 {
   "class_type": null,
   "name": "UTFWin::PerspectiveEffect::GetProxyID",
-  "package": null,
+  "package": "pkg-dfw-00980510",
   "subsystem": "UTFWin",
   "va": "0x00980510"
 }
@@ -40,10 +40,10 @@
 ```json
 {
   "blocked": false,
-  "reconstructed": false,
+  "reconstructed": true,
   "runtime_gated": false,
   "runtime_validated": 0,
-  "status": "queued"
+  "status": "reconstructed"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "74d83e8afe9e0be7a6ecc140f3e1a08617c12499cc3c4ae1131064c49eab29b6",
-  "live_attempts": [],
+  "content_sha256": "379f2db0db0f8490ce1f95188058cc30574cc7a11d7cbaaedeb77f51bae73a5a",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00980510 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,33 +71,32 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Unknown calling convention */
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-
-uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
-
-{
-  return 0x202;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 5028,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"integral_in_EAX\",\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"no_discriminator: no stack-argument read and no positive receiver evidence\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"PARTIAL\",\n  \"conflicts\": [],\n  \"content_sha256\": \"7c7889c3efdaa01276a08b3911e660efda4ae16d9e9db5a6c182c640efb982c1\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": null,\n    \"candidate_conventions\": [\n      \"__cdecl\",\n      \"__stdcall\",\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"UNKNOWN\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 1,\n    \"persisted\": \"no_information\",\n    \"persisted_calling_convention\": null\n  },\n  \"dispatch\": {\n    \"call_offsets\": [],\n    \"indirect_calls\": 0,\n    \"vtable_shaped_loads\": 0\n  },\n  \"inferences\": [\n    {\n      \"based_on\": [\n        \"obs-0002\"\n      ],\n      \"claim\": \"the caller clea
-[TRUNCATED]
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 0,
+  "ordinary_stack_arguments": [],
+  "receiver_register": "ECX",
+  "ret_form": "RET (bare, no immediate)",
+  "return_register": "EAX",
+  "return_semantics": "integral_in_EAX",
+  "return_type": "std::uint32_t",
+  "saved_registers": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET"
+}
 ```
 
 ## 07_callers_callees
@@ -113,9 +120,15 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
 
 ```json
 {
-  "globals": [],
-  "types": [],
+  "globals": [
+    "global:PASS",
+    "global:none. The listing names no data-segment address, and the body reaches memory nowhere."
+  ],
+  "types": [
+    "std::uint32_t"
+  ],
   "vtables": [
+    "vtable:0x014440cc",
     "vtable:0x014440d0"
   ]
 }
@@ -158,7 +171,7 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
   "manifest_callers": [],
   "nearby_reconstructed": [],
   "scc": {
-    "id": "scc-0291",
+    "id": "scc-0325",
     "size": 1
   },
   "vtable_reference_count": 0
@@ -172,6 +185,62 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
 
 ```json
 [
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-utfwin-slot7-wave12",
+    "score": 8,
+    "symbol": "re_00fc7e10_UTFWin_ImageDrawable_GetTiling",
+    "va": "0x00fc7e10"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-utfwin-settiling-wave13",
+    "score": 8,
+    "symbol": "set_tiling_00fd9460",
+    "va": "0x00fd9460"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-0095fa30-utfwin-isancestorof",
+    "score": 6,
+    "symbol": "is_ancestor_of_0095fa30",
+    "va": "0x0095fa30"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-utfwin-func35-wave12",
+    "score": 6,
+    "symbol": "func35_0095fd60",
+    "va": "0x0095fd60"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-dfw-0096ff70",
+    "score": 6,
+    "symbol": "dfw_func88h_0096ff70",
+    "va": "0x0096ff70"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-dfw-00980c50",
+    "score": 6,
+    "symbol": "dfw_00980c50_func88h",
+    "va": "0x00980c50"
+  },
   {
     "match_basis": [
       "shared_vtable:vtable:0x014440d0"
@@ -202,10 +271,19 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
 {
   "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
   "files": [
-    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c"
+    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510.cpp",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510_model_test.cpp",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510_types.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.cpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510_model_test.cpp"
   ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/pkg-dfw-00980510/00980510.json",
+    "reconstruction/metadata/pkg-utfwin-perspective-proxyid-00980510/00980510.json"
+  ]
 }
 ```
 
@@ -222,28 +300,24 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "Slot +0x18 (0x00980520) has no function record in Ghidra, so the slot immediately after GetProxyID is uncharacterised. It is the most likely place a related per-class override would sit, which makes it the obvious next target for this class.",
+    "Slot +0x18 (0x00980520) has no function record in Ghidra, so the slot immediately after this one is uncharacterised. It is the most likely place a related per-class override would sit.",
+    "The decompiler's `ILayoutElement *` parameter type is not independently confirmed. The binary carries no MSVC RTTI (per the project evidence note), so the base type comes from the imported Spore-ModAPI symbols. This record keeps the receiver opaque (struct PerspectiveEffect) rather than adopting the decompiler's base-class spelling, and flags the disagreement rather than resolving it.",
+    "The exact vtable extent. Slots +0x00..+0x5c are recorded and mutually consistent, but no null terminator appears in that window, and words observed at +0x60..+0x7c (0x010829f0, 0x00951230, 0x006f2f20) may belong to this image or to the next one. Nothing in this target's body depends on the answer.",
+    "The extent of the dispatch-table image. Only the eight words actually read are recorded. Whether the image continues past +0x1c, and where it ends, is unresolved; nothing in this body depends on the answer.",
+    "The receiver convention is inferred, not observed. See observed_original_abi.convention_basis. Nothing in the body can corroborate it, which is why the derived ABI record abstained (verdict 
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-dfw-00980510/00980510.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-utfwin-perspective-proxyid-00980510/00980510.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dfw-00980510/dfw_00980510.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dfw-00980510/dfw_00980510_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dfw-00980510/dfw_00980510_types.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -257,11 +331,6 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {
@@ -283,10 +352,24 @@ uint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json",
-    ".spore-analysis/ghidra-exp
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-dfw-00980510/00980510.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-utfwin-perspective-proxyid-00980510/00980510.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-dfw-00980510/dfw_00980510.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "
 [TRUNCATED]
 ```

@@ -11,8 +11,10 @@ openspore context VA [--live]
 openspore recover VA [--live]
 openspore validate VA
 openspore integrate status|check|apply
+openspore promote plan|apply PACKAGE [--va VA] [--overwrite] [--no-build] [--no-ctest] [--rebuild]
+openspore satisfy plan|apply [VA ...] [--reason TEXT] [--verify-build] [--dry-run]
 openspore swarm [--limit N] [--out PATH]
-openspore orchestrate plan|brief|run|reap|reclaim [VA] [--worker CMD] [--worker-id ID]
+openspore orchestrate plan|brief|run|reap|reclaim [VA] [--worker CMD] [--worker-channel auto|jsonl|argv] [--worker-id ID]
 openspore claim VA --worker-id ID
 openspore release VA --worker-id ID [--to queued|blocked]
 openspore worker-template VA
@@ -30,8 +32,10 @@ Default source selection is persisted. `frontier` and `swarm` are read-only; `ev
 - Evidence packs are deterministic JSON plus Markdown under `reconstruction/evidence/<va8>/`.
 - Context briefs contain 15 fixed sections and preserve provenance.
 - Recover safely composes evidence, context, and validation and is rerunnable.
-- Validation reports all requested structural categories and keeps runtime status `NOT_AVAILABLE` without an exact oracle.
+- Validation reports all requested structural categories over the static dimension, and the runtime dimension separately. A static verdict is never a runtime claim, and a gated runtime is an open gate rather than a failure. See `validation-dimensions.md`.
 - Integrate check is non-writing; apply uses the existing atomic generated-index writer.
+- Promote installs a staged package into `src/reconstruction/` only when its static `PASS` and runtime `GATED` compose and a scratch build-and-test gate is green; the gate verdict is recorded in the per-VA provenance record.
+- Satisfy is the only writer of the manifest transition that ends a dependency. It refuses unless the promotion is static-validated, carries a test, has a provenance record, and has a green recorded build verdict, and it writes no runtime field.
 - Swarm emits a dependency-aware queue and does not launch workers.
 - Orchestration groups the plan into dependency waves, claims each target atomically through the canonical queue, and dispatches a worker per dispatchable unit. Only a validator `PASS` on a candidate the worker produced may close a target.
 - The orchestrator is the single writer of claims. `frontier`, `swarm` and `orchestrate plan` stay read-only, and there is no second claim store.
@@ -42,7 +46,53 @@ Default source selection is persisted. `frontier` and `swarm` are read-only; `ev
 
 See `orchestration.md` for the runbook: the pipeline, the dependency scheduler, the lease and claim rules, the worker result contract, the retry bounds, failure recovery, CLI recipes, and how to wire an external worker.
 
-See `architecture.md`, `commands.md`, `evidence-model.md`, `frontier-scoring.md`, and `concurrency.md` for contracts.
+See `reconstruction-failure-modes.md` for the worker's side: the recurring ways a
+correct reconstruction still fails a dimension, the check each one fires, and the
+source shape that satisfies it without falsifying anything. Read it before
+writing a candidate — a green `g++` build is not the gate, and several of these
+only appear under `clang++ -Werror -m32` with the package linked as a static
+library.
+
+See `architecture.md`, `commands.md`, `evidence-model.md`, `frontier-scoring.md`, `concurrency.md`, and `validation-dimensions.md` for contracts.
+
+## Read-only exchange: `spore-semantic`
+
+`tools/spore-semantic/` is a standalone Go CLI (stdlib only, no Python and no
+Ghidra at runtime) that exports everything above into ONE deterministic
+snapshot and answers `binary_sha256 + VA` lookups against it. It is a
+*read-only projection*, not a second source of truth: it copies facts from the
+artifacts listed in `semantic-exchange.md` with their provenance intact and
+derives none of them.
+
+```text
+spore-semantic export        [--out PATH] [--root DIR]
+spore-semantic lookup        <VA>      [--snapshot PATH] [--json]
+spore-semantic lookup-symbol <NAME>    [--snapshot PATH] [--json]
+spore-semantic explain       <VA>      [--snapshot PATH]
+spore-semantic stats                   [--snapshot PATH] [--json]
+spore-semantic validate                [--snapshot PATH] [--json]
+```
+
+Snapshot: `knowledge/semantic/function-passport-v1.jsonl` (JSON Lines, metadata
+first, then one passport per canonical VA ascending). Regenerating from the
+same repository state is byte-for-byte identical. `OPENSPORE_REQUIRE_SHA`
+makes every command refuse a snapshot describing a different binary.
+
+See `semantic-exchange.md` for the field-to-authoritative-source mapping, the
+snapshot schema, and what `UNKNOWN` means; and `semantic-exchange-consumer.md`
+for how a sibling project (`spore-recomp`) consumes it without depending on
+OpenSpore.
+
+Installed on this machine at `~/.local/bin/spore-semantic`:
+
+```bash
+cd tools/spore-semantic
+CGO_ENABLED=0 go build -trimpath -ldflags '-s -w' -o ~/.local/bin/spore-semantic ./cmd/spore-semantic
+gofmt -l . && go vet ./... && go test ./...
+```
+
+Run it from anywhere: the checkout is found by walking up from the working
+directory, or via `--root`, or `$OPENSPORE_ROOT`.
 
 ## Verification
 

@@ -1,0 +1,767 @@
+# Evidence 0x009804e0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `b5a0ae0ac2f97fdce5151fb122a17ad699263003c9349ad8bbcb81c0e20a6faf`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "x86-32 thiscall, receiver in ECX, one 32-bit type word on the stack at [ESP+0x4]",
+  "return_semantics": "EAX = sub-object pointer for the requested ObjectTYPE word, or 0",
+  "return_type": "void*",
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x4"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 4,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x4",
+    "side": "callee"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "e145729ef38cf64238c7cfe0e21cea821505e47f8cbfd349dca805b643dc10d5",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 2,
+    "persisted": "no_information",
+    "persisted_calling_convention": "x86-32 thiscall, receiver in ECX, one 32-bit type word on the stack at [ESP+0x4]"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "the callee pops 4 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 4,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002",
+        "obs-0005"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "ECX carries the receiver: 0x009804e0 is slot 3 of the vptr-backed vftable at 0x014440d0, so it is a virtual member of some class and every virtual call that reaches it indexes the vptr through the object address; the body takes the address of its incoming ECX (LEA at 0x009804f8) and never touches memory through it, after a null test of it, and a body that computes an address from a register the vtable dispatch delivered computes it from the object, so the receiver is in ECX. The callee pops its own stack arguments, which is the COM / __stdcall interface form, and that is the one shape in which a virtual member takes its receiver from the first popped stack word instead -- a body in that form has no register parameter and never reads its incoming ECX, which is why this body reading it is what decides the two apart",
+      "confidence": "INFERRED",
+      "id": "R2-VFT",
+      "value": {
+        "cleanup_side": "callee",
+        "incoming_ecx_null_test": true,
+        "incoming_ecx_reads": 1,
+        "incoming_member_leas": 1,
+        "member_lea_displacements": [
+          12
+        ],
+        "member_lea_sites": [
+          "0x009804f8"
+        ],
+        "membership_count": 1,
+        "receiver_provenance": "vftable_slot_address",
+        "receiver_register": "ECX",
+        "slot_index": 3,
+        "table": "0x014440d0"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0007",
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
+      "confidence": "INFERRED",
+      "id": "C6B",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "the function can reach a caller by transferring out of the listing, so the path that actually returns was never observed",
+      "confidence": "UNKNOWN",
+      "id": "T2",
+      "value": {
+        "form": "epilogue_then_jmp"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x009804e0",
+      "count": 2,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x009804e0",
+      "base": "ESP",
+      "disp": 4,
+      "id": "obs-0002",
+      "index": 0,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x009804e0",
+      "definite": true,
+      "id": "obs-0003",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword 
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
+
+```json
+"\n/* WARNING: Unknown calling convention */\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n\nvoid UTFWin__PerspectiveEffect__func80h(PerspectiveEffect *this,int param_2)\n\n{\n  int in_ECX;\n  \n  if (this != (PerspectiveEffect *)0xef2b293b) {\n    FUN_00950eb0();\n    return;\n  }\n  if (in_ECX != 0) {\n    return;\n  }\n  return;\n}\n\n"
+```
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 11,
+  "instructions": [
+    {
+      "address": "009804e0",
+      "instruction": "MOV EAX,dword ptr [ESP + 0x4]"
+    },
+    {
+      "address": "009804e4",
+      "instruction": "CMP EAX,0xef2b293b"
+    },
+    {
+      "address": "009804e9",
+      "instruction": "JZ 0x009804f4"
+    },
+    {
+      "address": "009804eb",
+      "instruction": "MOV dword ptr [ESP + 0x4],EAX"
+    },
+    {
+      "address": "009804ef",
+      "instruction": "JMP 0x00950eb0"
+    },
+    {
+      "address": "009804f4",
+      "instruction": "TEST ECX,ECX"
+    },
+    {
+      "address": "009804f6",
+      "instruction": "JZ 0x009804fe"
+    },
+    {
+      "address": "009804f8",
+      "instruction": "LEA EAX,[ECX + 0xc]"
+    },
+    {
+      "address": "009804fb",
+      "instruction": "RET 0x4"
+    },
+    {
+      "address": "009804fe",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "00980500",
+      "instruction": "RET 0x4"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall, receiver in ECX, one 32-bit type word on the stack at [ESP+0x4]",
+    "return_semantics": "EAX = sub-object pointer for the requested ObjectTYPE word, or 0",
+    "return_type": "void*",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee"
+  },
+  "analogues": [
+    {
+      "match_basis": [
+        "same_subsystem",
+        "shared_vtable:vtable:0x014440d0"
+      ],
+      "package": "pkg-dfw-00980510",
+      "score": 10,
+      "symbol": "dfw_get_proxy_id_00980510",
+      "va": "0x00980510"
+    },
+    {
+      "match_basis": [
+        "shared_types:void*",
+        "shared_vtable:vtable:0x014440d0"
+      ],
+      "package": "PKG-UTFWIN-CORE-WAVE6",
+      "score": 7,
+      "symbol": "re_00951220",
+      "va": "0x00951220"
+    },
+    {
+      "match_basis": [
+        "shared_types:void*",
+        "shared_vtable:vtable:0x014440d0"
+      ],
+      "package": "PKG-UTFWIN-CORE-WAVE6",
+      "score": 7,
+      "symbol": "re_00951230",
+      "va": "0x00951230"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "pkg-0095fa30-utfwin-isancestorof",
+      "score": 6,
+      "symbol": "is_ancestor_of_0095fa30",
+      "va": "0x0095fa30"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "pkg-utfwin-func35-wave12",
+      "score": 6,
+      "symbol": "func35_0095fd60",
+      "va": "0x0095fd60"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "pkg-dfw-0096ff70",
+      "score": 6,
+      "symbol": "dfw_func88h_0096ff70",
+      "va": "0x0096ff70"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "pkg-dfw-00980c50",
+      "score": 6,
+      "symbol": "dfw_00980c50_func88h",
+      "va": "0x00980c50"
+    },
+    {
+      "match_basis": [
+        "same_subsystem"
+      ],
+      "package": "pkg-utfwin-slot7-wave12",
+      "score": 6,
+      "symbol": "re_00fc7e10_UTFWin_ImageDrawable_GetTiling",
+      "va": "0x00fc7e10"
+    }
+  ],
+  "audit_evidence_boundary": null,
+  "audit_findings": [],
+  "audit_status": null,
+  "blocked": false,
+  "blockers": [],
+  "body_status": null,
+  "class_type": null,
+  "cluster": "utfwin-framework",
+  "confidence": null,
+  "dependencies": {
+    "callees": [],
+    "callees_truncated": false,
+    "callers": [],
+    "callers_truncated": false,
+    "data_reference_count": 0,
+    "edges": [
+      {
+        "callsite": "0x009804ef",
+        "direction": "out",
+        "other": "0x00950eb0",
+        "reference_type": "direct-call"
+      }
+    ],
+    "edges_truncated": false,
+    "external_callees": [],
+    "fan_in": 0,
+    "fan_out": 0,
+    "manifest_callees": [],
+    "manifest_callers": [],
+    "nearby_reconstructed": [],
+    "scc": {
+      "id": "scc-0324",
+      "size": 1
+    },
+    "vtable_reference_count": 0
+  },
+  "evidence_level": "CONFIRMED",
+  "globals": [],
+  "integration_status": null,
+  "name": "UTFWin::PerspectiveEffect::func80h",
+  "normalized_symbol": "UTFWin::PerspectiveEffect::func80h",
+  "observed_mechanics": [],
+  "ownership": {
+    "claimability": "queue_candidate",
+    "handoff_packages": [],
+    "manifest": {
+      "record": null,
+      "worker_ownership": null
+    },
+    "package": null,
+    "queue_state": "queued"
+  },
+  "package": null,
+  "reconstructed": false,
+  "review_status": null,
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [],
+    "validated": 0
+  },
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "semantic": null,
+  "semantic_status": null,
+  "services": [],
+  "source": {
+    "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__func80h.c",
+    "file": null,
+    "files": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__func80h.c",
+      "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0.cpp",
+      "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0.hpp",
+      "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0_model_test.cpp"
+    ],
+    "handoffs": [],
+    "metadata": [
+      "reconstruction/metadata/pkg-utfwin-perspective-009804e0/009804e0.json"
+    ],
+    "provenance": []
+  },
+  "status": "queued",
+  "subsystem": "UTFWin",
+  "triage": {
+    "category": "ENGINE_INTERFACE",
+    "cluster": "utfwin-framework",
+    "db_triage_status": "QUEUED",
+    "decomp_path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__func80h.c",
+    "dependencies": [
+      "app-lifecycle",
+      "resource-io"
+    ],
+    "evidence": "CONFIRMED",
+    "kg_node_id": "fun:009804e0",
+    "name": "UTFWin::PerspectiveEffect::func80h",
+    "priority": "P0",
+    "provenance": {
+      "classifier": "triage-v4",
+      "generated_at": "2026-09-23T10:12:09Z",
+      "generator": "subagent-7-sequential-triage",
+      "sdk_name": "UTFWin::PerspectiveEffect::func80h",
+      "snapshot": "2540f2ca",
+      "snapshot_sha256": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
+      "vtable_addrs": [
+        "014440d0"
+      ]
+    },
+    "queue_state": "queued",
+    "rank": 140
+  },
+  "types": [
+    "openspore::reconstruction::pkg_utfwin_perspective_009804e0::ObjectTypeId",
+    "openspore::reconstruction::pkg_utfwin_perspective_009804e0::PerspectiveEffect",
+    "openspore::reconstruction::pkg_utfwin_perspective_009804e0::PerspectiveEffectVTable",
+    "openspore::reconstruction::pkg_utfwin_perspective_009804e0::SubObjectVTable",
+    "void*"
+  ],
+  "unresolved_questions": [],
+  "va": "0x009804e0",
+  "vtables": [
+    "vtable:0x009806c0",
+    "vtable:0x01444098",
+    "vtable:0x014440b4",
+    "vtable:0x014440d0"
+  ]
+}
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00980502",
+  "body_span_bytes": 35,
+  "body_start": "009804e0",
+  "callees": [
+    "FUN_00950eb0"
+  ],
+  "callers": [],
+  "classification": "wrapper",
+  "dispatch": null,
+  "entry_point": "009804e0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [
+    {
+      "name": "param_2",
+      "storage": "Stack[0x8]:4",
+      "type": "int"
+    },
+    {
+      "name": "in_ECX",
+      "storage": "register:00000004:4",
+      "type": "int"
+    },
+    {
+      "name": "this",
+      "storage": "Stack[0x4]:4",
+      "type": "PerspectiveEffect *"
+    }
+  ],
+  "locals_count": 3,
+  "mode": "live",
+  "name": "UTFWin::PerspectiveEffect::func80h",
+  "namespace": "UTFWin",
+  "namespace_source": "derived_from_symbol_name",
+  "parameter_count": 2,
+  "parameters": [
+    {
+      "name": "this",
+      "ordinal": 0,
+      "storage": "Stack[0x4]:4",
+      "type": "PerspectiveEffect *"
+    },
+    {
+      "name": "param_2",
+      "ordinal": 1,
+      "storage": "Stack[0x8]:4",
+      "type": "int"
+    }
+  ],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "void",
+  "return_type_resolved": true,
+  "rva": "0x5804e0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "void UTFWin::PerspectiveEffect::func80h(PerspectiveEffect * this, int param_2)",
+  "size_bytes": 35,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x009804e0",
+  "vtables": {
+    "referenced_by_vtables": [
+      "0x014440d0"
+    ],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 3,
+  "xrefs": [
+    {
+      "from": "014440dc"
+    },
+    {
+      "from": "00980663"
+    },
+    {
+      "from": "00980673"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__func80h.c",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__func80h.c",
+    "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0.cpp",
+    "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-009804e0/utfwin_perspective_009804e0_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/pkg-utfwin-perspective-009804e0/009804e0.json"
+  ]
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "queued"
+}
+```
+
+## types
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "openspore::reconstruction::pkg_utfwin_perspective_009804e0::ObjectTypeId",
+  "openspore::reconstruction::pkg_utfwin_perspective_009804e0::PerspectiveEffect",
+  "openspore::reconstruction::pkg_utfwin_perspective_009804e0::PerspectiveEffectVTable",
+  "openspore::reconstruction::pkg_utfwin_perspective_009804e0::SubObjectVTable",
+  "void*"
+]
+```
+
+## vtables
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "vtable:0x009806c0",
+  "vtable:0x01444098",
+  "vtable:0x014440b4",
+  "vtable:0x014440d0"
+]
+```
+
+## Conflicts
+
+```json
+[]
+```

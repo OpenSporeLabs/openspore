@@ -1,7 +1,7 @@
 # Reconstruction context 0x00e5b790
 
 - Status: `partial`
-- Content SHA-256: `4aae9284789fba6a10273ca77d1e0613260a0f8ae1c8a7dfd98b9fb9768bb060`
+- Content SHA-256: `5756dca33251fcd1934810497210044647a53b0dad2366003c5cce27393eb3cc`
 
 ## 01_assignment
 
@@ -54,10 +54,18 @@
 
 ```json
 {
-  "content_sha256": "c8042f569a5c3287d845a86e7f3b3cf2cd7bcd1f36cd2f969a8bd374035ca435",
-  "live_attempts": [],
-  "live_requested": false,
-  "overall": "PERSISTED"
+  "content_sha256": "769190db12e3300be241884097ea8910e2cca3664a9b49460162518c9e1d68bf",
+  "live_attempts": [
+    {
+      "code": "live_unavailable",
+      "kind": "decompilation",
+      "message": "Ghidra returned snapshot instead of live evidence",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
 }
 ```
 
@@ -107,8 +115,8 @@
   ],
   "callers": [
     {
-      "name": null,
-      "reconstructed": false,
+      "name": "cell_update_body_00e806b0",
+      "reconstructed": true,
       "va": "0x00e806b0"
     }
   ],
@@ -164,8 +172,7 @@
     {
       "callsite": "0x00e5b817",
       "direction": "out",
-      "other": "0x00e50730",
-      "referen
+      "other": "0x00e
 [TRUNCATED]
 ```
 
@@ -226,8 +233,8 @@
   "callees_truncated": false,
   "callers": [
     {
-      "name": null,
-      "reconstructed": false,
+      "name": "cell_update_body_00e806b0",
+      "reconstructed": true,
       "va": "0x00e806b0"
     }
   ],
@@ -282,8 +289,7 @@
       "other": "0x00e50730",
       "reference_type": "direct-call"
     },
-    {
-      "callsite"
+
 [TRUNCATED]
 ```
 
@@ -346,26 +352,28 @@
   },
   {
     "match_basis": [
-      "direct_xref_neighbor"
+      "same_subsystem"
     ],
-    "package": "PKG-11-H3-HELPER-WAVE2",
-    "score": 3,
-    "symbol": "embedded_object_first_word_init_00743b50",
-    "va": "0x00743b50"
+    "package": "PKG-CAMERA-WAVE8",
+    "score": 6,
+    "symbol": "editor_camera_func24h_005a2050",
+    "va": "0x005a2050"
   },
   {
     "match_basis": [
-      "same_calling_convention"
+      "same_subsystem"
     ],
-    "package": "PKG-06-WAVE6-APP-MANAGERS",
-    "score": 2,
-    "symbol": "App_IStateManager_Get_0067dce0",
-    "va": "0x0067dce0"
+    "package": "PKG-CAMERA-WAVE8",
+    "score": 6,
+    "symbol": "editor_camera_func54h_005a2320",
+    "va": "0x005a2320"
   },
   {
     "match_basis": [
-      "same_calling_convention"
-    
+      "same_subsystem"
+    ],
+    "package": "PKG-CAMERA-WAVE8",
+    "score"
 [TRUNCATED]
 ```
 
@@ -459,7 +467,7 @@
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/integrated/batch-2026-09-25-wave7/handoff.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-camera-wave7/00e5b790.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg_camera_wave7/camera_wave7.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'tools/re/data/ghidra_snapshot_cell_movement.json', 'mode': 'snapshot', 'source_class': 'ghidra'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-wave7/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-camera-wave7/00e5b790.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_camera_wave7/camera_wave7.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -468,6 +476,21 @@
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
       "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
     },
     {
       "mode": "persisted",
@@ -501,18 +524,6 @@
     },
     {
       "mode": "persisted",
-      "ref": "src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp",
-      "source_class": "committed_artifact"
-    },
-    {
-      "mode": "snapshot",
-      "ref": "tools/re/data/ghidra_snapshot_cell_movement.json",
-      "source_class": "ghidra"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json",
-    "src/reconstruction/pkg_camera_wave7/camera_wave7.cpp",
-    ".spore-analysis/ghidra-exports/decompiled_sdk/Simul
+      "ref": "src/reconstruct
 [TRUNCATED]
 ```

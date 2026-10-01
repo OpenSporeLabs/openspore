@@ -2,9 +2,40 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `82c146af8ad236b701443f8e60d43ed62f7b1272bc65e303b68a725f1027a3e7`
+- Content SHA-256: `2dcc9fe5430d1d72c722a6278ede0087af718b56a0a09bcc15f8c770ea69584c`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX, consumed by 0x00b515e8 MOV EDI,ECX and used only at 0x00b51638 to write the byte latch at EDI+0x30. ECX is clobbered by the virtual call at 0x00b51615 and reloaded at 0x00b51617.",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "The body never writes EAX outside the two SETNZ AL instructions at 0x00b51601 and 0x00b5161d, whose results feed TEST AL,AL immediately and are dead by 0x00b51606 / 0x00b51620. Every inspected callsite discards EAX: at 0x00fdc31c the next instruction is a fresh CALL, at 0x00b3d7a8 the next instruction reloads ECX from ESI, at 0x00fe105e the next instruction is CALL 0x00b3d350. The decompiler agrees: `void __fastcall FUN_00b515e0(int param_1)`.",
+  "return_register": null,
+  "return_semantics": "no value; side effects only",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EDI",
+    "ESI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET at 0x00b5163d"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -40,7 +71,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "11f9e095f1cbf58452c4df54cce245cec4318ffab11e7326bb0fb22720d89855",
+  "content_sha256": "0cd0d75a5470585f1114ec56fcefa72b033bdf5c5a37fe8bf380427402c19055",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -48,16 +79,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -274,21 +305,81 @@
       "at": "0x00b51624",
       "id": "obs-0014",
       "index": 24,
-      "kind": 
+      "kind
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "simulator_game_input_manager_get_00b3d350",
+    "reconstructed": true,
+    "va": "0x00b3d350"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b3d7a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ed4b70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00f44dd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fdc240"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fdc710"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fdc800"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fe0160"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fe0e10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fe0f40"
+  }
+]
+```
 
 ## contradictions
 
@@ -298,13 +389,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nvoid __fastcall FUN_00b515e0(int param_1)\n\n{\n  int iVar1;\n  cGameInputManager *pcVar2;\n  int iVar3;\n  \n  if (DAT_0167ecd0 == 0) {\n    return;\n  }\n  if (DAT_0167ecd4 == 0) goto LAB_00b51633;\n  iVar1 = *(int *)(DAT_0167ecd4 + 0x1c);\n  pcVar2 = Simulator__cGameInputManager__Get();\n  if (*(cGameInputManager **)(iVar1 + 0x34) == pcVar2) {\n    pcVar2 = Simulator__cGameInputManager__Get();\n    iVar3 = (**(code **)(*(int *)pcVar2->field_18 + 0xc))();\n    if (*(int *)(iVar1 + 0x3c) != *(int *)(iVar3 + 8)) goto LAB_00b51624;\n  }\n  else {\nLAB_00b51624:\n    FUN_00b4f7f0();\n  }\n  if (DAT_0167ecd4 != 0) {\n    return;\n  }\nLAB_00b51633:\n  FUN_00b512f0();\n  *(undefined1 *)(param_1 + 0x30) = 1;\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -456,9 +543,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 11164,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX, consumed by 0x00b515e8 MOV EDI,ECX and used only at 0x00b51638 to write the byte latch at EDI+0x30. ECX is clobbered by the virtual call at 0x00b51615 and reloaded at 0x00b51617.\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"The body never writes EAX outside the two SETNZ AL instructions at 0x00b51601 and 0x00b5161d, whose results feed TEST AL,AL immediately and are dead by 0x00b51606 / 0x00b51620. Every inspected callsite discards EAX: at 0x00fdc31c the next instruction is a fresh CALL, at 0x00b3d7a8 the next instruction reloads ECX from ESI, at 0x00fe105e the next instruction is CALL 0x00b3d350. The decompiler agrees: `void __fastcall FUN_00b515e0(int param_1)`.\",\n    \"return_register\": null,\n    \"return_semantics\": \"no value; side effects only\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET at 0x00b5163d\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-GAME-INPUT-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"simulator_game_input_manager_get_00b3d350\",\n      \"va\": \"0x00b3d350\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"simulator_game_input_manager_get_00b3d350\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d350\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b3d7a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ed4b70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f44dd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fdc240\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fdc710\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fdc800\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fe0160\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fe0e10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fe0f40\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00b3d7a3\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b3d7a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ed4bd7\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ed4b70\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00f44f66\",\n        \"direction\": \"in\",\n        \"other\": \"0x00f44dd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00fdc31c\",\n        \"direction\": \"in\",\n        \"other\": \"0x00fdc240\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00fdc74c\",\n        \"direction\": \"in\",\n        \"other\": \"0x00fdc710\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00fdc864\",\n        \"direction\": \"in\",\n        \"other\": \"0x00fdc800\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00fe03b4\",\n        \"d
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -480,14 +574,14 @@
   ],
   "callers": [
     "FUN_00fe0e10",
-    "FUN_00fdc800",
-    "FUN_00ed4b70",
+    "FUN_00fdc240",
     "FUN_00b3d7a0",
-    "FUN_00fdc710",
-    "FUN_00fe0160",
-    "FUN_00fe0f40",
     "FUN_00f44dd0",
-    "FUN_00fdc240"
+    "FUN_00fdc800",
+    "FUN_00fdc710",
+    "FUN_00fe0f40",
+    "FUN_00fe0160",
+    "FUN_00ed4b70"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -498,29 +592,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "iVar1",
-      "storage": "unique:00017200:4",
-      "type": "int"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar3",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "pcVar2",
-      "storage": "register:00000000:4",
-      "type": "cGameInputManager *"
-    }
-  ],
-  "locals_count": 4,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00b515e0",
   "namespace": null,
@@ -589,9 +662,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b16/b515e0_cached_object_validate.cpp",
+    "reconstruction/staging/wave13-w1-core-b16/b515e0_cached_object_validate.hpp",
+    "reconstruction/staging/wave13-w1-core-b16/b515e0_cached_object_validate_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b16/00b515e0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -601,9 +688,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential must confirm that the cGameInputManager pointer stored at +0x34 is really compared by identity and not rewritten behind the cached object's back between calls, which would make the check vacuous.",
+    "A runtime trace must show whether [this + 0x30] is ever read, and by which code, before the latch can be named.",
+    "A runtime trace with a concrete receiver is required to resolve the slot +0x0c callee: the call must be sampled with ECX holding the sub-object and the callee address recorded.",
+    "Every claim here is static. No original-process trace has been captured for 0x00b515e0, and the Cell stage has never been entered in any recorded run."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -613,15 +713,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

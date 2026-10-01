@@ -1,7 +1,7 @@
 # Reconstruction context 0x00b8d9b0
 
 - Status: `partial`
-- Content SHA-256: `86cd68c4d93f89454020b6d0b588d0f1b67f69380310251364f12763c25d2ce5`
+- Content SHA-256: `b5db4e5af8be4f3e56d35aa21349fddfb36ee6c8c00b4cf82a3bb76ac62233a6`
 
 ## 01_assignment
 
@@ -19,7 +19,7 @@
 
 ## 02_function_identity
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
@@ -34,16 +34,16 @@
 
 ## 03_current_status
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "blocked": null,
-  "reconstructed": null,
-  "runtime_gated": null,
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
-  "status": null
+  "status": "unresolved"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "812682e24959d2fc5a6e87e46543bc7b4ceec18bbcca430336f8d09fd7e6ebf9",
-  "live_attempts": [],
+  "content_sha256": "7d94b8f8507ed7f3c9adac6b97204d60b1e8bd4f4a33e561e94100e069f7e4be",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00b8d9b0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,100 +71,367 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-int __fastcall FUN_00b8d9b0(undefined4 param_1)
-
-{
-  int iVar1;
-  int iVar2;
-  undefined4 uVar3;
-  
-  uVar3 = param_1;
-  FUN_00b3d2a0(param_1);
-  iVar1 = FUN_00bb99e0(uVar3);
-  if (iVar1 == 0) {
-    FUN_00feb9f0(param_1);
-    iVar2 = FUN_00fee220(param_1);
-    if (iVar2 != 0) {
-      iVar1 = FUN_00c4b220();
-      return iVar1;
-    }
-  }
-  return iVar1;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
-
-```json
-{
-  "original_bytes": 8633,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"abstained_because\": [\n    \"receiver_not_determinable: ecx_read_without_deref\",\n    \"no_discriminator: no stack-argument read and no positive receiver evidence\"\n  ],\n  \"cleanup\": {\n    \"bytes\": 0,\n    \"confidence\": \"INFERRED\",\n    \"corroboration\": \"not_available\",\n    \"evidence\": \"ret with no immediate, no stack reads\",\n    \"side\": \"caller\"\n  },\n  \"completeness\": \"PARTIAL\",\n  \"conflicts\": [],\n  \"content_sha256\": \"cf67bae81102ee0333a1b382dba38199bdb28a5b08d6427c753a94c3c11f6cfa\",\n  \"conventions\": {\n    \"ambiguities\": [],\n    \"calling_convention\": null,\n    \"candidate_conventions\": [\n      \"__cdecl\",\n      \"__stdcall\",\n      \"__thiscall\",\n      \"__fastcall\"\n    ],\n    \"confidence\": \"UNKNOWN\",\n    \"corroboration\": \"not_available\"\n  },\n  \"cross_validation\": {\n    \"agreement\": false,\n    \"ghidra\": \"no_information\",\n    \"ghidra_calling_convention\": null,\n    \"ghidra_parameter_count\": 0,\n    \"persisted\": \"no_information\",\n    \"persisted_calling_convention\": null\n  },\n  \"dispatch\": {\n    \"call_offsets\": [],\n    \"indirect_calls\": 0,\n    \"vtable_shaped_loads\": 0\n  },\n  \"inferenc
-[TRUNCATED]
-```
-
-## 07_callers_callees
-
-- State: `missing`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "callees": [],
-  "callers": [],
-  "edge_rows": [],
-  "external_callees": []
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read; ESI holds it for the whole body and is pushed as the argument to both callees",
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET (with a tail JMP to 0x00c4b220 on the deepest path)",
+  "return_observation": "Three exits write EAX: 0x00b8d9e1 MOV EAX,EDI (provably 0 on that path), 0x00b8d9e3 the preserved EDI from tier 1, and the tail transfer at 0x00b8d9dc which returns 0x00c4b220's EAX unchanged. The full dword is defined on every exit.",
+  "return_register": "EAX",
+  "return_semantics": "an opaque context handle: the non-null result of the tier-1 registry resolve, otherwise the tier-2 mission context's lazily resolved +0x1F4 slot, otherwise exactly 0",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET at 0x00b8d9e5, or JMP 0x00c4b220 at 0x00b8d9dc"
 }
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "FUN_00b3d2a0",
+      "reconstructed": true,
+      "va": "0x00b3d2a0"
+    }
+  ],
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00b8d9f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00bba870"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c44d00"
+    },
+    {
+      "name": "FUN_00c59240",
+      "reconstructed": false,
+      "va": "0x00c59240"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c59540"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00e2eba0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00e98500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fdf5b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fdf5f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fe7e60"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x010727e0"
+    }
+  ],
+  "edge_rows": [
+    {
+      "callsite": "0x00b8da09",
+      "direction": "in",
+      "other": "0x00b8d9f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00bba885",
+      "direction": "in",
+      "other": "0x00bba870",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c44d16",
+      "direction": "in",
+      "other": "0x00c44d00",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c593f3",
+      "direction": 
+[TRUNCATED]
 ```
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "std::uint32_t"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
-  "runtime": {},
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "A runtime write watchpoint on the singleton at 0x0167EAE4 and on the context field at +0x1F4 is required to confirm the lazy-resolution claim about 0x00c4b220, which this batch inferred from static structure only.",
+      "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+      "The concrete type of the returned handle can only be established by observing a receiver at a callsite and locating its vtable, neither of which is possible statically.",
+      "The tier-1/tier-2 split is a runtime-behavioural claim about which registry is populated in a given game state. A differential test must exercise at least one planet that resolves through tier 1 and one that falls through to tier 2, and observe that tier 1's cross-context write is invisible to the caller."
+    ],
+    "validated": 0
+  },
   "semantic": {}
 }
 ```
 
 ## 10_dependencies
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "FUN_00b3d2a0",
+      "reconstructed": true,
+      "va": "0x00b3d2a0"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00b8d9f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00bba870"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c44d00"
+    },
+    {
+      "name": "FUN_00c59240",
+      "reconstructed": false,
+      "va": "0x00c59240"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00c59540"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00e2eba0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00e98500"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fdf5b0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fdf5f0"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x00fe7e60"
+    },
+    {
+      "name": null,
+      "reconstructed": false,
+      "va": "0x010727e0"
+    }
+  ],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00b8da09",
+      "direction": "in",
+      "other": "0x00b8d9f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00bba885",
+      "direction": "in",
+      "other": "0x00bba870",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00c44d16",
+      "direction": "in",
+      "other": "0x00c44d00",
+      "reference_
+[TRUNCATED]
+```
 
 ## 11_related_functions
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "direct_xref_neighbor"
+    ],
+    "package": "PKG-01-SHARED-STATE-ROOTS",
+    "score": 3,
+    "symbol": "FUN_00b3d2a0",
+    "va": "0x00b3d2a0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_pair_004279d0",
+    "va": "0x004279d0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "property_record_assign_scalar_00428060",
+    "va": "0x00428060"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_paint_commit_0043ac40",
+    "va": "0x0043ac40"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "model_parts_apply_properties_00447150",
+    "va": "0x00447150"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-APP-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "pair_vector_insert_004786e0",
+    "va": "0x004786e0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-EDITOR-SAFE-WAVE11",
+    "score": 2,
+    "symbol": "editor_entry_expand_004ad6f0",
+    "va": "0x004ad6f0"
+  },
+  {
+    "match_basis": [
+      "same_calling_convention"
+    ],
+    "package": "PKG-10-EDITOR-DISPATCH",
+    "score": 2,
+    "symbol": "Editors_EditorModel_SetColor_raw_004ae250",
+    "va": "0x004ae250"
+  }
+]
+```
 
 ## 12_existing_reconstruction
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b06/b8d9b0_planet_record_resolve_context.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b06/00b8d9b0.json"
+  ]
+}
+```
 
 ## 13_semantic_hypotheses
 
@@ -171,28 +446,25 @@ int __fastcall FUN_00b8d9b0(undefined4 param_1)
 ```json
 {
   "conflicts": [],
-  "unresolved_questions": []
-}
+  "unresolved_questions": [
+    "A runtime write watchpoint on the singleton at 0x0167EAE4 and on the context field at +0x1F4 is required to confirm the lazy-resolution claim about 0x00c4b220, which this batch inferred from static structure only.",
+    "Does tier 2 ever need to run in practice? Tier 1 covers records whose planet id is in the manager's registry, and 0x00bba870 already iterates a list calling this function per element, which suggests tier 1 usually succeeds. No static evidence establishes how often tier 2 is reached.",
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+    "The briefing's canonical ledger recorded callee_count 5 and caller_count 11; both match the live xref query, with the note that 0x00bba870 calls it inside a loop rather than once.",
+    "The concrete type of the returned handle can only be established by observing a receiver at a callsite and locating its vtable, neither of which is possible statically.",
+    "The tier-1/tier-2 split is a runtime-behavioural claim about which registry is populated in a given game state. A differential test must exercise at least one planet that resolves through tier 1 and one that falls through to tier 2, and observe that tier 1's cross-context write is invisible to the caller.",
+    "What class owns the singleton at 0x0167EAE4? It has a registry header at +0x184 and a lazily resolved pointer at +0x1F4, so it is at least 0x1F8 bytes. The SDK's attribution of the conta
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-w1-core-b06/00b8d9b0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b06/b8d9b0_planet_record_resolve_context.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -210,11 +482,6 @@ int __fastcall FUN_00b8d9b0(undefined4 param_1)
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -227,21 +494,29 @@ int __fastcall FUN_00b8d9b0(undefined4 param_1)
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
-    }
-  ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-w1-core-b06/00b8d9b0.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b06/b8d9b0_planet_record_resolve_context.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "
+[TRUNCATED]
 ```

@@ -1,0 +1,139 @@
+{
+  "schema": "wave6-resources-function-handoff.v1",
+  "package": "pkg-resource-index-ref-008d86b0",
+  "function_address": "0x008d86b0",
+  "ghidra_name": "Resource::DatabasePackedFile::DestroyIndex",
+  "normalized_symbol": "destroy_index_008d86b0",
+  "reconstructed_symbol": "openspore::reconstruction::resource_index_ref::destroy_index_008d86b0",
+  "subsystem": "Resource",
+  "cluster": "resource-io",
+  "source_files": [
+    "reconstruction/staging/pkg-resource-index-ref-008d86b0/dbp_index_ref_008d86b0.hpp",
+    "reconstruction/staging/pkg-resource-index-ref-008d86b0/dbp_index_ref_008d86b0.cpp",
+    "reconstruction/staging/pkg-resource-index-ref-008d86b0/dbp_index_ref_008d86b0_model_test.cpp"
+  ],
+  "dependencies": [
+    "reconstruction/staging/wave6-resources/dbpF_integrity.hpp (ObservedDatabasePackedFile convention)"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "ObservedIndexObject* __thiscall destroy_index_008d86b0(ObservedIndexRefCarrier* file);",
+  "observed_original_abi": {
+    "return_type": "ObservedIndexObject*",
+    "return_type_rationale": "The machine has exactly one data-producing instruction: 0x008d86b0 8B 81 60 02 00 00 MOV EAX,dword ptr [ECX+0x260], followed by 0x008d86b6 C3 RET. EAX is therefore a 32-bit value copied out of the receiver. The 32-bit value at +0x260 is independently proven to be a pointer by two neighbouring functions: 0x008d86c0 loads it into EDI and dereferences it as a vtable-bearing object, and FUN_008d8c50 calls vtable slot +0x28 through param_1[0x98] which is the same +0x260 slot. The SDK-derived Ghidra prototype for this address says 'void', which the machine contradicts; the pointer return is the modelled reading and the disagreement is recorded in unresolved_questions. The pointee's EA class name is not recoverable from the binary, so ObservedIndexObject is a locally declared carrier, not an EA name.",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "ObservedIndexRefCarrier*",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "termination": "RET (0 bytes) at 0x008d86b6; INT3 padding 0xCC at 0x008d86b7"
+  },
+  "raw_bytes": {
+    "read_at": "0x008d86b0",
+    "hex": "8b8160020000c3cc",
+    "length_read": 8,
+    "function_extent": "0x008d86b0..0x008d86b6 inclusive, 7 bytes, 2 instructions",
+    "trailing": "0xCC at 0x008d86b7 is inter-function padding, not part of the body"
+  },
+  "layout_evidence": {
+    "gtype": "ObservedIndexRefCarrier (locally declared observation carrier; no Ghidra structure exists)",
+    "ghidra_datatype_probe": "dtm.getDataType(\"/DatabasePackedFile\") and getDataType(\"/EAIOZoneObject\") both return ABSENT in the live program, so no named type constrains the layout",
+    "size_bytes": 640,
+    "fields": [
+      {"offset": "0x14", "size_bytes": 4, "meaning": "zero/non-zero gate on the paired writer; read by 0x008d86c3 CMP dword ptr [EBX+0x14],0x0 / 0x008d86c7 JNZ 0x008d8701"},
+      {"offset": "0x260", "size_bytes": 4, "meaning": "non-owning handle to a polymorphic refcounted object; the value this target returns verbatim"}
+    ],
+    "identity_boundary": "No field name for +0x14 or +0x260 is claimed. The SDK label 'DestroyIndex' names a teardown operation, but the machine at this address is a pure accessor, so no EA field name is asserted for either offset."
+  },
+  "mechanics": {
+    "load": "One dword read at [ECX+0x260] into EAX. Displacement is the 32-bit form 0x00000260, so the carrier must be at least 0x264 bytes.",
+    "return": "EAX is returned unchanged. There is no AddRef, no Release, no null test, no branch and no call anywhere in the 7-byte body, so the returned handle is non-owning and a null field yields a plain null return.",
+    "no_stack_argument": "The single terminator is a bare RET, not RET 0x4. Under the observed __thiscall convention the callee reclaims its own stack arguments (contrast the adjacent writer 0x008d86c0, which ends in RET 0x4 at 0x008d86fe). A bare RET therefore proves this function declares no stack parameter."
+  },
+  "virtual_dispatch": {
+    "vtable_label": "PTR_FUN_014367b0",
+    "vtable_base": "0x014367b0",
+    "slot_byte_offset": "0x4c",
+    "slot_index": 19,
+    "note": "0x008d86b0 is the value stored at 0x014367fc, i.e. byte offset +0x4c from the vtable base 0x014367b0. The immediately following slot at +0x50 (0x01436800) holds 0x008d86c0, the paired writer for the same +0x260 field.",
+    "adjacent_writer_slot": {
+      "byte_offset": "0x50",
+      "address": "0x008d86c0",
+      "role": "AddRef-then-store-then-Release writer for the +0x260 field, gated on the +0x14 dword, returns bool in AL, RET 0x4"
+    },
+    "reference_counts": {
+      "total_xrefs_to_target": 1,
+      "xrefs": [
+        {"from_address": "0x014367fc", "type": "DATA", "from_function": null, "meaning": "the vtable slot itself; there are no direct callers"}
+      ]
+    }
+  },
+  "call_graph": {
+    "direct_callers": {"ghidra_count": 0, "functions": []},
+    "direct_callees": {"ghidra_functions": []},
+    "reachability": "Reached only by virtual dispatch through PTR_FUN_014367b0 + 0x4c. No call site targets 0x008d86b0 directly, so no caller-side use of the return value is observable in the binary."
+  },
+  "neighbour_evidence": {
+    "0x008d86c0": {
+      "role": "paired writer of the same +0x260 field",
+      "key_instructions": [
+        "0x008d86c3 CMP dword ptr [EBX + 0x14], 0x0",
+        "0x008d86c7 JNZ 0x008d8701  -> 0x008d8701 XOR AL,AL; 0x008d8704 RET 0x4",
+        "0x008d86cf MOV EDI, dword ptr [EBX + 0x260]",
+        "0x008d86d5 CMP ESI, EDI / JZ 0x008d86f9  (no-op when unchanged)",
+        "0x008d86dd MOV EAX,[ESI] ; 0x008d86df MOV EDX,[EAX+0x4] ; 0x008d86e4 CALL EDX  (AddRef, ECX = pointee)",
+        "0x008d86e6 MOV dword ptr [EBX + 0x260], ESI",
+        "0x008d86f0 MOV EAX,[EDI] ; 0x008d86f2 MOV EDX,[EAX+0x8] ; 0x008d86f7 CALL EDX  (Release, ECX = pointee)",
+        "0x008d86fb MOV AL, 0x1 ; 0x008d86fe RET 0x4"
+      ],
+      "conclusion": "The +0x260 slot is a refcounted, vtable-bearing handle stored non-owning, which is what makes the target's bare pointer return a non-owning borrow."
+    },
+    "FUN_008d8c50": {
+      "role": "second reader of the same +0x260 slot",
+      "key_instructions": [
+        "param_1[0x98] is byte offset 0x260; it is called through vtable slot +0x28: (**(code **)(*(int *)param_1[0x98] + 0x28))(uVar1, 0)",
+        "neighbouring slots observed: param_1[0x97] = 0x25c, param_1[0x99] = 0x264, param_1[0x9a] = 0x268, param_1[0x9b] = 0x26c"
+      ],
+      "conclusion": "Independently confirms the +0x260 slot holds a pointer to an object with a vtable of at least 0x2c bytes."
+    }
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x008d86b0", "observation": "Exactly two instructions: 0x008d86b0 MOV EAX,dword ptr [ECX + 0x260] and 0x008d86b6 RET. No call, no branch, no stack access."},
+    {"tool": "ghidra_read_memory", "address": "0x008d86b0", "observation": "Bytes 8b 81 60 02 00 00 c3 cc confirm the disp32 form of the +0x260 load, the bare RET, and INT3 padding at 0x008d86b7."},
+    {"tool": "ghidra_get_function_by_address", "address": "0x008d86b0", "observation": "body_start 0x008d86b0, body_end 0x008d86b6, SDK signature 'void Resource::DatabasePackedFile::DestroyIndex(DatabasePackedFile * this, EAIOZoneObject * pObject)' - the return type and the second parameter both disagree with the machine."},
+    {"tool": "ghidra_decompile_function", "address": "0x008d86b0", "observation": "Decompiles to an empty void body, which is the decompiler honouring the imported void prototype rather than evidence of an empty function; the disassembly is authoritative here."},
+    {"tool": "ghidra_decompile_function", "address": "0x008d86c0", "observation": "The adjacent vtable slot proves the +0x260 field is a refcounted vtable-bearing handle, gated on the +0x14 dword."},
+    {"tool": "ghidra_disassemble_function", "address": "0x008d86c0", "observation": "Pins the +0x14 gate, the AddRef vtable slot +0x04, the Release vtable slot +0x08, the store to +0x260, the unchanged-pointer fast path, and the RET 0x4 terminator that contrasts with this target's bare RET."},
+    {"tool": "ghidra_decompile_function", "address": "0x008d8c50", "observation": "Second reader of the same +0x260 slot, invoked through vtable slot +0x28, confirming the field is a pointer to a polymorphic object."},
+    {"tool": "ghidra_run_script_inline (FunctionManager/SymbolTable/Memory probe)", "observation": "Resolved PTR_FUN_014367b0 + 0x00..+0x4c; the value at 0x014367fc is 0x008d86b0 and 0x01436800 is 0x008d86c0. getDataType(\"/DatabasePackedFile\") and getDataType(\"/EAIOZoneObject\") are both ABSENT. ReferenceManager.getReferencesTo(0x008d86b0) returns exactly one DATA reference, from 0x014367fc."},
+    {"tool": "ghidra_list_class_members", "class_name": "DatabasePackedFile", "observation": "Three members matched by this_type DatabasePackedFile *: 0x008d8570 CreateRecordWriteData, 0x008d86b0 (this target), 0x008d9320 VerifyIndexRecordIntegrity. No class namespace exists, so class-level identity is SDK-derived only."}
+  ],
+  "analogue_prior": [
+    "reconstruction/staging/wave6-resources/dbpF_integrity.hpp - the ObservedDatabasePackedFile carrier convention and the __thiscall macro pattern reused here",
+    "reconstruction/staging/wave6-resources/pf_index_write.hpp - the static_assert-pinned partial carrier convention reused for +0x14 and +0x260"
+  ],
+  "confidence": {
+    "abi": "high",
+    "mechanics": "high",
+    "layout": "high for the two offsets, zero for all field names",
+    "return_type": "high for 'a 32-bit pointer is returned in EAX', low for the pointee class identity",
+    "sdk_name_fidelity": "low - the SDK label 'DestroyIndex' contradicts the machine"
+  },
+  "unresolved_questions": [
+    "The SDK label 'DestroyIndex' and the imported prototype 'void ... (DatabasePackedFile* this, EAIOZoneObject* pObject)' both disagree with the machine: the body is a non-destructive single load, and the bare RET proves there is no stack parameter, so the EAIOZoneObject* parameter is not real for this address. Whether the SDK symbol table mis-mapped this address, or names an unrelated accessor, cannot be settled from the binary.",
+    "The EA class name of the object stored at +0x260 is unknown. Only its vtable shape is known: slot +0x04 AddRef, slot +0x08 Release, and slot +0x28 called from FUN_008d8c50. No /DatabasePackedFile or /EAIOZoneObject Ghidra structure exists to resolve it.",
+    "The meaning of the +0x14 dword gate is unknown. It is read as a plain zero/non-zero test by 0x008d86c0 only; nothing observed shows who writes it or what state it represents.",
+    "No caller-side use of the return value is observable, because the only reference to this address is the vtable slot itself. What consumers do with the non-owning handle is unproven.",
+    "The remaining slots of PTR_FUN_014367b0 are only partly resolved to function entries, so the full class this vtable belongs to is not established. Slot +0x20 resolves to Resource::DatabaseDirectoryFiles::GetRefCount, so the vtable is shared with or adjacent to another class and its owning class is not identified."
+  ],
+  "blockers": [
+    "The +0x260 pointee type is an opaque runtime boundary in the staging model; only its vtable protocol is modelled.",
+    "The class identity of PTR_FUN_014367b0 is unresolved, so the receiver is typed as an opaque observation carrier rather than a named EA class."
+  ],
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror dbp_index_ref_008d86b0.cpp dbp_index_ref_008d86b0_model_test.cpp -o /tmp/opencode/dbp-index-ref-008d86b0-model && /tmp/opencode/dbp-index-ref-008d86b0-model",
+    "result": "passed",
+    "codegen_command": "clang++ -m32 -O2 -std=c++17 -c dbp_index_ref_008d86b0.cpp",
+    "codegen_result": "passed - the entry symbol emits exactly 8b 81 60 02 00 00 c3, byte-identical to the original 0x008d86b0..0x008d86b6"
+  }
+}

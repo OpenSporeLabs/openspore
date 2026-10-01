@@ -1,7 +1,7 @@
 # Reconstruction context 0x00bba2a0
 
 - Status: `partial`
-- Content SHA-256: `c1afaa8d350d596f87a22b78865ecba6dd4beede9ee7aa6dabd57e5934df06a0`
+- Content SHA-256: `f46675da984439ccbbe77be99dde41453532987cd926c13dcfb439844a45c274`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "c27ed8c2d47ecaf0292f9a9ddd10642402db9db4dc162b78f4f8ea0068504f07",
-  "live_attempts": [],
+  "content_sha256": "94acc60cabe3229f39c7259793086750309de34f6bbf4962954b0749771004cc",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00bba2a0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,74 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-/* WARNING: Enum "Names": Some values do not have unique names */
-
-void __fastcall cStarRecord__ctor(int param_1)
-
-{
-  char cVar1;
-  intrusive_ptr<Simulator::cPlanet> *unaff_EBX;
-  int iVar2;
-  cPlanetRecord *unaff_EBP;
-  int iVar3;
-  int iVar4;
-  ISimulatorStrategy__vftable **ppIVar5;
-  cStarManager *this;
-  undefined4 uVar6;
-  undefined4 local_2c;
-  int local_24;
-  int local_20;
-  int local_14;
-  ISimulatorStrategy__vftable *local_10;
-  IVirtual__vftable *local_c;
-  undefined1 *local_8;
-  
-  iVar2 = *(int *)(param_1 + 0x4c);
-  iVar4 = 0;
-  local_24 = 0;
-  if (iVar2 == 2) {
-    local_2c = 0x876201aa;
-  }
-  else if (iVar2 == 4) {
-    local_2c = 0xefc33700;
-  }
-  else {
-    if (iVar2 != 5) {
-      *(undefined4 *)(param_1 + 0x78) = 0;
-      *(undefined4 *)(param_1 + 0x7c) = 0;
-      *(undefined4 *)(param_1 + 0x74) = 0;
-      *(undefined4 *)(param_1 + 0x80) = 0;
-      return;
-    }
-    uVar6 = *(undefined4 *)(param_1 + 0x54);
-    local_2c = 0xfc5a17bc;
-    FUN_00b3d2a0(uVar6);
-    local_24 = FUN_00ba9370(uVar6);
-  }
-  local_20 = 100;
-  iVar2 = 0;
-  iVar3 = 0;
-  local_14 = 0;
-  Simulator__cPlanetModel__Get();
-  while (((iVar2 == 0 ||
-          (((iVar2 == *(int *)(param_1 + 0x74) && (iVar3 == *(int *)(param_1 + 0x78))) &&
-           (local_14 == *(int *)(param_1 + 0x7c))))) && (local_20 = local_20 + -1, -1 < local_20)))
-  {
-    if (local_24 == 0) {
-      iVar4 = FUN_00ac10a0(local_2c);
-    }
-    else {
-      iVar4 = FUN_00ac1190(*(undefined4 *)(local_24 + 0x58));
-    }
-    if (iVar4 == 0) goto LAB_00bba410;
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -218,7 +160,7 @@ void __fastcall cStarRecord__ctor(int param_1)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -246,11 +188,6 @@ void __fastcall cStarRecord__ctor(int param_1)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

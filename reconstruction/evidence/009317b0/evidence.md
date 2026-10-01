@@ -1,0 +1,622 @@
+# Evidence 0x009317b0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `26652a957ddf69e19b830901e2dca6ce5c314c9eb57daa0a3aaa2a4c6d2085b7`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "x86-32 thiscall with first explicit stream receiver in ECX and caller cleanup",
+  "return_semantics": "new signed 32-bit reference count in EAX",
+  "return_type": "std::int32_t",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "pointer_like_in_EAX",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "71f0074c9ec9fc2afccd1cdab1da0fed617e95984ff9af4dc72e64da2c791079",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 2,
+    "persisted": "no_information",
+    "persisted_calling_convention": "x86-32 thiscall with first explicit stream receiver in ECX and caller cleanup"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0003"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          528
+        ],
+        "register": "ECX",
+        "written_through": 1
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0003"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0003"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0003"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0003"
+      ],
+      "claim": "the last value written to EAX classifies as pointer_like",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "pointer_like"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x009317b0",
+      "count": 2,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "INC dword ptr [ECX + 0x210]",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x009317b6",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ECX + 0x210]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x009317bc",
+      "form": "RET",
+      "id": "obs-0003",
+      "imm": null,
+      "index": 2,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 3,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bounds_only": true,
+    "confidence": "INFERRED",
+    "distinct_offsets": 1,
+    "max_offset": 528,
+    "offsets": [
+      528
+    ],
+    "present": true,
+    "register": "ECX",
+    "shape": "R-DIRECT",
+    "written_through": 1
+  },
+  "return": {
+    "aggregate_evidence": {
+      "bulk_write": false
+    },
+    "confidence": "INFERRED",
+    "register": "EAX",
+    "register_class": "pointer_like",
+    "type": null,
+    "void_possible": false
+  },
+  "schema": "openspore-abi-inference-1",
+  "seh_or_cookie_frame": false,
+  "sret": {
+    "ambiguity": null,
+    "basis": "entry slot 0 is not written through a pointer; DERIVED absence is weak, a struct filled through another alias would be missed",
+    "candidates": null,
+    "confidence": "APPROXIMATION",
+    "eax_holds_slot0_at_ret": null,
+    "hypothesis_confidence": null,
+    "present": false,
+    "slot": null,
+    "this_interaction": null
+  },
+  "stack_arguments": {
+    "confidence": "APPROXIMATION",
+    "derived_slots": 0,
+    "gaps": 0,
+    "not_complete": false,
+    "observed_slots": 0,
+    "slots": [],
+    "total_bytes": 0,
+    "widths_ambiguous": false
+  },
+  "tail_call": {
+    "after_frame_setup": false,
+    "form": null,
+    "present": false,
+    "target": null
+  },
+  "target": {
+    "address_available": true,
+    "image_base": "0x00400000",
+    "instructions": 3,
+    "syntax": "intel",
+    "va": "0x009317b0"
+  },
+  "variadic": "UNKNOWN",
+  "verdict": "ABI_INFERRED"
+}
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "service_005fa8d0",
+    "reconstructed": true,
+    "va": "0x005fa8d0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005fb430"
+  },
+  {
+    "name": "service_005fc330",
+    "reconstructed": true,
+    "va": "0x005fc330"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005fd260"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x008d6ed0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0091c640"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00947e30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00947ec0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e4c130"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00f01f40"
+  }
+]
+```
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 3,
+  "instructions": [
+    {
+      "address": "009317b0",
+      "instruction": "INC dword ptr [ECX + 0x210]"
+    },
+    {
+      "address": "009317b6",
+      "instruction": "MOV EAX,dword ptr [ECX + 0x210]"
+    },
+    {
+      "address": "009317bc",
+      "instruction": "RET"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 10674,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"x86-32 thiscall with first explicit stream receiver in ECX and caller cleanup\",\n    \"return_semantics\": \"new signed 32-bit reference count in EAX\",\n    \"return_type\": \"std::int32_t\",\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_file_stream_wave6::FileStream,openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream,openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer,openspore::reconstruction::pkg_file_stream_wave6::StreamChild\",\n        \"shared_vtable:vtable:0x0143ca40,vtable:0x0143e670\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-FILE-STREAM-WAVE6\",\n      \"score\": 29,\n      \"symbol\": \"pkg_file_stream_wave6_file_stream_set_utf8_path_009317e0\",\n      \"va\": \"0x009317e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_file_stream_wave6::FileStream,openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream,openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer,openspore::reconstruction::pkg_file_stream_wave6::StreamChild\",\n        \"shared_vtable:vtable:0x0143ca40,vtable:0x0143e670\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-FILE-STREAM-WAVE6\",\n      \"score\": 29,\n      \"symbol\": \"pkg_file_stream_wave6_file_stream_set_wide_path_00931810\",\n      \"va\": \"0x00931810\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_file_stream_wave6::FileStream,openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream,openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer,openspore::reconstruction::pkg_file_stream_wave6::StreamChild\"\n      ],\n      \"package\": \"PKG-FILE-STREAM-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"pkg_file_stream_wave6_xml_writer_begin_processing_instruction_00901930\",\n      \"va\": \"0x00901930\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_file_stream_wave6::FileStream,openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream,openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer,openspore::reconstruction::pkg_file_stream_wave6::StreamChild\"\n      ],\n      \"package\": \"PKG-FILE-STREAM-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"pkg_file_stream_wave6_stream_buffer_delegate_0093ae60\",\n      \"va\": \"0x0093ae60\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\",\n        \"same_subsystem\",\n        \"shared_types:openspore::reconstruction::pkg_file_stream_wave6::FileStream,openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream,openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer,openspore::reconstruction::pkg_file_stream_wave6::StreamChild\"\n      ],\n      \"package\": \"PKG-FILE-STREAM-WAVE6\",\n      \"score\": 23,\n      \"symbol\": \"pkg_file_stream_wave6_stream_child_delegate_0093b6d0\",\n      \"va\": \"0x0093b6d0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"service_005fa8d0\",\n      \"va\": \"0x005fa8d0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"service_005fc330\",\n      \"va\": \"0x005fc330\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-RECORD-IO-WAVE6\",\n      \"score\": 2,\n      \"symbol\": \"fixed_memory_stream_seek_0093b950\",\n      \"va\": \"0x0093b950\"\n    }\n  ],\n  \"audit_evidence_boundary\": \"Reviewed static mechanics and x86-32 ABI are preserved; opaque runtime ports and ownership remain gated.\",\n  \"audit_findings\": [],\n  \"audit_status\": \"clean_after_reviewed_repairs\",\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": \"integrated\",\n  \"class_type\": null,\n  \"cluster\": \"resource-io\",\n  \"confidence\": 0.9,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": \"service_005fa8d0\",\n        \"reconstructed\": true,\n        \"va\": \"0x005fa8d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005fb430\"\n      },\n      {\n        \"name\": \"service_005fc330\",\n        \"reconstructed\": true,\n        \"va\": \"0x005fc330\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005fd260\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x008d6ed0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0091c640\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00947e30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00947ec0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e4c130\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f01f40\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x005faad8\",\n        \"direction\": \"in\",\n        \"other\": \"0x005fa8d0\",\n        \"refe
+[TRUNCATED]
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "009317bc",
+  "body_span_bytes": 13,
+  "body_start": "009317b0",
+  "callees": [],
+  "callers": [
+    "FUN_005fc330",
+    "FUN_00947ec0",
+    "FUN_00f01f40",
+    "FUN_00e4c130",
+    "FUN_005fd260",
+    "FUN_005fa8d0",
+    "FUN_005fb430",
+    "FUN_0091c640",
+    "FUN_008d6ed0",
+    "FUN_00947e30"
+  ],
+  "classification": "stub",
+  "dispatch": null,
+  "entry_point": "009317b0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [],
+  "locals_count": 0,
+  "mode": "live",
+  "name": "IO::FileStream::SetPathCString",
+  "namespace": "IO",
+  "namespace_source": "derived_from_symbol_name",
+  "parameter_count": 2,
+  "parameters": [
+    {
+      "name": "this",
+      "ordinal": 0,
+      "storage": "Stack[0x4]:4",
+      "type": "FileStream *"
+    },
+    {
+      "name": "pPath8",
+      "ordinal": 1,
+      "storage": "Stack[0x8]:4",
+      "type": "char *"
+    }
+  ],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "void",
+  "return_type_resolved": true,
+  "rva": "0x5317b0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "void IO::FileStream::SetPathCString(FileStream * this, char * pPath8)",
+  "size_bytes": 13,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x009317b0",
+  "vtables": {
+    "referenced_by_vtables": [
+      "0x0143ca40",
+      "0x0143e670",
+      "0x0143fe78"
+    ],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 13,
+  "xrefs": [
+    {
+      "from": "005fb725"
+    },
+    {
+      "from": "005faad8"
+    },
+    {
+      "from": "005fc375"
+    },
+    {
+      "from": "008d6fc3"
+    },
+    {
+      "from": "00947e67"
+    },
+    {
+      "from": "00947ef7"
+    },
+    {
+      "from": "0091c68a"
+    },
+    {
+      "from": "00e4c19f"
+    },
+    {
+      "from": "0143ca44"
+    },
+    {
+      "from": "0143e674"
+    },
+    {
+      "from": "0143fe7c"
+    },
+    {
+      "from": "00f01fa0"
+    },
+    {
+      "from": "005fd4a0"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/IO__FileStream__SetPathCString.c",
+  "file": "src/reconstruction/pkg_file_stream_wave6/file_stream_adapter.cpp",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/IO__FileStream__SetPathCString.c",
+    "src/reconstruction/pkg_file_stream_wave6/file_stream_adapter.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave6-integrator-clean/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg-file-stream-wave6/009317b0.json"
+  ]
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "runtime validation not run",
+    "stream lifetime and reference-count synchronization remain gated"
+  ],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## types
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "openspore::reconstruction::pkg_file_stream_wave6::FileStream",
+  "openspore::reconstruction::pkg_file_stream_wave6::OpaqueStream",
+  "openspore::reconstruction::pkg_file_stream_wave6::StreamBuffer",
+  "openspore::reconstruction::pkg_file_stream_wave6::StreamChild",
+  "openspore::reconstruction::pkg_file_stream_wave6::XmlWriter",
+  "std::int32_t"
+]
+```
+
+## vtables
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "vtable:0x0143ca40",
+  "vtable:0x0143e670",
+  "vtable:0x0143fe78"
+]
+```
+
+## Conflicts
+
+```json
+[]
+```

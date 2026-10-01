@@ -1,4 +1,6 @@
 import json
+import os
+import re
 from pathlib import Path
 
 from .models import ROOT, ToolError, bounded, canonical_json, compact, normalize_va, optional_json, relative, sha256_json, write_json_atomic, write_text_atomic
@@ -20,7 +22,40 @@ try:
 except ImportError:  # pragma: no cover - the module is optional by design
     abi_infer = None
 
+# The sound vftable predicate is a second optional collaborator, for the same
+# reason and with the same contract: when it is absent, or the image it needs is
+# absent, or the image in hand is not the binary this repository describes, the
+# collector asks it nothing and the pack is bit-identical to what it was before
+# it existed. Nothing here is inferred from its absence.
+try:
+    from . import vftables
+except ImportError:  # pragma: no cover - the module is optional by design
+    vftables = None
+
 ABI_INFER_REL = "tools/reconstruction_tooling/abi_infer.py"
+VFTABLES_REL = "tools/reconstruction_tooling/vftables.py"
+#: The image every reconstruction in this repository describes, relative to the
+#: repository root. Named here rather than derived from the index because the
+#: index names the program and its digest, never a path.
+BINARY_RELPATH = ("SPORE", "SporeBin", "SporeApp.exe")
+#: The basis a membership entry must carry to be passed to the engine. Mirrors
+#: ``abi_infer.VFTABLE_BASIS``; compared by value so a pack produced here is
+#: readable by an engine that does not expose the constant.
+VFTABLE_BASIS = "vftable_predicate"
+#: How many tail hops a resolution may follow. Measured: every direct chain in
+#: this binary terminates at depth 2, so this is the depth the corpus needs --
+#: and it is a *cap*, not an assumption, because ``tail_call.target`` is
+#: provably wrong for ``0x00847a90`` and ``0x01053be0`` and a cycle is
+#: expressible in machine code.
+TAIL_TARGET_MAX_DEPTH = 2
+#: Distinct targets one resolution may visit, on top of the depth cap, so a wide
+#: fan-out cannot turn one pack into an unbounded number of bridge queries.
+TAIL_TARGET_MAX_VISITED = 8
+#: One direct ``JMP <imm32>`` in a listing. The pre-filter that decides whether a
+#: target is worth resolving at all; the engine re-derives the hop from its own
+#: parse and rejects any record resolved for a different address, so a
+#: disagreement here costs a query and never a claim.
+DIRECT_JUMP = re.compile(r"^\s*jmp\s+0x([0-9a-fA-F]+)\s*$", re.IGNORECASE)
 # Entry points accepted on the collaborator, most specific first. This is a
 # capability probe, not an API contract: an unrecognised module simply means no
 # derivation happens. The engine's real signature is
@@ -118,6 +153,14 @@ EVIDENCE_REL = "reconstruction/evidence"
 SNAPSHOT_GLOB = "ghidra_snapshot_*.json"
 FUNCTION_KEYS = ("address", "va", "function_address")
 DECOMPILATION_KEYS = ("decompiled", "decompiled_evidence", "decompilation", "code")
+
+# The byte budget for a *stored* machine listing. It is a bound, not a target:
+# past it ``compact`` still returns a truncated envelope, which is still refused
+# downstream. It is simply large enough that no listing Ghidra produces for one
+# x86 function in this binary is lost to persistence -- the largest observed
+# listing is 39783 bytes of JSON, so this leaves ~6x headroom while keeping the
+# per-pack size bounded. See ``_live_disassembly``.
+LISTING_BUDGET = 262144
 
 
 def _index(root):
@@ -267,17 +310,27 @@ def _live_disassembly(va):
     if isinstance(data, dict) and data.get("mode") not in (None, "live"):
         return {"status": "error", "mode": "live", "provenance": "GhidraMCP /disassemble_function", "code": "live_unavailable", "message": "Ghidra returned %s instead of live disassembly" % data.get("mode")}
     # Two views of the same bridge response, deliberately. ``data`` is the
-    # *stored* evidence: the 12000-byte budget every other category uses, so
-    # the category value and the pack's ``content_sha256`` are exactly what they
-    # were before this line. ``listing`` is the *derivation's* input, kept whole,
-    # because ``compact`` hands the ABI engine a ``{"truncated": ...}`` envelope
-    # for anything past the budget and ``_disassembly_payload`` rightly refuses
-    # to derive from an envelope -- which silently starved the largest functions
-    # in the binary, the ones with the most ABI evidence. Nothing serialises the
+    # *stored* evidence: the budget every other category uses, so the category
+    # value and the pack's ``content_sha256`` are exactly what they were before
+    # this line. ``listing`` is the *derivation's* input, kept whole, because
+    # ``compact`` hands the ABI engine a ``{"truncated": ...}`` envelope for
+    # anything past the budget and ``_disassembly_payload`` rightly refuses to
+    # derive from an envelope -- which silently starved the largest functions in
+    # the binary, the ones with the most ABI evidence. Nothing serialises the
     # card as a whole (only ``data`` and ``provenance`` reach the pack), so the
     # uncompacted copy stays in memory and never lands on disk.
+    #
+    # The stored copy gets its own, larger budget. The shared 12000-byte budget
+    # is a *display* budget: a listing past it was replaced by a truncated
+    # envelope, and the envelope is the one shape the validator refuses to read
+    # (``validate._listing`` rejects ``truncated``), so the 33 largest functions
+    # in the binary were stored as evidence the rest of the pipeline is forbidden
+    # to use. That is a persistence-layer loss, not a Ghidra one -- the bridge
+    # returned every instruction. ``LISTING_BUDGET`` is still a hard bound, and
+    # anything past it is still truncated, still labelled truncated, and still
+    # unread: completeness is bought, never assumed.
     return {"status": "ok", "mode": "live", "provenance": "GhidraMCP /disassemble_function",
-            "data": compact(data, 12000), "listing": data}
+            "data": compact(data, LISTING_BUDGET), "listing": data}
 
 
 def _abi_infer_entry():
@@ -591,7 +644,214 @@ def _stored_derived_record(record):
     return candidate
 
 
-def _derived_abi(va, function, disassembly, persisted_abi=None, index=None):
+def _binary_scan(root, index):
+    # type: (object, object) -> tuple
+    """``(scan, digest, refusal)`` for the image this repository reconstructs.
+
+    ``refusal`` is a human-readable reason the scan was not used, or ``None``.
+    The three refusals, in the order they are checked:
+
+    * the predicate module is not importable, or the engine is not either --
+      the collaborators are optional by contract, so this is a silent
+      degradation and not an error;
+    * the image file is not present (a checkout without ``SPORE/``), or it is
+      not a PE32 image the predicate can map;
+    * **the digest of the image in hand is not the digest the index records.**
+      This is the check that makes the membership traceable: a pack's other
+      evidence -- Ghidra listings, function cards, the index record itself --
+      describes one specific build, and a membership proved against a different
+      build would be a claim about a binary nothing else in the pack came from.
+      Refusing is the only safe answer, and it is why the digest travels into
+      the pack's provenance whenever a membership *is* used.
+
+    The scan itself is memoised by the caller, not here: the predicate's own
+    cache is keyed by the image digest, so the expensive part (a 20 MB linear
+    scan) happens once per binary and every call after it pays a file read and
+    a hash, which is what keeps a verdict bound to the bytes it was read from.
+    """
+    if vftables is None or abi_infer is None:
+        return None, None, "the vftable predicate is not importable"
+    if root is None:
+        return None, None, "no repository root was supplied"
+    path = os.path.join(str(root), *BINARY_RELPATH)
+    if not os.path.exists(path):
+        return None, None, "%s is not present" % "/".join(BINARY_RELPATH)
+    scan = vftables.scan_file(path, image_base=_image_base(index),
+                              cache_dir=vftables.default_cache_dir(root))
+    if scan is None:
+        return None, None, "%s is not a PE32 image" % "/".join(BINARY_RELPATH)
+    digest = vftables.digest_of(scan)
+    expected = (index or {}).get("binary") or {}
+    recorded = expected.get("sha256") if isinstance(expected, dict) else None
+    if isinstance(recorded, str) and recorded and recorded != digest:
+        return None, digest, ("the image digest %s is not the indexed binary %s"
+                              % (digest, recorded))
+    return scan, digest, None
+
+
+def _vftable_slots(scan, va):
+    # type: (object, object) -> list
+    """Membership evidence for one target: ``[]`` whenever it is not proven.
+
+    Each entry states the basis it was established on, because that is the only
+    thing that distinguishes a membership proved from the image's bytes from a
+    membership asserted by the triage heuristics -- and the engine drops the
+    latter. See ``abi_infer.vftable_memberships``.
+    """
+    if scan is None:
+        return []
+    out = []
+    try:
+        target = normalize_va(va)
+    except (TypeError, ValueError):
+        return []
+    number = int(target, 16)
+    for table, slot in vftables.slots_of(scan, number):
+        out.append({"table": "0x%08x" % table, "slot_index": slot,
+                    "basis": VFTABLE_BASIS})
+    return out
+
+
+def _listing_of(va, root, live):
+    # type: (object, object, bool) -> object
+    """One function's own instruction payload, or ``None``.
+
+    Live collection asks the bridge, exactly as it does for the target itself;
+    offline it reads the committed pack for that address, so a hop target that
+    has already been collected is resolvable with no bridge at all. A pack that
+    is absent, unreadable or carries no listing yields ``None``, which is a
+    refusal and never an invented listing.
+    """
+    if live:
+        return _disassembly_payload(_live_disassembly(va))
+    try:
+        target = normalize_va(va)
+    except (TypeError, ValueError):
+        return None
+    if root is None:
+        return None
+    path = os.path.join(str(root), "reconstruction", "evidence", target[2:],
+                        "evidence.json")
+    pack = optional_json(path)
+    if not isinstance(pack, dict):
+        return None
+    categories = pack.get("categories")
+    if not isinstance(categories, dict):
+        return None
+    value = (categories.get("disassembly") or {}).get("value")
+    if not isinstance(value, dict) or value.get("truncated") is True:
+        return None
+    return value if isinstance(value.get("instructions"), list) and value["instructions"] else None
+
+
+def _tail_target_record(va, root, index, live, scan, visited, depth):
+    # type: (object, object, object, bool, object, object, int) -> object
+    """Resolve one tail-hop target into what ``T1-FWD`` needs, or ``None``.
+
+    The engine is a pure function of one listing, so it cannot read the target's
+    listing and this is where the recursion lives: the visited set is keyed by
+    VA, the depth is capped, and **either** cap answering ``None`` leaves the
+    target's convention UNKNOWN -- never a guess and never a partial forward.
+    A record is only produced for an address the resolver can establish to be a
+    function *entry* (the listing's own first instruction) inside this image's
+    code range, which is what excludes a jump into the middle of another body
+    and a jump through an import table.
+    """
+    if depth > TAIL_TARGET_MAX_DEPTH or len(visited) > TAIL_TARGET_MAX_VISITED:
+        return None
+    try:
+        target = normalize_va(va)
+    except (TypeError, ValueError):
+        return None
+    if target in visited:
+        return None                       # a cycle, or a second path to the same body
+    visited.add(target)
+    payload = _listing_of(target, root, live)
+    if payload is None:
+        return None
+    instructions = payload.get("instructions") or []
+    if not instructions:
+        return None
+    first = instructions[0].get("address")
+    try:
+        entry = normalize_va(first) == target
+    except (TypeError, ValueError):
+        entry = False
+    number = int(target, 16)
+    in_text = bool(scan is not None and vftables.is_code_address(scan, number))
+    inner = _tail_target_record(number, root, index, live, scan, visited, depth + 1)
+    record = None
+    if _abi_infer_entry() is not None:
+        card = _live_function(target) if live else None
+        data = (card or {}).get("data") if isinstance(card, dict) else None
+        data = data if isinstance(data, dict) else {}
+        stored = ((index or {}).get("records") or {}).get(target) or {}
+        try:
+            record = _abi_infer_entry()(
+                payload,
+                ghidra_calling_convention=data.get("ghidra_calling_convention"),
+                ghidra_parameter_count=data.get("parameter_count"),
+                persisted_abi=stored.get("abi") if isinstance(stored.get("abi"), dict) else None,
+                image_base=_image_base(index),
+                vftable_slots=_vftable_slots(scan, number),
+                tail_target_record=inner)
+        except Exception:
+            record = None
+    if not isinstance(record, dict) or not record:
+        return None
+    span = None
+    last = instructions[-1].get("address")
+    try:
+        span = [first, normalize_va(last)]
+    except (TypeError, ValueError):
+        span = None
+    return {"va": target, "entry": entry, "in_text": in_text,
+            # A direct-JMP target inside this image's code range is not a pointer
+            # read out of an import table: an import thunk's target lives in the
+            # import section or in another module, and either way it fails the
+            # code-range test above. Stating it keeps the engine's S7 explicit.
+            "import_pointer": False, "record": record,
+            "source": "%s listing for %s%s" % (
+                "live" if live else "committed", target,
+                ", %s" % ("hops resolved to depth %d" % depth) if inner else ""),
+            "listing_span": span}
+
+
+def _tail_target_for(va, payload, root, index, live, scan):
+    # type: (object, object, object, object, bool, object) -> object
+    """The one target worth resolving for this listing, or ``None``.
+
+    A pre-filter over the listing text, kept deliberately dumb: a listing with
+    any ``RET`` has no hop to follow, and a listing whose direct ``JMP <imm32>``
+    sites all name **one** address has exactly one candidate. Anything else -- a
+    conditional tail, a jump through a register or memory, two genuine exits, one
+    of them to a different address -- resolves to nothing, and the engine's own
+    S1/S2 would have rejected it anyway.
+
+    Unambiguous *target*, not a single *site*: two sites naming one address are
+    one transfer target (``0x00841440`` is the shape), and a count of sites is
+    not the property the engine needs. This resolver only decides which address
+    to derive the target's record from; whether the forward is sound stays
+    ``T1-FWD``'s decision, so widening the pre-filter cannot widen the claim.
+    """
+    instructions = (payload or {}).get("instructions") or []
+    hops = []
+    for item in instructions:
+        if not isinstance(item, dict):
+            continue
+        text = str(item.get("instruction") or "")
+        if re.match(r"^\s*ret\b", text, re.IGNORECASE):
+            return None
+        match = DIRECT_JUMP.match(text)
+        if match:
+            hops.append(int(match.group(1), 16))
+    if not hops or len(set(hops)) != 1:
+        return None
+    return _tail_target_record(hops[0], root, index, live, scan, {normalize_va(va)}, 0)
+
+
+def _derived_abi(va, function, disassembly, persisted_abi=None, index=None,
+                 root=None, live=False):
     # type: (...) -> object
     """Infer an ABI record from live observations, without ever failing.
 
@@ -637,6 +897,28 @@ def _derived_abi(va, function, disassembly, persisted_abi=None, index=None):
     This never mutates ``record["abi"]``, never reads or writes ``index.json``,
     and persists nothing: the result is a pack-local projection whose canonical
     home remains ``reconstruction/metadata/**``.
+
+    Two evidence classes are added here, both optional and both degrading to
+    "absent" rather than to a guess:
+
+    * **vftable slot membership**, from the sound predicate in ``vftables.py``
+      over the PE image, passed as ``vftable_slots``. Every entry carries the
+      basis it was established on, and the engine drops anything that cannot
+      state it. The digest of the image the membership was computed against is
+      appended to the returned ``observations``, so the pack's provenance names
+      the exact binary a ``V1-VFT`` claim came from -- a membership without that
+      would be a claim about some build of this program, which is not the same
+      claim at all.
+    * **a tail-hop target record**, resolved on demand from the target's *own*
+      listing and passed as ``tail_target_record``, with the recursion, the
+      VA-keyed visited set and the depth cap all living here rather than in the
+      engine (which is a pure function of one listing and must stay one).
+
+    Both are consulted only after the listing exists, so an offline collection
+    still never derives and its pack is still bit-identical. When either
+    collaborator is missing, the image is absent, or the image's digest is not
+    the indexed binary's, nothing is passed and the record is exactly the one
+    the pre-extension engine produced.
     """
     payload = _disassembly_payload(disassembly)
     if payload is None:
@@ -649,6 +931,9 @@ def _derived_abi(va, function, disassembly, persisted_abi=None, index=None):
         return None
     data = (function or {}).get("data") if isinstance(function, dict) else None
     data = data if isinstance(data, dict) else {}
+    scan, digest, _refusal = _binary_scan(root, index)
+    slots = _vftable_slots(scan, va)
+    target = _tail_target_for(va, payload, root, index, live, scan)
     try:
         value = entry(
             payload,
@@ -656,11 +941,19 @@ def _derived_abi(va, function, disassembly, persisted_abi=None, index=None):
             ghidra_parameter_count=data.get("parameter_count"),
             persisted_abi=persisted_abi if isinstance(persisted_abi, dict) else None,
             image_base=_image_base(index),
+            vftable_slots=slots,
+            tail_target_record=target,
         )
     except Exception:
-        # Includes the TypeError an unexpected entry-point name raises, and the
-        # ValueError the engine re-raises for an input shape it does not accept.
-        # One clear call, no retry: see the docstring.
+        # Includes the TypeError an unexpected entry-point name raises, the
+        # TypeError an engine without the two new keyword arguments would raise,
+        # and the ValueError the engine re-raises for an input shape it does not
+        # accept. One clear call, no retry: a retry cannot distinguish a signature
+        # rejection from a ``TypeError`` raised *inside* the engine, and the old
+        # retry path is what turned a signature mismatch into a silent, wrong
+        # derivation. An engine that cannot take the evidence derives without it
+        # or not at all; either way the pack never states a claim it cannot
+        # support.
         return None
     if not isinstance(value, dict) or not value:
         return None
@@ -681,6 +974,17 @@ def _derived_abi(va, function, disassembly, persisted_abi=None, index=None):
                 observations.append(provenance)
     if not observations:
         return None
+    if digest and any(entry.get("id") == "V1-VFT" for entry in value.get("inferences") or ()):
+        # The binary a membership claim was read against, named by digest --
+        # attached to the *claim*, not to the consultation. A pack whose record
+        # states nothing new stays byte-identical to the one the pre-extension
+        # collector wrote, which is the invariant every rule that cannot fire
+        # has to keep; the cost is that a membership which was proven and then
+        # refused (the twelve callee-pop vftable slots) leaves no trace here,
+        # which is correct: nothing was claimed from it.
+        observations.append("%s@%s" % (VFTABLES_REL, digest))
+    if target and any(entry.get("id") == "T1-FWD" for entry in value.get("inferences") or ()):
+        observations.append("%s#tail_target=%s" % (ABI_INFER_REL, target["va"]))
     try:
         return {"value": _stored_derived_record(value), "observations": observations}
     except Exception:
@@ -761,14 +1065,42 @@ def _convention_keys(value):
     return keys
 
 
-def _category(state, value, provenance, source_class="committed_artifact", evidence_level="OBSERVED", reason=None):
+def _listing_state(value):
+    # type: (object) -> str
+    """``complete`` / ``truncated`` / ``degraded`` / ``missing`` for a listing.
+
+    Four states, and the distinction is the point: ``availability`` answers
+    "did the bridge hand us anything", which a truncated envelope also answers
+    yes to. A reader who stops there reads a fragment of a body as the body, and
+    a fragment that agrees with a source is not corroboration. So the listing
+    states its own completeness, and the *card* is labelled from it rather than
+    from the mere fact of a response.
+
+    ``degraded`` is a property of the machine parse rather than of the stored
+    bytes, so a listing whose parse record went in degraded is reported as such:
+    the instructions are all here, but something in them was not read, and "all
+    present" is not "all understood".
+    """
+    if not isinstance(value, dict) or not value:
+        return "missing"
+    if value.get("truncated") is True:
+        return "truncated"
+    if not isinstance(value.get("instructions"), list) or not value.get("instructions"):
+        return "missing"
+    parse = value.get("parse")
+    if isinstance(parse, dict) and (parse.get("degraded") is True or int(parse.get("unparsed") or 0)):
+        return "degraded"
+    return "complete"
+
+
+def _category(state, value, provenance, source_class="committed_artifact", evidence_level="OBSERVED", reason=None, listing_state=None):
     if state == "available" and value in (None, {}, []):
         state = "unavailable"
     if state != "available":
         evidence_state = "MISSING"
     else:
         evidence_state = {"live": "LIVE", "derived": "DERIVED", "inferred": "INFERRED"}.get(source_class, "PERSISTED")
-    return {
+    card = {
         "availability": state,
         "evidence_state": evidence_state,
         "evidence_level": evidence_level if state == "available" else "UNKNOWN",
@@ -780,6 +1112,21 @@ def _category(state, value, provenance, source_class="committed_artifact", evide
         # gap as a per-target finding, so a caller may state its own reason.
         "reason": None if state == "available" else (reason or "no exact source evidence found"),
     }
+    if listing_state is not None:
+        # A truncated listing is not an OBSERVED listing. The evidence level and
+        # state are demoted so no consumer can read a stored fragment as a whole
+        # body, while the value itself is kept verbatim -- the fragment is still
+        # the observation, and the parse record inside it still names the real
+        # byte count it was cut from.
+        if listing_state == "truncated":
+            card["evidence_state"] = "TRUNCATED"
+            card["evidence_level"] = "PARTIAL"
+            card["reason"] = "the machine listing exceeded the %d-byte storage budget and was stored as a fragment" % LISTING_BUDGET
+        elif listing_state == "degraded":
+            card["evidence_state"] = "DEGRADED"
+            card["evidence_level"] = "PARTIAL"
+        card["listing_state"] = listing_state
+    return card
 
 
 def _existing_source_refs(source, root):
@@ -879,16 +1226,31 @@ def collect(root=ROOT, va=None, live=False, write=True, out_dir=None):
     else:
         categories["decompilation"] = _category("unavailable", None, [], "unavailable", "UNKNOWN")
     if disassembly and disassembly.get("status") == "ok":
-        # ``data``, never ``listing``: the category is the stored evidence and
-        # keeps the 12000-byte budget, so this value -- and therefore the pack's
-        # ``content_sha256`` -- is unaffected by the uncompacted copy the
-        # derivation reads.
-        categories["disassembly"] = _category("available", disassembly.get("data"), [disassembly.get("provenance")], "live", "OBSERVED")
+        # ``data``, never ``listing``: the category is the stored evidence, and
+        # only it reaches the pack, so the pack's ``content_sha256`` reflects
+        # what is on disk rather than the uncompacted copy the derivation reads.
+        # The card is labelled from the stored bytes' own completeness, so a
+        # listing that did not survive the storage budget is recorded as
+        # truncated instead of passing as an observed body.
+        stored = disassembly.get("data")
+        state = _listing_state(stored)
+        if state == "missing":
+            # The bridge answered, and the answer is not a listing. That is an
+            # absence of evidence, not evidence of an empty body, so the card
+            # says MISSING rather than storing an ``available`` nothing.
+            categories["disassembly"] = _category(
+                "unavailable", None, [disassembly.get("provenance")], "unavailable", "UNKNOWN",
+                reason="Ghidra returned a disassembly card that carries no instruction listing",
+                listing_state="missing")
+        else:
+            categories["disassembly"] = _category("available", stored, [disassembly.get("provenance")], "live", "OBSERVED",
+                                                  listing_state=state)
     else:
-        categories["disassembly"] = _category("unavailable", None, [], "unavailable", "UNKNOWN")
+        categories["disassembly"] = _category("unavailable", None, [], "unavailable", "UNKNOWN", listing_state="missing")
     # Derived ABI, evaluated after the observations exist and before the
     # provenance list is assembled so the derivation can cite its own source.
-    derived = _derived_abi(va, function, disassembly, record.get("abi"), index)
+    derived = _derived_abi(va, function, disassembly, record.get("abi"), index,
+                           root=root, live=live)
     derived_filled = False
     if derived and categories.get("abi", {}).get("availability") == "unavailable":
         # Persisted ABI always wins: the ~263 records that carry one are the
@@ -900,6 +1262,29 @@ def collect(root=ROOT, va=None, live=False, write=True, out_dir=None):
                                       [INDEX_REL] + derived["observations"],
                                       "derived", "INFERRED")
         derived_filled = True
+    # The same envelope, published under its own key so that it survives the
+    # branch above. ``categories["abi"]`` is the ABI *category*: the persisted
+    # projection whenever the record carries one, which is what keeps the
+    # committed packs bit-identical and must not be disturbed. The machine
+    # derivation, though, was computed either way -- and when the persisted ABI
+    # won, the entire derived record was computed and then dropped, taking with
+    # it the three sub-records no other category carries (``parse``,
+    # ``dispatch``, ``receiver``) and therefore the only machine evidence three
+    # of the validator's dimensions could have read. So it is published here
+    # instead: strictly additive, no verdict, gate or status moves, and the
+    # projection is a pure function of the same live listing, so both categories
+    # agree byte-for-byte whenever both are filled. The value is stored as the
+    # engine returned it, envelope included -- ``validate._abi_category`` reads a
+    # ``{"truncated": true}`` value as "no derived record", and a projection is
+    # never that envelope, so a pack can tell a projection from a full record.
+    if derived:
+        categories["abi_derived"] = _category("available", derived["value"],
+                                              [INDEX_REL] + derived["observations"],
+                                              "derived", "INFERRED")
+    else:
+        categories["abi_derived"] = _category("unavailable", None, [], "unavailable", "UNKNOWN",
+                                              "the ABI engine produced no record for this target: derivation "
+                                              "requires a live instruction listing and a loadable engine")
     provenance = [
         {"ref": projection.get("source", INDEX_REL), "mode": "derived" if projection.get("rebuilt") else "persisted", "source_class": "generated_index"},
         {"ref": "knowledgegraph/triage/queue-f0e310e0-v6.json", "mode": "persisted", "source_class": "committed_artifact"},

@@ -2,9 +2,79 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `f83cbf2d0becf9649612354dbcaa356b37e2c658eaa55f3089a34e7a8f80a70b`
+- Content SHA-256: `81c904593ff2baa0a69df067d7e1bd3d9b88b4b187deb2cd3e445b2c5e9101f5`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__cdecl",
+  "hidden_receiver": "none: ECX is written at 0x00c70156 from ESI and is a call argument, not a receiver",
+  "hidden_this_register": "ECX is only ever loaded, at 0x00c70156 (MOV ECX,ESI) and 0x00c701a7 (MOV ECX,ESI) and 0x00c701b2 (MOV ECX,ESI), each immediately before a thiscall to a one-argument accessor",
+  "ordinary_stack_argument_slots": 3,
+  "receiver": false,
+  "ret_form": "RET",
+  "return_note": "(boolean)",
+  "return_observation": "0x00c70246: MOV AL,0x1 and 0x00c7024e: XOR AL,AL write only the low byte; bits 8..31 of EAX are left as the caller left them, and every consumer tests AL (0x00c3588f, 0x00c3514c, 0x00c61a3c, 0x00c630bf, 0x01068b72)",
+  "return_register": "EAX",
+  "return_semantics": "1 when some entry satisfies the acceptance test, 0 otherwise; the only writes are XOR AL,AL at 0x00c70162 and 0x00c7024e, and MOV AL,0x1 at 0x00c70246, so only AL is defined",
+  "return_type": "std::uint8_t",
+  "return_width_bytes": 1,
+  "saved_registers": [
+    "EBX",
+    "EBP",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "frame_offset": "ESP0 + 0x04",
+      "overwritten": "0x00c7017b stores the loop counter into this same slot and 0x00c701ef reloads it, so the argument is dead after its first read",
+      "read_at": [
+        "0x00c70152"
+      ],
+      "role": "the owner object; supplies the element count through its +0x160 and +0x15c fields and the kind through 0x00b8dab0",
+      "slot": 1
+    },
+    {
+      "frame_offset": "ESP0 + 0x08",
+      "read_at": [
+        "0x00c70190"
+      ],
+      "role": "reloaded into ESI at the top of every outer iteration but never used on any observed path",
+      "slot": 2
+    },
+    {
+      "frame_offset": "ESP0 + 0x0c",
+      "read_at": [
+        "0x00c70194",
+        "0x00c7019a"
+      ],
+      "role": "used both as the dword-array base (0x00c7019e: MOV ESI,[EAX + EBP*0x4]) and as the holder of the dword at +0x84 (0x00c701a1)",
+      "slot": 3
+    },
+    {
+      "frame_offset": "ESP0 + 0x10",
+      "read_at": [
+        "0x00c701d0"
+      ],
+      "role": "byte flag selecting the inner acceptance rule; no inspected caller initialises this slot",
+      "slot": 4,
+      "status": "UNRESOLVED"
+    }
+  ],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET (two sites: 0x00c7024a on the accept path, 0x00c70252 on the reject path)"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -142,7 +212,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "39a619ae7fa31f832c52ff28b3120c412912a122250718710bffbe2439e37f7c",
+  "content_sha256": "31427e643c7971ae9ed4ffa6997a449c4981e9fbe37156f72d9c04fc45522a8f",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -161,7 +231,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__cdecl"
   },
   "dispatch": {
     "call_offsets": [],
@@ -254,21 +324,85 @@
         "obs-0012",
         "obs-0044",
         "obs-0050"
-    
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "address_window_offset_005c65e0",
+    "reconstructed": true,
+    "va": "0x005c65e0"
+  },
+  {
+    "name": "FUN_00b8dab0",
+    "reconstructed": false,
+    "va": "0x00b8dab0"
+  },
+  {
+    "name": "FUN_01021080",
+    "reconstructed": true,
+    "va": "0x01021080"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c308e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c344f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c34ee0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c35810"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c59540"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c62ff0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c70b20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01068970"
+  }
+]
+```
 
 ## contradictions
 
@@ -278,13 +412,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 FUN_00c70150(int param_1,int param_2,char param_3)\n\n{\n  char cVar1;\n  int iVar2;\n  int iVar3;\n  int *piVar4;\n  int iVar5;\n  int iVar6;\n  int local_4;\n  \n  iVar2 = FUN_00b8dab0();\n  if (iVar2 != 5) {\n    return 0;\n  }\n  iVar2 = *(int *)(param_1 + 0x160) - *(int *)(param_1 + 0x15c) >> 2;\n  local_4 = 0;\n  if (0 < iVar2) {\n    do {\n      iVar6 = *(int *)(param_2 + 0x84);\n      iVar3 = FUN_00ff0420();\n      if (iVar3 == iVar6) {\n        piVar4 = (int *)FUN_005c65e0();\n        iVar3 = 0;\n        iVar6 = piVar4[1] - *piVar4 >> 2;\n        if (0 < iVar6) {\n          do {\n            if (param_3 == '\\0') {\n              return 1;\n            }\n            iVar5 = FUN_00ff0870();\n            if (1 < iVar5) {\n              return 1;\n            }\n            iVar3 = iVar3 + 1;\n          } while (iVar3 < iVar6);\n        }\n      }\n      local_4 = local_4 + 1;\n    } while (local_4 < iVar2);\n  }\n  iVar2 = FUN_01021080();\n  if (iVar2 == 0) {\n    if (DAT_0167a60c == 0) {\n      iVar2 = FUN_00f473a0(200,\"Simulator/SimSingleton\",0,0,0,0);\n      if (iVar2 == 0) {\n        DAT_0167a60c = 0;\n      }\n      else {\n        DAT_0167a60c = FUN_00ae5c30();\n      }\n    }\n    cVar1 = FUN_00ae3740();\n    if (cVar1 != '\\0') {\n      return 1;\n    }\n  }\n  return 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -601,9 +731,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 14061,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__cdecl\",\n    \"hidden_receiver\": \"none: ECX is written at 0x00c70156 from ESI and is a call argument, not a receiver\",\n    \"hidden_this_register\": \"ECX is only ever loaded, at 0x00c70156 (MOV ECX,ESI) and 0x00c701a7 (MOV ECX,ESI) and 0x00c701b2 (MOV ECX,ESI), each immediately before a thiscall to a one-argument accessor\",\n    \"ordinary_stack_argument_slots\": 3,\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_note\": \"(boolean)\",\n    \"return_observation\": \"0x00c70246: MOV AL,0x1 and 0x00c7024e: XOR AL,AL write only the low byte; bits 8..31 of EAX are left as the caller left them, and every consumer tests AL (0x00c3588f, 0x00c3514c, 0x00c61a3c, 0x00c630bf, 0x01068b72)\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"1 when some entry satisfies the acceptance test, 0 otherwise; the only writes are XOR AL,AL at 0x00c70162 and 0x00c7024e, and MOV AL,0x1 at 0x00c70246, so only AL is defined\",\n    \"return_type\": \"std::uint8_t\",\n    \"return_width_bytes\": 1,\n    \"saved_registers\": [\n      \"EBX\",\n      \"EBP\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"frame_offset\": \"ESP0 + 0x04\",\n        \"overwritten\": \"0x00c7017b stores the loop counter into this same slot and 0x00c701ef reloads it, so the argument is dead after its first read\",\n        \"read_at\": [\n          \"0x00c70152\"\n        ],\n        \"role\": \"the owner object; supplies the element count through its +0x160 and +0x15c fields and the kind through 0x00b8dab0\",\n        \"slot\": 1\n      },\n      {\n        \"frame_offset\": \"ESP0 + 0x08\",\n        \"read_at\": [\n          \"0x00c70190\"\n        ],\n        \"role\": \"reloaded into ESI at the top of every outer iteration but never used on any observed path\",\n        \"slot\": 2\n      },\n      {\n        \"frame_offset\": \"ESP0 + 0x0c\",\n        \"read_at\": [\n          \"0x00c70194\",\n          \"0x00c7019a\"\n        ],\n        \"role\": \"used both as the dword-array base (0x00c7019e: MOV ESI,[EAX + EBP*0x4]) and as the holder of the dword at +0x84 (0x00c701a1)\",\n        \"slot\": 3\n      },\n      {\n        \"frame_offset\": \"ESP0 + 0x10\",\n        \"read_at\": [\n          \"0x00c701d0\"\n        ],\n        \"role\": \"byte flag selecting the inner acceptance rule; no inspected caller initialises this slot\",\n        \"slot\": 4,\n        \"status\": \"UNRESOLVED\"\n      }\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET (two sites: 0x00c7024a on the accept path, 0x00c70252 on the reject path)\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-11-H4-HELPER-WAVE3\",\n      \"score\": 3,\n      \"symbol\": \"address_window_offset_005c65e0\",\n      \"va\": \"0x005c65e0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"FUN_01021080\",\n      \"va\": \"0x01021080\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_bake_probe_004bf770\",\n      \"va\": \"0x004bf770\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"dispatch_key_00628450\",\n      \"va\": \"0x00628450\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IStateManager_Get_0067dce0\",\n      \"va\": \"0x0067dce0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"WAVE6-ENGINE-RUNTIME\",\n      \"score\": 2,\n      \"symbol\": \"app_config_manager_get_0067dcf0\",\n      \"va\": \"0x0067dcf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IPropManager_Get_0067ddf0\",\n      \"va\": \"0x0067ddf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"FUN_00b3d3a0\",\n      \"va\": \"0x00b3d3a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [\n    \"The fourth-stack-slot read at 0x00c701d0 cannot be reconciled with the three-word pushes at all ten inspected call sites; this is recorded as an open ABI discrepancy rather than resolved by assumption.\"\n  ],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"address_window_offset_005c65e0\",\n        \"reconstructed\": true,\n        \"va\": \"0x005c65e0\"\n      },\n      {\n        \"name\": \"FUN_00b8dab0\",\n        \"reconstructed\": false,\n        \"va\": \"0x00b8dab0\"\n      },\n      {\n        \"name\": \"FUN_01021080\",\n        \"reconstructed\": true,\n        \"va\": \"0x01021080\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c308e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c344f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c34ee0\"\n      },\n      {\n    
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -619,24 +756,24 @@
   "body_span_bytes": 259,
   "body_start": "00c70150",
   "callees": [
+    "FUN_005c65e0",
+    "FUN_00ae3740",
+    "FUN_00b8dab0",
+    "FUN_01021080",
     "FUN_00ae5c30",
     "FUN_00f473a0",
-    "FUN_00ae3740",
-    "FUN_00ff0420",
-    "FUN_01021080",
-    "FUN_005c65e0",
-    "FUN_00b8dab0",
-    "FUN_00ff0870"
+    "FUN_00ff0870",
+    "FUN_00ff0420"
   ],
   "callers": [
-    "FUN_01068970",
-    "FUN_00c34ee0",
-    "FUN_00c344f0",
     "FUN_00c308e0",
-    "FUN_00c59540",
+    "FUN_00c62ff0",
+    "FUN_01068970",
+    "FUN_00c344f0",
     "FUN_00c35810",
     "FUN_00c70b20",
-    "FUN_00c62ff0"
+    "FUN_00c59540",
+    "FUN_00c34ee0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -649,57 +786,12 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "iVar6",
-      "storage": "register:00000018:4",
-      "type": "int"
-    },
-    {
-      "name": "piVar4",
-      "storage": "register:00000000:4",
-      "type": "int *"
-    },
-    {
-      "name": "iVar5",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar2",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar3",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0xc]:1",
-      "type": "char"
-    },
-    {
-      "name": "cVar1",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x8]:4",
-      "type": "int"
-    },
-    {
       "name": "local_4",
       "storage": "Stack[-0x4]:4",
-      "type": "int"
+      "type": "undefined4"
     }
   ],
-  "locals_count": 10,
+  "locals_count": 1,
   "mode": "live",
   "name": "FUN_00c70150",
   "namespace": null,
@@ -768,9 +860,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/c70150_any_entry_unlocked.cpp",
+    "reconstruction/staging/wave13-w1-core-b10/c70150_any_entry_unlocked.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b10/00c70150.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -780,9 +886,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential test must confirm the owner's +0x194 value is 5 whenever the scan is expected to run, since a different value would make every call return 0.",
+    "No original-process trace has been captured for 0x00c70150. The 0x00c701d0 read of an apparently uninitialised stack slot is the single most important runtime gate: a trace must record the flag value at that address on entry to each of the ten call sites.",
+    "The 0x00c70221 ADD ESP,0x18 and the 0x00f473a0 argument order must be observed live to confirm the six-argument allocation contract.",
+    "The population-count computation in 0x00ff0870 must be checked against a live element, because the acceptance threshold of 1 depends on its exact result."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -792,15 +911,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint8_t (boolean)"
+]
+```
 
 ## vtables
 

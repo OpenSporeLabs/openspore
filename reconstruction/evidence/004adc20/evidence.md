@@ -2,9 +2,46 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `ba595945e53282206c8d9a82fc2203a7f4b9871d163487cd001e0654d478fa8b`
+- Content SHA-256: `43c31d026ff92d7fa374cd6e167ba27f54844916b8b11810ab945093465c49d2`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32 (x86:LE:32:windows, image base 0x00400000)",
+  "calling_convention": "__thiscall",
+  "ordinary_stack_argument_slots": 1,
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x4",
+  "return_observation": "0x004adc30: MOV ESP,EBP / 0x004adc32: POP EBP / 0x004adc33: RET 0x4 with no meaningful EAX. No sampled caller reads a result.",
+  "return_register": "none (void)",
+  "return_semantics": "No value is returned. EAX is used only as scratch; on the only path through the function the last write to EAX is the reload of the spilled receiver at 0x004adc27.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [
+    {
+      "entry_offset": "EBP+0x8",
+      "name": "value",
+      "narrowing_note": "The body reads only the low byte of the incoming word. Bits 8..31 of the caller's stack word are discarded, so a caller passing 0x00000101 stores 0x01. The reconstruction makes this explicit by typing the parameter std::uint8_t rather than relying on an implicit truncation.",
+      "read_evidence": "0x004adc2a: MOV CL,byte ptr [EBP + 0x8]",
+      "type": "std::uint8_t in a 4-byte ABI word",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "single exit at 0x004adc33"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -70,23 +107,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "f7848659a7cf3961b1dae5409a724206c574dab9af7858f4ccb76c650e9ed859",
+  "content_sha256": "8332a9797527504201054e3b912bf3c8f6d48b318339dbac45e0d9b9a7c0fd19",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -279,7 +316,7 @@
       "at": "0x004adc2a",
       "base": "EBP",
       "disp": 8,
-      "id": 
+      "id
 [TRUNCATED]
 ```
 
@@ -291,9 +328,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0043fc20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0048f790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004934d0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0049d6b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6ca0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6d20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6f10"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00582250"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00586960"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00586b00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b4bf0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b74f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b75e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b8fb0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005be500"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005d02d0"
+  }
+]
+```
 
 ## contradictions
 
@@ -303,13 +425,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __thiscall FUN_004adc20(int param_1,undefined1 param_2)\n\n{\n  *(undefined1 *)(param_1 + 0x4f) = param_2;\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -373,9 +491,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13313,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32 (x86:LE:32:windows, image base 0x00400000)\",\n    \"calling_convention\": \"__thiscall\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"0x004adc30: MOV ESP,EBP / 0x004adc32: POP EBP / 0x004adc33: RET 0x4 with no meaningful EAX. No sampled caller reads a result.\",\n    \"return_register\": \"none (void)\",\n    \"return_semantics\": \"No value is returned. EAX is used only as scratch; on the only path through the function the last write to EAX is the reload of the spilled receiver at 0x004adc27.\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"EBP+0x8\",\n        \"name\": \"value\",\n        \"narrowing_note\": \"The body reads only the low byte of the incoming word. Bits 8..31 of the caller's stack word are discarded, so a caller passing 0x00000101 stores 0x01. The reconstruction makes this explicit by typing the parameter std::uint8_t rather than relying on an implicit truncation.\",\n        \"read_evidence\": \"0x004adc2a: MOV CL,byte ptr [EBP + 0x8]\",\n        \"type\": \"std::uint8_t in a 4-byte ABI word\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"single exit at 0x004adc33\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0043fc20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0048f790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004934d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0049d6b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6ca0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6d20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6f10\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00582250\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00586960\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00586b00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b4bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b74f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b75e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b8fb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005be500\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005d02d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005d07f0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0043fc88\",\n        \"direction\": \"in\",\n        \"other\": \"0x0043fc20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -392,23 +517,23 @@
   "body_start": "004adc20",
   "callees": [],
   "callers": [
-    "FUN_004a6f10",
-    "FUN_0048f790",
-    "FUN_005b74f0",
-    "FUN_00586960",
-    "Editors::cEditor::SetEditorModel",
-    "FUN_004a6ca0",
-    "Editors::cEditor::sub_581F70",
-    "FUN_0043fc20",
-    "FUN_0049d6b0",
-    "FUN_005b75e0",
-    "FUN_004a6d20",
-    "FUN_004934d0",
-    "FUN_005d07f0",
-    "FUN_005d02d0",
     "FUN_005b4bf0",
+    "FUN_005d07f0",
+    "FUN_005b75e0",
+    "FUN_004934d0",
+    "FUN_0048f790",
+    "FUN_004a6ca0",
+    "FUN_005be500",
+    "FUN_0049d6b0",
     "FUN_005b8fb0",
-    "FUN_005be500"
+    "FUN_005d02d0",
+    "FUN_004a6d20",
+    "FUN_0043fc20",
+    "FUN_004a6f10",
+    "Editors::cEditor::sub_581F70",
+    "FUN_00586960",
+    "FUN_005b74f0",
+    "Editors::cEditor::SetEditorModel"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -421,17 +546,12 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_2",
-      "storage": "Stack[0x4]:1",
-      "type": "undefined1"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 2,
+  "locals_count": 1,
   "mode": "live",
   "name": "FUN_004adc20",
   "namespace": null,
@@ -605,9 +725,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b01/004adc20_set_flag4f.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/004adc20_set_flag4f.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/wave13_b01_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b01/004adc20.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -617,9 +752,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime pass would need to set the flag through a known call site and observe the paired 0x004adc40 read, to confirm the pairing and to see which values are stored.",
+    "No original-process trace exists, so the claim that this flag is written and later read with a meaning is static only.",
+    "The original Cell stage has never been entered in any recorded run, so no stage-level reachability claim is made."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -629,15 +776,30 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint8_t in a 4-byte ABI word",
+  "void"
+]
+```
 
 ## vtables
 

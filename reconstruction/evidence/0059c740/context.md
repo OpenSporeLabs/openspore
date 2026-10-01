@@ -1,7 +1,7 @@
 # Reconstruction context 0x0059c740
 
 - Status: `partial`
-- Content SHA-256: `40d7c4aff5bebbd2580e17a96e6d243b98c0e6a50634d0c9205300f4fae56321`
+- Content SHA-256: `cc69eacf2da1e1f6aa7f08e46b9b20b7e568e45b8b2d40350989831a09fa5241`
 
 ## 01_assignment
 
@@ -41,7 +41,7 @@
 {
   "blocked": false,
   "reconstructed": false,
-  "runtime_gated": false,
+  "runtime_gated": true,
   "runtime_validated": 0,
   "status": "candidate"
 }
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "82ca3c3e315ea14f80aee1dcf7956434a0f021217dab80956afd1612a475c6a8",
-  "live_attempts": [],
+  "content_sha256": "c2b4ff5bdacde3a6cd95fb020a191c681022f52186ea7319d4ed1f7d3df6ce98",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x0059c740 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,57 +71,38 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uint *param_2)
-
-{
-  undefined4 *puVar1;
-  undefined4 *puVar2;
-  undefined4 *puVar3;
-  undefined4 *puVar4;
-  uint local_8 [2];
-  
-  puVar1 = (undefined4 *)(param_1 + 4);
-  puVar4 = puVar1;
-  if (*(undefined4 **)(param_1 + 0xc) != (undefined4 *)0x0) {
-    puVar2 = *(undefined4 **)(param_1 + 0xc);
-    do {
-      if ((uint)puVar2[4] < *param_2) {
-        puVar3 = (undefined4 *)*puVar2;
-      }
-      else {
-        puVar3 = (undefined4 *)puVar2[1];
-        puVar4 = puVar2;
-      }
-      puVar2 = puVar3;
-    } while (puVar3 != (undefined4 *)0x0);
-  }
-  if ((puVar4 != puVar1) && ((uint)puVar4[4] <= *param_2)) {
-    return puVar4 + 5;
-  }
-  local_8[0] = *param_2;
-  param_2 = (uint *)((uint)param_2 & 0xffffff00);
-  local_8[1] = 0;
-  FUN_0059c520(&param_2,puVar4,local_8,param_2);
-  return (undefined4 *)((int)param_2 + 0x14);
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
 - State: `present`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
-  "original_bytes": 14648,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"confidence\": \"UNKNOWN\",\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n          1,\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x4\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"unclassified_in_EAX\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"confidence\": \"UNKNOWN\",\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n          1,\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4\"\n  },\n  \"abstained_because\": [\n    \"flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path\",\n    \"unparsed_lines_present: 2 line(s) matched no grammar rule\",\n    \"slot_width_ambiguous: one entry slot is read at more 
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX, callee pops the one stack word)",
+  "hidden_receiver": "explicit",
+  "hidden_this_register": "ECX, read at 0x0059c740 and 0x0059c748 before anything else; never written",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_note": "(pointer to the mapped 4-byte value)",
+  "return_observation": "0x0059c7b3 LEA EAX,[EDX + 0x14] on the hit path and 0x0059c7a1 MOV EAX,dword ptr [ESP + 0x18] / 0x0059c7a5 ADD EAX,0x14 on the insert path. Three call sites dereference the result exactly once (0x0059caf2 MOV EAX,dword ptr [EAX], 0x0059cb4a MOV ESI,dword ptr [EAX]) and one passes it as ECX to another method (0x0059c986), which is the behaviour of a pointer to a pointer.",
+  "return_register": "EAX",
+  "return_semantics": "the address of the mapped value inside the tree node, i.e. node + 0x14, on both the hit and the insert path; never the value itself",
+  "return_type": "std::uint32_t*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP, ESI, EDI (pushed 0x0059c746/0x0059c747/0x0059c74b, popped 0x0059c7a8/0x0059c7a9/0x0059c7aa and 0x0059c7b1/0x0059c7b2/0x0059c7b6)"
+  ],
+  "stack_arguments": [
+    {
+      "address_at_entry": "[ESP_entry + 0x4]",
+      "loaded_by": "0x0059c74c MOV EDI,dword ptr [ESP + 0x18] (ESP is 0x14 below entry)",
+      "note": "0x0059c77b MOV byte ptr [ESP + 0x18],0x0 overwrites the low byte of this argument slot itself; the slot is dead after 0x0059c74c, and the body then reuses it as the out-parameter cell for the insert port.",
+  
 [TRUNCATED]
 ```
 
@@ -213,27 +202,34 @@ undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uin
 
 ## 08_types_fields_globals
 
-- State: `missing`
+- State: `present`
 - Provenance: `reconstruction/knowledge/index.json`
 
 ```json
 {
   "globals": [],
-  "types": [],
+  "types": [
+    "std::uint32_t* (pointer to the mapped 4-byte value)"
+  ],
   "vtables": []
 }
 ```
 
 ## 09_state_event_relationships
 
-- State: `missing`
+- State: `present`
 - Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
 
 ```json
 {
   "runtime": {
     "blocking_reason": null,
-    "gates": [],
+    "gates": [
+      "A differential test must confirm the mapped handle the insert path produces, which no static evidence in this batch pins down.",
+      "A differential test must establish whether the key pointer is ever null in practice, because the miss path dereferences it at 0x0059c775.",
+      "A differential test must exercise the miss path and observe what 0x0059c520 writes into the caller's argument slot, since that value becomes the return value; a wrong node there would be an immediate fault in every caller.",
+      "No original-process trace exists for 0x0059c740. Every statement here is static."
+    ],
     "validated": 0
   },
   "semantic": {}
@@ -394,9 +390,15 @@ undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uin
 
 ```json
 {
-  "files": [],
+  "files": [
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.cpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.hpp",
+    "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create_model_test.cpp"
+  ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c740.json"
+  ]
 }
 ```
 
@@ -429,29 +431,22 @@ undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uin
     }
   ],
   "unresolved_questions": [
-    "{\"kind\": \"repository_contradiction\", \"source\": \"knowledgegraph/research/global-campaign-2026/conflicts/track-a-type-signature.json:602-779\", \"statement\": \"The conflict artifact calls the target an ordered lower-bound helper, while the live target body and sibling 0x0059c740 enforce exact-key selection.\"}"
-  ]
-}
+    "A differential test must confirm the mapped handle the insert path produces, which no static evidence in this batch pins down.",
+    "A differential test must establish whether the key pointer is ever null in practice, because the miss path dereferences it at 0x0059c775.",
+    "A differential test must exercise the miss path and observe what 0x0059c520 writes into the caller's argument slot, since that value becomes the return value; a wrong node there would be an immediate fault in every caller.",
+    "Are the 22 callers all operating on the same container instance, or does 0x0059c740 serve several containers of this instantiation? Only the four named editor callers were traced to cEditorAnimWorld+0x08.",
+    "Call site 0x0059c981 can pass a null key pointer (0x0059c972 XOR EDI,EDI). On the miss path this body dereferences it unconditionally (0x0059c775), so that path would fault. Whether the container is guaranteed empty th
+[TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c740.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
   "provenance": [
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP /disassemble_function",
-      "source_class": "derived"
-    },
-    {
-      "mode": "derived",
-      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
-      "source_class": "derived"
-    },
     {
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
@@ -469,11 +464,6 @@ undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uin
     },
     {
       "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
       "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
@@ -486,21 +476,28 @@ undefined4 * __thiscall map_int_EditorCreatureControllerPtr__get(int param_1,uin
       "mode": "persisted",
       "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
       "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/wave13-pilot-gameglobal-b03/0059c740.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/wave13-pilot-gameglobal-b03/59c740_map_get_or_create_model_test.cpp",
+      "source_class": "committed_artifact"
     }
   ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+  
+[TRUNCATED]
 ```

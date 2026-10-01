@@ -28,6 +28,16 @@ namespace openspore::reconstruction::pkg_editor_adc40_flag {
 // receiver faults on the unchecked load -- the observed behaviour, and no
 // check is added.
 //
+// The load is written as a DISPLACEMENT into the opaque receiver, not as a member
+// access. What the machine-derived receiver record carries for this target is
+// the set of displacements the body was seen using through ECX -- 0x4f, and
+// nothing else -- with `bounds_only` set, and that is all it carries: a set of
+// displacements says where the body reached, never which member occupies that
+// offset. Naming a member here would assert a field identity that no machine
+// record corroborates, so the wire struct in the header exists for the model
+// test's byte-exact observation of the receiver and is never named from this
+// body.
+//
 // Two properties of the original encoding are recorded rather than reproduced,
 // because a C++ return type does not model either of them:
 //
@@ -50,7 +60,10 @@ namespace openspore::reconstruction::pkg_editor_adc40_flag {
 //    the bare RET never consumes.
 extern "C" Field PKG_EDITOR_ADC40_THISCALL
 FUN_004adc40(OpaqueEditorFlag* self) {
-  return self->byte_04f;
+  // 0x004adc47  MOV EAX,dword ptr [EBP-0x4]    EAX is the spilled ECX
+  // 0x004adc4a  MOV AL,byte ptr [EAX + 0x4f]   one BYTE, at displacement 0x4f
+  return *reinterpret_cast<const Field*>(
+      reinterpret_cast<const unsigned char*>(self) + 0x4f);
 }
 
 }  // namespace openspore::reconstruction::pkg_editor_adc40_flag

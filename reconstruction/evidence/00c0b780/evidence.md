@@ -2,9 +2,36 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `65a4276c36f1a61617e2291666ba94f3756f44deaec51195d79a28632e72489e`
+- Content SHA-256: `086e9462f43e6106d0e18de842b36aa537f283dabbc722939b3682b3b2f18d58`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, read at 0x00c0b780",
+  "hidden_this_register": "ECX is read once and then zeroed at 0x00c0b786. The zeroing is part of the idiom, not evidence that ECX is unused.",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_register": "EAX",
+  "return_semantics": "A full dword 0 or 1, never a byte. XOR ECX,ECX / CMP ECX,[EAX + 0x608] sets CF iff the memory dword is unsigned-greater than zero; SBB EAX,EAX yields 0 or 0xFFFFFFFF; NEG EAX maps 0xFFFFFFFF to 1. Both EAX writes are 32-bit, so bits 8..31 of the answer are written rather than left as the caller had them. Every inspected consumer tests AL, which is consistent but does not narrow the width.",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single RET at 0x00c0b792"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -36,7 +63,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "9ae248f80816c527cdecbf45d509eb8f9797473b71c68966bfa0a07defab9f7d",
+  "content_sha256": "742b3d0a369915cf0ff4b549c34174a24d7f5acf6121f8114afa5fb60e4bbfac",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -44,16 +71,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -265,7 +292,7 @@
   },
   "target": {
     "address_available": true,
-    "image_ba
+    "image
 [TRUNCATED]
 ```
 
@@ -277,9 +304,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba27b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c02eb0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c042e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c24f40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d2c000"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d3cdc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d581b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d5f780"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d71060"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d74060"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d8cab0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d8dcc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d8f560"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00da8a40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00dbc7a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e8bf20"
+  }
+]
+```
 
 ## contradictions
 
@@ -289,13 +401,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nbool __fastcall FUN_00c0b780(int param_1)\n\n{\n  return *(int *)(*(int *)(param_1 + 0xb20) + 0x608) != 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -343,9 +451,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12904,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX, read at 0x00c0b780\",\n    \"hidden_this_register\": \"ECX is read once and then zeroed at 0x00c0b786. The zeroing is part of the idiom, not evidence that ECX is unused.\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"A full dword 0 or 1, never a byte. XOR ECX,ECX / CMP ECX,[EAX + 0x608] sets CF iff the memory dword is unsigned-greater than zero; SBB EAX,EAX yields 0 or 0xFFFFFFFF; NEG EAX maps 0xFFFFFFFF to 1. Both EAX writes are 32-bit, so bits 8..31 of the answer are written rather than left as the caller had them. Every inspected consumer tests AL, which is consistent but does not narrow the width.\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single RET at 0x00c0b792\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba27b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c02eb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c042e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c24f40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2c000\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d3cdc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d581b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d5f780\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d71060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d74060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d8cab0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d8dcc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d8f560\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00da8a40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dbc7a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e8bf20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e8cd30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01030fd0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00ba27fa\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba27b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba2815\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba27b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba2820\",\n        \"direction\": \"in\",\n        \"other
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -362,24 +477,24 @@
   "body_start": "00c0b780",
   "callees": [],
   "callers": [
-    "FUN_00d5f780",
-    "FUN_00dbc7a0",
-    "FUN_00d8dcc0",
-    "FUN_00d8f560",
-    "FUN_00c02eb0",
-    "FUN_00ba27b0",
-    "FUN_00d71060",
-    "FUN_00da8a40",
-    "FUN_00e8bf20",
-    "FUN_00c042e0",
-    "FUN_00d581b0",
-    "FUN_00e8cd30",
-    "FUN_00d74060",
-    "FUN_00d3cdc0",
-    "FUN_00d2c000",
     "FUN_00c24f40",
+    "FUN_00d71060",
+    "FUN_00d5f780",
+    "FUN_00da8a40",
+    "FUN_00d74060",
+    "FUN_00ba27b0",
     "FUN_00d8cab0",
-    "FUN_01030fd0"
+    "FUN_00e8cd30",
+    "FUN_00c042e0",
+    "FUN_00d2c000",
+    "FUN_00d3cdc0",
+    "FUN_01030fd0",
+    "FUN_00d581b0",
+    "FUN_00d8f560",
+    "FUN_00dbc7a0",
+    "FUN_00c02eb0",
+    "FUN_00d8dcc0",
+    "FUN_00e8bf20"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -390,14 +505,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 1,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00c0b780",
   "namespace": null,
@@ -517,9 +626,26 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b08/00c0b780.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -529,9 +655,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists for 0x00c0b780. A differential run must confirm the answer is still 0/1 in the shipping build and that no runtime patch retargets it.",
+    "The non-null invariant on receiver+0xB20 must be observed at a concrete callsite before any caller-side guard can be claimed.",
+    "The value of the dword at +0x608, and of the sibling at +0x60C, at the moment 0x00ba27b0 reads them, can only be established at runtime."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -541,15 +679,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t"
+]
+```
 
 ## vtables
 

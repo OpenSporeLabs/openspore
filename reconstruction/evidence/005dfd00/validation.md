@@ -1,0 +1,60 @@
+# Validation 0x005dfd00
+
+- Static reconstruction: `FAIL`
+- Runtime (original process): `GATED`
+- Source: `src/reconstruction/pkg10_editor_dispatch/editor_query_helpers.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `WARN` | `partial` | derived calling-convention confidence is UNKNOWN; the oracle is not proven |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 220-instruction listing name the same 17 direct transfer target(s); the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 26 outgoing call edge row(s) over 17 distinct address(es) for 0x005dfd00; 7 incoming call edge row(s) reach it, which the record's bounded projection counts against the same 30-row window but which are not callees; the record's dependency edge list is a scheduler projection of this export, not the export itself: it holds 30 row(s) and 15 address-named callee(s), against the 26 outgoing call edge row(s) and 17 distinct callee(s) the export records; 2 callee(s) the export records are absent from it, and the 30-row window capped at MAX_DEPENDENCY_EDGES=30 is why: 0x008098f0, 0x00809db0; the record's edges_truncated flag is set, and it is computed over this record's incoming and outgoing call rows together, so incoming edges alone can set it; the export records 26 outgoing call edge row(s) for this target, which is the count that bounds a callee set; the source span names 13 of them and no others |
+| GLOBALS | `WARN` | `partial` | the complete 220-instruction listing names 2 data address(es) (0x1519a48, 0x15fd918) and the xref export carries no data-reference edge type, so there is nothing to corroborate them against; read/write mode still needs per-access evidence |
+| FIELDS/OFFSETS | `WARN` | `partial` | the source span names 5 member(s) (active, owner, prefix, runtime) and no machine record in this pack carries member names, so the identity of the member at a given displacement can be neither confirmed nor refuted by any machine evidence here and the name stays a review item: a displacement is a location claim and this pack settles those, a name is an identity claim and it settles none; the 1 displacement(s) declared alongside (0x118) are reported above with the witness each one rests on; the 220-instruction listing is the governing witness for what this body reaches -- it was consumed in full by the machine parse (declared_count=220, degraded=false, unparsed=0) -- and it is read alias-aware over receiver register ECX, so that a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the scan attributes 1 displacement(s) to the receiver as proven (0xd0) and 0 more only on one arm of a branch, which is a may and grounds nothing (none); the machine-derived receiver record enumerates 6 displacement(s) (0xc8, 0xd0, 0x17c, 0x180, 0x1c4, 0x234), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open, so it widens what a claim may be grounded in and refutes nothing; 5 of those (0xc8, 0x17c, 0x180, 0x1c4, 0x234) the scan does not attribute to the receiver, and the listing governs there |
+| CONSTANTS | `FAIL` | `partial` | the source-vs-listing rule: 13 source constant(s) are absent from the machine listing: 0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x109, 0x10a, 0x10c, 0x10d |
+| CONTROL FLOW | `PASS` | `complete` | all 7 conditional branch target(s) in the complete 220-instruction listing lie inside the recovered body span 0x005dfd00..0x005dffbc, so the branch graph is closed inside it; the source span declares for, if, switch, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `WARN` | `partial` | the complete 220-instruction body names 5 indirect transfer(s): 0x005dfd21 is INDIRECT_NON_VTABLE; 0x005dfd4a dispatches slot 0x30 through the table word in EDX; 0x005dfe4e dispatches slot 0x30 through the table word in EDX; 0x005dff01 dispatches slot 0x14 through the table word in EDX; 0x005dff99 dispatches slot 0x28 through the table word in EDX; the machine parse consumed 220 of 220 instruction(s) with 0 unparsed and degraded=False, and the machine dispatch record independently counts 5, so the dispatch is visible in the machine listing but is not proven: 1 of the 5 indirect transfer(s) classify as INDIRECT_NON_VTABLE (0x005dfd21), so the dispatch's identity is not established: the target is the memory operand [EAX*0x4 + 0x5dffc0], so no register chain exists to read; a scaled operand such as [EAX*0x4 + 0x5dd840] is a jump table and a plain [ESP + 0x30] is a frame slot, and neither is a virtual dispatch |
+| RETURN SEMANTICS | `PASS` | `partial` | return type agrees with the bounded ABI record |
+
+Static evidence basis: 8 of 8 static checks evaluated, 3 passed, 0 had no evidence to evaluate; 12 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 12 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `bb9049639cb700687095d36775b6e49e37437e9afe85122a5d1579417f3b0c74`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `b3f1982ea90824f4601c62762f87d1e0571a52658e54e6c54a46af5f3555b5c2`
+- Pack digest quoted by the briefing: `bb9049639cb700687095d36775b6e49e37437e9afe85122a5d1579417f3b0c74`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `gate-editor-query-helpers`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- Does the indirect vtable slot +0x14 return a width that any caller observes beyond AL?
+- What are the meanings of the command values and material constants beyond their observed call order?
+- What are the runtime values and ownership of context fields +0x5c, +0xb4, +0xc8, and +0xd0?
+- What concrete editor, app-system, material-manager, and transition owners implement the external boundaries?
+- command and material constants
+- concrete editor, app-system, material-manager, and transition owners
+- gate-editor-query-helpers
+- runtime context field values

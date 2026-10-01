@@ -1,0 +1,168 @@
+{
+  "schema": "openspore-vft-preinc-0051e340.function-handoff.v1",
+  "package": "PKG-VFT-PREINC-0051E340",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x0051e340",
+  "address": "0x0051e340",
+  "symbol": "vft_preinc_0051e340",
+  "normalized_symbol": "vft_preinc_0051e340",
+  "subsystem": "Editor",
+  "cluster": "editor-core",
+  "target_state": "implemented in staging; canonical review pending",
+  "phase": "body reconstruction implemented; not run through `openspore validate` by this worker (prohibited for a child session)",
+  "captured_on": "2026-09-28",
+  "source_files": [
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.cpp",
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.hpp",
+    "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340_model_test.cpp"
+  ],
+  "briefing_gaps_closed": [
+    "The briefing's `abi` record was empty and the pack's `abi_derived` category was unavailable ('the ABI engine produced no record for this target: derivation requires a live instruction listing and a loadable engine'). The pack was re-collected with `openspore evidence 0x0051e340 --live`, which pulled the live listing from the Ghidra bridge and ran the engine over it: the derived record now carries the V1-VFT inference (42 vftable memberships, first cited table 0x013ef110 slot 0), conventions __thiscall at confidence INFERRED, receiver register ECX with provenance vftable_slot, and a complete parse record (20 of 20 instructions, degraded=false, unparsed=0).",
+    "The machine-derived receiver record is bounds_only with EMPTY offsets and reason 'ecx_reassigned_before_deref': ECX is spilled, reloaded with the derived address receiver+4, and only then dereferenced, so the engine attributes no receiver-relative offset. The field's receiver-relative offset 0x8 is a composition of the two machine displacements (ADD EAX,0x4 at 0x0051e34c and the [ECX+0x4] operand at 0x0051e355); it is recorded in the header as kFieldReceiverOffset with a composition static_assert and is flagged here as derived, not as a machine-stated operand.",
+    "The class is deliberately NOT named. The target is a slot value in 42 vptr-backed vftables (ICF collapse), so membership yields 'virtual member of some class' and attributing the body to one class would be invention. The receiver is an opaque struct."
+  ],
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "vft_preinc_0051e340",
+    "declaration": "extern \"C\" std::uint32_t __thiscall vft_preinc_0051e340(Receiver *self);",
+    "linkage": "C language linkage, so the emitted symbol is the bare name vft_preinc_0051e340",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX; no ordinary stack arguments",
+    "return_type": "std::uint32_t",
+    "body": "Forms the byte address receiver+4 (ADD EAX,0x4), takes the dword at that address plus 4 (the dword at receiver+8), pre-increments it, stores the incremented value back, and returns it: observationally 'return ++*(uint32_t*)((char*)self + 8);'. The machine reads the field dword twice, both reads before the store; the double read is a -O0 artifact and the single-read pre-increment is observationally identical.",
+    "source": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.cpp",
+    "header": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340.hpp",
+    "model_test": "reconstruction/staging/pkg-vft-preinc-0051e340/vft_preinc_0051e340_model_test.cpp",
+    "compile_gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 on both translation units, archived with ar/ranlib into a static library, linked and executed: clean, test passed. g++ -std=c++17 -Wall -Wextra -Werror -m32 built the same way as the cross-check: clean, test passed. A mutant that returns the old value instead of old+1 aborts the test (verified by sed-mutating the increment away and re-running).",
+    "test_coverage": "test_preincrement_at_receiver_plus_8 (value, in-place update, the dword at +4 untouched, caller stack balanced); test_vtable_slot_placement_two_level (receiver -> vtable -> slot asserted as two reads, the collapsed receiver -> slot read computed and asserted different, dispatch through the slot reaches the body); test_recorded_placement_constants; test_return_width_and_argument_surface (static_asserts on the 4-byte return and the 4-byte slot pointer)."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_basis": "vftable slot membership (rule V1-VFT), not a body read. 0x0051e340 is the value of a slot in 42 vptr-backed vftables (predicate P over the PE image); the callee pops nothing and no stack word is read as an argument, so the receiver is not in the callee-popped area, and of __thiscall/__fastcall only ECX carries one. The body itself spills ECX and later reassigns it, so the convention is a statement about how the slot is reached, not something the body's bytes discriminate.",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_reads": 0,
+    "stack_writes": 0,
+    "callee_saved_pushes": "PUSH EBP only (the frame pointer, restored by POP EBP; EBP is not an argument)",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (bare, no immediate)",
+    "return_register": "EAX",
+    "return_type": "std::uint32_t",
+    "return_semantics": "integral_in_EAX at 32-bit width; the engine's own classifier says pointer_like because the last EAX write is a load from memory, which is the conservative reading of the same fact",
+    "return_type_rationale": "The last definition of EAX before the RET is MOV EAX,dword ptr [EBP + -0xc], a full 32-bit load of the spilled old+1 value, so all four bytes of the result are defined and the width is 4. The value is the pre-incremented field dword, so std::uint32_t is the width-computable builtin true of the listing; the engine's return record names register EAX and leaves type null, and its register_class is pointer_like only because a value loaded from memory cannot be distinguished from a pointer by the classifier. The width is the machine fact; the spelling is the source-side choice among 4-byte types.",
+    "tail_call": "absent. The body contains no JMP and no CALL; the only control transfer is the terminal RET at 0x0051e373."
+  },
+  "vtable_placement": {
+    "note": "The load-bearing structural fact for the target and the reason the ABI is __thiscall.",
+    "membership_count": 42,
+    "first_cited_table": "0x013ef110",
+    "first_cited_slot_index": 0,
+    "first_cited_reference_word": "0x013ef110 (content 0x0051e340, read live)",
+    "adjacent_virtual": "0x0051e380, the next slot in the same tables (read live at 0x013ef114, 0x013ef1c4, 0x013f2198, 0x013f21dc)",
+    "slot_index_variance": "The pair's slot index is a property of each table, not of the body: slot 0/1 in 0x013ef110 and 0x013ef1c0, slot 14/15 in 0x013f2194 and 0x013f21d8 (read live). The briefing's 'slot 15' is the same adjacency seen from a table where the pair sits one slot later.",
+    "conclusions": [
+      "0x0051e340 is a virtual member of some class, never of one named class: 42 vptr-backed tables hold it, which is ICF collapse, and no rule can attribute it to a single class.",
+      "The adjacent slot holds 0x0051e380 in every table read, so the two bodies are sibling virtuals of one family; 0x0051e380 is the obvious next target."
+    ]
+  },
+  "function_extent": {
+    "entry": "0x0051e340",
+    "body_end_inclusive": "0x0051e373",
+    "body_end_exclusive": "0x0051e374",
+    "body_span_bytes": 52,
+    "instruction_count": 20,
+    "raw_bytes": "558bec83ec0c894df88b45f883c0048945fc8b4dfc8b510483c2018955f48b45fc8b480483c1018b55fc894a048b45f48be55dc3",
+    "return_site": "0x0051e373: RET (bare, no immediate)"
+  },
+  "mechanics": {
+    "shape": "straight-line: no branch, no call, no jump, no indirect transfer. The only control transfer is the terminal RET.",
+    "receiver_dependence": "the body reads the receiver only to form the byte address receiver+4; the value it acts on is the dword at receiver+8.",
+    "memory_effects": "one dword read twice and written once, all at receiver+8; the dword at receiver+4 is computed as an address and never dereferenced as data; the frame holds three locals ([EBP-0x8] the spilled receiver, [EBP-0x4] the derived address, [EBP-0xc] the spilled result).",
+    "globals": "none. The listing names no data-segment address, and the body reaches memory only through the receiver and its own frame.",
+    "indirect_transfers": "none. The body loads nothing through a pointer with the intent to transfer control; it performs no virtual dispatch of its own -- although it IS itself the target of virtual dispatch (a slot in 42 tables).",
+    "direct_transfers": "none. No CALL or JMP with an immediate operand exists in the body, so there is no statically-named callee. This is consistent with the briefing's empty callees and callers lists, which is a property of the code rather than a gap in the evidence.",
+    "callers": "none by direct call. The only reachability is the virtual dispatch through the 42 slots, whose call sites are data references and are therefore not enumerable as code callers."
+  },
+  "return_semantics": {
+    "kind": "value returned",
+    "source_return_type": "std::uint32_t",
+    "basis": "the last definition of EAX before the RET is a full 32-bit load of the spilled old+1 value, so the result is a defined 32-bit quantity on the only path.",
+    "value": "the pre-incremented field dword (old + 1)",
+    "ownership": "pure. The body allocates nothing, acquires and releases nothing, and mutates only the one receiver dword it is about."
+  },
+  "direct_transfers": {
+    "calls": [],
+    "jumps": [],
+    "conditional_branches": [],
+    "note": "the only control transfer in the body is the terminal RET at 0x0051e373"
+  },
+  "fields_offsets": {
+    "receiver_offsets_addressed_by_this_body": [],
+    "note": "the machine-derived receiver record is bounds_only with empty offsets (ecx_reassigned_before_deref), so no receiver-relative offset is machine-attested. The body addresses the dword at receiver+8; that offset is the composition of the two machine displacements 0x4 (ADD EAX,0x4 @ 0x0051e34c) and 0x4 ([ECX+0x4] @ 0x0051e355), recorded in the header as kFieldReceiverOffset = 0x8 with a composition static_assert. Which member sits at that displacement is not established by any record in this pack and is not claimed."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "binary_evidence_state": "LIVE",
+    "evidence_pack": "reconstruction/evidence/0051e340/evidence.json",
+    "evidence_pack_note": "Re-collected with `openspore evidence 0x0051e340 --live` during this run: the pack is now evidence_state LIVE with the disassembly, the live function card, and the engine-derived ABI record (V1-VFT). The decompilation category is unavailable (the Ghidra decompiler failed on this function: 'Decompilation did not complete'); the listing is the sole machine authority and it is complete.",
+    "live_listing": "ghidra_disassemble_function(0x0051e340) -> 20 instructions, 0x0051e340..0x0051e373, no gap, no padding, no hidden fallthrough.",
+    "live_bytes": "ghidra_read_memory(0x0051e340, 52) -> 558bec83ec0c894df88b45f883c0048945fc8b4dfc8b510483c2018955f48b45fc8b480483c1018b55fc894a048b45f48be55dc3",
+    "derived_abi_record": "the live collection ran tools/reconstruction_tooling/abi_infer.py over the listing with the vftable-membership input: verdict ABI_INFERRED, conventions __thiscall confidence INFERRED, receiver register ECX provenance vftable_slot bounds_only with empty offsets and reason ecx_reassigned_before_deref, return register EAX register_class pointer_like type null, parse declared_count 20 degraded false unparsed 0, dispatch indirect_calls 0, sret present false. The V1-VFT inference cites 42 memberships, first table 0x013ef110 slot 0.",
+    "vtable_images_read_live": [
+      "ghidra_read_memory(0x013ef110, 80) -- slots +0x00..+0x13: slot 0 is 0x0051e340, slot 1 is 0x0051e380, the run closes at +0x1c with 0x00000000",
+      "ghidra_read_memory(0x013ef1c0, 80) -- same pair at slots 0/1",
+      "ghidra_read_memory(0x013f2194, 80) -- the pair at slots 14/15",
+      "ghidra_read_memory(0x013f21d8, 80) -- the pair at slots 14/15"
+    ]
+  },
+  "validation": {
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "PASS",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "expected_basis": "A projection, not an observation: this worker is forbidden from running `openspore validate`. ABI is expected PASS because the source span names __thiscall through the package macro and the derived record claims the same convention at confidence INFERRED. CALLS is expected PASS because the xref export and the complete 20-instruction listing each record no outgoing transfer and the source span names no callee. GLOBALS and CONSTANTS are expected PASS because neither the listing nor the source span states a data address or a hexadecimal literal. CONTROL FLOW is expected PASS on the absence of any branch. VIRTUAL DISPATCH is expected PASS on the absence of any indirect transfer, corroborated by the dispatch record at 0. RETURN SEMANTICS is expected PASS because the sidecar's observed_original_abi.return_type is std::uint32_t, the source span declares exactly that, and the machine return state is a 32-bit EAX value. FIELDS/OFFSETS is expected PASS via the alias-aware repair: the naive arm would WARN that the [ECX+0x4] displacement lies outside the empty bounds_only record, but the displacement is present in the body, so the repair replaces it with the evidenced-absence verdict; the field's receiver-relative offset 0x8 is a composed fact recorded in the header and flagged in this sidecar. EVIDENCE COVERAGE is expected WARN (9 of 18 static categories available) and does not block: COVERAGE_CHECK is excluded from the structural set.",
+    "observed": null,
+    "known_blockers": []
+  },
+  "provenance": [
+    "GhidraMCP disassemble_function?address=0x0051e340 (live, 20 instructions, the sole listing authority)",
+    "GhidraMCP read_memory?address=0x0051e340&length=52 (live, original bytes 558bec...c3)",
+    "GhidraMCP read_memory at 0x013ef110, 0x013ef1c0, 0x013f2194, 0x013f21d8 (live vtable images)",
+    "openspore evidence 0x0051e340 --live (live pack collection; ran the abi_infer engine with the vftable-membership input over the live listing)",
+    "reconstruction/evidence/0051e340/evidence.json (the re-collected LIVE pack)",
+    "docs/tooling/abi-inference-vftable-extension.md (rule V1-VFT and its cleanup guard)",
+    "docs/tooling/reconstruction-failure-modes.md (the source shapes that pass each dimension)",
+    "clang++ and g++ -m32 -std=c++17 -Wall -Wextra -Werror builds; static-library archive step; model test executed and passed; sed-mutant of the increment aborted the test"
+  ],
+  "unresolved_questions": [
+    "The class is unknown and unknowable from this evidence: 42 vptr-backed tables hold the body, which is ICF collapse, so 'virtual member of some class' is the strongest true statement.",
+    "Which member sits at receiver+8 is not established. The offset is a composition of two machine displacements; the member's name, type and purpose (a counter? a version? an index?) are not recoverable from a 20-instruction body that only increments it.",
+    "The machine reads the field dword twice, both reads before the store. The source spells a single-read pre-increment, which is observationally identical because nothing runs between the reads; whether the original source was '++x', 'x = x + 1' or 'return x++ + 1' cannot be decided from the bytes.",
+    "The engine's return classifier says pointer_like (the last EAX write is a load from memory) while the source reads the value as an integral dword. The width (4 bytes) is the machine fact both agree on; the classification difference is recorded rather than resolved.",
+    "The receiver-relative offset 0x8 is not machine-attested as a single operand: the machine states 0x4 twice. A runtime trace of a constructed object would settle the layout, but no original-process trace exists in this repository."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "blocking_reason": "no original-process trace exists in this repository",
+    "conditions": [
+      "Call the original 0x0051e340 through a vtable slot on a live object of the holding class and confirm EAX == old+1 and that the dword at receiver+8 is the only receiver word mutated.",
+      "Confirm the slot index at runtime for one concrete class: dispatch through an object read live and check the loaded pointer equals 0x0051e340. This is the one claim a trace would settle decisively, since it is what the __thiscall modelling rests on.",
+      "Confirm the field's identity: whether the dword at receiver+8 is a counter, a version tag or something else is not statically recoverable and needs either a trace or SDK documentation."
+    ]
+  }
+}

@@ -2,9 +2,39 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `0b4ff554d19e01011663ae908430dd1088fff7bde7bd61f51529f14975800fc1`
+- Content SHA-256: `cb5caafdc8e52e2c1c8f82c3eccf56cdf7ee54208caaac5877a333400d3d1ed2`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is read only by the spill at 0x004ad456",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x004ad45c loads the field into ECX, 0x004ad45f stores it to [EBP-4] and 0x004ad462 loads it straight back into EAX; the round trip through the frame slot is a register-allocation artefact with no effect. There is no null check and no LEA, so the value is the field itself and not &field.",
+  "return_register": "EAX",
+  "return_semantics": "the pointer stored at receiver+0x30, unmodified and untested",
+  "return_type": "void*",
+  "return_width_bytes": 4,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single RET at 0x004ad468"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -39,7 +69,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "9134e232ddd6c198a63ad6789658d3e84f1bf2334fca6a26be5ee3ace3cd01b1",
+  "content_sha256": "dce3801c58b5a50afe80c4e5984e64c2b650218d305637c1e4a7623ac33cdc8f",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -56,7 +86,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall (receiver in ECX), no stack arguments"
   },
   "dispatch": {
     "call_offsets": [],
@@ -271,9 +301,7 @@
     },
     {
       "at": "0x004ad45f",
-      "base": "EBP",
-      "disp": -4,
-      "id"
+   
 [TRUNCATED]
 ```
 
@@ -285,9 +313,79 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0048d010"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0048dcd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00491b40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004956b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6690"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0057d710"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005b9840"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005ba320"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005bb5a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005bc0f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005bccc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005d27e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x005d36e0"
+  }
+]
+```
 
 ## contradictions
 
@@ -297,13 +395,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 __fastcall FUN_004ad450(int param_1)\n\n{\n  return *(undefined4 *)(param_1 + 0x30);\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -371,9 +465,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 11883,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall (receiver in ECX), no stack arguments\",\n    \"hidden_receiver\": \"ECX\",\n    \"hidden_this_register\": \"ECX is read only by the spill at 0x004ad456\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x004ad45c loads the field into ECX, 0x004ad45f stores it to [EBP-4] and 0x004ad462 loads it straight back into EAX; the round trip through the frame slot is a register-allocation artefact with no effect. There is no null check and no LEA, so the value is the field itself and not &field.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the pointer stored at receiver+0x30, unmodified and untested\",\n    \"return_type\": \"void*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single RET at 0x004ad468\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-PALETTE-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"palette_safe_wave11_fill_node_array_005c7ff0\",\n      \"va\": \"0x005c7ff0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"service_005fa8d0\",\n      \"va\": \"0x005fa8d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 3,\n      \"symbol\": \"service_0060ee90\",\n      \"va\": \"0x0060ee90\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"re_00835380\",\n      \"va\": \"0x00835380\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-WAVE6-CONTAINERS-MEMORY\",\n      \"score\": 3,\n      \"symbol\": \"wave6_fixed_pool_allocator_alloc_00926100\",\n      \"va\": \"0x00926100\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"re_00951220\",\n      \"va\": \"0x00951220\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:void*\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"re_00951230\",\n      \"va\": \"0x00951230\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0048d010\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0048dcd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00491b40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004956b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6690\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0057d710\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005b9840\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005ba320\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005bb5a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005bc0f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005bccc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005d27e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x005d36e0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0048d56d\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048d010\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048dd3c\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048e231\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048e292\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048e4c6\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0048e4d9\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048dcd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004926f2\",\n        \"direction\": \"in\",\n        \"other\": \"0x004
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -390,19 +491,19 @@
   "body_start": "004ad450",
   "callees": [],
   "callers": [
+    "FUN_005bccc0",
+    "FUN_0048d010",
+    "FUN_005b9840",
+    "FUN_005d27e0",
+    "FUN_004a6690",
+    "FUN_004956b0",
     "FUN_0048dcd0",
     "FUN_005bc0f0",
-    "FUN_00491b40",
-    "FUN_005bb5a0",
-    "FUN_004a6690",
     "FUN_005d36e0",
-    "FUN_0057d710",
-    "FUN_005d27e0",
-    "FUN_005bccc0",
-    "FUN_004956b0",
-    "FUN_005b9840",
-    "FUN_0048d010",
-    "FUN_005ba320"
+    "FUN_00491b40",
+    "FUN_005ba320",
+    "FUN_005bb5a0",
+    "FUN_0057d710"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -415,12 +516,17 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 1,
+  "locals_count": 2,
   "mode": "live",
   "name": "FUN_004ad450",
   "namespace": null,
@@ -546,9 +652,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/004ad450_related_pointer_getter.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/004ad450_related_pointer_getter.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b04/004ad450.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -558,9 +678,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace has been captured. Whether the +0x30 pointer is ever null at a callsite is a runtime fact; statically the getter propagates whatever is there.",
+    "The 26 uninspected callsites need at least a sample disassembled before the uniform 'result is the next receiver' reading can be generalised."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -570,15 +701,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void*"
+]
+```
 
 ## vtables
 

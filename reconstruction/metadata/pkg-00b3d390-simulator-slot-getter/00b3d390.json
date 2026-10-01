@@ -1,0 +1,99 @@
+{
+ "address": "0x00b3d390",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "GhidraMCP /disassemble_function @ 0x00b3d390 - 2 instructions, listing_state complete: MOV EAX,[0x0167eb08]; RET",
+  "GhidraMCP /read_memory @ 0x00b3d390 - hex a108eb6701c3cccc, so the 6-byte body is a1 08 eb 67 01 c3 and the 0xcc is INT3 pad",
+  "GhidraMCP /decompile_function @ 0x00b3d390 - 'return DAT_0167eb08;'",
+  "GhidraMCP /get_function_by_address @ 0x00b3d3a0 - 'Simulator::cStarManager::Get', the SDK-named immediate table neighbour",
+  "reconstruction/evidence/00b3d390/evidence.json - disassembly, decompilation, ghidra_function, abi/abi_derived categories",
+  "reconstruction/evidence/00b3d390/validation.md - 2-instruction listing, GLOBALS WARN naming 0x0167eb08 with read=1",
+  ".spore-analysis/ghidra-exports/functions.tsv - entry 00b3d390, size 6, .text; and the 46 entries over 0x00b3d220..0x00b3d520 from which the 43-accessor bijection is derived",
+  "knowledgegraph/triage/datarefs-2540f2ca.tsv - exactly one row for 0167eb08: 00b3d390 0167eb08 read .data -wr",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv - 101 direct callsites of 00b3d390 across 63 distinct callers",
+  "whole-file byte scan of SPORE/SporeBin/SporeApp.exe - the little-endian encoding of 0x0167eb08 occurs exactly once, at file offset 0x73c791",
+  "PE optional header section table of SporeApp.exe - .data VirtualAddress 0x0110c000 VirtualSize 0x00212764 SizeOfRawData 0x000c4c00, image base 0x00400000; the slot at section offset 0x572b08 is in the zero-filled tail",
+  "objdump -d -M intel SPORE/SporeBin/SporeApp.exe --start-address=0x00bf6f40 --stop-address=0x00bf6f92 - 0x00bf6f6d call, 0x00bf6f72 mov ecx,eax, 0x00bf6f74 call 0x0104e340: the returned word used as a receiver",
+  "objdump -d -M intel SPORE/SporeBin/SporeApp.exe --start-address=0x00b5fee6 --stop-address=0x00b5ff12 - 0x00b5fee6 call, 0x00b5feeb push eax: the returned word used as an argument",
+  "objdump -d -M intel SPORE/SporeBin/SporeApp.exe --start-address=0x00b3d230 --stop-address=0x00b3d3c0 - the six-byte accessors at 0x10 stride and MOV EAX,0x0167eac0 at 0x00b3d220",
+  "GhidraMCP /decompile_function @ 0x0104e340 - the receiver's own body shows no fixed-offset dereference of its parameter, which is why no pointee offset is claimed",
+  "docs/analysis/simulator-root-closure.md and knowledgegraph/research/root-closure-f0e310e0.json - the two canonical manager slots in the same table (0x0167eb0c, 0x0167eb60) and the Phase-0 rule that shared caller sets do not establish object identity",
+  "knowledgegraph/research/root-closure/followup-global-slots.md:22,218 - indirect publication of the sibling slots is unexcluded",
+  "reconstruction/staging/pkg-00b3d380-simulator-slot-getter - read only, as a house-style template for a sibling accessor; nothing of it was modified"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390.hpp",
+  "model_test": "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390_model_test.cpp",
+  "source": "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390.cpp"
+ },
+ "normalized_symbol": "simulator_slot_getter_00b3d390",
+ "package": "PKG-00B3D390-SIMULATOR-SLOT-GETTER",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "simulator_slot_getter_00b3d390",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  "The entry is a borrowed global-slot reader: one 32-bit load, one return, no validation and no reference counting. It is a getter, not a service locator with behaviour.",
+  "0x0167eb08 is word 18 (table offset 0x48) of a CONTIGUOUS 43-word singleton slot table at 0x0167eac0 spanning 0x0167eac0..0x0167eb68 (168 bytes), with no gap and no duplicate; the 43 accessors of the block map onto the 43 slots bijectively.",
+  "The slot has exactly one direct reader (this load) and zero direct writers in the whole image, confirmed both by the committed datarefs export and by an independent whole-file byte scan. Absence of a direct writer is not an immutability claim.",
+  "The whole slot block lies in .data's loader-zeroed tail (section offsets 0x572ac0..0x572b68, all past SizeOfRawData 0xc4c00), so no image initializer exists for any of the 43 words and the zero returned by an unpublished slot is the loader's, not a special case.",
+  "The returned word is consumed as a POINTER, not compared as a scalar: one caller moves it straight into ECX as a receiver (0x00bf6f72) and one pushes it straight as a stack argument (0x00b5feeb).",
+  "The class of the object is UNKNOWN. The SDK import names 0x0167eb0c (cStarManager::Get at 0x00b3d3a0) and 0x0167eb60 (cGameNounManager::Get at 0x00b3d400) in the same table and leaves 0x0167eb08, 0x0167eb00 and 0x0167eb04 unnamed; adjacency in the table is not identity, and this is an UNNAMED accessor.",
+  "The ABI record abstains from naming a convention and reports cdecl, stdcall, thiscall and fastcall as byte-identical, which is correct for a zero-parameter entry; this package models it as a plain zero-parameter entry and picks none."
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390.cpp",
+  "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390.hpp",
+  "reconstruction/staging/pkg-00b3d390-simulator-slot-getter/simulator_slot_getter_00b3d390_model_test.cpp"
+ ],
+ "staging_package": "pkg-00b3d390-simulator-slot-getter",
+ "subsystem": "Simulator",
+ "summary": "FUN_00b3d390 is a complete six-byte borrowed global-slot reader: MOV EAX,dword ptr ds:[0x0167eb08]; RET. No branch, call, flag test, store or validation, zero parameters, no receiver, zero callee cleanup. Staged as simulator_slot_getter_00b3d390 with a 10-group model test, green under g++ and clang++ -m32 -std=c++17 -Wall -Wextra -Werror, and refuted by all seven external perturbations of the body. The slot is word 18 (table offset 0x48) of a contiguous 43-word singleton table at 0x0167eac0 whose 43 accessors map onto it bijectively, it lies in .data's loader-zeroed tail, and it has exactly one direct reader (this load) with zero direct writers in the pinned image. The returned word is demonstrably an object pointer (one caller moves it into ECX as a receiver, one pushes it as an argument) but NO field offset and NO class are claimed, because no sampled caller reaches an offset - weaker pointee evidence than sibling 0x00b3d380, and deliberately not strengthened by invention.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "What class does the word at 0x0167eb08 point to? The SDK import leaves this slot, and 0x0167eb00 and 0x0167eb04, unnamed, and no committed research note names it. This is the single biggest gap and the reason the pointee type is opaque with no modelled extent.",
+  "Is 0x0167eb08 related to the SDK-named neighbours 0x0167eb0c (cStarManager::Get) and 0x0167eb60 (cGameNounManager::Get), and to the alternate slots 0x0167eae0 and 0x0167eae4 Phase 0 already closed? Adjacency in one table is not evidence of aliasing, and nothing here claims or denies it. The root closure's open alternate-vs-canonical question does not currently list this slot.",
+  "Who publishes 0x0167eb08, when, and how is it torn down and reset? There is no direct writer anywhere in the image and the slot is loader-zeroed, so publication is necessarily indirect or bulk.",
+  "Is the returned pointer ever null at a real callsite, and what do callers do then? None of the sampled sites null-tests the result, so no null contract is claimed in either direction - only that a stored zero is returned as a stored zero, which is what the body does.",
+  "Does the returned pointer need an AddRef, and if so by whom? The body has no room for a reference call and no writer is known, so ownership is undetermined.",
+  "Of the 63 distinct callers, only 0x00b5fde0 and 0x00bdc1a0's neighbourhoods were read by disassembly; the remaining 61 were counted from the edge sidecar and not classified by hand, because fan-in is not semantic evidence.",
+  "Promotion is blocked by a validator limitation rather than a package defect (FIELDS/OFFSETS cannot score a global-slot load). An integrator must either promote by review or add a global-slot arm to that check; tools/** was not modified."
+ ],
+ "va": "0x00b3d390",
+ "validation": {
+  "committed": false,
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32, build+run",
+  "gate_result": "pass",
+  "known_promotion_friction": "FIELDS/OFFSETS cannot score a global-slot load (its PASS arm requires a listing with no bracketed operand; MOV EAX,[0x0167eb08] has one), and the alternative arm would FAIL because no field offset is honestly declarable. Other checks are PASS/WARN. Same limitation the sibling 0x00b3d380 recorded; tools/** was not modified, so an integrator must promote by review or add a global-slot arm to that check.",
+  "mutation_test": {
+   "external_all_detected": true,
+   "external_perturbations": 7,
+   "perturbations": [
+    "LEA form: return the slot's own address",
+    "materialised constant: return the literal 0x0167eb08",
+    "store-through: publish 0x5a5a5a5a into the slot before returning",
+    "neighbour slot: read 0x0167eb04 (sibling 0x00b3d380's word) instead",
+    "tagged return: OR the loaded value with 0x10000",
+    "store through the returned pointer: zero the pointee byte",
+    "first-read cache with no refresh"
+   ],
+   "unperturbed_passes": true
+  },
+  "optimisation_levels": [
+   "-O0",
+   "-O1",
+   "-O2",
+   "-Os"
+  ],
+  "secondary_gate": "g++ -std=c++17 -Wall -Wextra -Werror -m32 build+run",
+  "secondary_gate_result": "pass",
+  "target_span_check": "one definition of simulator_slot_getter_00b3d390 in the package; the 8-hex VA 00b3d390 is embedded in that symbol",
+  "touched_other_packages": false
+ },
+ "version": "3.1.0.22",
+ "worker_outcome": "IMPLEMENTED"
+}

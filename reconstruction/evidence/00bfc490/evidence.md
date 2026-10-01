@@ -2,9 +2,42 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `bd17ec059ae6f0a26868d31a74713c2e83c4ae06427db81c9f2a1a7389821024`
+- Content SHA-256: `81920f55c0245202b74be2475b1e07884ec73aed5e10e3dacf6dfe6c909f0692`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this_register": "ECX, read once at 0x00bfc491 and never written",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x00bfc49a is FDIVR float ptr [ESI + 0x38], an x87 divide whose only writer of the result is the x87 stack. No EAX or XMM0 write appears in the body, which is why the Ghidra decompilation declares a float10 return and casts it to float; the observed writer is the FPU, not a general-purpose register.",
+  "return_register": "ST0",
+  "return_semantics": "x87 extended-precision value in ST0",
+  "return_type": "float",
+  "return_width_bytes": 10,
+  "saved_registers": [
+    {
+      "pop": "0x00bfc49d",
+      "push": "0x00bfc490",
+      "register": "ESI"
+    }
+  ],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET at 0x00bfc49e"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -39,7 +72,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "e35f9df7610153c2992edc4dc498be00d486e3b3af72dd529b49afb4c25f35dd",
+  "content_sha256": "b07c584693071b3613c9f601e8730492e2da874129ebd07695e2383044932fd3",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -47,16 +80,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -275,8 +308,7 @@
   "schema": "openspore-abi-inference-1",
   "seh_or_cookie_frame": false,
   "sret": {
-    "ambiguity": null,
-
+    "ambiguity": nul
 [TRUNCATED]
 ```
 
@@ -288,25 +320,167 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b188b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b685e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bd8660"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c02df0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c0ba30"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c0ba70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c0bab0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c0bb90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c22ae0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c23e90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c26170"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c9cfd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c9e700"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ccc640"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ccefb0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cd0830"
+  }
+]
+```
 
 ## contradictions
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "anchors": [
+      "0x00e7a4a0",
+      "0x00e7a7c0",
+      "0x00e7a7c0",
+      "0x00e7e6c0",
+      "0x00e7a4a0",
+      "0x00e7a4a0",
+      "0x00e62340",
+      "0x00e52910",
+      "0x00e7a7c0",
+      "0x00e7a7c0",
+      "0x00bfc460",
+      "0x00bfc460",
+      "0x00bfc490",
+      "0x00bfc490",
+      "0x00bfc4a0",
+      "0x00bfc4a0"
+    ],
+    "conflict_id": "cell_field_112_semantics",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": "The cited direct body establishes a bounded state mutation or call anchor, but the full transition policy, consumer order, and runtime reachability remain unresolved.",
+    "resolution_status": "The cited direct body establishes a bounded state mutation or call anchor, but the full transition policy, consumer order, and runtime reachability remain unresolved.",
+    "source": "knowledgegraph/research/conflicts/track-c-state-events.json",
+    "subject": null,
+    "unresolved_reason": "Runtime reachability is absent or the required direct body/call path is not recovered."
+  },
+  {
+    "anchors": [
+      "0x00bfc460",
+      "0x00bfc540",
+      "0x00bfc460",
+      "0x00e7e6c0",
+      "0x00e7a4a0",
+      "0x00e52910",
+      "0x00e7a7c0",
+      "0x00bfc460",
+      "0x00bfc460",
+      "0x00bfc490",
+      "0x00bfc490",
+      "0x00bfc4a0",
+      "0x00bfc4a0",
+      "0x00bfc540",
+      "0x00bfc540",
+      "0x00bfc540"
+    ],
+    "conflict_id": "creature_death_publication",
+    "kind": "conflict_ledger",
+    "rejected": [],
+    "resolution": "The cited producer, consumer, or registration surface is retained, but the complete event-to-message mapping, timing, and payload contract remain unresolved.",
+    "resolution_status": "The cited producer, consumer, or registration surface is retained, but the complete event-to-message mapping, timing, and payload contract remain unresolved.",
+    "source": "knowledgegraph/research/conflicts/track-c-state-events.json",
+    "subject": null,
+    "unresolved_reason": "Runtime reachability is absent or the required direct body/call path is not recovered."
+  }
+]
+```
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nfloat10 __fastcall FUN_00bfc490(int *param_1)\n\n{\n  float10 fVar1;\n  \n  fVar1 = (float10)(**(code **)(*param_1 + 0x58))();\n  return (float10)(float)param_1[0xe] / fVar1;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -362,9 +536,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 15268,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this_register\": \"ECX, read once at 0x00bfc491 and never written\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00bfc49a is FDIVR float ptr [ESI + 0x38], an x87 divide whose only writer of the result is the x87 stack. No EAX or XMM0 write appears in the body, which is why the Ghidra decompilation declares a float10 return and casts it to float; the observed writer is the FPU, not a general-purpose register.\",\n    \"return_register\": \"ST0\",\n    \"return_semantics\": \"x87 extended-precision value in ST0\",\n    \"return_type\": \"float\",\n    \"return_width_bytes\": 10,\n    \"saved_registers\": [\n      {\n        \"pop\": \"0x00bfc49d\",\n        \"push\": \"0x00bfc490\",\n        \"register\": \"ESI\"\n      }\n    ],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET at 0x00bfc49e\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b188b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b685e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bd8660\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c02df0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c0ba30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c0ba70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c0bab0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c0bb90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c22ae0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c23e90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c26170\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c9cfd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c9e700\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ccc640\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ccefb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cd0830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ce8d00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cea970\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2b6b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2b720\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2b950\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d2dd20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d41a70\"\n      },\n      {\n 
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -381,45 +562,45 @@
   "body_start": "00bfc490",
   "callees": [],
   "callers": [
-    "FUN_00d41a70",
-    "FUN_00db4370",
-    "FUN_00d2b950",
-    "FUN_00c9e700",
-    "FUN_00dc57a0",
-    "FUN_01072680",
-    "FUN_00f0efa0",
-    "FUN_00ccc640",
-    "FUN_00f10bd0",
-    "FUN_00d71060",
     "FUN_00d7d160",
-    "FUN_00d2dd20",
-    "FUN_00b685e0",
     "FUN_00b188b0",
-    "FUN_00c02df0",
-    "FUN_00da9800",
+    "FUN_00d71060",
+    "FUN_00d2dd20",
+    "FUN_00cd0830",
     "FUN_00d2b6b0",
-    "FUN_00c9cfd0",
-    "FUN_00cea970",
-    "FUN_00e07e70",
-    "FUN_00ce8d00",
-    "FUN_00c0bb90",
-    "FUN_00c23e90",
-    "FUN_00c0bab0",
-    "FUN_00f0e520",
-    "FUN_00d62010",
+    "FUN_00db7190",
     "FUN_00c26170",
     "FUN_00c0ba30",
-    "FUN_00e934f0",
-    "FUN_00c0ba70",
-    "FUN_00d2b720",
-    "FUN_00bd8660",
-    "FUN_00d824a0",
     "FUN_00f0e6e0",
+    "FUN_00e934f0",
+    "FUN_00c02df0",
+    "FUN_00db4370",
+    "FUN_00c9e700",
+    "FUN_00c0bb90",
+    "FUN_00d824a0",
     "FUN_00ccefb0",
-    "FUN_00cd0830",
-    "FUN_00e93f50",
+    "FUN_01072680",
+    "FUN_00c9cfd0",
+    "FUN_00d2b950",
+    "FUN_00d2b720",
     "FUN_00c22ae0",
-    "FUN_00db7190"
+    "FUN_00d41a70",
+    "FUN_00f0e520",
+    "FUN_00ccc640",
+    "FUN_00d62010",
+    "FUN_00b685e0",
+    "FUN_00cea970",
+    "FUN_00ce8d00",
+    "FUN_00c0bab0",
+    "FUN_00c0ba70",
+    "FUN_00da9800",
+    "FUN_00bd8660",
+    "FUN_00dc57a0",
+    "FUN_00e93f50",
+    "FUN_00c23e90",
+    "FUN_00e07e70",
+    "FUN_00f0efa0",
+    "FUN_00f10bd0"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -430,19 +611,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "fVar1",
-      "storage": "register:00001100:10",
-      "type": "float10"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int *"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00bfc490",
   "namespace": null,
@@ -646,9 +816,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-pilot-core-b01/bfc490_combatant_ratio.cpp",
+    "reconstruction/staging/wave13-pilot-core-b01/wave13_pilot_core_b01_model_test.cpp",
+    "reconstruction/staging/wave13-pilot-core-b01/wave13_pilot_core_b01_types.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-pilot-core-b01/00bfc490.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -658,9 +842,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime trace would be needed to see which override of slot +0x58 is reached for a real creature, to observe the actual return values of the ratio in play, and to check whether the divisor is ever zero.",
+    "No original-process trace exists for 0x00bfc490; every claim is static.",
+    "The runtime values of the six threshold and scale globals cannot be recovered statically because they are zero in the file image."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -670,15 +866,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "float"
+]
+```
 
 ## vtables
 

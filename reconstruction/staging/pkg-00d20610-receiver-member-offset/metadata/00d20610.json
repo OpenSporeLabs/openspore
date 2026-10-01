@@ -1,0 +1,145 @@
+{
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "package": "PKG-00D20610-RECEIVER-MEMBER-OFFSET",
+ "subsystem": "Simulator",
+ "cluster": "unknown-fun-mass",
+ "queue_id": "",
+ "va": "0x00d20610",
+ "address": "0x00d20610",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "sdk_symbol": null,
+ "normalized_symbol": "receiver_member_offset_00d20610",
+ "reconstructed_symbol": "receiver_member_offset_00d20610",
+ "target_state": "implemented in staging; integrator review pending",
+ "captured_on": "2026-10-01",
+ "canonical_source_path": "",
+ "source_files": [
+  "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610.hpp",
+  "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610.cpp",
+  "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610_model_test.cpp"
+ ],
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610.hpp",
+  "source": "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610.cpp",
+  "model_test": "reconstruction/staging/pkg-00d20610-receiver-member-offset/receiver_member_offset_00d20610_model_test.cpp"
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall, receiver in ECX, zero stack arguments, callee pops nothing",
+  "calling_convention_evidence": "the only register the body reads is ECX and it is the base of the LEA's memory operand (0x00d20610 `8d 81 c8 01 00 00` = LEA EAX,[ECX+0x1c8]); the terminator is a bare RET at 0x00d20616 (`c3`), so no callee cleanup; and the body reads no stack word at all, so it consumes no stack argument whether or not one is pushed",
+  "calling_convention_alternatives": "__fastcall is not distinguishable from __thiscall on this body: a one-ECX-argument fastcall and a __thiscall both place a single pointer argument in ECX, and the callee-side evidence cannot separate them. __cdecl and __stdcall ARE excluded, because both require the argument on the stack and ECX is read as the base of an address computation. The receiver framing is chosen because it is the one the 95 call sites support, not because the seven bytes alone choose it; see unresolved_questions.",
+  "receiver": "ECX, used only as the base register of the LEA's address computation and never dereferenced",
+  "receiver_disposition": "NO receiver evidence is collected machine-side. The derived ABI record abstains with reason `ecx_address_taken_without_memory_access` and confidence UNKNOWN, because the LEA takes ECX's address without any memory access through it. This package does not override that abstention with a layout: it models the receiver as an opaque type and asserts no size and no fields.",
+  "ordinary_stack_argument_slots": 0,
+  "ordinary_stack_arguments": [],
+  "stack_arguments_evidence": "the two-instruction body contains no ESP-relative operand of any kind, so there is no entry slot to read; independently, 54 of the 95 call sites push nothing at all before the call and the remaining pushes are register saves or arguments to other calls, never an argument for this callee",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "ret_form": "RET (0x00d20616 `c3`), no immediate",
+  "return_register": "EAX",
+  "return_type": "opaque 32-bit object pointer",
+  "return_semantics": "the address receiver+0x1c8, computed by LEA and therefore never dereferenced by this function",
+  "return_type_rationale": "OBSERVED FROM THE LISTING, NOT INFERRED FROM A TYPE. 0x00d20610 `8d 81 c8 01 00 00` is an LEA with ECX as base and a 32-bit displacement, which computes an address and reads no memory; EAX is that address. The address semantics is corroborated from the CALL SIDE as well: 71 of the 95 call sites dereference EAX or move it into another register within the following 8 instructions, and the sampled remainder pass it as an argument (0x00d7fc32/0x00d7fc37 `PUSH EAX`). A reconstruction returning a VALUE rather than an address would be refuted by every one of those sites.",
+  "saved_registers": [],
+  "frame": "none: no PUSH, no MOV EBP,ESP, no SUB ESP. The body is 7 bytes and ESP is untouched from entry to exit."
+ },
+ "observed_mechanics": [
+  "the whole body is `LEA EAX,[ECX + 0x1c8]` at 0x00d20610 followed by `RET` at 0x00d20616: two instructions, seven bytes, no branch, no call, no global",
+  "the encoding `8d 81 c8 01 00 00 c3` was re-read from memory for this package (GhidraMCP read_memory @ 0x00d20610 length 7) and matches the disassembled listing byte for byte",
+  "the function is byte-identical under __thiscall, __fastcall, __cdecl and __stdcall: nothing in the seven bytes distinguishes the conventions, which is why the call sites, not the callee, carry the convention claim",
+  "ECX is loaded immediately before the call at 92 of the 95 call sites (measured with a bounded backward scan of 12 instructions per site); the three that are not are sites where ECX was set earlier and left live",
+  "the returned pointer is consumed AS A POINTER by its callers, not as a value: 71 of 95 sites dereference it or re-register it within 8 instructions, and the sites read through it with MOVSS/FLD at +0, +4, +8 (0x00b565fe, 0x00c058a6, 0x00d8111a) or read a vtable word at +0 then a dword at +4 (0x00b3dc5b, 0x00c2a2e8)",
+  "callers treat the result as the base of an OBJECT, not as a scalar: 0x00c2d2f2 reads three consecutive words from it and stores all three elsewhere, which is a sub-object being copied",
+  "the receiver differs from caller to caller -- ECX is loaded from [ESI+0x40], [ESI+0x80], [ESI+0x14], EDI, EAX and LEA results in different sites -- so the function is shared across many receiver types and the SAME displacement 0x1c8 is being added to all of them. That is a fact about the call sites, and it is the strongest reason NOT to name a single owning class here."
+ ],
+ "field_offsets": [
+  {
+   "owner": "the computed result, not the receiver",
+   "displacement": "0x1c8",
+   "width_bytes": 4,
+   "access": "address arithmetic only",
+   "instructions": [
+    "00d20610"
+   ],
+   "note": "this is the LEA's displacement, the machine's own constant. It is NOT declared as a field offset of any receiver: the derived receiver record is bounds_only with zero enumerated offsets, and the function performs no memory access, so nothing here evidences a member at this displacement. The header states it as kMemberDisplacement, a computed displacement, and the type it points at is left opaque for exactly that reason."
+  }
+ ],
+ "layout": "no field offsets and no layout are claimed. OpaqueReceiver and OpaqueMember are both incomplete types with no members, and no static_assert anywhere in this package states a size for either.",
+ "globals": [],
+ "vtables": [],
+ "types": [],
+ "type_scope": "every object involved is opaque; the receiver is never dereferenced by the reconstructed body and the member is never named",
+ "analogues": [],
+ "semantic_findings": [
+  "0x00d20610 is a member-offset accessor: it computes the address of a fixed sub-object at receiver+0x1c8 and returns it, and it performs no read, no write and no call.",
+  "The return is an ADDRESS, not a value. That is established from the instruction (LEA) and corroborated from 95 call sites that consume the result as a pointer.",
+  "The function is shared by many receiver types: 95 call sites in 88 distinct functions load ECX from at least six different sources and all receive the same displacement. A single owning class is therefore NOT determinable from this evidence.",
+  "The receiver is not read. The model test proves it by pointing the receiver at a PROT_NONE mapping positioned so that receiver+0x1c8 is the first unmapped byte: the function returns that address without faulting, which a load through either the receiver or the result could not do."
+ ],
+ "not_claimed": [
+  "a class name and an owning type: SporeApp.exe has no MSVC RTTI, and 95 call sites with six different ECX sources rule out one receiver type being the whole story",
+  "what lives at receiver+0x1c8: the callers read floats at +0/+4/+8 in some sites and pointer words in others, so even the element type of the sub-object is not settled by this evidence",
+  "the size of the receiver: nothing reads or writes it, so there is no floor and no ceiling",
+  "whether the displacement 0x1c8 is a field offset, a base-class sub-object offset, or a pointer-stride: LEA is used here, so the result is an ADDRESS of something and the arithmetic is byte-wise on a 32-bit word, but WHICH layout it indexes is not established",
+  "__thiscall as a machine fact: it is the convention the call sites support and the one this package declares; the seven bytes alone do not exclude __fastcall",
+  "any runtime behaviour: no original-process observation exists in this repository for this target"
+ ],
+ "confidence": "the body is recovered COMPLETELY from a fully parsed 2-instruction listing whose 7 bytes were re-read from memory; the arithmetic, the operand, the constant, the terminator and the absence of every other behaviour are all OBSERVED. What is INFERRED is the calling convention (from the call sites, not the callee) and the receiver's identity (not determined at all).",
+ "unresolved_questions": [
+  "THE DERIVED ABI RECORD ABSTAINS AND THIS PACKAGE DOES NOT OVERRIDE IT. abi_derived.receiver is bounds_only with reason `ecx_address_taken_without_memory_access`, and inference R0 records the receiver register as null with UNKNOWN confidence. The consequence for the validator is stated plainly: FIELDS/OFFSETS cannot ground a declared offset, because there is no machine-derived receiver register to ground it against. The package therefore declares NO field offset, and the LEA displacement is carried as a computed constant instead.",
+  "WHICH CLASS OWNS THE 0x1c8 SUB-OBJECT IS UNKNOWN, AND THE FAN-IN IS THE EVIDENCE AGAINST A SINGLE OWNER. 95 call sites in 88 functions load ECX from at least six distinct sources ([ESI+0x40], [ESI+0x80], [ESI+0x14], EDI, EAX, and LEA-computed values) and every one of them receives the same displacement. Either one class hierarchy supplies all of them, or the compiler/linker shared the accessor across unrelated types; this evidence cannot separate those, and no class name is asserted.",
+  "__thiscall VERSUS __fastcall IS NOT SETTLED BY THE CALLEE. The derived record's own C10 inference says the function is byte-identical under all four conventions, and that is correct. The receiver framing is declared because the 95 call sites all load ECX immediately before the call and none passes an argument on the stack; a fastcall reading of the same bytes is not excluded by the callee and is recorded in observed_original_abi.calling_convention_alternatives rather than discarded.",
+  "THE CALLER-SIDE EAX USE IS A MEASUREMENT OVER A WINDOW, NOT A WHOLE-BODY PROOF. The 71-of-95 pointer-consumption figure comes from a bounded scan of the 8 instructions following each call site, so it is a lower bound on pointer consumption, not an exhaustive classification of all 95 sites. The sampled remainder were read individually and all consume the result as a pointer or an argument.",
+  "NO RUNTIME EVIDENCE EXISTS. Nothing in this repository has run the original process for this target, so the model test is a static model of the listing and not a differential test against the game."
+ ],
+ "evidence_provenance": [
+  "reconstruction/evidence/00d20610/evidence.json category disassembly (LIVE, 2 instructions, listing_state complete): LEA EAX,[ECX + 0x1c8] at 00d20610, RET at 00d20616",
+  "reconstruction/evidence/00d20610/evidence.json category abi_derived (openspore-abi-inference-1: parse declared_count 2 degraded false unparsed 0; receiver null bounds_only offsets []; dispatch indirect_calls 0; cleanup bytes 0 owner caller; verdict ABI_UNKNOWN)",
+  "GhidraMCP read_memory @ 0x00d20610 length 7 = 8d81c8010000c3, re-read for this package to pin the encodings the model test asserts on",
+  "GhidraMCP get_xrefs_to @ 0x00d20610: 95 UNCONDITIONAL_CALL references, 0 outgoing",
+  "bounded inline Ghidra scan over all 95 call sites: ECX set within the preceding 12 instructions at 92 sites, no PUSH before the call at 54 sites, EAX consumed as a pointer within the following 8 instructions at 71 sites",
+  "per-site listing reads at 0x00b3dc5b, 0x00b565fe, 0x00b49113, 0x00b4942f, 0x00b4a74a, 0x00c058a6, 0x00c0c80a, 0x00c1e7fc, 0x00c2a2e8, 0x00c2d2f2, 0x00cb0f8f, 0x00cb257a, 0x00cb50a5, 0x00d7fc32, 0x00d8111a, 0x00e969da, 0x01031f10",
+  "docs/tooling/reconstruction-failure-modes.md rules 3, 4, 5, 7 and 8, each applied and each visible in the source",
+  "docs/tooling/validation-dimensions.md section 'Absence is not a pass', applied to the no-globals / no-branch / no-dispatch passes"
+ ],
+ "focused_test": {
+  "cases": 6,
+  "checks": 40,
+  "mutants": 8,
+  "mutant_catch_counts": [
+   14,
+   14,
+   18,
+   13,
+   13,
+   "process_abort_SIGSEGV",
+   "process_abort_SIGSEGV",
+   13
+  ],
+  "perturbations_of_the_reconstruction_itself_tried": [
+   "LEA displacement 0x1c8 -> 0x1c0: 14 of 40 named checks fail",
+   "LEA displacement 0x1c8 -> 0x1c4: 14 of 40 named checks fail",
+   "return the receiver unchanged instead of adding the displacement: 18 of 40 named checks fail",
+   "SUBTRACT the displacement instead of adding it: 13 of 40 named checks fail",
+   "add TWICE the displacement: 13 of 40 named checks fail",
+   "write a byte through the computed address, which the two-instruction body cannot do: the process dies on SIGSEGV (rc=139) rather than reaching a named check, because the first case's base 0xfffff000 makes the store address unmapped. The store IS also caught by the receiver-mutation case, but the abort happens earlier, so the honest count is the abort and not a check count.",
+   "read a byte through the receiver, which the LEA does not do: the process dies on SIGSEGV (rc=139) in the PROT_NONE case, which is the refutation the case was written for.",
+   "ignore the argument and return a fixed constant address: 13 of 40 named checks fail"
+  ],
+  "counting_method": "each mutant is built and run under the real gate (fresh ar archive per mutant, `ar qc` APPENDS and a stale archive silently links the wrong object); the instrumented build replaces the failing `std::_Exit(1)` with a printf so every failing named check is counted rather than only the first, and the unmutated instrumented build reports 0 failures",
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<dir> -c <src>.cpp && -c <test>.cpp && ar qc <fresh> && clang++ -m32 link && run: 40 checks, 0 failures (prints checks=40). Byte-identical result under g++ -std=c++17 -Wall -Wextra -Werror -m32.",
+  "validator": "openspore validate 0x00d20610 reads the staging source through reconstruction/metadata/pkg-00d20610-receiver-member-offset/00d20610.json: aggregate WARN, 8 of 8 static checks evaluated, 6 PASS, 2 WARN, 0 NOT_AVAILABLE, 0 FAIL"
+ },
+ "runtime_validation": 0,
+ "runtime_validation_status": "not performed",
+ "runtime_gates": [
+  "observe one real caller long enough to record what lives at receiver+0x1c8 and whether its element type is the float triple that some sites read at +0/+4/+8 or the pointer triple that others read",
+  "identify the class or classes whose accessors were merged or shared at this address, which the 95-site fan-in with six distinct ECX sources leaves open",
+  "separate __thiscall from __fastcall on a caller that also passes a second argument, which is the only shape where the two conventions differ observably"
+ ],
+ "review_status": "staged_static_review",
+ "integration_status": "not promoted",
+ "worker_ownership": "w31/0x00d20610"
+}

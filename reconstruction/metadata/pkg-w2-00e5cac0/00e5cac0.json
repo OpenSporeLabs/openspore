@@ -1,0 +1,254 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "va": "0x00e5cac0",
+  "normalized_opaque_name": "ret_eax_from_ecx_00e5cac0",
+  "canonical_source_path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0.cpp",
+  "canonical_test_path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0_model_test.cpp",
+  "package": "PKG-W2-00E5CAC0",
+  "subsystem": "Editor",
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_w2_00e5cac0::Receiver",
+    "openspore::reconstruction::pkg_w2_00e5cac0::Word"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added. Receiver is DECLARED AND LEFT UNDEFINED on purpose, so the sidecar asserts no receiver size, layout, member or field.",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics": "EAX receives the 32-bit value ECX held on entry, verbatim and unnarrowed; the machine classification for it is unclassified_in_EAX (aggregate_unknown) because the body never dereferences what it returns"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_confidence": "INFERRED",
+    "calling_convention_candidates": [
+      "__thiscall"
+    ],
+    "calling_convention_ambiguity": null,
+    "calling_convention_determination": "C6B, on the receiver rule R1-VFT. Transcribed field for field from reconstruction/evidence/00e5cac0/evidence.json, category abi_derived: conventions.calling_convention = __thiscall, conventions.confidence = INFERRED, conventions.candidate_conventions = [\"__thiscall\"], conventions.ambiguities = [], verdict ABI_INFERRED, conflicts [] empty. R1-VFT (INFERRED): \"ECX carries the receiver\" -- 0x00e5cac0 is slot 28 of the vptr-backed vftable the record bases at 0x013f57f8, so it is a virtual member of some class, and the body READS the register such a dispatch delivers (MOV EAX,ECX: one incoming ECX read). The rule discriminates that from the COM / __stdcall interface form, which takes its receiver from the first popped stack word and never reads its incoming ECX; the same step records cleanup_side = callee, which is what makes the two forms distinguishable. R1-VFT value: {receiver_register ECX, receiver_provenance vftable_slot_dispatch, table 0x013f57f8, slot_index 28, membership_count 3, incoming_ecx_reads 1, cleanup_side callee}. C6B (INFERRED): \"calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX\". INFERRED, not OBSERVED: nothing in this repository has watched a caller dispatch through a table. What was observed is the cleanup (RET 0x4 is in the bytes) and the register-to-register move.",
+    "calling_convention_cleanup_side": "callee",
+    "calling_convention_cleanup_bytes": 4,
+    "calling_convention_cleanup_confidence": "OBSERVED, and independent of the convention: cleanup.evidence is \"ret 0x4\", the terminal immediate read straight out of the two instruction bytes at 0x00e5cac2 (C2 04 00)",
+    "calling_convention_abstained_because": null,
+    "conventions_note": "The convention is recorded because the MACHINE now determines it, not because this package chose it. The determination is transcribed field for field from the evidence pack's abi_derived category and is carried in the staging header as DATA (kDerivedConventionVerdict, kDerivedConventionConfidence, kCandidateConventionCount, kConventionAmbiguityCount, kDerivedReceiverRegister, kReceiverProvenance, kReceiverPresent, kReceiverBoundsOnly, kReceiverHasShape, kReceiverDereferenceCount, kReceiverDistinctOffsets, kReceiverFieldOffsetClaimed, kObservedCleanupSide, kRetImmediateBytes, kStackArgumentWords, kStackArgumentRead, kStackArgumentWritten, kStackArgumentIsReceiver, kReturnRegisterId, kReturnWidthBytes), where the model test checks every value against an independently written literal -- a check that compared a value with the header's own pointer to it would survive the very edit it exists to catch. The PREVIOUS revision of this sidecar carried an abi_abstention_carried_forward block instead, quoted the old derived record's verdict ABI_UNKNOWN at length, and published no calling_convention anywhere; the previous source declared a convention token as an explicitly labelled MODELLING choice. That abstention is gone, the block has been deleted rather than left standing, and every sentence that asserted it has been rewritten.",
+    "abstention_withdrawn": "The record no longer abstains. It previously returned verdict ABI_UNKNOWN with abstained_because [\"receiver_not_determinable: ecx_read_without_deref\", \"receiver_undetermined_blocks_convention: ...\"], conventions {calling_convention null, confidence UNKNOWN, candidate_conventions [__stdcall, __thiscall]} and receiver {present null, register null, reason ecx_read_without_deref}. That whole shape is superseded: the machine now carries the R1-VFT receiver rule, so the receiver is not undetermined and the convention is not blocked. `ecx_read_without_deref` remains TRUE as a fact about the body -- the register is read and never dereferenced -- but it is no longer a reason to withhold the convention, because R1-VFT decides the question from the slot membership and the incoming-ECX read rather than from a dereference. The old abstention was not a machine finding this package overrode; it was the machine finding itself at the time.",
+    "corroboration_of_the_determination": "The caller side agrees, independently, and is recorded as CORROBORATION, NOT as the source of the claim. Three direct call sites exist, confirmed by reading their rel32 displacements back out of the image: 0x007fbd61 (e8 5a 0d 66 00), 0x007fbd90 (e8 2b 0d 66 00) and 0x007fbfc8 (e8 f3 0a 66 00). The middle one is preceded, three bytes earlier, by 0x007fbd8d 83 c1 0c -- ADD ECX,0xc -- so that caller hands over this+0xc, and the body at 0x00e5cac0 adjusts nothing. A first argument that a CALLER-side instruction changes by a constant before the transfer is a receiver; a by-value parameter is not adjusted by its caller. The other two sites carry no adjustor at all, which is why the header records both shapes and the model test drives both (case K): an unadjusted call answers the base address, an adjusted one answers base+0xc, and the whole difference is the caller's. This also excludes the former other candidate __stdcall, which has no receiver for a caller-side adjustor to act on, and __fastcall, which the terminal immediate excludes because the callee pops. The determination itself stands on R1-VFT and C6B; the call sites are a second machine source that agrees.",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": "ECX carries the receiver, and the body forwards it into EAX. What the machine record states, at INFERRED confidence: receiver {present true, register ECX, provenance vftable_slot_dispatch, bounds_only true, shape null, distinct_offsets 0, offsets [], written_through 0}. What the two instructions show: MOV EAX,ECX at 0x00e5cac0 copies all 32 bits of the incoming ECX into EAX, verbatim and unnarrowed, and the record returned by 0x007fbd90 is the very value that entered the CALL. ECX is NEVER DEREFERENCED in this body: the two instructions contain no load and no store through it in any register, and they neither add to nor subtract from it. So NO FIELD OFFSET IS CLAIMED IN EITHER DIRECTION -- the package asserts neither a member at some displacement nor the object's being flat or empty; it asserts only that this body shows none, which is what bounds_only true with an empty offsets list records. The receiver is declared and deliberately left undefined in the staging header (`struct Receiver;`), so the source itself carries no receiver type, size, layout, vtable-pointer offset, field or member.",
+    "receiver_record": "present: true, register: ECX, provenance: vftable_slot_dispatch, confidence: INFERRED, bounds_only: true, shape: null, distinct_offsets: 0, offsets: [], written_through: 0",
+    "receiver_register": "ECX",
+    "receiver_alias": "none. MOV EAX,ECX is the only transfer of the receiver and it is a move into the return register, not an alias into a working register: there is no second copy, no callee, and nothing that could lose the value before the RET.",
+    "receiver_note": "ECX is read at 0x00e5cac0 and is the receiver, per the machine record. The register is named here as an OBSERVED MECHANIC of the body and as the machine's DETERMINED receiver register; no package source names a class, a vtable identity, a receiver type, a field or an object size on the strength of it.",
+    "receiver_offsets": [],
+    "receiver_dereferenced_here": false,
+    "receiver_field_offset_claimed": null,
+    "receiver_field_offset_statement": "NOT CLAIMED, IN EITHER DIRECTION. The body shows no displacement through ECX, so nothing here asserts a member at any offset, and nothing here asserts the object's being flat, empty or of any size. bounds_only true with offsets [] is the record's own reading of exactly that absence, and this package restates it rather than filling it.",
+    "receiver_identity": "UNRESOLVED, and not guessed. __thiscall says where the receiver arrives, not what it IS. This body neither dereferences nor adjusts the pointer, and it is reached at two different displacements -- bare at 0x007fbd61 and 0x007fbfc8, plus 0xc at 0x007fbd90 -- so more than one base relationship reaches it. No class, no vtable identity, no receiver type, no object size and no relationship between the three tables is claimed.",
+    "receiver_where_the_receiver_is_not_claimed": "The three vptr-backed tables that name this address are 0x013f57f8 (slot 28), 0x0140116c (slot 6) and 0x01485550 (slot 21). Each was confirmed by reading the word at table_base + 4*slot back out of the image: 0x013f5868, 0x01401184 and 0x014855a4 all hold 0x00e5cac0. They are the membership R1-VFT reasons FROM. They are NOT three classes and NOT three claims of anything: identical folding and vtable merging both put one address in several tables, and five bytes cannot tell those apart. Why one address lives in three tables is an open question, recorded as one.",
+    "receiver_disambiguated_from_the_popped_word": "The receiver (ECX) and the popped stack word at entry_ESP+0x4 are DIFFERENT values and this package keeps them apart. The stack word is never read (the machine record says so: source ret_immediate, observed false, read false, written false) and the body has no stack operand to read it with; the receiver arrives in ECX and is what lands in EAX. Conflating them would be the one substantive ABI error available in this body, so the model test drives the two independently -- four different stack words against one fixed receiver in case D, and a pushed word that is deliberately a recognisable constant the probe reports back on -- and plants values that make the two distinguishable.",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_argument_detail": "entry_ESP+0x4, observed: false, ordinal 1, sizes [4], read: false, written: false, size_inferred: false, source: \"ret_immediate\". A 4-byte slot is modelled because the terminal immediate accounts for exactly four bytes; that is the POPPED AREA and not a parameter count, so it is named for the bytes and not for a meaning.",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_cleanup_confidence": "OBSERVED",
+    "stack_cleanup_evidence": "ret 0x4, read from the bytes C2 04 00 at 0x00e5cac2",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4",
+    "return_register": "EAX",
+    "return_register_class": "aggregate_unknown",
+    "return_semantics": "unclassified_in_EAX",
+    "return_width_bytes": 4,
+    "return_width_basis": "MOV EAX,ECX at 0x00e5cac0 writes all four bytes of EAX, and it is the only write and the last one before the single reachable RET. The exact C type spelling is a source-side choice among the four-byte types and is not verified by the machine; the declared_return_type below records the spelling this package picked, and the machine fixes only the width and the fact that the value is the receiver verbatim.",
+    "return_confidence": "INFERRED (RT1, RT2)",
+    "declared_return_type": "Receiver *",
+    "return_observation": "The record classifies the last write to EAX as aggregate_unknown (RT2) and the envelope as unclassified_in_EAX. The listing says more than that and this package reads only the listing: the single write to EAX is MOV EAX,ECX at 0x00e5cac0, a register-to-register move of the value ECX carried on entry, so the returned value is the incoming receiver verbatim and 32 bits wide, and the body never dereferences what it returns. The C spelling is Receiver *, chosen for the reason given in the sibling package at 0x00642210; the machine fixes the width, not the spelling.",
+    "frame": "no frame: no PUSH EBP, no MOV EBP,ESP, no SUB ESP, no saved registers, no local extent. The five bytes allocate nothing and spill nothing.",
+    "variadic": "UNKNOWN (machine record; no variadic evidence either way)",
+    "tail_call": "absent",
+    "sret": "present false; the return is a plain 4-byte value in EAX and nothing is written through a hidden pointer"
+  },
+  "observed_mechanics": [
+    "MOV EAX,ECX at 0x00e5cac0 (bytes 8B C1): ModRM 0xC1 is mod=11 so both operands are registers, reg=000 so the destination is EAX, r/m=001 so the source is ECX; all 32 bits of ECX are copied into EAX and no flag is touched.",
+    "RET 0x4 at 0x00e5cac2 (bytes C2 04 00): the opcode's 16-bit little-endian immediate is 0x0004, so the callee pops four bytes off its own frame on return.",
+    "The body is five bytes in total, 0x00e5cac0..0x00e5cac4; the live read at 0x00e5cac0 returns 8bc1c20400cccccccccccccccccccccc, so the byte after the body is 0xCC inter-function padding.",
+    "No memory operand of any kind appears: the target performs no field access, no global access, no load and no store.",
+    "No call, no indirect transfer and no conditional branch appears; the body is straight-line and transfers control nowhere.",
+    "The four bytes the RET immediate accounts for are never read by the body; the machine record reads that slot from the terminal immediate alone (source ret_immediate, observed false, read false, written false), which is the popped area and not a parameter count.",
+    "ECX is read but never dereferenced, and never adjusted. The record therefore states bounds_only true with an empty offsets list, which is a statement about this body and not about the object's layout; no field offset is claimed in either direction.",
+    "The body adjusts nothing. ADD ECX,0xc appears at 0x007fbd8d, in the CALLER, three bytes before the CALL at 0x007fbd90; the two instructions at 0x00e5cac0 contain no add, no sub and no lea, so the +0xc is entirely caller-side.",
+    "The calling convention is DETERMINED, not modelled: R1-VFT puts the receiver in ECX from the vftable-slot membership plus the incoming-ECX read, and C6B names __thiscall from the callee-side cleanup together with that receiver register. Confidence is INFERRED, not OBSERVED."
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "triage",
+      "path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0.cpp",
+      "scope": "fully reviewed staging body and boundary declaration"
+    },
+    {
+      "kind": "triage",
+      "path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0.hpp",
+      "scope": "fully reviewed boundary types, byte-level decode, the transcribed machine ABI determination, the caller-side corroboration and the stated non-claims"
+    },
+    {
+      "kind": "triage",
+      "path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0_model_test.cpp",
+      "scope": "fully reviewed focused model test, including the calibrated measurement of the callee stack pop, the caller-side this-adjustor probe, the value-by-value check of the machine ABI data and the run-time decode of the emitted body"
+    },
+    {
+      "kind": "machine",
+      "path": "reconstruction/evidence/00e5cac0/evidence.json",
+      "scope": "live GhidraMCP collection: the complete 2-instruction listing, the derived ABI envelope with verdict ABI_INFERRED (conventions __thiscall/INFERRED, receiver ECX/vftable_slot_dispatch, cleanup 4 bytes callee OBSERVED, conflicts []), and the parse record (declared_count 2, degraded false, unparsed 0)"
+    },
+    {
+      "kind": "machine",
+      "path": "GhidraMCP /read_memory @ 0x00e5cac0",
+      "scope": "the sixteen image bytes 8bc1c20400cccccccccccccccccccccc, which fix the body length at five and show 0xCC padding behind it"
+    },
+    {
+      "kind": "machine",
+      "path": "GhidraMCP /read_memory @ 0x007fbd50, 0x007fbd80 and 0x007fbfb0",
+      "scope": "the three direct call sites and the ADD ECX,0xc at 0x007fbd8d, read back out of the image and used as corroboration of the convention"
+    },
+    {
+      "kind": "machine",
+      "path": "GhidraMCP /read_memory @ 0x013f5868",
+      "scope": "the word at vftable 0x013f57f8 + 4*28, which reads back as 0x00e5cac0 and confirms R1-VFT's table and slot index"
+    }
+  ],
+  "vtable_references_observed_but_not_claimed": {
+    "note": "the pack's xref export names these three tables as referencing this address, and each was confirmed by reading table_base + 4*slot back out of the image. They are the membership R1-VFT reasons FROM and nothing more: no class, no slot boundary and no virtual membership beyond R1-VFT's own stated slot is asserted anywhere in the package, the model test dispatches only through a table it builds itself, and why one address lives in three tables is an open question rather than a set of claims.",
+    "addresses": [
+      "0x013f57f8",
+      "0x0140116c",
+      "0x01485550"
+    ],
+    "slot_indices": [
+      28,
+      6,
+      21
+    ],
+    "slot_words_read_back": [
+      "0x013f5868",
+      "0x01401184",
+      "0x014855a4"
+    ]
+  },
+  "confidence": {
+    "body": "high",
+    "stack_cleanup": "high",
+    "mechanics": "high",
+    "calling_convention": "INFERRED, from the machine record (R1-VFT and C6B) rather than from anything this package chose; the caller-side this-adjustor corroborates it independently",
+    "receiver_role": "INFERRED, from the machine record's vftable-slot dispatch provenance. The receiver's identity remains unknown and is not claimed",
+    "receiver_layout": "none claimed. The body never dereferences the receiver, so this is an absence of evidence and not a description of the object",
+    "runtime_ownership": "not_applicable, no runtime claim is made"
+  },
+  "unresolved_runtime_gates": [
+    "no original-process trace exists in this repository for this target, so nothing here is a runtime claim"
+  ],
+  "unresolved_questions": [
+    "What does the popped 4-byte stack slot mean? It is established that the callee pops it and never reads it; whether it is a parameter at all, and if so of what type and meaning, is not established by this listing and is not guessed.",
+    "Which class, if any, does this address belong to? R1-VFT establishes that it is a virtual member of SOME class, because it is a slot of a vptr-backed table, and that is as far as the evidence goes. This binary carries no MSVC RTTI, the record names no owning class, and identical folding means one address can be a virtual member of several classes at once, so no class identity is claimed.",
+    "Why does one address live in three vtables? ICF-folded shared stubs and vtable merging both produce that, and nothing in the five bytes distinguishes them.",
+    "Is the receiver the head of its object or an interior sub-object? The two unadjusted call sites and the one +0xc-adjusted site reach the same body at different displacements, and the body neither adds nor subtracts anything of its own, so the base relationships between them are not recoverable from here.",
+    "What is the register_class of the returned value? The record classifies it aggregate_unknown (RT2) and the envelope as unclassified_in_EAX. The listing shows the value is the incoming receiver verbatim, so it is a pointer-shaped 4 bytes, but the machine's own classification is recorded as it stands and is not upgraded here."
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0_model_test.cpp",
+    "flags": "-m32 -Wall -Wextra -Werror -std=c++17",
+    "g_o0": "pass, 149 checks, 0 failures, exit 0",
+    "g_o1": "pass, 153 checks, 0 failures, exit 0",
+    "g_o2": "pass, 153 checks, 0 failures, exit 0",
+    "g_o3": "pass, 153 checks, 0 failures, exit 0",
+    "clang_o0": "pass, 149 checks, 0 failures, exit 0",
+    "clang_o1": "pass, 153 checks, 0 failures, exit 0",
+    "clang_o2": "pass, 153 checks, 0 failures, exit 0",
+    "clang_o3": "pass, 153 checks, 0 failures, exit 0",
+    "note": "all eight cells were built and run, not one. Case H decodes the compiler's own emitted bytes and is skipped at -O0 only, because an unoptimised build is free to spill the incoming ECX to the stack; the -O0 rows therefore run 149 checks and the -O1/-O2/-O3 rows 153. Every other case runs at every level. The bare-assembly probe is a file-scope function that touches only EAX, ECX, EDX and its own %ebp frame, and it samples the caller's ESI, EDI, EBX and ESP at its own entry and exit and reports them, so the register discipline is measured inside the block rather than sampled from C++ -- a C++-side sample perturbs the very frame pointer and callee-saved registers it reads, which is what made an earlier revision of a sibling package fail from -O1 upwards while passing at -O0.",
+    "result": "pass"
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "review_status": "approved",
+  "integration_status": "staging",
+  "source_files": [
+    "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0.cpp",
+    "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0.hpp",
+    "reconstruction/staging/pkg-w2-00e5cac0/ret_eax_from_ecx_00e5cac0_model_test.cpp"
+  ],
+  "mutation_evidence": {
+    "note": "every mutation below is a wrong reconstruction of the five machine bytes or a wrong transcription of the machine's ABI determination; each was applied to a copy of the package, built and run under BOTH compilers at ALL FOUR optimisation levels (-O0, -O1, -O2, -O3 -- eight cells, not one), and each died in all eight. The clean package passes all eight. No mutation was made to a check, to the validator, to the ABI engine or to a test assertion.",
+    "cells_per_mutation": 8,
+    "mutations": [
+      {
+        "id": "offset1",
+        "change": "return receiver + 1 instead of receiver",
+        "died": "8 of 8 cells. 22 checks fail under g++ -O2, first on 'F: the return register carries the register-carried value verbatim rather than a word loaded through it' and 'K: an unadjusted call site answers with the address it was given', then on the case-A identity battery, case D and case H's emitted-body decode"
+      },
+      {
+        "id": "slot",
+        "change": "return the popped stack slot instead of the register-carried receiver",
+        "died": "8 of 8 cells. 26 checks fail under g++ -O2; the probe reads 0x2468ace0, its own pushed word, in the answer register, which is the clearest possible refutation of swapping the two carriers"
+      },
+      {
+        "id": "null",
+        "change": "return nullptr",
+        "died": "8 of 8 cells. 21 checks fail under g++ -O2, first on the two case-F answer checks and on case K, then on the whole case-A battery"
+      },
+      {
+        "id": "write",
+        "change": "store 0xa5 through the receiver before returning",
+        "died": "8 of 8 cells. 'F: not one byte of the object the register carried was written' fails; the second F probe, which hands the body an unmapped value, then faults, so those runs also exit on SIGSEGV"
+      },
+      {
+        "id": "adjust",
+        "change": "move the caller-side adjustment into the callee: return receiver + 0xc",
+        "died": "8 of 8 cells. 22 checks fail under g++ -O2, and the ones that identify the fault are in case K -- 'K: an unadjusted call site answers with the address it was given' and the difference check -- which is what case K exists for"
+      },
+      {
+        "id": "cleanup",
+        "change": "transcribe the body as `movl %ecx,%eax; ret` with no RET immediate, i.e. a callee that pops nothing",
+        "died": "8 of 8 cells. The three case-F cleanup checks fail under g++ -O2, the measured pop reads 0 against 4, and the unbalanced stack then trips the stack protector, so the run aborts on the very first probe"
+      },
+      {
+        "id": "disc",
+        "change": "add a branch the five bytes do not contain: return nullptr when the popped stack word equals 0x2468ace0",
+        "died": "8 of 8 cells. 9 checks fail under g++ -O2, on both case-F answer checks, on case K and on case H's emitted-body decode, which is what catches a body that grew an operation the five bytes do not contain"
+      },
+      {
+        "id": "header_revert",
+        "change": "revert the machine ABI data in the header to the old abstention: confidence UNKNOWN, two convention candidates, receiver absent, provenance unknown, and the third table's slot index altered",
+        "died": "8 of 8 cells. 6 checks fail, all in case J -- 'J: the convention is INFERRED, not OBSERVED and not UNKNOWN', 'J: __thiscall is the only candidate the record names', 'J: the receiver's provenance is vftable_slot_dispatch', 'J: the record states a receiver is present' and the third table's slot index. This is the check the previous revision of this package did not have: with no case J, reverting the determination to the abstention passed silently"
+      },
+      {
+        "id": "probe_tautology",
+        "change": "make the probe report four bytes for every callee, discarding the measured ESP delta",
+        "died": "8 of 8 cells. Exactly the two calibration checks fail, 'F: the control that pops nothing measures a zero-byte pop' and 'F: the control that pops eight measures an eight-byte pop'. This is the control for the control: without it, a probe that simply reported four would clear the reconstruction and prove nothing"
+      }
+    ]
+  },
+  "validation_outcome": {
+    "static": "PASS",
+    "pass": 8,
+    "warn": 1,
+    "fail": 0,
+    "not_available": 0,
+    "passing_checks": [
+      "ABI",
+      "CALLS",
+      "CONSTANTS",
+      "CONTROL FLOW",
+      "FIELDS/OFFSETS",
+      "GLOBALS",
+      "RETURN SEMANTICS",
+      "VIRTUAL DISPATCH"
+    ],
+    "warning_checks": {
+      "EVIDENCE COVERAGE": "11 of 17 static evidence categories are available. The six absent ones were never collected or failed to collect for this target -- the Ghidra decompiler reported 'Decompilation did not complete' for this two-instruction body, and the target names no callee, no global, no external callee and no contradiction, so those categories are empty. This is a measurement of the evidence pack, not a defect in the package, and no package content can add a category to it. The static status is PASS with this one WARN, matching the two already-completed sibling packages at 0x00642210 and 0x0057d6f0."
+    },
+    "abi_arm_history": "The previous revision of this package was WARN on ABI with the detail 'the derived ABI record abstained (ABI_UNKNOWN, receiver_not_determinable: ecx_read_without_deref)', and the previous revision of this sidecar recorded in validation_outcome that the check was 'machine-side and is not reachable from the package'. That is no longer true, and the sentence has been deleted rather than edited: the derived record now determines __thiscall (verdict ABI_INFERRED, R1-VFT and C6B), the staging source carries a __thiscall token on the reconstructed entry, and this sidecar publishes the determination in observed_original_abi.calling_convention. Nothing was weakened to get there: no gate, no validator code, no ABI engine rule and no test assertion was touched."
+  }
+}

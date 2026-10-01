@@ -1,0 +1,266 @@
+{
+  "schema": "pkg-utfwin-rotateeffect-func88h.function-handoff.v1",
+  "package": "PKG-UTFWIN-ROTATEEFFECT-FUNC88H",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x00980c50",
+  "address": "0x00980c50",
+  "symbol": "UTFWin::RotateEffect::func88h",
+  "normalized_symbol": "utfwin_rotateeffect_func88h_00980c50",
+  "reconstructed_symbol": "func88h_00980c50",
+  "subsystem": "UTFWin",
+  "cluster": "utfwin-framework",
+  "queue_id": "fun:00980c50:UTFWin::RotateEffect::func88h",
+  "target_state": "staging candidate; src/ promotion is integrator-owned",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-26",
+  "implementer_id": "orch-swarm",
+  "attempts_used": 1,
+  "outcome": "PARTIAL",
+  "source_files": [
+    "reconstruction/staging/pkg-utfwin-rotateeffect-func88h/utfwin_rotateeffect_func88h_00980c50.cpp",
+    "reconstruction/staging/pkg-utfwin-rotateeffect-func88h/utfwin_rotateeffect_func88h_00980c50.hpp",
+    "reconstruction/staging/pkg-utfwin-rotateeffect-func88h/utfwin_rotateeffect_func88h_00980c50_model_test.cpp",
+    "reconstruction/metadata/pkg-utfwin-rotateeffect-func88h/00980c50.json"
+  ],
+  "function_extent": {
+    "entry": "0x00980c50",
+    "body_end_inclusive": "0x00980c55",
+    "instruction_count": 2,
+    "bytes": "B8 D5 2A 2B CF C3",
+    "int3_padding_start": "0x00980c56",
+    "int3_padding_end": "0x00980c5f",
+    "single_linear_flow": true,
+    "return_sites": [
+      "0x00980c55: RET (bare; no immediate, so the caller removes any stack arguments)"
+    ]
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall receiver in ECX (per the SDK method header) with caller stack cleanup; the receiver and every argument are ignored",
+    "return_type": "std::uint32_t",
+    "return_type_rationale": "The machine is unambiguous: 0x00980c50 is MOV EAX,0xCF2B2AD5 / RET, so the frame materialises a 32-bit immediate in EAX and that word is the observed return. The SDK and the Ghidra import both spell the return type void, which is the SDK generator's placeholder for a virtual it could not name; this span declares std::uint32_t because that is what the instructions do, and the disagreement is reported rather than resolved. Confidence: high for the EAX immediate (byte-verified and reproduced byte-identically by the staged build), low for the semantic type of the value, which is documented nowhere in the SDK.",
+    "hidden_receiver": "ECX, typed as the RotateEffect receiver by the SDK method header. The frame never reads ECX, so the receiver cannot influence the result and no subobject offset can be recovered from this address.",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x08 on entry",
+        "name": "param_2",
+        "type": "uint32",
+        "usage": "never read; the frame executes no memory load at all"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x0C on entry",
+        "name": "param_3",
+        "type": "uint32",
+        "usage": "never read"
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x10 on entry",
+        "name": "param_4",
+        "type": "uint32",
+        "usage": "never read"
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "ret_form": "bare RET at 0x00980c55; the caller pops, which the staged model test exercises by pushing three words and removing them with 'addl $12, %esp' after the call",
+    "flags_written": [],
+    "registers_written": [
+      "EAX"
+    ],
+    "registers_read": [],
+    "stack_reads_by_frame": [],
+    "stack_writes_by_frame": [],
+    "ghidra_signature_discrepancy": "The live Ghidra signature is void UTFWin::RotateEffect::func88h(RotateEffect*, int, int, int): three int stack words copied from the SDK method header, and a void return. The machine reads no stack word and writes EAX with an immediate, so both the return type and the argument list of the SDK header are unreliable for this address."
+  },
+  "observed_mechanics": [
+    "0x00980c50 is exactly six bytes: B8 D5 2A 2B CF (MOV EAX,0xCF2B2AD5) followed by C3 (RET). ghidra_disassemble_function(0x00980c50) returns exactly those two instructions and ghidra_get_function_by_address reports body_start 0x00980c50 / body_end_inclusive 0x00980c55.",
+    "The frame is a leaf with no stack frame: it executes no PUSH/POP, no memory load, no memory store, no call, and no conditional or indirect branch. It is not a thunk and not an adjustor -- unlike the two entries that follow it, 0x00980c60 and 0x00980c70, it neither adjusts ECX nor transfers control.",
+    "The frame never reads the hidden ECX receiver, so the result is independent of the object it is dispatched on. No subobject offset and no field offset can be recovered from this address.",
+    "0x00980c56..0x00980c5f is ten bytes of 0xCC INT3 padding, the standard MSVC inter-function pad for a body that is not 16-byte aligned in size.",
+    "The RET is bare, not RET 4 and not RET 8, so this frame removes no stack argument; the caller performs the cleanup. The staged model test pushes the three words the SDK header declares and pops them with 'addl $12, %esp', reproducing the observed convention.",
+    "The sole reference to 0x00980c50 in the whole image is a DATA pointer at 0x01444364: ghidra_get_xrefs_to returns exactly one reference, from 0x01444364, type DATA. There is no code caller, matching the briefing's empty callers/callees/xrefs lists and the single-node SCC scc-0060 with no edges.",
+    "0x01444364 is slot +0x00 of the pointer run the briefing and the Ghidra long-run detector both label 'vtable:0x01444364' (36 slots, namespace UTFWin, firstSlotFunc 0x00980c50). Ghidra's vtable detection never ran on this program (0 vtable labels per AGENTS.md), so this is a pointer run, not a proven vftable.",
+    "The run transcribed from ghidra_read_memory(0x01444364, 48) is: slot_00 0x00980c50 (this target), slot_04 0x00980320 (E9 AB F2 EB FF = JMP 0x0044f5d0), slot_08 0x009800e0 (E9 5B D9 FF FF = JMP 0x0097da80), slot_0c 0x00980cb0, slot_10 0x0096ff20, slot_14 0x00e31100, slot_18 0x009634c0, slot_1c 0x00963780, and slot_20..slot_2c all 0x006f2f20.",
+    "Slot +0x10 of the run is 0x0096ff20, which the already-reconstructed sibling package reconstruction/metadata/pkg-utfwin-glideeffect-func88h/0096ff70.json identifies as the vector-deleting destructor of the GlideEffect family (it tests the 0xEF2B293B vector-delete magic and ends in RET 0x4). Its presence in this run ties the run to the UTFWin effect family rather than to an unrelated class.",
+    "The immediate 0xCF2B2AD5 is not arbitrary: twelve bytes further on, still inside the same 32-byte code block, an unconditional block stores the very same immediate into the receiver. Its bytes are 8B 44 24 04 (MOV EAX,[ESP+4]) / 85 C0 (TEST EAX,EAX) / 74 0D (JZ 0x00980c95) / 83 7C 24 08 00 (CMP dword [ESP+8],0) / 74 06 (JZ 0x00980c95) / C7 00 D5 2A 2B CF (MOV dword [EAX],0xCF2B2AD5) / B8 01 00 00 00 (MOV EAX,1) / C2 08 00 (RET 0x8), spanning 0x00980c80..0x00980c9b. Read as source that is 'if (receiver != 0 && word != 0) { *receiver = 0xCF2B2AD5; } return receiver != 0;' -- a bool-returning setter of the same 32-bit object word this target returns unconditionally.",
+    "The two entries between this target and that block are MSVC adjustor thunks of exactly the shape of the already-reconstructed sibling UTFWin::GlideEffect::func88h @ 0x0096ff70: 0x00980c60 is 83 E9 04 / E9 48 00 00 00 (SUB ECX,0x04 / JMP 0x00980cb0) and 0x00980c70 is 83 E9 0C / E9 38 00 00 00 (SUB ECX,0x0C / JMP 0x00980cb0).",
+    "A third constant-returning stub sits at 0x00980ca4: B8 24 44 44 01 (MOV EAX,0x01444424) / C2 04 00 (RET 4), padding to 0x00980cb3. It shows the compiler emits this bare MOV-immediate/RET shape for several small accessors in this block, so the shape is idiomatic here rather than unique to this target.",
+    "0x00980cb4 begins a real function (56 8B F1 = PUSH ESI / MOV ESI,ECX). Because the adjustor thunks at 0x00980c60 and 0x00980c70 both branch to 0x00980cb0, which the image fills with 0xCC padding, those two thunks target an address four bytes below the nearest real code. Ghidra has created a function FUN_00980cb0 spanning 0x00980cb0..0x00980ce8 that starts inside that padding. This is recorded as a boundary anomaly and is not resolved here.",
+    "The SDK and Ghidra both warn 'Enum ObjectTYPE: Some values do not have unique names' for this function. The cause is visible in the SDK enum: 0xEF2B293B is published simultaneously for UTFWin::IGlideEffect, UTFWin::IPerspectiveEffect and UTFWin::IRotateEffect, so the effect interfaces cannot be told apart by that value.",
+    "The value 0xCF2B2AD5 is deliberately unnamed. It is NOT a member of the SDK ObjectTYPE enum: the XML contains no ENUM_ENTRY whose VALUE carries the 0xCF2B prefix at all, and 0xEF2B293B is a different value. The staged source therefore exposes it only as the literal constant kFunc88hToken and the model test asserts the two never coincide."
+  ],
+  "vtables": [
+    {
+      "label": "vtable:0x01444364",
+      "basis": "Ghidra long run, .spore-analysis/ghidra-exports/vtables.json (namespace UTFWin, address 0x01444364, 36 slots, firstSlotFunc 0x00980c50, sdkFuncs[0] UTFWin::RotateEffect::func88h)",
+      "run_base": "0x01444364",
+      "target_slot_offset": "0x00",
+      "target_slot_address": "0x01444364",
+      "slot_00": "0x00980c50",
+      "slot_04": "0x00980320",
+      "slot_08": "0x009800e0",
+      "slot_0c": "0x00980cb0",
+      "slot_10": "0x0096ff20",
+      "slot_14": "0x00e31100",
+      "slot_18": "0x009634c0",
+      "slot_1c": "0x00963780",
+      "slot_20": "0x006f2f20",
+      "slot_24": "0x006f2f20",
+      "slot_28": "0x006f2f20",
+      "slot_2c": "0x006f2f20",
+      "caveat": "Ghidra's vtable detection never ran on this program (0 vtable labels), so 0x01444364 is a pointer run, not a proven vftable. The run is also detected as 36 slots, which runs past the start of the neighbouring run at 0x014443a4 reported in the same detector output, so the run length is an over-estimate."
+    }
+  ],
+  "layout": {
+    "structure": "UTFWin::RotateEffect",
+    "source": "name from the SDK symbol table (.spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__RotateEffect__func88h.c header) and the vtable-detector sdkFuncs attribution; NO field layout is asserted",
+    "fields": [
+      {
+        "offset": "0x00",
+        "name": "token_00",
+        "sdk": "undocumented; the leading word the block at 0x00980c80 writes with MOV dword [EAX],0xCF2B2AD5"
+      }
+    ],
+    "receiver_subobject": {
+      "name": "unknown",
+      "offset_of_most_derived": "undetermined",
+      "note": "0x00980c50 never reads ECX, so it yields no evidence about which subobject the slot belongs to. The two sibling adjustors at 0x00980c60 and 0x00980c70 adjust by -0x04 and -0x0C respectively, which is the only hint about the base offset available, and it belongs to those addresses rather than to this one."
+    }
+  },
+  "types": [
+    "RotateEffectVTableRun (pointer run based at 0x01444364, 12 transcribed slots)",
+    "RotateEffectTokenWord (the receiver's leading 32-bit word, the only word any observed code touches)",
+    "Opaque = std::uint32_t (opaque 32-bit word)"
+  ],
+  "globals": [],
+  "services": [],
+  "state_events": [],
+  "call_graph": {
+    "direct_callees": [],
+    "direct_callers": [],
+    "data_xrefs": [
+      {
+        "from": "0x01444364",
+        "to": "0x00980c50",
+        "type": "DATA"
+      }
+    ],
+    "caller_boundary": "The single live reference is a function-table entry at slot +0x00 of the run based at 0x01444364; no direct code caller exists, so nothing in the static binary names a caller. The dispatching caller is therefore runtime-gated."
+  },
+  "semantic_findings": [
+    {
+      "kind": "constant_return_stub",
+      "statement": "0x00980c50 is a six-byte constant-returning leaf: MOV EAX,0xCF2B2AD5 / RET. It ignores its receiver and all three stack arguments, performs no memory access and no call, and its result is therefore a compile-time constant.",
+      "confidence": "high",
+      "evidence": "ghidra_disassemble_function 0x00980c50; ghidra_read_memory 0x00980c50 len 16 (B8 D5 2A 2B CF C3 CC...)",
+      "corroboration": "The staged build emits byte-identical code: objdump of the model-test binary shows 'b8 d5 2a 2b cf  mov $0xcf2b2ad5,%eax' followed by 'c3 ret'."
+    },
+    {
+      "kind": "caller_cleans_stack",
+      "statement": "Because the RET carries no immediate, this frame pops nothing; a caller that pushes the three words the SDK method header declares must remove them itself.",
+      "confidence": "high",
+      "evidence": "ghidra_disassemble_function 0x00980c50 (RET with no operand)"
+    },
+    {
+      "kind": "getter_setter_pairing",
+      "statement": "0xCF2B2AD5 is a meaningful object value, not a hash or a sentinel: the block at 0x00980c80, twelve bytes past this target in the same code block, stores that identical immediate into the receiver and returns a bool, making the pair an adjacent (get, set) virtual pair over one 32-bit object word.",
+      "confidence": "medium",
+      "evidence": "ghidra_read_memory 0x00980c50 len 192, bytes at 0x00980c80..0x00980c9b",
+      "caveat": "Ghidra reports no function at or containing 0x00980c80, so that block's entry point, owning class and vtable slot are unknown. The pairing is a byte-level adjacency argument, not a proven virtual pair."
+    },
+    {
+      "kind": "constant_undocumented",
+      "statement": "0xCF2B2AD5 has no name. It is absent from the SDK ObjectTYPE enum (the enum's effect-interface value is 0xEF2B293B, published for IGlideEffect, IPerspectiveEffect and IRotateEffect alike; no enum entry carries a 0xCF2B prefix), so the immediate is exposed as a literal rather than given an invented meaning.",
+      "confidence": "high",
+      "evidence": "SporeGhidra_march2017.xml ENUM NAME=ObjectTYPE; grep for the 0xCF2B prefix returns no ENUM_ENTRY"
+    },
+    {
+      "kind": "return_type_disagreement",
+      "statement": "The SDK and the Ghidra import declare the return type void, but the machine writes a 32-bit immediate into EAX. This span is modelled as returning std::uint32_t.",
+      "confidence": "high for the machine, low for the SDK label",
+      "evidence": "ghidra_get_function_by_address 0x00980c50 signature 'void UTFWin::RotateEffect::func88h(RotateEffect*, int, int, int)' against ghidra_disassemble_function 0x00980c50"
+    },
+    {
+      "kind": "boundary_anomaly",
+      "statement": "The adjustors at 0x00980c60 and 0x00980c70 both JMP to 0x00980cb0, an address the image fills with 0xCC INT3 padding, and Ghidra has created FUN_00980cb0 spanning 0x00980cb0..0x00980ce8 starting inside that padding. The nearest real code begins at 0x00980cb4.",
+      "confidence": "high for the bytes, unresolved for the cause",
+      "evidence": "ghidra_read_memory 0x00980c50 len 192; ghidra_get_function_by_address 0x00980cb0",
+      "caveat": "This concerns the two sibling thunks and the SDK/Ghidra boundary, not 0x00980c50 itself, whose extent is unambiguous."
+    },
+    {
+      "kind": "sdk_label_offset_unresolved",
+      "statement": "The SDK placeholder name func88h implies a vftable offset of 0x88 by the SDK's naming convention, but the only DATA reference puts this stub at offset +0x00 of the run based at 0x01444364. The offset implied by the name and the offset observed in the image do not agree.",
+      "confidence": "high",
+      "evidence": "ghidra_get_xrefs_to 0x00980c50 (one DATA reference from 0x01444364); the same discrepancy was recorded for the sibling 0x0096ff70 in reconstruction/metadata/pkg-utfwin-glideeffect-func88h/0096ff70.json"
+    }
+  ],
+  "runtime_gates": [
+    "No runtime validation has been run; every claim here is static.",
+    "The dispatching caller of the run's slot +0x00 is unknown, so the circumstances under which this getter is invoked -- and whether its result is compared against anything -- are unknown.",
+    "Whether slot +0x00 of the run is genuinely a getter of the word the block at 0x00980c80 stores is unproven; the adjacency is a byte-level argument only."
+  ],
+  "blockers": [
+    "Ghidra's vtable detection never ran on this program, so 'vtable:0x01444364' is an unverified pointer run and every slot attribution derived from it is a heuristic.",
+    "The SDK's ObjectTYPE enum is not injective (0xEF2B293B is shared by IGlideEffect, IPerspectiveEffect and IRotateEffect), so no constant in this family can identify a class on its own.",
+    "0xCF2B2AD5 is undocumented in the SDK, so no semantic name for the returned word is recoverable from the available evidence."
+  ],
+  "unresolved_questions": [
+    "What is 0xCF2B2AD5 semantically? It is stored by the block at 0x00980c80 and returned by this target, but it appears in no SDK enum, structure or function signature, so it is left as a literal.",
+    "Is the SDK return type void or is it a 32-bit value? The machine writes EAX with an immediate, but a void-returning SDK placeholder is equally consistent with the vtable generator's naming. The span is modelled as returning std::uint32_t; a human reviewer with vftable context may prefer void.",
+    "Why does the SDK declare three int parameters for a frame that reads no stack word and pops nothing? The extra words are most likely artefacts of the SDK method-header generator.",
+    "Which vftable actually owns slot +0x00 of the run at 0x01444364, and what is its offset? The SDK name func88h implies offset 0x88, but the only DATA reference is at +0x00, and the same conflict is unresolved for the sibling 0x0096ff70.",
+    "What is the true entry point and owner of the constant-storing block at 0x00980c80? Ghidra finds no function there, so the getter/setter pairing is unproven.",
+    "Why do the adjustors at 0x00980c60 and 0x00980c70 branch into the 0xCC padding at 0x00980cb0 when real code starts at 0x00980cb4? Is the SDK symbol for 0x00980cb0 four bytes low, or is Ghidra's FUN_00980cb0 a mis-created function?",
+    "Which of the four identical 0x006f2f20 entries at slots +0x20..+0x2c of the run is meaningful, and what does 0x006f2f20 contain? Not investigated; it is outside this target's span."
+  ],
+  "validation": {
+    "status": "not run by this worker",
+    "note": "`openspore validate` was deliberately not invoked; the orchestrator runs it. The entry symbol func88h_00980c50 binds the source span, carries the words func, 88 and h from the record name UTFWin::RotateEffect::func88h, and embeds the 8-hex target VA 00980c50."
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-utfwin-rotateeffect-func88h reconstruction/staging/pkg-utfwin-rotateeffect-func88h/*.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-utfwin-rotateeffect-func88h reconstruction/staging/pkg-utfwin-rotateeffect-func88h/*.cpp -o /tmp/opencode/r8-test && /tmp/opencode/r8-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-utfwin-rotateeffect-func88h reconstruction/staging/pkg-utfwin-rotateeffect-func88h/*.cpp -o /tmp/opencode/r8-nd && /tmp/opencode/r8-nd",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg-utfwin-rotateeffect-func88h/*.hpp reconstruction/staging/pkg-utfwin-rotateeffect-func88h/*.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-utfwin-rotateeffect-func88h/00980c50.json",
+    "emitted_code_command": "objdump -d --disassemble='func88h_00980c50' /tmp/opencode/r8-test"
+  },
+  "verification_results": {
+    "x86_32_syntax": "passed",
+    "focused_model_test_o2": "passed",
+    "focused_model_test_o0": "passed",
+    "focused_model_test_o2_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "emitted_code_matches_target_bytes": "passed -- the staged build emits 'b8 d5 2a 2b cf  mov $0xcf2b2ad5,%eax' / 'c3 ret', byte-identical to the six bytes read from SporeApp.exe at 0x00980c50",
+    "runtime_validation": "not run"
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "ghidra_decompile_function",
+      "ghidra_disassemble_function",
+      "ghidra_get_function_by_address",
+      "ghidra_get_xrefs_to",
+      "ghidra_read_memory",
+      "openspore_vtable_lookup"
+    ],
+    "disassembly": "0x00980c50: MOV EAX,0xCF2B2AD5; RET. Two instructions, body_end_inclusive 0x00980c55.",
+    "decompile": "Both the persisted SDK export .spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__RotateEffect__func88h.c and the live ghidra_decompile_function(0x00980c50) return an empty body -- 'return;' with no statements -- and carry the warnings 'Unknown calling convention' and 'Enum ObjectTYPE: Some values do not have unique names'. The decompiler emits nothing because the two instructions only produce a constant; the disassembly and the raw bytes are the authoritative evidence and they are exhaustive for a six-byte leaf.",
+    "sdk_symbol_table": "SporeGhidra_march2017.xml (read from the local SDK copy) supplies the name UTFWin::RotateEffect::func88h and the ObjectTYPE enum in which 0xEF2B293B is shared by UTFWin::IGlideEffect, UTFWin::IPerspectiveEffect and UTFWin::IRotateEffect; no ObjectTYPE entry carries the 0xCF2B prefix."
+  },
+  "analogue_dependencies": [
+    "reconstruction/metadata/pkg-utfwin-glideeffect-func88h/0096ff70.json -- the sibling UTFWin::GlideEffect::func88h from the same run. It establishes the MSVC adjustor-thunk idiom for the func88h placeholder slot and identifies 0x0096ff20 (which sits at slot +0x10 of this target's run) as the family vector-deleting destructor that tests the 0xEF2B293B magic.",
+    "reconstruction/staging/pkg-utfwin-glideeffect-func88h/utfwin_glideeffect_func88h.{hpp,cpp} -- the layout, naming, comment style and sidecar shape this package follows.",
+    "reconstruction/staging/pkg-utfwin-effect-wave9/utfwin_effect_wave9.cpp -- an earlier staging package that already models 0x00980c50 as 'movl $0xcf2b2ad5,%eax; ret' with four arguments. That package has no metadata sidecar and its symbol name does not satisfy the validator's name binding, which is why this target was re-reconstructed here under a binding name with its own sidecar. No file in that package was modified."
+  ],
+  "integration_status": "staged",
+  "canonical_files": []
+}

@@ -1,0 +1,239 @@
+{
+  "schema": "pkg-resource-ddf-refcount.function-handoff.v1",
+  "package": "PKG-RESOURCE-DDF-REFCOUNT",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x0069d3f0",
+  "address": "0x0069d3f0",
+  "symbol": "Resource::DatabaseDirectoryFiles::GetRefCount",
+  "normalized_symbol": "Resource__DatabaseDirectoryFiles__GetRefCount_0069d3f0",
+  "subsystem": "Resource",
+  "cluster": "resource-io",
+  "target_state": "staging-only handoff; no canonical src/ path is claimed",
+  "phase": "body reconstruction implemented and statically verified against the persisted evidence pack",
+  "captured_on": "2026-09-26",
+  "source_files": [
+    "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.cpp",
+    "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.hpp",
+    "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count_model_test.cpp"
+  ],
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "Resource__DatabaseDirectoryFiles__GetRefCount_0069d3f0",
+    "source": "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.cpp",
+    "header": "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.hpp",
+    "model_test": "reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count_model_test.cpp",
+    "declaration": "extern \"C\" std::int32_t PKG_RESOURCE_DDF_THISCALL Resource__DatabaseDirectoryFiles__GetRefCount_0069d3f0(void* receiver);",
+    "linkage": "C language linkage",
+    "argument_surface": "one opaque receiver pointer, delivered in ECX per the source observation below; no stack argument is read by the body",
+    "return_type": "std::int32_t",
+    "return_register": "EAX",
+    "opaque_receiver": "The receiver is an opaque pointer. No struct, no member and no field name is declared, because abi_derived.receiver names no register and therefore supplies no displacement bound to check one against.",
+    "displacement_expression": "base + 0x8, the literal the machine listing itself shows in ADD ECX,0x8",
+    "primitive": "__sync_fetch_and_add(word, 0) -- a locked 32-bit read returning the prior value and leaving the word unchanged",
+    "convention_declaration": "__thiscall via PKG_RESOURCE_DDF_THISCALL (__thiscall on MSVC, __attribute__((thiscall)) elsewhere)",
+    "convention_status": "declared from a source-side observation of the listing, NOT from the machine ABI record, which abstained (ABI_UNKNOWN). The declaration does not and cannot move the ABI check off WARN."
+  },
+  "function_extent": {
+    "entry": "0x0069d3f0",
+    "body_end_inclusive": "0x0069d3f9",
+    "body_span_bytes": 10,
+    "instruction_count": 4,
+    "return_site": "0x0069d3f9: RET",
+    "frame": "none; no push/pop of EBP, no ESP adjustment, no SEH frame or stack cookie"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "machine_abi_verdict": "ABI_UNKNOWN",
+    "machine_abi_abstained_because": [
+      "receiver_not_determinable: ecx_reassigned_before_deref",
+      "no_discriminator: no stack-argument read and no positive receiver evidence"
+    ],
+    "calling_convention": "undetermined by the machine ABI record; the reconstruction declares __thiscall from the listing observation below, which is a source-side claim and not a derived fact",
+    "stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET",
+    "ret_immediate": null,
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX (the machine record's own wording)",
+    "return_type": "not named by the machine ABI record; the reconstruction declares a 32-bit integral return",
+    "ghidra_prototype": "int Resource::DatabaseDirectoryFiles::GetRefCount(DatabaseDirectoryFiles * this)",
+    "ghidra_convention_note": "Live decompilation reports an unknown calling convention. Ghidra materialises `this` at Stack[0x4] yet never reads it; the value the body actually dereferences is its own `in_ECX` local, storage register:00000004:4.",
+    "receiver": {
+      "register_named_by_record": null,
+      "record_present": null,
+      "record_confidence": "UNKNOWN",
+      "record_reason": "ecx_reassigned_before_deref",
+      "record_offsets": [],
+      "record_bounds_only": true
+    }
+  },
+  "mechanics": {
+    "instruction_by_instruction": [
+      "0x0069d3f0 XOR EAX,EAX -- zero the addend register; this also establishes the return register as EAX.",
+      "0x0069d3f2 ADD ECX,0x8 -- advance the base register by 8 bytes, in place.",
+      "0x0069d3f5 XADD.LOCK dword ptr [ECX],EAX -- interlocked exchange-add: EAX receives the word's prior value and the word receives prior+EAX, i.e. prior+0.",
+      "0x0069d3f9 RET -- return with no immediate, so the caller owns any stack cleanup."
+    ],
+    "behavior": "Reads the 32-bit word at receiver+0x8 under the machine's LOCK XADD and returns the value that word held. The zero addend leaves the word byte-identical, so the operation is a read, not an increment or a decrement.",
+    "read_count": 1,
+    "write_count": 0,
+    "mutation": "none; the XADD is a read-modify-write whose written value equals the value read",
+    "atomicity": "the LOCK prefix is present, so the read is interlocked against concurrent writers to the same word",
+    "branching": "none; the body is straight-line and ends in a single RET",
+    "calls": "none; the body transfers control nowhere",
+    "globals": "none; the body names no absolute address",
+    "indirect_transfer": "none; the LOCK XADD is a read-modify-write, not a transfer of control, and the machine dispatch record counts 0 indirect calls",
+    "null_behavior": "unresolved; a null receiver is dereferenced at +0x8 with no guard in the body, and whether any caller can pass one is not established by this body",
+    "sign_and_range": "a plain 32-bit integral; the reconstruction preserves the full signed range and performs no clamping, masking or saturation",
+    "side_effects": "the LOCK XADD issues a bus-level read-modify-write on the word even though the value is unchanged; that fence, not the arithmetic, is the only externally visible effect",
+    "fallback": "none",
+    "sibling_slot_fallback": "none",
+    "pointee_access": "none beyond the single 32-bit word at receiver+0x8",
+    "reference_operations": "an interlocked read of a reference-count-like word; the body neither increments nor decrements it, and whether the word is the object's reference count is taken from the SDK symbol name rather than from this body"
+  },
+  "source_observations": {
+    "receiver_register": {
+      "claim": "the receiver arrives in ECX",
+      "confidence": "OBSERVED from the listing, not derived",
+      "argument": [
+        "ECX has no definition before its use as a memory-operand base: the only writes in the body are XOR EAX,EAX (to EAX) and ADD ECX,0x8, and the latter is an in-place add on the entry value, so the base is entry ECX + 8.",
+        "the body reads no stack slot at all, so no [EBP+4]-style argument read competes with the register reading.",
+        "live Ghidra decompilation of the same bytes uses its local `in_ECX` (storage register:00000004:4) as the dereferenced base and leaves the Stack[0x4] `this` parameter unread."
+      ],
+      "why_the_record_still_abstained": "the engine reads the ADD ECX,0x8 as a reassignment that breaks the link back to the entry register, so it reports ecx_reassigned_before_deref; the argument above is a reading of the same four instructions, not new machine evidence.",
+      "byte_level_support": "the raw bytes are 33c0 83c108 f00fc101 c3: the only definition of ECX in the body is the in-place ADD at 0x0069d3f2, so the dereference base is entry ECX + 8. This is a reading of the same four instructions the engine already read, not new machine evidence, and it does not change the record's ecx_reassigned_before_deref verdict."
+    },
+    "word_offset": {
+      "claim": "the word read is at byte displacement 0x8 from the receiver",
+      "confidence": "OBSERVED",
+      "argument": "ADD ECX,0x8 is the only displacement the body applies, and XADD.LOCK dword ptr [ECX],EAX dereferences the result with no further offset.",
+      "not_claimed": "no member name, no field identity, no struct size, no alignment or ownership story"
+    },
+    "return_value": {
+      "claim": "EAX holds the word's prior value at RET",
+      "confidence": "OBSERVED",
+      "argument": "XADD writes the operand's prior value into its first operand register, and EAX is that register after EAX was zeroed."
+    }
+  },
+  "return_semantics": {
+    "kind": "integral 32-bit value in EAX",
+    "value": "the value the 32-bit word at receiver+0x8 held immediately before the interlocked read",
+    "ownership": "The body acquires no reference and releases none; it is a pure read of a count and the returned value carries no ownership of its own.",
+    "lifetime": "The object's lifetime, the word's initialisation and the point at which the count becomes meaningful are all outside these four instructions."
+  },
+  "layout": {
+    "receiver": "opaque; the reconstruction declares no type, no size and no member for it",
+    "observed_word": {
+      "offset": "0x8",
+      "width_bytes": 4,
+      "access": "interlocked read-modify-write with a zero addend",
+      "source": "the machine listing, single instruction"
+    },
+    "boundary": "8 bytes of prefix are implied by the displacement and nothing more; the word at 0x8 need not be the last member and no trailing size is derivable."
+  },
+  "compiler_observation": {
+    "finding": "the reconstruction is semantically equivalent to the original but does not reassemble to the same instruction sequence",
+    "original": "xor eax,eax ; add ecx,8 ; lock xadd dword ptr [ecx],eax ; ret",
+    "clang_m32_O2": "mfence ; mov 0x8(%ecx),%eax ; ret",
+    "reading": "clang recognises a zero-addend atomic fetch_add as an atomic load and lowers it to a fenced plain load. The observable behaviour is the same -- an interlocked 32-bit read returning the prior value and leaving the word unchanged, receiver in ECX, word at +0x8 -- but the instruction sequence differs.",
+    "consequence": "no claim is made that this source text is the text MSVC was given; MSVC's _InterlockedExchangeAdd(&word, 0) is the idiom that provokes the original four instructions, and that is a plausible reading, not a proven one."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "pack": "reconstruction/evidence/0069d3f0/evidence.json",
+    "pack_content_sha256": "ee4b66db2b9a5df8d26112dbac654a03bb08c1f9c9f099e681098671637174e7",
+    "listing_state": "complete; the machine parse declared 4 of 4 instructions with 0 unparsed and degraded=false",
+    "assembly": [
+      "0069d3f0: XOR EAX,EAX",
+      "0069d3f2: ADD ECX,0x8",
+      "0069d3f5: XADD.LOCK dword ptr [ECX],EAX",
+      "0069d3f9: RET"
+    ],
+    "raw_bytes": "33c083c108f00fc101c3",
+    "decompiler": "piVar2 = (int *)(in_ECX + 8); LOCK(); iVar1 = *piVar2; *piVar2 = *piVar2; UNLOCK(); return iVar1;",
+    "decompiler_caveat": "the decompiled self-assignment *piVar2 = *piVar2 is Ghidra's rendering of the XADD with a zero addend, not a second store; the listing is the authority and it shows one read-modify-write",
+    "direct_callees": 0,
+    "direct_callers": 0,
+    "function_xrefs": 7,
+    "function_xref_addresses": [
+      "0x014086a8",
+      "0x01408510",
+      "0x01409640",
+      "0x0140a148",
+      "0x01436710",
+      "0x014367c0",
+      "0x01482d48"
+    ],
+    "xref_reading": "all seven xrefs are vtable slots, which is how the record associates seven vtables with this target; the target itself performs no indirect transfer and reads no vtable",
+    "data_references": 0,
+    "external_callees": 0,
+    "semantic_hypotheses": "none recorded; knowledgegraph/research/semantic-decomp.json carried no record for this target",
+    "discrepancy_noted": "the record lists 7 vtables for a body with 0 vtable references; the validator treats record vtables as a classifier association and not as an oracle, and this reconstruction claims no vtable",
+    "byte_level_confirmation": {
+      "tool": "GhidraMCP /read_memory",
+      "address": "0x0069d3f0",
+      "length": 10,
+      "hex": "33c083c108f00fc101c3",
+      "decoded": [
+        "33c0        0069d3f0  XOR EAX,EAX",
+        "83c108      0069d3f2  ADD ECX,0x8",
+        "f00fc101    0069d3f5  XADD.LOCK dword ptr [ECX],EAX",
+        "c3          0069d3f9  RET"
+      ],
+      "confirms": [
+        "83c108 is ADD ECX,0x8 (sign-extended imm8), an in-place add on the entry ECX and not a load from anywhere; there is no instruction that could have defined ECX from a stack slot or another register before the dereference",
+        "f00fc101 is LOCK XADD dword ptr [ECX],EAX, so the word is 32-bit and the LOCK prefix is present",
+        "the span is exactly 0x0a = 10 bytes and the four instructions close on a bare c3 RET"
+      ],
+      "validator_effect": "none; the ABI record still abstains (ecx_reassigned_before_deref, no_discriminator) and ABI stays WARN; FIELDS/OFFSETS stays WARN because the record names no receiver register to check the 0x8 against"
+    }
+  },
+  "provenance": [
+    "persisted pack reconstruction/evidence/0069d3f0/evidence.json (verified, content_sha256 ee4b66db...)",
+    "pack category disassembly (GhidraMCP /disassemble_function, LIVE)",
+    "pack category decompilation (GhidraMCP REST /decompile_function, LIVE)",
+    "pack category ghidra_function (GhidraMCP REST /get_function_by_address + /analyze_function_complete, LIVE)",
+    "pack category abi / abi_derived (tools/reconstruction_tooling/abi_infer.py)",
+    "live re-read GhidraMCP REST /disassemble_function?address=0x0069d3f0 -- same 4 instructions",
+    "live re-read GhidraMCP REST /read_memory?address=0x0069d3f0&length=10 -- bytes 33c083c108f00fc101c3",
+    "committed artifact .spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__GetRefCount.c",
+    "clang++ -m32 -std=c++17 -O2 objdump of the candidate body (compiles to mfence; mov 0x8(%ecx),%eax; ret)"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -c reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.cpp -o /dev/null",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-resource-ddf-refcount reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count.cpp reconstruction/staging/pkg-resource-ddf-refcount/ddf_get_ref_count_model_test.cpp -o /tmp/opencode/ddf-refcount-model && /tmp/opencode/ddf-refcount-model",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg-resource-ddf-refcount/*",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-resource-ddf-refcount/0069d3f0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "header_self_contained": "passed",
+      "model": "passed",
+      "format": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "Byte-level confirmation of the four instructions is now recorded (evidence.byte_level_confirmation), including that 83c108 is an in-place ADD with no prior definition of ECX. It changes no verdict: the ABI record still abstains with the same two reasons, so the receiver observation remains an observation and the convention remains unestablished.",
+    "ABI_UNKNOWN: the machine ABI record abstained -- receiver_not_determinable: ecx_reassigned_before_deref",
+    "ABI_UNKNOWN: the machine ABI record abstained -- no_discriminator: no stack-argument read and no positive receiver evidence",
+    "The source declares __thiscall from a reading of the listing (ECX is never defined before the dereference, the body reads no stack slot, and Ghidra's own decompilation dereferences in_ECX). That observation is not corroborated by the machine ABI record, which names no receiver register, so the convention stays an observation rather than a derived fact.",
+    "Is the word at receiver+0x8 really this object's reference count? The name comes from the SDK symbol, and a single 32-bit word read cannot distinguish a count from any other counter.",
+    "What is the concrete type of the receiver, what is the meaning of the 8 bytes below the word, and does the word sit at the end of the object?",
+    "Which MSVC source form produced xor eax,eax / add ecx,8 / lock xadd [ecx],eax / ret, and is the operation intended as an interlocked read or as a fetch_add with a zero operand that some caller variant treats differently?",
+    "Can any of the seven vtable-slot call sites pass a null or partially constructed receiver? The body has no guard.",
+    "The record associates seven vtables with this target while the xref export records zero vtable references; the classifier association is unexplained and no slot identity is claimed."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "A Resource::DatabaseDirectoryFiles instance is live and its word at +0x8 is initialised.",
+      "The original accessor is invoked through one of its seven vtable slots and the returned value is compared with the word's observed value.",
+      "A concurrent writer is present, so that the interlocked read can be distinguished from a plain load."
+    ],
+    "blocking_reason": "no original-process trace exists in this repository; nothing was attempted and nothing failed"
+  }
+}

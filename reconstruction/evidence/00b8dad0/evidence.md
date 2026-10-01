@@ -2,9 +2,36 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `b5142b7a738649f928f481863651919a86612e14fc88d316d75193a0c705a824`
+- Content SHA-256: `b34ca72bf45cbb741336d4af034d0d394ef8c36f89bbc984bcd09631e08588e7`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "ECX, read at 0x00b8dad0",
+  "hidden_this_register": "ECX is read exactly once, by the LEA displacement",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_register": "EAX",
+  "return_semantics": "A pointer to receiver + 0x198. Formed with LEA, so it is the address of a member block inside the receiver, not a pointer the receiver stores. The result ALIASES the receiver: writing through it modifies the receiver's +0x198 block, which makes this a mutable-reference accessor rather than a const getter.",
+  "return_type": "ResourceKey3*",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET at 0x00b8dad6"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -35,7 +62,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "bdf1bf75875502f3baed05626028ecbecc99b00cd07675089e244c30f923cf11",
+  "content_sha256": "52d254a1eb516c60f2bcaf71986550726e083507e35373a46019c07a04ee1aa0",
   "conventions": {
     "ambiguities": [],
     "calling_convention": null,
@@ -54,7 +81,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -262,9 +289,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b6b1a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c53bc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c704a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c71750"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c71910"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c829e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e2abc0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01000000"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103af90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103ca40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103cd00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103d9b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103e6e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103e8e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0103fe90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01068970"
+  }
+]
+```
 
 ## contradictions
 
@@ -274,13 +386,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nint __fastcall FUN_00b8dad0(int param_1)\n\n{\n  return param_1 + 0x198;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -312,9 +420,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12415,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"ECX, read at 0x00b8dad0\",\n    \"hidden_this_register\": \"ECX is read exactly once, by the LEA displacement\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"A pointer to receiver + 0x198. Formed with LEA, so it is the address of a member block inside the receiver, not a pointer the receiver stores. The result ALIASES the receiver: writing through it modifies the receiver's +0x198 block, which makes this a mutable-reference accessor rather than a const getter.\",\n    \"return_type\": \"ResourceKey3*\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET at 0x00b8dad6\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b6b1a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c53bc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c704a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c71750\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c71910\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c829e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e2abc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01000000\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103af90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103ca40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103cd00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103d9b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103e6e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103e8e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103fe90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01068970\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0106ba00\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00b6b39c\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b6b1a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c53c0f\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c53bc0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c704aa\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c704a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c7188f\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c71750\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"ca
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -331,22 +446,22 @@
   "body_start": "00b8dad0",
   "callees": [],
   "callers": [
-    "FUN_00c829e0",
-    "FUN_0103e8e0",
-    "FUN_00b6b1a0",
-    "FUN_01000000",
-    "FUN_0103d9b0",
-    "FUN_0106ba00",
-    "FUN_00c53bc0",
     "FUN_0103e6e0",
-    "FUN_0103af90",
-    "FUN_0103ca40",
-    "FUN_00c71750",
     "FUN_00c704a0",
     "FUN_01068970",
-    "FUN_0103fe90",
-    "FUN_0103cd00",
     "FUN_00e2abc0",
+    "FUN_0103af90",
+    "FUN_0103cd00",
+    "FUN_00b6b1a0",
+    "FUN_0103fe90",
+    "FUN_0103d9b0",
+    "FUN_01000000",
+    "FUN_0106ba00",
+    "FUN_00c53bc0",
+    "FUN_0103ca40",
+    "FUN_00c71750",
+    "FUN_00c829e0",
+    "FUN_0103e8e0",
     "FUN_00c71910"
   ],
   "classification": "stub",
@@ -358,14 +473,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 1,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00b8dad0",
   "namespace": null,
@@ -479,9 +588,32 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c47180_manager_slot_replace.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test2.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b08/00b8dad0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -491,9 +623,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists. A differential run must confirm the returned address is still receiver + 0x198 in the shipping build.",
+    "The class attribution rests on a type-name literal read at 0x00ba61b0. A run that dumps the concrete vtable pointer of a constructed record would confirm or refute it."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -503,15 +646,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "ResourceKey3*"
+]
+```
 
 ## vtables
 

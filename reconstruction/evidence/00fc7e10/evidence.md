@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `df4dc2c136bac6df623b4a2bf4994bc236fbc5cb9c24f66b640884d0038bcb9b`
+- Content SHA-256: `44995772e3c70c4e226b3cb9104adbb6822822e75016d7e514f850fa2479093d`
 
 ## abi
 
@@ -60,6 +60,282 @@
 }
 ```
 
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4",
+      "entry_ESP+0x8"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0x8",
+    "return_register": "EAX",
+    "return_semantics": "pointer_like_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x8"
+  },
+  "abstained_because": [],
+  "cleanup": {
+    "bytes": 8,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x8",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "c2933469d82d7ccf9bae833bc7f8d43c2819791ea5cd41f0f07f0bf175d229eb",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
+  },
+  "cross_validation": {
+    "agreement": true,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 1,
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0009"
+      ],
+      "claim": "the callee pops 8 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 8,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002",
+        "obs-0004"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 2,
+        "total_bytes": 8
+      }
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007",
+        "obs-0008"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          8,
+          16
+        ],
+        "register": "ECX",
+        "written_through": 2
+      }
+    },
+    {
+      "based_on": [
+        "obs-0006",
+        "obs-0007",
+        "obs-0008",
+        "obs-0009"
+      ],
+      "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
+      "confidence": "INFERRED",
+      "id": "C6B",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0009"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0009"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0009"
+      ],
+      "claim": "the last value written to EAX classifies as pointer_like",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "pointer_like"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00fc7e10",
+      "count": 2,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00fc7e10",
+      "base": "ESP",
+      "disp": 4,
+      "id": "obs-0002",
+      "index": 0,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x00fc7e10",
+      "definite": true,
+      "id": "obs-0003",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00fc7e14",
+      "base": "ESP",
+      "disp": 8,
+      "id": "obs-0004",
+      "index": 1,
+      "key": 8,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EDX,dword ptr [ESP + 0x8]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x00fc7e14",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "raw": "MOV EDX,dword ptr [ESP + 0x8]",
+      "reg": "EDX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00fc7e18",
+      "count": 2,
+      "first_use": 2,
+      "first_write_index": null,
+      "id": "obs-0006",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "MOV dword ptr [ECX + 0x8],EAX",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00fc7e18",
+      "count": 1,
+      "first_use": 2,
+      "first_write_index": 0,
+      "id": "obs-0007",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "MOV dword ptr [ECX + 0x8],EAX",
+      "reg": 
+[TRUNCATED]
+```
+
 ## callees_dependencies
 
 - Availability: `unavailable`
@@ -80,13 +356,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Unknown calling convention */\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n\nImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)\n\n{\n  int in_ECX;\n  undefined4 in_stack_00000008;\n  \n  *(IImageDrawable **)(in_ECX + 8) = this;\n  *(undefined4 *)(in_ECX + 0x10) = in_stack_00000008;\n  return (ImageTiling)this;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -137,7 +409,7 @@
 ```json
 {
   "original_bytes": 9061,
-  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\",\n      \"entry_ESP+0x8\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"name\": \"first_word\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"type\": \"opaque 32-bit word\"\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"name\": \"second_word\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"type\": \"opaque 32-bit word\"\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x8\",\n    \"return_observation\": \"EAX exits holding the first stack word. No instruction produces a result in EAX, so the machine level fact is a 4-byte value in EAX whose value equals the first argument; whether the original source produced it deliberately is NOT established by this evidence.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"opaque 32-bit word in EAX, equal to the first stack argument; intended-return semantics unresolved\",\n    \"return_type\": \"OpaqueWord\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": \"none; no register is pushed and no callee-saved register is written\",\n    \"stack_cleanup_bytes\": 8,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x8\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005f9230\",\n      \"va\": \"0x005f9230\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005f9310\",\n      \"va\": \"0x005f9310\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005fa8d0\",\n      \"va\": \"0x005fa8d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005fc330\",\n      \"va\": \"0x005fc330\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-12-SIM-SPACE\",\n      \"score\": 5,\n      \"symbol\": \"FUN_00aeb160\",\n      \"va\": \"0x00aeb160\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x01492140\"\n      ],\n      \"package\": \"PKG-16-SPOREPEDIA-ONLINE\",\n      \"score\": 4,\n      \"symbol\": \"Sporepedia_cSPAssetDataOTDB_HasName_raw_00641770\",\n      \"va\": \"0x00641770\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"re_00575ea0\",\n      \"va\": \"0x00575ea0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\"\n      ],\n      \"package\": \"PKG-APP-CANVAS-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"app_canvas_00847a40\",\n      \"va\": \"0x00847a40\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"utfwin-framework\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0511\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"CONFIRMED\",\n  \"globals\": [],\n  \"integration_status\": null,\n  \"name\": \"UTFWin::ImageDrawable::GetTiling\",\n  \"normalized_symbol\": \"UTFWin::ImageDrawable::GetTiling\",\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"runtime_gated_requires_explicit_gate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": \"queued\"\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"No original-process invocation or indirect-caller trace was captured, so no concrete caller is known and the argument values a real caller passes cannot be observed.\",\n      \"The declared types of the words at receiver +0x08 and +0x10 are not established. Their observed uses are a CALL target and a call argument respectively, which constrains but does not prove them.\",\n      \"The owning C++ class name and the interface identity of slot +0x1c are not established. SporeApp.exe carries no MSVC RTTI, so class identity cannot be read from the binary; the 0x01493990 class is known only to derive from the 0x01491730 class because its constructor calls the latter's constructor.\",\n      \"Whether the +
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\",\n      \"entry_ESP+0x8\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"name\": \"first_word\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"type\": \"opaque 32-bit word\"\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"name\": \"second_word\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"type\": \"opaque 32-bit word\"\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0x8\",\n    \"return_observation\": \"EAX exits holding the first stack word. No instruction produces a result in EAX, so the machine level fact is a 4-byte value in EAX whose value equals the first argument; whether the original source produced it deliberately is NOT established by this evidence.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"opaque 32-bit word in EAX, equal to the first stack argument; intended-return semantics unresolved\",\n    \"return_type\": \"OpaqueWord\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": \"none; no register is pushed and no callee-saved register is written\",\n    \"stack_cleanup_bytes\": 8,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x8\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005f9230\",\n      \"va\": \"0x005f9230\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005f9310\",\n      \"va\": \"0x005f9310\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005fa8d0\",\n      \"va\": \"0x005fa8d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SERVICES-SAFE-WAVE11\",\n      \"score\": 5,\n      \"symbol\": \"service_005fc330\",\n      \"va\": \"0x005fc330\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\",\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-12-SIM-SPACE\",\n      \"score\": 5,\n      \"symbol\": \"FUN_00aeb160\",\n      \"va\": \"0x00aeb160\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x01492140\"\n      ],\n      \"package\": \"PKG-16-SPOREPEDIA-ONLINE\",\n      \"score\": 4,\n      \"symbol\": \"Sporepedia_cSPAssetDataOTDB_HasName_raw_00641770\",\n      \"va\": \"0x00641770\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"re_00575ea0\",\n      \"va\": \"0x00575ea0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueWord\"\n      ],\n      \"package\": \"PKG-APP-CANVAS-WAVE6\",\n      \"score\": 3,\n      \"symbol\": \"app_canvas_00847a40\",\n      \"va\": \"0x00847a40\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"utfwin-framework\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0582\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"CONFIRMED\",\n  \"globals\": [],\n  \"integration_status\": null,\n  \"name\": \"UTFWin::ImageDrawable::GetTiling\",\n  \"normalized_symbol\": \"UTFWin::ImageDrawable::GetTiling\",\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"runtime_gated_requires_explicit_gate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": \"queued\"\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [\n      \"No original-process invocation or indirect-caller trace was captured, so no concrete caller is known and the argument values a real caller passes cannot be observed.\",\n      \"The declared types of the words at receiver +0x08 and +0x10 are not established. Their observed uses are a CALL target and a call argument respectively, which constrains but does not prove them.\",\n      \"The owning C++ class name and the interface identity of slot +0x1c are not established. SporeApp.exe carries no MSVC RTTI, so class identity cannot be read from the binary; the 0x01493990 class is known only to derive from the 0x01491730 class because its constructor calls the latter's constructor.\",\n      \"Whether the +
 [TRUNCATED]
 ```
 
@@ -165,24 +437,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "in_stack_00000008",
-      "storage": "Stack[0x8]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "in_ECX",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "this",
-      "storage": "Stack[0x4]:4",
-      "type": "IImageDrawable *"
-    }
-  ],
-  "locals_count": 3,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "UTFWin::ImageDrawable::GetTiling",
   "namespace": "UTFWin",

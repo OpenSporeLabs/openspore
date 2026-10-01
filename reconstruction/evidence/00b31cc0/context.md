@@ -1,0 +1,495 @@
+# Reconstruction context 0x00b31cc0
+
+- Status: `partial`
+- Content SHA-256: `93b5a619948cc30218b76a6563e781ddceb8c93a042acf1630c4609ab1e7d534`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00b31cc0",
+  "phase": "reconstruction",
+  "target": "0x00b31cc0"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "OpaqueCellUpdateBody",
+  "name": "timing_update_body_00b31cc0",
+  "package": "PKG-FRAME-RUNTIME-WAVE8",
+  "subsystem": "Runtime.Frame",
+  "va": "0x00b31cc0"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "e82496dcc0cdf4ef73104c18576bad96ebf0fcd85c8c45aadbfa5ad421a95843",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00b31cc0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "thiscall with one ordinary stack word",
+  "ordinary_stack_arguments": [
+    {
+      "entry_offset": "ESP+0x04",
+      "machine_type": "pointer-sized context word",
+      "normalized_name": "first_stack_word",
+      "position": 1,
+      "width_bytes": 4
+    }
+  ],
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x4",
+  "return_register": "EAX",
+  "return_width_bytes": 0,
+  "stack_cleanup_bytes": 4
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "pkg13_creature_accessor_00b1fdb0",
+      "reconstructed": true,
+      "va": "0x00b1fdb0"
+    },
+    {
+      "name": "FUN_00b3d300",
+      "reconstructed": true,
+      "va": "0x00b3d300"
+    },
+    {
+      "name": "FUN_01021260",
+      "reconstructed": true,
+      "va": "0x01021260"
+    }
+  ],
+  "callers": [],
+  "edge_rows": [
+    {
+      "callsite": "0x00b31dd6",
+      "direction": "out",
+      "other": "0x0041cb40",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31ddb",
+      "direction": "out",
+      "other": "0x0067dd10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31df0",
+      "direction": "out",
+      "other": "0x007c40f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31cd7",
+      "direction": "out",
+      "other": "0x00838020",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e4a",
+      "direction": "out",
+      "other": "0x00838330",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31d5c",
+      "direction": "out",
+      "other": "0x00b1fdb0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31d55",
+      "direction": "out",
+      "other": "0x00b3d300",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e8b",
+      "direction": "out",
+      "other": "0x00bc28c0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e3c",
+      "direction": "out",
+      "other": "0x00bc2f00",
+      "reference_type": "direct-call"
+[TRUNCATED]
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [
+    "global:timing_root_00b3d300 is called before the runtime accessor."
+  ],
+  "types": [
+    "DATA",
+    "OpaqueCellUpdateBody",
+    "OpaqueTimingOwner*"
+  ],
+  "vtables": []
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "required"
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "pkg13_creature_accessor_00b1fdb0",
+      "reconstructed": true,
+      "va": "0x00b1fdb0"
+    },
+    {
+      "name": "FUN_00b3d300",
+      "reconstructed": true,
+      "va": "0x00b3d300"
+    },
+    {
+      "name": "FUN_01021260",
+      "reconstructed": true,
+      "va": "0x01021260"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00b31dd6",
+      "direction": "out",
+      "other": "0x0041cb40",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31ddb",
+      "direction": "out",
+      "other": "0x0067dd10",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31df0",
+      "direction": "out",
+      "other": "0x007c40f0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31cd7",
+      "direction": "out",
+      "other": "0x00838020",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e4a",
+      "direction": "out",
+      "other": "0x00838330",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31d5c",
+      "direction": "out",
+      "other": "0x00b1fdb0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31d55",
+      "direction": "out",
+      "other": "0x00b3d300",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e8b",
+      "direction": "out",
+      "other": "0x00bc28c0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00b31e3c",
+      "
+[TRUNCATED]
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:OpaqueCellUpdateBody"
+    ],
+    "package": "PKG-FRAME-RUNTIME-WAVE8",
+    "score": 22,
+    "symbol": "cell_update_body_00e806b0",
+    "va": "0x00e806b0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_types:DATA"
+    ],
+    "package": "PKG-FRAME-RUNTIME-WAVE7",
+    "score": 9,
+    "symbol": "cell_mode_update_00e80980",
+    "va": "0x00e80980"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "PKG-FRAME-RUNTIME-WAVE7",
+    "score": 6,
+    "symbol": "app_frame_update_00f47930",
+    "va": "0x00f47930"
+  },
+  {
+    "match_basis": [
+      "shared_types:DATA"
+    ],
+    "package": "PKG-SKINNER-SAFE-WAVE10",
+    "score": 3,
+    "symbol": "skin_painter_job_brush_pass_005182f0",
+    "va": "0x005182f0"
+  },
+  {
+    "match_basis": [
+      "shared_types:DATA"
+    ],
+    "package": "PKG-18-UI-SCRIPTING",
+    "score": 3,
+    "symbol": "FUN_005bf9d0",
+    "va": "0x005bf9d0"
+  },
+  {
+    "match_basis": [
+      "shared_types:DATA"
+    ],
+    "package": "PKG-18-UI-SCRIPTING",
+    "score": 3,
+    "symbol": "FUN_005c0100",
+    "va": "0x005c0100"
+  },
+  {
+    "match_basis": [
+      "shared_types:DATA"
+    ],
+    "package": "PKG-18-UI-SCRIPTING",
+    "score": 3,
+    "symbol": "FUN_005c0380",
+    "va": "0x005c0380"
+  },
+  {
+    "match_basis": [
+      "shared_types:DATA"
+    ],
+    "package": "wave6-resources",
+    "score": 3,
+    "symbol": "property_list_has_property_006a2470",
+    "va": "0x006a2470"
+  }
+]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "file": "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.cpp",
+  "files": [
+    "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.cpp",
+    "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.hpp",
+    "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8_model_test.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave8/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg-frame-runtime-wave8/00b31cc0.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "concrete runtime owners and values remain unresolved",
+    "required"
+  ]
+}
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-wave8/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-frame-runtime-wave8/00b31cc0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8_model_test.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/integrated/batch-2026-09-25-wave8/handoff.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-frame-runtime-wave8/00b31cc0.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg_frame_runtime_wave8/frame_runtime_wave8.hpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction
+[TRUNCATED]
+```

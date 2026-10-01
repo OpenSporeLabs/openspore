@@ -3,6 +3,8 @@
 from __future__ import print_function
 
 import argparse
+import bisect
+import csv
 import hashlib
 import json
 import os
@@ -23,11 +25,21 @@ SEMANTIC_REL = "knowledgegraph/research/semantic-decomp.json"
 CONFLICT_DIR_REL = "knowledgegraph/research/conflicts"
 METADATA_DIR_REL = "reconstruction/metadata"
 HANDOFF_DIR_REL = "reconstruction/integrated"
+# The integrator-owned function universe. Every address this projection mints a
+# record for is claimed to be a function, so the admission test is membership of
+# that universe -- the same frozen export ``tools/triage/classify.py`` and
+# ``tools/triage/export_xrefs.py`` read, with the same 58,757-entry assertion.
+FUNCTIONS_REL = ".spore-analysis/ghidra-exports/functions.tsv"
 
 HEX8 = re.compile(r"^(?:0x)?([0-9a-fA-F]{1,8})$")
 ADDRESS = re.compile(r"0x[0-9a-fA-F]{4,8}")
 BARE_ADDRESS = re.compile(r"(?<![0-9a-fA-F])([0-9a-fA-F]{8})(?![0-9a-fA-F])")
 CALL_TYPES = frozenset(("direct-call", "thunk", "external", "computed-call"))
+#: The schema id a worker-metadata sidecar must carry before its declared
+#: identity is allowed to override the triage/SDK-derived one. Named rather than
+#: assumed so the rule below cannot be satisfied by an arbitrary JSON file that
+#: happens to sit under ``reconstruction/metadata/``.
+WORKER_METADATA_SCHEMA = "openspore-worker-metadata-1"
 MAX_LIST = 12
 MAX_TEXT = 600
 MAX_DEPENDENCY_NODES = 50
@@ -187,6 +199,129 @@ def merge_values(old, new):
     return [old, new]
 
 
+# The name, then any pointer/reference decoration, with the spaces a human
+# writes between them ("char *", "OpaqueController *"). The decoration is part of
+# the type, so it is consumed here rather than left for the note -- a `char *`
+# that became `char` plus a note reading `*` would be a *wrong* claim, which is
+# worse than no claim at all.
+TYPE_TOKEN = re.compile(r"^(?:const\s+)?[A-Za-z_][A-Za-z0-9_:<>]*(?:\s*[*&]+)?")
+PRIMITIVE_TYPES = frozenset((
+    "void", "bool", "char", "signed", "unsigned", "short", "int", "long",
+    "float", "double", "wchar_t", "size_t", "ptrdiff_t",
+    "int8", "int16", "int32", "int64",
+    "int8_t", "int16_t", "int32_t", "int64_t",
+    "uint8", "uint16", "uint32", "uint64",
+    "uint8_t", "uint16_t", "uint32_t", "uint64_t",
+    "byte", "word", "dword",
+))
+
+
+def _is_type_token(token):
+    """Does ``token`` read as a C++ type rather than as the first word of prose?
+
+    The corpus spells its own types in three recognisable ways -- a primitive
+    name, a namespace-qualified name, or an UpperCamel name (``OpaqueBuilding*``,
+    ``Transform``) -- and writes its annotations in lower case (``virtual
+    dispatch result``, ``not named by the machine ABI record``). Without this
+    test the split would read those annotations' first words as types and turn
+    "there is no canonical claim" into a canonical claim of ``virtual``, which
+    is a worse defect than the prose it replaced: a wrong claim that can be
+    *compared* against. A token that is not recognisably a type is therefore
+    not a type, and the value stays a note.
+    """
+    if not token:
+        return False
+    base = token.rstrip("*& ").strip()
+    if not base:
+        return False
+    # `const` qualifies a type, it is not one, so it is dropped before the name
+    # is judged: `const char*` is a pointer to char.
+    if base.startswith("const "):
+        base = base[6:].strip()
+    if not base:
+        return False
+    if "::" in base:
+        return True
+    # A primitive keeps its decoration's base name: `char *` is a pointer to
+    # char, so the base is still `char`.
+    if base in PRIMITIVE_TYPES:
+        return True
+    if base.split("::")[-1] in PRIMITIVE_TYPES:
+        return True
+    return base[:1].isupper()
+
+
+def split_return_type(value):
+    """A ``return_type`` split into a type token and the note that qualified it.
+
+    The projection's ``return_type`` is a *type* field, and the validator's
+    agreement arm compares it against a single C++ return type captured from the
+    source span. Metadata records, though, routinely write the annotation into
+    the same string -- ``"bool (modeled)"``, ``"std::uint32_t, used by every
+    observed caller as a pointer-like value"`` -- so the field carried prose no
+    type token can ever spell, and the check was permanently WARN for every one
+    of those targets however correct the reconstruction was. Splitting the
+    annotation off into ``return_note`` loses nothing: the prose is preserved
+    verbatim, in the same record, one field away.
+
+    Returns ``(token, note)``. ``token`` is ``None`` when no leading type token
+    is present, and the note is ``None`` when the value was already bare.
+    """
+    if not isinstance(value, str):
+        return None, None
+    text = value.strip()
+    if not text:
+        return None, None
+    match = TYPE_TOKEN.match(text)
+    if not match:
+        return None, text
+    token = match.group(0).rstrip()
+    if match.end() >= len(text):
+        # The whole value is already one token. It is kept verbatim, whatever it
+        # looks like: `unclassified_in_EAX` and `cCommEvent*` are values the
+        # projection already published and the validator already compared, and
+        # this change is about splitting prose out of the field, not about
+        # re-deciding which single tokens are legitimate. Narrowing the accepted
+        # vocabulary here would silently withdraw claims that stand today.
+        return (token or None), None
+    if not _is_type_token(token):
+        return None, text
+    note = text[match.end():].strip(" ,;:-") or None
+    return token, note
+
+
+def normalize_return_type(value):
+    """A list of ``return_type`` values reduced the way this model requires.
+
+    A list here is ``merge_values`` recording that two metadata records for one
+    VA disagreed -- never a type. When the members agree once their annotations
+    are split off, the agreement is the value. When they still disagree, no
+    winner is picked: inventing one would be choosing between two records on no
+    evidence, so the canonical claim is dropped and every member is kept as a
+    note. A dropped claim is not a lost verdict -- it hands the target to the
+    stricter machine-derived return route, which adjudicates from the listing
+    rather than from a string.
+    """
+    if not isinstance(value, list):
+        return split_return_type(value)
+    tokens, notes = [], []
+    for item in value:
+        if not isinstance(item, str):
+            notes.append(json.dumps(item, sort_keys=True))
+            continue
+        token, note = split_return_type(item)
+        if token:
+            tokens.append(token)
+        if note:
+            notes.append(note)
+    if not tokens:
+        return None, "; ".join(notes) or None
+    if len(set(tokens)) == 1:
+        return tokens[0], ("; ".join(notes) or None)
+    notes = sorted(set(tokens)) + notes
+    return None, "; ".join(notes) or None
+
+
 def extract_abi(document):
     candidates = []
     for key in ("observed_original_abi", "original_native_abi", "live_abi",
@@ -197,6 +332,7 @@ def extract_abi(document):
     selected = {}
     wanted = {
         "architecture", "calling_convention", "convention", "return_type",
+        "return_note",
         "return_width_bytes", "return_register", "stack_cleanup_bytes",
         "stack_cleanup_owner", "hidden_this_register", "hidden_receiver",
         "hidden_this", "hidden_this_type", "receiver_register", "receiver",
@@ -204,15 +340,32 @@ def extract_abi(document):
         "ordinary_stack_argument_slots", "saved_registers", "ret_form",
         "termination", "return_semantics", "return", "return_observation",
     }
+    notes = []
     for candidate in candidates:
         if isinstance(candidate, str):
             selected.setdefault("calling_convention", candidate)
             continue
         for path, value in walk_values(candidate, wanted):
             key = path[-1]
+            if key == "return_type":
+                # Split here rather than after the merge, so the note is
+                # accumulated per record and two records that annotated the same
+                # type differently still merge to one token.
+                token, note = normalize_return_type(value)
+                if token and not selected.get("return_type"):
+                    selected["return_type"] = token
+                if note:
+                    notes.append(note)
+                continue
             if key in selected and selected[key] not in (None, "", [], {}):
                 continue
             selected[key] = bounded(value)
+    if notes:
+        # One field, all the annotations that were written into the type field,
+        # joined and de-duplicated. Nothing is discarded: a reader who wants the
+        # caveat finds it here, and a comparison against a C++ type no longer
+        # has prose in its way.
+        selected["return_note"] = bounded("; ".join(sorted_unique(notes)))
     convention = selected.get("calling_convention")
     if convention is None and isinstance(document.get("signature_status"), str):
         text = document["signature_status"].lower()
@@ -338,7 +491,7 @@ def extract_metadata(root):
         "paths": [], "schemas": [], "types": [], "globals": [],
         "vtables": [], "services": [], "unresolved_questions": [],
         "blockers": [], "runtime_gates": [], "source_files": [],
-        "evidence": [], "abi": {},
+        "evidence": [], "abi": {}, "identity": None,
     })
     metadata_dir = root / METADATA_DIR_REL
     for path in sorted(metadata_dir.rglob("*.json")):
@@ -354,6 +507,23 @@ def extract_metadata(root):
         entry["paths"].append(path_text)
         if isinstance(document.get("schema"), str):
             entry["schemas"].append(document["schema"])
+        # A worker-metadata record is the one place in this pipeline where a
+        # human read the bytes and wrote down what they are. Capture its declared
+        # identity and the provenance it gives for it, so the index can carry a
+        # refutation instead of republishing a name the evidence rejects.
+        if document.get("schema") == WORKER_METADATA_SCHEMA:
+            declared = document.get("name")
+            if isinstance(declared, str) and declared and not entry["identity"]:
+                entry["identity"] = {
+                    "name": declared,
+                    "schema": document["schema"],
+                    "declared_by": path_text,
+                    "reason": document.get("refuted_symbol")
+                              or document.get("name_source")
+                              or document.get("name_provenance")
+                              or document.get("symbol_provenance"),
+                    "refuted": document.get("refuted_symbol"),
+                }
         entry["types"].extend(extract_types(document, []))
         for ref in extract_refs(document):
             entry[ref["kind"] + "s"].append(ref["id"])
@@ -380,6 +550,24 @@ def extract_metadata(root):
         for key in entry:
             if isinstance(entry[key], list):
                 entry[key] = sorted_unique(entry[key])
+        # The per-record split in ``extract_abi`` can still leave a list here,
+        # because ``merge_values`` turns two *disagreeing* type tokens into one:
+        # one record says "Field" and another says "Byte" for the same VA, and
+        # each was already split, so the disagreement is a genuine one between
+        # two clean tokens rather than prose. Reduce it the same way, once, now
+        # that every record has contributed. Agreement collapses to the agreed
+        # token; disagreement still publishes no claim, and the note keeps both
+        # so a reader can see what was in tension.
+        abi = entry.get("abi")
+        if isinstance(abi, dict) and isinstance(abi.get("return_type"), list):
+            token, note = normalize_return_type(abi["return_type"])
+            if token:
+                abi["return_type"] = token
+            else:
+                abi.pop("return_type", None)
+            if note:
+                abi["return_note"] = bounded("; ".join(
+                    sorted_unique([part for part in (abi.get("return_note"), note) if part])))
     return dict(result)
 
 
@@ -792,6 +980,71 @@ def status_for(function, triage):
     return body or triage.get("queue_state") or "unresolved"
 
 
+def load_function_universe(root):
+    """Return the integrator-owned function-entry universe, sorted for bisection.
+
+    ``functions.tsv`` is the frozen Ghidra export every other triage tool reads
+    (``classify.py``'s ``load_inputs``, ``export_xrefs.py``'s ``load_universe``,
+    ``recon_worker``'s loader). It is the only place in the repository that states
+    which addresses are function entries, so it is the admission test here too.
+    A missing or unreadable export returns ``None``: the caller then leaves every
+    address alone rather than guessing, because a silently empty universe would
+    make every queue row look like a non-entry and re-target the whole frontier.
+    """
+    path = Path(root) / FUNCTIONS_REL
+    if not path.is_file():
+        return None
+    bounds = []
+    try:
+        with path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            for row in reader:
+                address = maybe_va(row.get("address"))
+                if not address:
+                    continue
+                try:
+                    size = int(row.get("size") or 0)
+                except (TypeError, ValueError):
+                    size = 0
+                bounds.append((int(address, 16), size, address, row.get("name")))
+    except OSError:
+        return None
+    bounds.sort()
+    return bounds
+
+
+def canonical_identity(va, bounds):
+    """Resolve a claimed function VA onto the entry that actually contains it.
+
+    Returns ``None`` when ``va`` is itself an entry, and ``(canonical_va, offset)``
+    when it is not. An address that is not an entry can only be the interior of
+    some function, the trailing byte of an instruction whose own address is an
+    entry-adjacent address, or outside the universe entirely; the first two both
+    resolve to the containing entry, and the third resolves to ``None`` from
+    ``containing`` and is therefore left untouched by the caller.
+
+    The lookup is a bisection over entry starts followed by the exact
+    ``start <= a < start + size`` containment test, so an address that lands in
+    the gap between two entries -- real padding, or the last byte of the final
+    instruction of a function whose ``size`` stops short -- resolves to nothing
+    and is left alone. That is the conservative direction: an address we cannot
+    place is left as it was, and only an address we can place exactly is moved.
+    """
+    if not bounds:
+        return None
+    starts = [item[0] for item in bounds]
+    position = bisect.bisect_right(starts, int(va, 16)) - 1
+    if position < 0:
+        return None
+    start, size, entry, name = bounds[position]
+    address = int(va, 16)
+    if entry == va:
+        return None
+    if start <= address < start + size:
+        return entry, address - start, name
+    return None
+
+
 def build_index(root=ROOT):
     root = Path(root)
     manifest_path = root / MANIFEST_REL
@@ -819,9 +1072,54 @@ def build_index(root=ROOT):
         if not isinstance(row, dict):
             continue
         va = maybe_va(row.get("va"))
-        if va:
-            triage_by_va[va] = row
-    target_vas = set(manifest_functions) | set(triage_by_va) | set(metadata) | set(handoffs)
+        if not va:
+            continue
+        triage_by_va[va] = row
+    universe = load_function_universe(root)
+    # Every address in ``target_vas`` becomes a record keyed on that address, and
+    # every downstream consumer -- frontier, evidence, validation, promotion --
+    # reads it as a function. So the admission test for that key is membership of
+    # the integrator-owned function universe, and an address that is not an entry
+    # is resolved to the entry that contains it before any record is minted.
+    # Canonicalization is applied uniformly to all four sources rather than to the
+    # queue alone, because two of them carry the bad addresses: measured over the
+    # committed artifacts, the queue and the metadata each hold the same three
+    # non-entries, while the manifest and the handoffs hold none -- so resolving
+    # the union is provably scoped, and a per-source rule would leave the metadata
+    # copy of each bad address still minting a phantom record.
+    identity_resolution = {}
+    target_vas = set()
+    for va in sorted(set(manifest_functions) | set(triage_by_va) | set(metadata) | set(handoffs)):
+        placement = canonical_identity(va, universe)
+        if placement is None:
+            target_vas.add(va)
+            continue
+        entry, offset, entry_name = placement
+        # Several sources may name the same non-entry. They all resolve to one
+        # entry, so the provenance list keeps every requested address rather than
+        # the last one seen, and the list is sorted so repeated builds agree.
+        resolved = identity_resolution.setdefault(
+            entry, {"canonical_va": entry, "rule": "containing_function_entry",
+                    "requested": []})
+        resolved["requested"].append({"va": va, "offset": offset})
+        for table in (manifest_functions, triage_by_va, metadata, handoffs):
+            if va in table:
+                moved = table[va]
+                table[entry] = moved
+                del table[va]
+                # The queue row that produced this record named the non-entry
+                # address and carried no symbol, so the record would otherwise be
+                # emitted with a null name -- which is exactly what made the
+                # original three unbindable to any source span. The entry's own
+                # name comes from the integrator-owned universe, so the canonical
+                # record names itself.
+                if table is triage_by_va and not moved.get("name") and entry_name:
+                    moved = dict(moved)
+                    moved["name"] = entry_name
+                    table[entry] = moved
+        target_vas.add(entry)
+    for resolved in identity_resolution.values():
+        resolved["requested"].sort(key=lambda item: item["va"])
     xrefs = load_xrefs(root, target_vas)
     names = {va: (function.get("normalized_symbol") or triage_by_va.get(va, {}).get(
         "name") or "fun:%s" % va[2:]) for va, function in manifest_functions.items()}
@@ -878,10 +1176,37 @@ def build_index(root=ROOT):
 
         runtime_gates.extend(handoff.get("runtime_gates", []))
         status = status_for(function, triage)
+        # A worker-metadata record is the one place in this pipeline where a
+        # human read the bytes and wrote down what they are. When it states a
+        # different identity than the triage/SDK-derived one, that disagreement
+        # must reach the index, or the record keeps publishing a name the
+        # evidence refutes and every consumer inherits it -- which is exactly
+        # how ``0x008414c0`` came to carry ``ArgScript::FormatParser::ParseFloat``
+        # over a seven-byte body that contains no FPU opcode and no stack
+        # argument. Both names are kept: the superseded one is preserved with its
+        # provenance, so the refutation is visible rather than silent, and the
+        # metadata path is cited so a reader can check the claim.
+        superseded_name = triage.get("name") or function.get("normalized_symbol")
+        identity = meta.get("identity") if isinstance(meta, dict) else None
+        if (isinstance(identity, dict) and identity.get("name")
+                and isinstance(superseded_name, str) and superseded_name
+                and identity["name"] != superseded_name):
+            record_identity_refuted = {
+                "name": identity["name"],
+                "superseded": superseded_name,
+                "superseded_source": ("triage_queue" if triage.get("name")
+                                      else "manifest_function"),
+                "declared_by": identity.get("declared_by"),
+                "reason": identity.get("reason"),
+                "refuted": identity.get("refuted"),
+            }
+            superseded_name = identity["name"]
+        else:
+            record_identity_refuted = None
         record = {
             "va": va,
             "normalized_symbol": function.get("normalized_symbol") or triage.get("name"),
-            "name": triage.get("name") or function.get("normalized_symbol"),
+            "name": superseded_name,
             "package": function.get("package") or triage.get("package") or
                        (semantic_record or {}).get("package"),
             "subsystem": function.get("subsystem") or triage.get("subsystem") or
@@ -895,6 +1220,7 @@ def build_index(root=ROOT):
              "runtime_validated": function.get(
                  "audit_runtime_validated", function.get("runtime_validation", 0)),
 
+            "identity_refuted": record_identity_refuted,
             "body_status": function.get("body_status"),
             "integration_status": function.get("integration_status"),
             "review_status": function.get("review_status"),
@@ -956,6 +1282,12 @@ def build_index(root=ROOT):
             function.get("caller_dependencies", []))
         record["dependencies"]["manifest_callees"] = bounded(
             function.get("callee_dependencies", []))
+        # Emitted only when this address was actually resolved. A record that is
+        # already a function entry gets no such key at all, so every unaffected
+        # record stays byte-identical and the presence of the key is itself the
+        # signal that the identity was corrected.
+        if va in identity_resolution:
+            record["identity_resolution"] = identity_resolution[va]
         records[va] = record
 
 

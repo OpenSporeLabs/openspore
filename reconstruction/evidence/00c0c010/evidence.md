@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `b563df5686274985eaf24fb6b37b9f7a4ad3db3c116c91b78049fff0b9bfb3d2`
+- Content SHA-256: `350f5bad49831967f2c291b2802a641921453c1eac0cdc3378a27afe205c8489`
 
 ## abi
 
@@ -27,8 +27,7 @@
     "termination": "RET"
   },
   "abstained_because": [
-    "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path",
-    "unparsed_lines_present: 1 line(s) matched no grammar rule"
+    "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path"
   ],
   "cleanup": {
     "bytes": 0,
@@ -39,7 +38,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "7b9398985c4994030cb2ff80f0684a1269ac7a361cd9914dae393efde8b1ae64",
+  "content_sha256": "80a738a5ed27a3e5ff4575ddeda952c5099658d5abdd540c1cfc2bf78e1ef38b",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -66,8 +65,8 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0011",
-        "obs-0013"
+        "obs-0010",
+        "obs-0012"
       ],
       "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
       "confidence": "INFERRED",
@@ -81,8 +80,8 @@
       "based_on": [
         "obs-0001",
         "obs-0002",
-        "obs-0010",
-        "obs-0012"
+        "obs-0009",
+        "obs-0011"
       ],
       "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
       "confidence": "INFERRED",
@@ -100,10 +99,10 @@
       "based_on": [
         "obs-0001",
         "obs-0002",
+        "obs-0009",
         "obs-0010",
         "obs-0011",
-        "obs-0012",
-        "obs-0013"
+        "obs-0012"
       ],
       "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
       "confidence": "INFERRED",
@@ -112,8 +111,8 @@
     },
     {
       "based_on": [
-        "obs-0011",
-        "obs-0013"
+        "obs-0010",
+        "obs-0012"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -124,7 +123,7 @@
     },
     {
       "based_on": [
-        "obs-0013"
+        "obs-0012"
       ],
       "claim": "the return value is carried in ST0: an x87 or SSE instruction appears in the body",
       "confidence": "APPROXIMATION",
@@ -212,18 +211,10 @@
       "via": "direct"
     },
     {
-      "at": "0x00c0c02f",
-      "id": "obs-0008",
-      "index": 7,
-      "kind": "UNPARSED",
-      "raw": "JC 0x00c0c036",
-      "reason": "unknown_mnemonic"
-    },
-    {
       "at": "0x00c0c031",
       "base": "ESP",
       "disp": 0,
-      "id": "obs-0009",
+      "id": "obs-0008",
       "index": 8,
       "key": null,
       "kind": "STACK_SLOT_READ",
@@ -234,7 +225,7 @@
     },
     {
       "at": "0x00c0c034",
-      "id": "obs-0010",
+      "id": "obs-0009",
       "index": 9,
       "kind": "REG_RESTORE",
       "raw": "POP ECX",
@@ -243,7 +234,7 @@
     {
       "at": "0x00c0c035",
       "form": "RET",
-      "id": "obs-0011",
+      "id": "obs-0010",
       "imm": null,
       "index": 10,
       "kind": "RET",
@@ -251,7 +242,7 @@
     },
     {
       "at": "0x00c0c03c",
-      "id": "obs-0012",
+      "id": "obs-0011",
       "index": 12,
       "kind": "REG_RESTORE",
       "raw": "POP ECX",
@@ -260,7 +251,7 @@
     {
       "at": "0x00c0c03d",
       "form": "RET",
-      "id": "obs-0013",
+      "id": "obs-0012",
       "imm": null,
       "index": 13,
       "kind": "RET",
@@ -269,8 +260,287 @@
   ],
   "parse": {
     "declared_count": 14,
-    "degraded": true,
-    "esp_
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": false,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "pus
+[TRUNCATED]
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "ST0",
+    "return_semantics": "float_or_x87_in_ST0",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path"
+  ],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate, no stack reads",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "80a738a5ed27a3e5ff4575ddeda952c5099658d5abdd540c1cfc2bf78e1ef38b",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0012"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0009",
+        "obs-0011"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          3716,
+          4564
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0002",
+        "obs-0009",
+        "obs-0010",
+        "obs-0011",
+        "obs-0012"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0012"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0012"
+      ],
+      "claim": "the return value is carried in ST0: an x87 or SSE instruction appears in the body",
+      "confidence": "APPROXIMATION",
+      "id": "RT1",
+      "value": "ST0"
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00c0c010",
+      "count": 2,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "PUSH ECX",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c0c011",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ECX + 0xe84]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00c0c01b",
+      "count": 1,
+      "first_use": 4,
+      "first_write_index": 1,
+      "id": "obs-0003",
+      "index": 4,
+      "kind": "REG_READ",
+      "raw": "MOVSS XMM0,dword ptr [EAX + 0x350]",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x00c0c01b",
+      "definite": true,
+      "id": "obs-0004",
+      "index": 4,
+      "kind": "REG_WRITE",
+      "raw": "MOVSS XMM0,dword ptr [EAX + 0x350]",
+      "reg": "XMM0",
+      "write_kind": "unknown"
+    },
+    {
+      "at": "0x00c0c023",
+      "count": 2,
+      "first_use": 5,
+      "first_write_index": 4,
+      "id": "obs-0005",
+      "index": 5,
+      "kind": "REG_READ",
+      "raw": "COMISS XMM0,dword ptr [0x01485378]",
+      "reg": "XMM0"
+    },
+    {
+      "at": "0x00c0c02a",
+      "count": 2,
+      "first_use": 6,
+      "first_write_index": null,
+      "id": "obs-0006",
+      "index": 6,
+      "kind": "REG_READ",
+      "raw": "MOVSS dword ptr [ESP],XMM0",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00c0c02a",
+      "base": "ESP",
+      "disp": 0,
+      "id": "obs-0007",
+      "index": 6,
+      "key": null,
+      "kind": "STACK_SLOT_WRITE",
+      "raw": "MOVSS dword ptr [ESP],XMM0",
+      "reason": "local",
+      "resolved": false,
+      "size": 4,
+      "via": "direct"
+    },
+    {
+      "at": "0x00c0c031",
+      "base": "ESP",
+      "disp": 0,
+      "id": "obs-0008",
+      "index": 8,
+      "key": null,
+      "kind": "STACK_SLOT_READ",
+      "raw": "FLD float ptr [ESP]",
+      "reason": "local",
+      "resolved": false,
+      "size": 4
+    },
+    {
+      "at": "0x00c0c034",
+      "id": "obs-0009",
+      "index": 9,
+      "kind": "REG_RESTORE",
+      "raw": "POP ECX",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c0c035",
+      "form": "RET",
+      "id": "obs-0010",
+      "imm": null,
+      "index": 10,
+      "kind": "RET",
+      "raw": "RET"
+    },
+    {
+      "at": "0x00c0c03c",
+      "id": "obs-0011",
+      "index": 12,
+      "kind": "REG_RESTORE",
+      "raw": "POP ECX",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c0c03d",
+      "form": "RET",
+      "id": "obs-0012",
+      "imm": null,
+      "index": 13,
+      "kind": "RET",
+      "raw": "RET"
+    }
+  ],
+  "parse": {
+    "declared_count": 14,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": false,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "pus
 [TRUNCATED]
 ```
 
@@ -294,13 +564,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nfloat10 __fastcall FUN_00c0c010(int param_1)\n\n{\n  float fVar1;\n  \n  if ((*(int *)(param_1 + 0xe84) != 0) &&\n     (fVar1 = *(float *)(*(int *)(param_1 + 0xe84) + 0x350), 0.0 <= fVar1)) {\n    return (float10)fVar1;\n  }\n  return (float10)DAT_0150c8b8;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -400,8 +666,8 @@
   "callees": [],
   "callers": [
     "FUN_00c03950",
-    "FUN_00c08350",
-    "FUN_00c09410"
+    "FUN_00c09410",
+    "FUN_00c08350"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -414,17 +680,12 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "fVar1",
-      "storage": "unique:0000a300:4",
-      "type": "float"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_4",
+      "storage": "Stack[-0x4]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 2,
+  "locals_count": 1,
   "mode": "live",
   "name": "FUN_00c0c010",
   "namespace": null,

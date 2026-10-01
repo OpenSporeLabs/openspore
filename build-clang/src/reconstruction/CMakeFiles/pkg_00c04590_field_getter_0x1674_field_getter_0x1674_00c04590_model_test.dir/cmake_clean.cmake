@@ -1,0 +1,12 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test.dir/link.d"
+  "CMakeFiles/pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test.dir/pkg_00c04590_field_getter_0x1674/field_getter_0x1674_00c04590_model_test.cpp.o"
+  "CMakeFiles/pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test.dir/pkg_00c04590_field_getter_0x1674/field_getter_0x1674_00c04590_model_test.cpp.o.d"
+  "pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test"
+  "pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/pkg_00c04590_field_getter_0x1674_field_getter_0x1674_00c04590_model_test.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

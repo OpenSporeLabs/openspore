@@ -2,9 +2,38 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `b15e21842fa23feb947dcdf100f82e4c7f3b5f6ddb7715562059e7288f6d8773`
+- Content SHA-256: `cfc73a529f07e8ffef59993f029bc4a3dd21787e96a4362b041b9eed856385f1`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX, read once and never modified",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_note": "(single flag bit, 0 or 1)",
+  "return_observation": "0x00b8d973 SHR EAX,0x8 followed by 0x00b8d976 AND AL,0x1 leaves the full dword as 0 or 1. Consumers agree: 0x00c8b878 and 0x00c48534 and 0x00c44d0c all use TEST AL,AL, which is compatible with either width, but the reconstruction was written to the dword contract rather than the byte one and the model test pins it.",
+  "return_register": "EAX",
+  "return_semantics": "Bit 8 of the flag word at receiver+0x2c, materialised as a full dword that is exactly 0 or exactly 1. SHR EAX,8 first clears bits 0..7 and bit 31, then AND AL,1 clears bits 8..31, so the whole register ends up 0 or 1 and the upper three bytes are provably zero.",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -36,7 +65,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "b573a56757cf1233fd8d9311a03ca84af8aa63262cfb020059bd77363b0d926c",
+  "content_sha256": "e769187ab2120ba61002611bb7b929128ab7feedc24a783f256577a767b20761",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -44,16 +73,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -267,9 +296,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "FUN_00bba790",
+    "reconstructed": false,
+    "va": "0x00bba790"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bba990"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c38270"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c44d00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c484e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8b820"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8b920"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8ba00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8bb00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8c420"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8c5d0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8c7f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c8c9d0"
+  },
+  {
+    "name": "PoliticalOwnershipScan_00c8d060",
+    "reconstructed": true,
+    "va": "0x00c8d060"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e97bf0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fdd210"
+  }
+]
+```
 
 ## contradictions
 
@@ -279,13 +393,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nuint __fastcall FUN_00b8d970(int param_1)\n\n{\n  return *(uint *)(param_1 + 0x2c) >> 8 & 0xffffff01;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -325,9 +435,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13755,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX, read once and never modified\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_note\": \"(single flag bit, 0 or 1)\",\n    \"return_observation\": \"0x00b8d973 SHR EAX,0x8 followed by 0x00b8d976 AND AL,0x1 leaves the full dword as 0 or 1. Consumers agree: 0x00c8b878 and 0x00c48534 and 0x00c44d0c all use TEST AL,AL, which is compatible with either width, but the reconstruction was written to the dword contract rather than the byte one and the model test pins it.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"Bit 8 of the flag word at receiver+0x2c, materialised as a full dword that is exactly 0 or exactly 1. SHR EAX,8 first clears bits 0..7 and bit 31, then AND AL,1 clears bits 8..31, so the whole register ends up 0 or 1 and the upper three bytes are provably zero.\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-13-E4-EMPIRE-WAVE3\",\n      \"score\": 3,\n      \"symbol\": \"PoliticalOwnershipScan_00c8d060\",\n      \"va\": \"0x00c8d060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": \"FUN_00bba790\",\n        \"reconstructed\": false,\n        \"va\": \"0x00bba790\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bba990\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c38270\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c44d00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c484e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8b820\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8b920\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8ba00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8bb00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8c420\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8c5d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8c7f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c8c9d0\"\n      },\n      {\n        \"name\": \"PoliticalOwnershipScan_00c8d060\",\n        \"reconstructed\": true,\n        \"va\": \"0x00c8d060\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e97bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fdd210\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fde3e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x010021a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x010091d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0100a160\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0103aa00\"\n      },\n  
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -345,30 +462,30 @@
   "callees": [],
   "callers": [
     "FUN_01068970",
-    "FUN_00bba990",
-    "FUN_00e97bf0",
-    "FUN_00c44d00",
-    "FUN_00fde3e0",
-    "FUN_00c8c5d0",
-    "FUN_01072d40",
-    "FUN_0103aa00",
-    "FUN_00fdd210",
-    "FUN_00c8b820",
-    "FUN_010021a0",
-    "FUN_00c38270",
-    "FUN_0100a160",
-    "FUN_00c8c420",
-    "FUN_00c8c9d0",
-    "FUN_00c8b920",
-    "FUN_0106ba00",
-    "FUN_01069aa0",
-    "FUN_00bba790",
-    "FUN_00c8bb00",
     "FUN_00c8ba00",
-    "FUN_00c8c7f0",
-    "FUN_010091d0",
+    "FUN_00bba790",
+    "FUN_00c484e0",
+    "FUN_00c44d00",
+    "FUN_0100a160",
+    "FUN_0103aa00",
+    "FUN_01069aa0",
+    "FUN_0106ba00",
+    "FUN_00fde3e0",
+    "FUN_00c8b820",
+    "FUN_00c38270",
     "FUN_00c8d060",
-    "FUN_00c484e0"
+    "FUN_01072d40",
+    "FUN_00bba990",
+    "FUN_00c8c7f0",
+    "FUN_00c8c420",
+    "FUN_010021a0",
+    "FUN_00c8bb00",
+    "FUN_00c8b920",
+    "FUN_00c8c5d0",
+    "FUN_00fdd210",
+    "FUN_00e97bf0",
+    "FUN_00c8c9d0",
+    "FUN_010091d0"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -379,14 +496,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 1,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00b8d970",
   "namespace": null,
@@ -518,9 +629,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b09/00b8d970.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -530,9 +656,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A differential fixture is cheap but needs a receiver whose flag word is set by real game code, which static evidence does not supply.",
+    "No original-process trace exists for this address, so the runtime value of the flag word at +0x2c is unverified.",
+    "The Cell stage has never been entered in any recorded run, so nothing here is runtime observed."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -542,15 +680,31 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "dword bitfield",
+  "dword state",
+  "std::uint32_t (single flag bit, 0 or 1)"
+]
+```
 
 ## vtables
 

@@ -1,0 +1,212 @@
+{
+  "schema": "pkg-utfwin-glideeffect-func88h.function-handoff.v1",
+  "package": "PKG-UTFWIN-GLIDEEFFECT-FUNC88H",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x0096ff70",
+  "address": "0x0096ff70",
+  "symbol": "UTFWin::GlideEffect::func88h",
+  "normalized_symbol": "utfwin_glideeffect_func88h_0096ff70",
+  "reconstructed_symbol": "func88h_0096ff70",
+  "subsystem": "UTFWin",
+  "cluster": "utfwin-framework",
+  "queue_id": "fun:0096ff70:UTFWin::GlideEffect::func88h",
+  "target_state": "staging candidate; src/ promotion is integrator-owned",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-26",
+  "implementer_id": "orch-swarm",
+  "attempts_used": 1,
+  "outcome": "PARTIAL",
+  "source_files": [
+    "reconstruction/staging/pkg-utfwin-glideeffect-func88h/utfwin_glideeffect_func88h.hpp",
+    "reconstruction/staging/pkg-utfwin-glideeffect-func88h/utfwin_glideeffect_func88h.cpp",
+    "reconstruction/staging/pkg-utfwin-glideeffect-func88h/utfwin_glideeffect_func88h_model_test.cpp"
+  ],
+  "function_extent": {
+    "entry": "0x0096ff70",
+    "body_end_inclusive": "0x0096ff77",
+    "instruction_count": 2,
+    "bytes": "83 E9 0C E9 58 00 00 00",
+    "int3_padding_end": "0x0096ff7f",
+    "single_linear_flow": true,
+    "return_sites": [
+      "0x0096ff73: JMP 0x0096ffd0 (tail transfer; no RET of its own)"
+    ]
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall adjustor thunk with one forwarded stack word",
+    "return_type": "void",
+    "return_type_rationale": "The SDK and the Ghidra import both declare UTFWin::GlideEffect::func88h as returning void, and the two-instruction thunk never writes EAX. The tail target 0x0096FFD0 does materialise its receiver in EAX (MOV EAX,ESI at 0x00970003) before RET 0x4, but the transfer out of 0x0096ff70 is a tail jump, so that value belongs to the callee's frame and is modelled as unobservable here. Confidence: high for the absence of an EAX write in this frame, medium for void over pointer because the SDK placeholder signature is unreliable.",
+    "hidden_receiver": "ECX GlideEffectBiStateSubobject* (a pointer 0x0C bytes ABOVE the object the tail target operates on)",
+    "receiver_adjustment": {
+      "instruction": "0x0096ff70: SUB ECX,0x0C",
+      "immediate": "0x0c",
+      "direction": "subtract",
+      "meaning": "the callee's receiver is 0x0C below the receiver this thunk was handed"
+    },
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x08 (as observed inside the tail target 0x0096FFD0)",
+        "name": "deleting_flag",
+        "type": "uint32",
+        "usage": "only bit 0 is read, by TEST byte [ESP+0x8],0x1 at 0x0096fff3"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_form": "RET 0x4 at 0x00970006, inside the tail target; the thunk itself has no RET",
+    "flags_written": [],
+    "registers_written": ["ECX"],
+    "stack_reads_by_thunk": [],
+    "ghidra_signature_discrepancy": "The live Ghidra signature is void UTFWin::GlideEffect::func88h(GlideEffect*, int, int, int), i.e. three int stack words copied from the SDK method header. The machine forwards exactly one stack word and the callee cleans exactly 4 bytes."
+  },
+  "observed_mechanics": [
+    "0x0096ff70 is 8 bytes: SUB ECX,0x0C (83 E9 0C) then JMP 0x0096FFD0 (E9 58 00 00 00); 0x0096ff78..0x0096ff7f is INT3 padding.",
+    "The function is a pure adjustor thunk: it writes only ECX, reads no stack slot, consults no flag, and has no branch other than the unconditional tail JMP.",
+    "The sole reference to 0x0096ff70 in the entire image is a DATA pointer at 0x0144258c, which is byte offset +0x08 of the pointer run based at 0x01442584 (Ghidra long run, namespace UTFWin, firstSlotFunc FUN_00e246c0).",
+    "There is no code caller; the call graph is a single-node SCC (scc-0059) whose only edge is the outgoing JMP, matching a vtable-resident leaf.",
+    "Tail target 0x0096FFD0 spans 0x0096ffd0..0x00970008 and is the shared deleting destructor of the family: it stores 0x014425D8 to [this+0x00], 0x014425C0 to [this+0x04], 0x01442584 to [this+0x0C] and 0x013EB938 to [this+0x60], calls 0x00980420, calls 0x00951330(this) only when bit 0 of the stack flag is set, then MOV EAX,ESI / POP ESI / RET 0x4.",
+    "Those four written words are exactly four of the slots the ModAPI SDK documents for UTFWin::GlideEffect (SIZE 0x70): BiStateEffect vptr +0x00, ILayoutElement vptr +0x04, IBiStateEffect vptr +0x0C, IGlideEffect vptr +0x60, with mnRefCount at +0x08 and mOffset at +0x64.",
+    "Because the tail target's receiver is the most-derived object and the thunk subtracts 0x0C, the vptr this thunk was reached through must sit on the subobject at +0x0C, which the SDK places as GlideEffect's IBiStateEffect subobject.",
+    "Sibling thunks in the same leaf block share the shape: 0x0096FF80 is SUB ECX,0x04 / JMP 0x0096FFD0 and 0x0096FF90 is SUB ECX,0x0C / JMP 0x0096FF20; 0x0096FF20 tests the 0xEF2B293B vector-delete magic and ends in RET 0x4, so 0x0096FFD0 / 0x0096FF20 are the scalar- and vector-deleting pair and 0x0096FF70 / 0x0096FF90 are their GlideEffect-side thunks.",
+    "The already-reconstructed sibling UTFWin::InflateEffect::func88h at 0x0097e550 is byte-for-byte the same two-instruction form (SUB ECX,0xC / JMP 0x0097E4A0) and is modelled in reconstruction/staging/pkg-utfwin-effects-wave6 as receiver minus 0x0c followed by a tail call, which this reconstruction follows."
+  ],
+  "vtables": [
+    {
+      "label": "vtable:0x01442584",
+      "basis": "Ghidra long run, .spore-analysis/ghidra-exports/vtables.json (namespace UTFWin, fromLongRun true, sdkCount 8, sharedWith 97)",
+      "run_base": "0x01442584",
+      "target_slot_offset": "0x08",
+      "target_slot_address": "0x0144258c",
+      "slot_00": "0x00e246c0",
+      "slot_04": "0x00805630",
+      "slot_08": "0x0096ff70",
+      "slot_0c": "0x0096ff90",
+      "slot_88": "0x00951220",
+      "caveat": "Ghidra's vtable detection never ran on this program (0 vtable labels), so 0x01442584 is a pointer run, not a proven vftable, and the run is longer than any single vftable (it reaches 0x01442620)."
+    }
+  ],
+  "layout": {
+    "structure": "UTFWin::GlideEffect",
+    "size": "0x70",
+    "source": ".spore-analysis/ghidra-exports/spore_sdk.xml, STRUCTURE GlideEffect",
+    "fields": [
+      {"offset": "0x00", "name": "bi_state_effect_vtable_00", "sdk": "_vftable0 BiStateEffect__vftable*"},
+      {"offset": "0x04", "name": "layout_element_vtable_04", "sdk": "_vftable1 ILayoutElement__vftable*"},
+      {"offset": "0x08", "name": "reference_count_08", "sdk": "int mnRefCount"},
+      {"offset": "0x0c", "name": "bi_state_interface_vtable_0c", "sdk": "_vftable2 IBiStateEffect__vftable*"},
+      {"offset": "0x10", "name": "opaque_10", "sdk": "0x10..0x5f (mfTime, field_14, mClock, mTriggerType, mInterpolationType, mfEaseIn/Out, mfDamping, field_44/48/4C, field_50, field_54/58/5C)"},
+      {"offset": "0x60", "name": "glide_interface_vtable_60", "sdk": "_vftable3 IGlideEffect__vftable*"},
+      {"offset": "0x64", "name": "opaque_64", "sdk": "Point mOffset (0x64) and int field_6C"}
+    ],
+    "receiver_subobject": {
+      "name": "GlideEffectBiStateSubobject",
+      "offset_of_most_derived": "0x0c",
+      "note": "the -0x0C adjustment target; matches the SDK's IBiStateEffect subobject offset"
+    }
+  },
+  "types": [
+    "GlideEffect (UTFWin::GlideEffect, SDK SIZE 0x70, 32-bit)",
+    "GlideEffectVTableRun (pointer run based at 0x01442584, 4 transcribed slots)",
+    "OpaqueVtable (4 opaque slots, used for all four documented vptr words)"
+  ],
+  "globals": [],
+  "services": [],
+  "state_events": [],
+  "call_graph": {
+    "direct_callees": [
+      {
+        "target": "0x0096ffd0",
+        "kind": "JMP (tail transfer, not CALL)",
+        "role": "shared deleting destructor of the GlideEffect family; also a different reconstruction target"
+      }
+    ],
+    "direct_callers": [],
+    "data_xrefs": [
+      {"from": "0x0144258c", "to": "0x0096ff70", "type": "DATA"}
+    ],
+    "caller_boundary": "The single live reference is a function-table entry inside the 0x01442584 pointer run; no direct code caller exists, so nothing in the static binary names a caller for this thunk."
+  },
+  "semantic_findings": [
+    {
+      "kind": "adjustor_thunk",
+      "statement": "0x0096ff70 is a compiler-emitted adjustor thunk whose sole effect is rewriting the hidden thiscall receiver by -0x0C and tail-jumping to 0x0096FFD0.",
+      "confidence": "high",
+      "evidence": "ghidra_disassemble_function 0x0096ff70"
+    },
+    {
+      "kind": "destructor_slot_hypothesis",
+      "statement": "The thunk is the scalar-deleting-destructor entry of a vftable slot that GlideEffect reaches through the subobject at +0x0C; the tail target's vptr resets and its deleting-flag/operator-delete pattern are the MSVC scalar-deleting destructor idiom.",
+      "confidence": "medium",
+      "evidence": "ghidra_disassemble_function 0x0096ffd0; sibling thunks 0x0096ff80 and 0x0096ff90; SDK GlideEffect layout",
+      "caveat": "The vftable in which the thunk occupies the destructor slot was not identified; Ghidra reports only one DATA reference, at +0x08 of the run based at 0x01442584."
+    },
+    {
+      "kind": "abi_mismatch",
+      "statement": "SDK and Ghidra model three int stack arguments; the machine forwards exactly one stack word and cleans 4 bytes.",
+      "confidence": "high",
+      "evidence": "ghidra_disassemble_function 0x0096ffd0 (TEST byte [ESP+0x8],0x1; RET 0x4) against spore_sdk.xml FUNCTION_DEF UTFWin/GlideEffect/func88h"
+    },
+    {
+      "kind": "sdk_label_offset",
+      "statement": "The SDK placeholder name func88h implies a vftable offset of 0x88 (the convention is visible in BiStateEffect__vftable, which is 0x8c bytes with an unnamed last slot at 0x88), yet the only DATA reference puts this thunk at +0x08 of the run based at 0x01442584, whose slot 0x88 holds 0x00951220 (UTFWin::GetAllocator).",
+      "confidence": "high",
+      "evidence": "spore_sdk.xml BiStateEffect__vftable; ghidra_read_memory 0x01442584; ghidra_get_xrefs_to 0x0096ff70"
+    }
+  ],
+  "runtime_gates": [
+    "No runtime validation has been run; every claim here is static.",
+    "The concrete caller that dispatches through the vftable entry at 0x0144258c is unknown, so the values of the deleting flag in real use are unknown.",
+    "Whether the -0x0C receiver is a GlideEffect IBiStateEffect subobject or the analogous subobject of a sibling class (the same two-instruction shape is shared by UTFWin::InflateEffect::func88h at 0x0097e550 and by 0x0096ff80 with -0x04) is not settled by the static image."
+  ],
+  "blockers": [
+    "Ghidra's vtable detection never ran on this program, so the 0x01442584 label is an unverified pointer run and the destructor-slot reading stays a hypothesis.",
+    "The SDK placeholder signature for func88h (three int parameters) disagrees with the machine (one stack word); the true caller contract is runtime-gated."
+  ],
+  "unresolved_questions": [
+    "Which vftable in the binary actually places 0x0096ff70 in the destructor slot, given that the SDK's func88h convention implies offset 0x88 while the only DATA reference is at +0x08 of the run based at 0x01442584?",
+    "Is the receiver of 0x0096ff70 a UTFWin::GlideEffect IBiStateEffect subobject, or the same-offset subobject of a sibling effect class? The identical SUB ECX,0x0C/JMP shape at 0x0097e550 (UTFWin::InflateEffect::func88h) makes the shapes non-distinguishing.",
+    "Why does the SDK declare three int parameters when the machine forwards one stack word? The extra words may be unused register-class artefacts of the SDK method-header generator.",
+    "What is the lifetime and ownership meaning of the 0x013EB938 store at [this+0x60], and is it a vptr or a plain field? 0x0096ffd0 was not a target of this run, so no claim is made here.",
+    "Which of 0x0096ff70 and 0x0096ff90 is the scalar-deleting versus vector-deleting entry in the unknown owning vftable, given the Ghidra run order places the scalar-flag thunk first?"
+  ],
+  "validation": {
+    "status": "not run by this worker",
+    "note": "`openspore validate` was deliberately not invoked; the orchestrator runs it. The entry symbol func88h_0096ff70 binds the source span and embeds the 8-hex target VA."
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-utfwin-glideeffect-func88h reconstruction/staging/pkg-utfwin-glideeffect-func88h/*.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-utfwin-glideeffect-func88h reconstruction/staging/pkg-utfwin-glideeffect-func88h/*.cpp -o /tmp/opencode/g8-test && /tmp/opencode/g8-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-utfwin-glideeffect-func88h reconstruction/staging/pkg-utfwin-glideeffect-func88h/*.cpp -o /tmp/opencode/g8-test-nd && /tmp/opencode/g8-test-nd",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg-utfwin-glideeffect-func88h/*.hpp reconstruction/staging/pkg-utfwin-glideeffect-func88h/*.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-utfwin-glideeffect-func88h/0096ff70.json"
+  },
+  "verification_results": {
+    "x86_32_syntax": "passed",
+    "focused_model_test_o2": "passed",
+    "focused_model_test_o0": "passed",
+    "focused_model_test_o2_ndebug": "passed",
+    "focused_model_test_o0_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "runtime_validation": "not run"
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "ghidra_disassemble_function",
+      "ghidra_get_function_by_address",
+      "ghidra_get_xrefs_to",
+      "ghidra_read_memory"
+    ],
+    "disassembly": "0x0096ff70: SUB ECX,0x0C; JMP 0x0096ffd0. 0x0096ffd0: 15 instructions, RET 0x4.",
+    "decompile": "The persisted SDK export .spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__GlideEffect__func88h.c contains only a call to FUN_0096ffd0 and carries the warning 'Unknown calling convention'; the live decompiler was not consulted because the disassembly is already exhaustive for a two-instruction thunk."
+  },
+  "integration_status": "staged",
+  "canonical_files": []
+}

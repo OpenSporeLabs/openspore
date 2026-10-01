@@ -1,0 +1,389 @@
+# Reconstruction context 0x00a85790
+
+- Status: `partial`
+- Content SHA-256: `c96f71eb62bf287def7916bcd192ef40da98694cf730259676594add2f5539f6`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00a85790",
+  "phase": "reconstruction",
+  "target": "0x00a85790"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": null,
+  "name": "FUN_00a85790",
+  "package": null,
+  "subsystem": "Editor",
+  "va": "0x00a85790"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": false,
+  "runtime_gated": false,
+  "runtime_validated": 0,
+  "status": "candidate"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "5395c2ce654727dd178e8c4cb6a48244933caa2e7299b2d79c6239539ffe4bc7",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00a85790 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 1,
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x4",
+  "return_note": "unclassified_in_EAX (machine-vocabulary phrase; see return_semantics)",
+  "return_register": "EAX",
+  "saved_registers": [
+    "ESI",
+    "EDI (conditionally: only across the 0x00a85815 call)"
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "0x00a85839 RET 0x4"
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callers": [],
+  "edge_rows": [
+    {
+      "callsite": "0x00a857cb",
+      "direction": "out",
+      "other": "0x00a85460",
+      "reference_type": "direct-call"
+    }
+  ],
+  "external_callees": []
+}
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "PKG_SW2_00A85790_THISCALL",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::HalfWord",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::Receiver",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::SlotNoArgument",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::SlotOneArgument",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::SlotTwoArguments",
+    "openspore::reconstruction::pkg_swarm_w2_00a85790::Word",
+    "unclassified_in_EAX (machine-vocabulary phrase; see return_semantics)",
+    "void -- chosen deliberately, and the disagreement with the canonical record is recorded in return_semantics and known_blockers rather than papered over. The single return site 0x00a85838 is reached from four directions and the word in EAX is a DIFFERENT unrelated value on each: the caller's own EAX on both early-exit paths (0x00a85797, 0x00a857a5, neither of which is preceded by an EAX write), the negative word just tested at 0x00a85824, and whatever the 0x00a8582f callee returned on the fallthrough. No path puts a value this function computed into EAX and no single value is consistent across paths, so the body produces no return value. Ghidra's own decompilation agrees in substance: signature `undefined FUN_00a85790(void)`, body ends in a bare `return;`, return_type_resolved false."
+  ],
+  "vtables": [
+    "vtable:0x01458024"
+  ]
+}
+```
+
+## 09_state_event_relationships
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [],
+  "callees_truncated": false,
+  "callers": [],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00a857cb",
+      "direction": "out",
+      "other": "0x00a85460",
+      "reference_type": "direct-call"
+    }
+  ],
+  "edges_truncated": false,
+  "external_callees": [],
+  "fan_in": 0,
+  "fan_out": 0,
+  "manifest_callees": [],
+  "manifest_callers": [],
+  "nearby_reconstructed": [],
+  "scc": {
+    "id": "scc-0337",
+    "size": 1
+  },
+  "vtable_reference_count": 0
+}
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458024",
+      "same_calling_convention"
+    ],
+    "package": "pkg-vft-preinc-0051e340",
+    "score": 12,
+    "symbol": "vft_preinc_0051e340",
+    "va": "0x0051e340"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458024",
+      "same_calling_convention"
+    ],
+    "package": "subobject-forward-0051e380",
+    "score": 12,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x01458024",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 12,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w2-00586700",
+    "score": 8,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 8,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 8,
+    "symbol": "re_005ba0d0",
+    "va": "0x005ba0d0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w2-00a980b0",
+    "score": 8,
+    "symbol": "re_00a980b0",
+    "va": "0x00a980b0"
+  },
+  {
+    "match_basis": [
+      "sam
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790.cpp",
+    "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_model_test.cpp",
+    "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_types.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/pkg-swarm-w2-00a85790/00a85790.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [],
+  "unresolved_questions": [
+    "Does the pending-identifier half of the function ever depend on the notification half? The listing fixes that the notification block is skipped to the shared continuation at 0x00a8581f and that the two halves share no memory, but nothing says whether the callees reached from the notification block are the ones that would have to write receiver+0x68 for the second half to fire. The model test shows the halves are independent as far as this body's own writes go, which is a weaker statement.",
+    "Is the 0x6c receiver bound the true object size? It is the minimum this body requires (its own dword store at 0x00a85831 ends at +0x6b). Nothing in this pack establishes an upper bound, and the constructor that would (0x00a853b0, cited by the sibling package for the same vtable) is not part of this target's evidence.",
+    "What are the three dispatches for? The two-level shape and the three displacements are fixed, but whether they are virtual overrides of a known interface or plain callback words stored in the listener object is not settled by any evidence in this pack, and the two readings execute identical instructions. The same applies to the 0x14-dispatched word: it is called with a pushed 4-byte argument and its return value is discarded.",
+    "What calls this body? The xref export records no incoming call edge; the single xref is the data reference from the table word at 0x01458030. So the callers are unknown and this package claims nothing about them.",
+    "What is 0x00a85460? There is no evidence pack for it in this r
+[TRUNCATED]
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-swarm-w2-00a85790/00a85790.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_types.hpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-swarm-w2-00a85790/00a85790.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_model_test.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/staging/pkg-swarm-w2-00a85790/sw2_00a85790_types.hpp",
+      "source_class": "committed_artifact"
+    }
+  ],
+  "read_first": [
+    "reconstruction/knowledge/index.js
+[TRUNCATED]
+```

@@ -1,0 +1,290 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W1-00F967D0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x00f967d0",
+  "address": "0x00f967d0",
+  "symbol": "re_00f967d0",
+  "normalized_symbol": "re_00f967d0",
+  "ghidra_name": "FUN_00f967d0",
+  "subsystem": "Sporepedia",
+  "cluster": "sporepedia-online",
+  "queue_id": "function:00f967d0:FUN_00f967d0",
+  "implementer_id": "w20",
+  "captured_on": "2026-09-28",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0.cpp",
+    "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_types.hpp",
+    "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_model_test.cpp"
+  ],
+  "types": [
+    "OpaqueReceiver",
+    "OpaquePointee",
+    "PKG_SW1_00F967D0_THISCALL"
+  ],
+  "target_state": "IMPLEMENTED in staging. The whole body is reconstructed: 27 instructions, 0x00f967d0..0x00f96832 inclusive, and all four machine facts the body turns on -- one receiver displacement (0x20c), one global operand (0x0140f334), the three direct callees and the frame's three out-pointers -- are read straight out of the listing or out of the callees' own bytes. The three callees' bodies were re-read for this package because all three of them FAIL to decompile (ghidra_decompile_function returns 'Error: Decompilation failed' for 0x0097ef00, 0x00fb7bb0 and 0x00fb7bc0); their two-instruction listings are what fix the three pointee displacements. Nothing is named that the machine does not fix: no member has a role name, the receiver has no class name, and the out parameters are described by where their values come from. RUNTIME is GATED at 0 and nothing was attempted. This sidecar and the three staging files are the only artifacts written; no other package was touched and nothing was committed.",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0.cpp",
+      "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_types.hpp",
+      "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed and no other package's files were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_00f967d0",
+    "declaration": "extern \"C\" void PKG_SW1_00F967D0_THISCALL re_00f967d0(OpaqueReceiver* receiver, std::int32_t* out_scaled, Word* out_word_5c0, Word* out_word_5c4);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "the hidden receiver in ECX plus three ordinary stack arguments, all three of them POINTERS. The frame resolves once against the entry ESP E: SUB ESP,0x10 then PUSH ESI leaves ESP at E-0x14, so [ESP+0x18], [ESP+0x1c] and [ESP+0x20] are E+0x04, E+0x08 and E+0x0c -- contiguous, ascending, and exactly the three words RET 0xc consumes. Each is loaded and then STORED THROUGH: MOV ECX,[ESP+0x18] / MOV [ECX],EAX for the first, MOV EDX,[ESP+0x1c] / MOV [EDX],EAX for the second, MOV ECX,[ESP+0x20] / MOV [ECX],EAX for the third. The register differs on the second store (EDX, not ECX) and that is fixed by the listing.",
+    "return_type": "void",
+    "source": "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0.cpp",
+    "header": "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_types.hpp",
+    "model_test": "reconstruction/staging/pkg-swarm-w1-00f967d0/sw1_00f967d0_model_test.cpp",
+    "receiver_model": "a struct with NO named member: a 0x210-byte opaque run reached through a displacement helper. 0x210 bytes is the whole claim (0x20c + 4 is the last byte the body can touch) and the body never writes any of it. The single member is spelled field-by-offset (kReceiverPointeeDisplacement = 0x20c) for the same reason the machine-derived receiver record is bounds_only: it states where the body was seen reaching and not which member is which. The word at +0x20c is a POINTER, and the model makes that a two-level access: the value is loaded into ECX and handed to a callee that dereferences it, and the model test drives decoys at BOTH levels to keep that honest.",
+    "dispatch_model": "none. The body performs no virtual dispatch and no dispatch slot is modelled anywhere. abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0, and all three transfers are direct CALLs to immediate targets. The body is itself reached virtually -- the one xref is DATA from 0x01490c60, which is 0x01490be8 + 0x78, slot index 30 of the table at 0x01490be8 -- but the body never reads a dispatch word, so nothing at the receiver's +0x00 is named.",
+    "dependency_note": "Three extern 'C' thiscall declarations, all defined by the model test as observers. 0x0097ef00 -> float in ST0 from the pointee's +0x08; 0x00fb7bb0 -> Word in EAX from the pointee's +0x5c0; 0x00fb7bc0 -> Word in EAX from the pointee's +0x5c4. Each callee ends in a bare C3, so each takes its receiver in ECX and no stack argument, and each has exactly one parameter in the declaration. Nothing in the reconstruction computes either word itself.",
+    "frame_policy": "No frame state is modelled. The body writes exactly one frame dword, [ESP+0x4] = entry-0x10 (the FSTP float scratch at 0x00f967e7), and nothing ever reads it back; the other twelve bytes of the SUB ESP,0x10 reservation are never written. The model's `const float scaled` is the single-rounded product, which is the same value the FSTP commits and the MOVSS reloads."
+  },
+  "function_extent": {
+    "entry": "0x00f967d0",
+    "body_end_inclusive": "0x00f96830",
+    "instruction_count": 27,
+    "return_site": "0x00f96830: RET 0xc (bytes C2 0C 00)",
+    "span_bytes": 99,
+    "listing_reexported": "The 27 instructions were read out of the live Ghidra listing for this package (ghidra_function.disassembly, count 27) and their addresses and lengths are internally consistent: the first is 3 bytes (SUB ESP,0x10), the last is 3 bytes (RET 0xc) and the span from 0x00f967d0 to 0x00f96832 exclusive is 0x62 = 98 bytes of code after the 3-byte terminator, i.e. 99 bytes with it, which matches ghidra_function.size_bytes 99 and body_end 0x00f96832. The three call targets and their call-site displacements (EAX-relative) were re-derived from the callees' own listings rather than from the decompilation, and the one data operand was re-read out of the image: ghidra_read_memory(0x0140f334, 16) returns 00 00 80 42, which is binary32 64.0f."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "ESI, formed at 0x00f967d4 (MOV ESI,ECX) and used for every receiver access; ECX is then free to be the argument register of the three calls",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x04",
+      "entry_ESP+0x08",
+      "entry_ESP+0x0c"
+    ],
+    "stack_argument_1": "entry ESP+0x04, a POINTER to a signed 32-bit out word. Read at 0x00f96804 (MOV ECX,[ESP+0x18], taken with ESP at entry-0x14) and stored through at 0x00f96808. Receives the floored scaled float.",
+    "stack_argument_2": "entry ESP+0x08, a POINTER to a 32-bit out word. Read at 0x00f96815 (MOV EDX,[ESP+0x1c]) and stored through at 0x00f96819. Receives 0x00fb7bb0's return.",
+    "stack_argument_3": "entry ESP+0x0c, a POINTER to a 32-bit out word. Read at 0x00f96826 (MOV ECX,[ESP+0x20]) and stored through at 0x00f9682a. Receives 0x00fb7bc0's return.",
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "saved_registers": [
+      "ESI"
+    ],
+    "ret_form": "RET 0xc",
+    "termination": "0x00f96830, bytes C2 0C 00. The callee owns all twelve argument bytes: the epilogue's POP ESI (0x00f9682c) and ADD ESP,0x10 (0x00f9682d) land ESP back on its entry value, and 0x62 is the offset from the first instruction to the terminator.",
+    "return_type": "void",
+    "return_note": "The machine-derived ABI record for this VA (briefing.abi) reports return_register ST0 and return_semantics 'float_or_x87_in_ST0'. That is a reading of the x87 PAIR the body executes, not of an outgoing value: 0x00f967dc's FLD result is consumed by the FMUL at 0x00f967e1 and committed to memory by the FSTP at 0x00f967e7, so the x87 stack is EMPTY from 0x00f967e8 onward and no instruction on any path writes ST0 after that. EAX is equally dead: its last writer is the store at 0x00f9682a, two instructions before the terminator, and it is not copied anywhere. The declared return type is void and the decompilation agrees (its body ends in a bare `return;` with no value). This is recorded as a disagreement with the derived record rather than silently overridden.",
+    "exception_frame": "none. No instruction touches FS:[0x0] or installs a scope; the frame is the 16-byte SUB ESP,0x10 plus the single saved ESI.",
+    "ghidra_prototype": "undefined FUN_00f967d0(void) with parameter_count 0 and ghidra_calling_convention null",
+    "ghidra_convention_note": "Ghidra models the three pointers as Stack[0x4], Stack[0x8] and Stack[0xc] (ghidra_function.locals) but declares no parameters, and its decompilation types them int*, undefined4*, undefined4*. That agrees with the listing on all three. The one thing its decompilation does NOT show is the x87 round trip: it prints `fVar3 * (float10)64.0` and a ROUND(), which is the FLD/FMUL/FSTP/CVTSS2SI/UCOMISS/CMOVC sequence written as source, and it does not show that the product is committed to a single by the FSTP before the conversion.",
+    "dispatch": {
+      "indirect_calls": 0,
+      "call_offsets": [],
+      "vtable_shaped_loads": 0,
+      "note": "No CALL or JMP in the body names a register or a memory operand. All three transfers are direct."
+    },
+    "callee_conventions": {
+      "0x0097ef00": "__thiscall, receiver in ECX, no stack argument, result in ST0. Its own two instructions are FLD float ptr [ECX + 0x8] / RET, and the terminator is a bare C3 with no immediate.",
+      "0x00fb7bb0": "__thiscall, receiver in ECX, no stack argument, result in EAX. MOV EAX,dword ptr [ECX + 0x5c0] / RET.",
+      "0x00fb7bc0": "__thiscall, receiver in ECX, no stack argument, result in EAX. MOV EAX,dword ptr [ECX + 0x5c4] / RET."
+    },
+    "evidence_level": "OBSERVED for every field above except the return type, which is a documented disagreement with the derived record and is argued from the listing rather than from a record."
+  },
+  "mechanics": {
+    "body_shape": "27 instructions, one straight-line block, ZERO branch instructions. The only conditional instruction is the CMOVC at 0x00f96801, which is modelled as the `if` it is. There is no loop, no second exit and no exceptional path: 0x00f9682c..0x00f96830 is reached by falling through from the last store on every invocation.",
+    "frame_resolution": "Entry ESP is E. SUB ESP,0x10 (0x00f967d0) then PUSH ESI (0x00f967d3) leaves ESP at E-0x14 for the whole middle of the body, so [ESP+0x00] = E-0x14 is the saved ESI, [ESP+0x04] = E-0x10 is the frame's leading dword, and [ESP+0x18], [ESP+0x1c], [ESP+0x20] are E+0x04, E+0x08, E+0x0c. The epilogue's POP ESI + ADD ESP,0x10 lands back on E exactly, which is what makes RET 0xc balance. One independent check on the same arithmetic: the FSTP at 0x00f967e7 writes four bytes at E-0x10, i.e. inside the 16 bytes the prologue reserved and well above the argument block, so the body's only frame write cannot collide with the arguments.",
+    "receiver_displacement": "ONE displacement, 0x20c, read three separate times: 0x00f967d6, 0x00f9680a and 0x00f9681b, each a fresh MOV ECX,dword ptr [ESI + 0x20c] immediately consumed as the next call's hidden receiver. The value is never held in a register across a call and never written. The model re-loads it before each of the three calls rather than caching the first read, and the model test proves that is observable: its 0x0097ef00 observer rewrites the word mid-call and the second and third calls then receive the replacement.",
+    "pointee_displacements": "The three displacements the body reaches THROUGH the pointer are the operands of its callees, not its own: +0x08 (a 4-byte IEEE-754 single, 0x0097ef00's FLD), +0x5c0 and +0x5c4 (4-byte words, 0x00fb7bb0's and 0x00fb7bc0's MOV). The pointee is therefore at least 0x5c8 bytes. The model sizes it at 0x5cc including a four-byte sentinel tail; that tail is a modelling choice for overrun detection and not a claim about the object's size.",
+    "layout_derivation": "0x20c from the body's own three MOVs. 0x08, 0x5c0 and 0x5c4 from the callees' own complete bodies, which are two instructions each and which had to be used because all three FAIL to decompile. Nothing else is fixed: no other byte of either object is read, and the runs between the three displacements are declared opaque rather than guessed.",
+    "control_flow": "Single block; see body_shape. The body_shape claim of zero branches is a positive statement about the 27 instructions, not an absence of a search: every one of the 27 was read, and none of them is a Jcc, a LOOP, a Jrcxz or a computed jump.",
+    "decision": "0x00f967f1 CVTSS2SI EAX,XMM0 truncates toward zero. 0x00f967f5 CVTSI2SS XMM1,EAX converts that back. 0x00f967fe UCOMISS XMM0,XMM1 raises CF when XMM0 is below XMM1, and ALSO in the unordered case. 0x00f96801 CMOVC EAX,ECX then takes EAX-1 (ECX was loaded with EAX at 0x00f967f9 and decremented at 0x00f967fb) when CF is set. For every finite in-range product this is exactly floor, because 'below its own truncation' is the same as 'has a fractional part and is negative'. The model runs the four instructions rather than calling floor, because the sequence is also what defines the out-of-range and NaN answers and floor() would not produce those.",
+    "conversion_edges": "The four results the sequence fixes, all asserted by the model test: NaN -> 0x7fffffff (indefinite 0x80000000, then the unordered carry decrements it); +infinity -> 0x80000000 (indefinite, and +inf is NOT below -2^31 so the carry is clear); -infinity and negative out-of-range -> 0x7fffffff; positive out-of-range including exactly 2^31 -> 0x80000000; exactly -2^31 -> 0x80000000 unchanged, because CVTSS2SI SUCCEEDS there and the product equals its own truncation; 2^31-128 -> 0x7fffff80.",
+    "multiplier": "0x00f967e1 FMUL float ptr [0x0140f334] is the only data-segment operand in the body. The four bytes at 0x0140f334 in this image are 00 00 80 42, which is binary32 64.0f (ghidra_read_memory 0x0140f334, 16). The instruction is a MEMORY operand, so the model reads a word at that address rather than embedding the value, and the model test plants four different multipliers to prove the answer tracks the word.",
+    "globals": {
+      "global_0x0140f334": {
+        "address": "0x0140f334",
+        "name": "scale_multiplier_0x0140f334",
+        "kind": "float32 read-only operand",
+        "value": 64.0,
+        "bytes_le": "00 00 80 42",
+        "read_by": "0x00f967e1 FMUL float ptr [0x0140f334]",
+        "role": "the sole multiplier of the whole body; the only data-segment operand in the 27 instructions",
+        "note": "Modelled as a file-scope float returned by reference (scale_word_0140f334), initialised from the image's own bytes, so the model test can change it and watch the result move. The neighbouring words at 0x0140f338 (0x00000000) and 0x0140f33c (0x3fd00000 = 0.25f) were read in the same 16-byte window and are NOT read by this body; neither is modelled and neither is a claim."
+      }
+    },
+    "direct_call_1": {
+      "target": "0x0097ef00",
+      "callsite": "0x00f967dc",
+      "receiver": "the word at receiver+0x20c, loaded at 0x00f967d6",
+      "stack_arguments": 0,
+      "result": "float in ST0, the pointee's +0x08",
+      "callee_body": "0097ef00 FLD float ptr [ECX + 0x8] / 0097ef03 RET (bare C3)"
+    },
+    "direct_call_2": {
+      "target": "0x00fb7bb0",
+      "callsite": "0x00f96810",
+      "receiver": "the word at receiver+0x20c, RE-LOADED at 0x00f9680a",
+      "stack_arguments": 0,
+      "result": "Word in EAX, the pointee's +0x5c0, stored through the second out-pointer at 0x00f96819",
+      "callee_body": "00fb7bb0 MOV EAX,dword ptr [ECX + 0x5c0] / 00fb7bb6 RET (bare C3)"
+    },
+    "direct_call_3": {
+      "target": "0x00fb7bc0",
+      "callsite": "0x00f96821",
+      "receiver": "the word at receiver+0x20c, RE-LOADED at 0x00f9681b",
+      "stack_arguments": 0,
+      "result": "Word in EAX, the pointee's +0x5c4, stored through the third out-pointer at 0x00f9682a",
+      "callee_body": "00fb7bc0 MOV EAX,dword ptr [ECX + 0x5c4] / 00fb7bc6 RET (bare C3)"
+    },
+    "store_order": "Three stores, in ascending argument order, each after its own call: 0x00f96808 (first out word, from the floor sequence), 0x00f96819 (second, from 0x00fb7bb0), 0x00f9682a (third, from 0x00fb7bc0). The model test samples the three out buffers from INSIDE each callee, so both the order and the after-its-own-call property are observed rather than assumed, and it repeats the check with all three arguments aliased to one cell.",
+    "not_modelled": [
+      "The frame. One dword is written ([ESP+0x4], the FSTP scratch) and never read back; the other twelve bytes of the reservation are never touched. No frame state exists to model.",
+      "EAX and ST0 at the terminator. Both are dead; see observed_original_abi.return_note.",
+      "The exception head. No instruction touches FS:[0x0].",
+      "The x87 stack. Empty from 0x00f967e8 onward; the model expresses the product as a float so the FSTP's single rounding is reproduced without modelling the register stack."
+    ],
+    "receiver_writes": "NONE. The body reads the receiver's word at +0x20c three times and writes nothing on the receiver on any path. The model test byte-compares the whole receiver arena, including a sentinel tail past the last byte the body can reach, and separately byte-compares the pointee.",
+    "semantic_summary": "Read the pointer the receiver holds at +0x20c. Ask it for a float, multiply by the word at 0x0140f334 and floor the product into the first out-parameter. Ask it for the two words at its own +0x5c0 and +0x5c4 and put each in the next out-parameter. The pointer is re-read between the three asks, so the three asks can be answered by three different objects. Nothing is written to the receiver and nothing is computed from the receiver other than that one pointer.",
+    "globals_count": 1
+  },
+  "return_semantics": {
+    "kind": "none (void)",
+    "value": "no value is produced. The three outputs are writes through the three out-pointers, and the only other effect the body has is on the x87/SSE registers, which are internal. See observed_original_abi.return_note for the disagreement with the derived ABI record's ST0 claim.",
+    "ownership": "The body reads one pointer out of the receiver and hands it to three callees. It never constructs, copies, stores or releases anything, so it neither acquires nor releases a reference, and whether the pointee is owned, borrowed or a smart handle is not established by any record for this target and is not claimed.",
+    "lifetime": "There are no frame objects that outlive the call. The one frame dword is a scratch slot for the FSTP and is dead at the terminator."
+  },
+  "evidence": {
+    "classification": "machine-listing derived; no runtime evidence and no differential trace was gathered",
+    "runtime_validated": 0,
+    "persisted_pack": "reconstruction/evidence/00f967d0/{evidence.json,context.json,evidence.md,context.md}",
+    "assembly": "ghidra_function.disassembly (27 instructions) and ghidra_disassemble_function for each of the three callees. The callee listings had to be used directly because ghidra_decompile_function returns 'Error: Decompilation failed' for all three.",
+    "decompiler": "The briefing's decompilation of 0x00f967d0, used as a cross-check only. It agrees with the model on all four transfers, their order, the three out-pointer stores and the 64.0 multiplier. It differs in presentation: it prints the x87 intermediate as `float10` and renders the CMOVC as a ROUND plus an explicit `if`, and it does not show the FSTP's single rounding or the fact that the pointer is re-loaded between calls.",
+    "decompiler_disagreements": [
+      "The decompilation types the first out-parameter `int *` and writes `ROUND((float)(fVar3 * (float10)64.0))`, which is the CVTSS2SI/UCOMISS/CMOVC sequence as source. floor() is the right description of the sequence for finite in-range products but not for NaN or out-of-range products, where the sequence yields 0x7fffffff or 0x80000000; the model therefore runs the instructions.",
+      "The decompilation shows the pointee as a single callee sequence and does not reveal that the word at receiver+0x20c is re-read before the second and third calls -- it has no way to, because all three reads are to the same address.",
+      "abi_derived.return_semantics says float_or_x87_in_ST0 and abi_derived.return_register says ST0; the listing shows no outgoing value. Recorded as a disagreement, not adopted."
+    ],
+    "direct_callees": [
+      "0x0097ef00",
+      "0x00fb7bb0",
+      "0x00fb7bc0"
+    ],
+    "indirect_transfers": [],
+    "direct_callers": [],
+    "caller_note": "ghidra_function.callers is empty and there is no call edge pointing at the entry. That is expected and is not evidence about how the body is reached: the single xref is a DATA reference from a vtable slot (see vtable_associations_not_used_as_evidence), and a virtual function has no direct caller.",
+    "xref_export_edges": [
+      {
+        "from": "0x00f967dc",
+        "to": "0x0097ef00",
+        "direction": "out",
+        "reference_type": "direct-call"
+      },
+      {
+        "from": "0x00f96810",
+        "to": "0x00fb7bb0",
+        "direction": "out",
+        "reference_type": "direct-call"
+      },
+      {
+        "from": "0x00f96821",
+        "to": "0x00fb7bc0",
+        "direction": "out",
+        "reference_type": "direct-call"
+      }
+    ],
+    "machine_abi_record": {
+      "completeness": "CORE_RESOLVED",
+      "abstained_because": [
+        "unparsed_lines_present: 1 line(s) matched no grammar rule",
+        "sret_vs_out_param: entry slot 0 is written through a pointer"
+      ],
+      "note": "The record's own abstentions are consistent with what the model does: the first entry slot IS an out-pointer (the store at 0x00f96808 goes through a loaded pointer, not into the frame), which is the sret-vs-out-param shape it declined to classify. The unparsed line was not located; all 27 instructions in the listing were accounted for by the model, and the frame walk balances, so nothing in the reconstruction depends on it."
+    },
+    "vtable_associations_not_used_as_evidence": {
+      "address": "0x01490be8",
+      "id": "vtable:0x01490be8",
+      "ghidra_label": "VTAB_01490be8_40slots",
+      "role": "the single vtable SLOT that points at 0x00f967d0 (byte offset 0x78 = 30 * 4 of vtable:0x01490be8)",
+      "corroboration": "ghidra_get_xrefs_to / ghidra_read_memory: the briefing carries one reference to the entry, DATA at 0x01490c60, and 0x01490c60 - 0x01490be8 = 0x78. ghidra_read_memory(0x01490be8, 176) was re-read for this package and the word at index 30 is 0x00f967d0.",
+      "evidence_level": "structural only",
+      "vtable_note": "The table is labelled by address. No record available for this VA names its owner: ghidra_function.namespace and ghidra_function.sdk_name are both null, so no class name is asserted and no dispatch slot is modelled on the receiver. A sibling package working another slot of the same table (reconstruction/metadata/pkg-terrain-getsimdatartt-00f968b0/00f968b0.json) records that the owner was not established there either, and that the briefing's single analogue (PKG-16-SPOREPEDIA-ONLINE, 0x00641770, matched on shared_vtable) is a slot-index coincidence: 0x00641770 is a two-instruction accessor at the pointee's +0x28 and sits at slot index 2, so it shares no class evidence with this body. Its listing was re-read for this package (MOV EAX,dword ptr [ECX + 0x28] / RET) only to confirm that."
+    }
+  },
+  "provenance": [
+    "GhidraMCP /get_function_by_address + /analyze_function_complete for 0x00f967d0 (27-instruction listing, body_start 0x00f967d0, body_end 0x00f96832, size_bytes 99, xref DATA from 0x01490c60)",
+    "GhidraMCP /disassemble_function for 0x0097ef00, 0x00fb7bb0 and 0x00fb7bc0 -- the three direct callees, read as listings because /decompile_function fails on all three",
+    "GhidraMCP /read_memory at 0x0140f334 (16 bytes) for the multiplier word, and at 0x01490be8 (176 bytes) for this body's vtable slot",
+    "GhidraMCP /decompile_function for 0x00f967d0 (cross-check only; see evidence.decompiler)",
+    "reconstruction/evidence/00f967d0/evidence.json and context.json (the assembled machine record this package was briefed from)",
+    "tools/reconstruction_tooling/abi_infer.py output as carried in the briefing's abi block, including its two abstentions",
+    "reconstruction/metadata/pkg-terrain-getsimdatartt-00f968b0/00f968b0.json -- read for the table's slot geometry and for its owner_class_unresolved note, NOT for semantics",
+    "reconstruction/metadata/pkg-dfw-006a2e20/006a2e20.json and its three staging files -- read for package SHAPE, annotation density and comment discipline only; no semantics, type, offset or constant was taken from it"
+  ],
+  "unresolved_questions": [
+    "What the word at receiver+0x20c points to is not established beyond the three displacements its consumers read (+0x08, +0x5c0, +0x5c4) and the fact that it is a pointer. Its type, its owner, whether it is ever null and whether the pointee is the same object every call are all open; nothing in this body or in the three callees says.",
+    "The class that owns vtable 0x01490be8 is not established. ghidra_function.namespace and ghidra_function.sdk_name are null for this VA, and the sibling package that read the same table could not establish the owner either. The receiver is therefore an opaque 0x210-byte run and no member is named.",
+    "The meaning of the three values is not established. The listing fixes where each comes from -- a scaled, floored float and the two words at the pointee's +0x5c0 and +0x5c4 -- and nothing fixes what any of them is for. The two words are one dword apart and are read by two separate two-instruction accessors, which is the shape of an adjacent pair of counters, a size and an alignment, or a key and a value; no record available here chooses between those.",
+    "Whether the multiplier at 0x0140f334 is a constant, a tunable or a per-instance scale is not established. It is a .rdata word, so it is a compile-time constant as far as this image is concerned, but the body only reads it and nothing here says whether a writer exists elsewhere in the binary.",
+    "Why the pointer is re-loaded three times is not established. The listing shows three identical MOVs with no write to the receiver between them, so on any ordinary execution all three loads return the same value and the re-reads are redundant. The model reproduces them because they are in the listing and because the difference is observable if a callee ever changed the word -- but no such writer is known, so whether the redundancy is deliberate (a debug or thread-safety concern) or a compiler artefact is open.",
+    "The one unparsed line in the derived ABI record (abstained_because: 'unparsed_lines_present: 1 line(s) matched no grammar rule') was not located. All 27 instructions of the listing are accounted for by the model and the frame walk balances, so no reconstruction claim rests on it, but which line the tool could not parse is not known."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The original process is driven so that a receiver of this vtable's class exists with a non-null word at its +0x20c, once with a small positive float there and once with a negative one, so that the floor's two arms are both exercised.",
+      "A trace records the receiver address in ECX, the three values in EAX and ST0 that the three callees return, and the three out-pointer addresses loaded at 0x00f96804, 0x00f96815 and 0x00f96826, so the argument order and the pointee's three displacements are confirmed against a live process rather than against the two-instruction callee listings alone.",
+      "A trace captures the word at receiver+0x20c at three moments -- before 0x00f967dc, before 0x00f96810 and before 0x00f96821 -- to confirm that nothing in the live process changes it and that the re-loads are the redundant reads the listing makes them look like.",
+      "A trace exercises a NaN and a negative float at the pointee's +0x08 to confirm the 0x7fffffff and the floor-decrement results, which are the two outcomes the reconstruction claims that no ordinary game value would produce.",
+      "The word left in EAX at 0x00f96830 is compared against the reconstructed signature to confirm that the void return is right and that EAX is unobservable to the original callers (it holds 0x00fb7bc0's return, which was already stored)."
+    ]
+  },
+  "validation": {
+    "command": "cd reconstruction/staging/pkg-swarm-w1-00f967d0 && g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw1_00f967d0.cpp sw1_00f967d0_model_test.cpp -o /tmp/w_00f967d0 && /tmp/w_00f967d0",
+    "compile_gate": "clean under -m32 -std=c++17 -Wall -Wextra -Werror, no warnings, no suppressions. The header was also compiled on its own (a wrapper TU that includes it and nothing else) to confirm it is self-contained.",
+    "model_test": "14 cases, all passing, 0 failures. The three direct callees are defined in the test as observers, so every transfer, its receiver, its return and the state of the three out buffers at the moment of the call are visible. Twelve of the fourteen carry REFUTE decoys: wrong multiplier (four substitutions, C), wrong pointer level (D), wrong receiver displacement with four decoy pointees (E), wrong pointee sub-displacement with words poisoned on both sides (F), wrong rounding against truncate/ceil/nearest-even (G), the eight x87 conversion edges (H), wrong store order and store-before-call (J), a cached pointee (K), swapped out-parameters (L), aliased out-pointers (M) and the callee-cleaned ABI measured by sampling ESP in a trampoline (N).",
+    "mutation_checking": "Twenty mutations of the reconstruction and of the test's own observers were applied in a scratch copy and the suite re-run. EIGHTEEN were refuted with named failures. Refuted, with the check that caught each: caching the pointee instead of re-loading it (K3, K5); hardcoding 64.0f instead of reading the word at 0x0140f334 (C); removing the floor decrement (G, H); the receiver displacement moved to 0x208 and to 0x210 (V3, then a crash on the null decoy pointee); the CMOVC inverted to an increment (G); the NaN/unordered arm of the carry test removed (H1); the carry test using <= instead of < (C, G); a saturating clamp substituted for the CVTSS2SI indefinite result (H1); the first store moved after the third (J3, M2, M3); the third store moved before the second (J5, M2, M4); the second and third out-parameters swapped (A6, A7, D2); the first store moved before its own call (J2, M1); the second store moved before its own call (J4, M3); the body writing one byte on the receiver (P1); the body computing the +0x5c0 word itself instead of calling 0x00fb7bb0 (A5, L1); the body computing the +0x5c4 word itself instead of calling 0x00fb7bc0 (A5, L1); the third callee's displacement moved to the +0x5c8 decoy (A7, D3, D4); the float callee's displacement moved to the +0x0c decoy (A5, C). An A8 plumbing probe, which perturbs the reconstruction's own second call-site stack sample, was also refuted. TWO counterfactuals are reported as NOT refuted, with the reason: (a) changing the CVTSS2SI range test's upper bound from < to <= -- 2^31 is the only representable float in the gap and both forms yield 0x80000000 on this host, so no test can distinguish them and the listing is the sole authority; (b) accumulating the product in a double rather than a float -- the exact product of two float32 operands needs at most 48 bits, so a double accumulator and a direct single multiply round identically and the FSTP at 0x00f967e7 is not separately observable. Both are stated as unobservable in the model test's header as well, so a reader never mistakes a passing suite for a proof of them.",
+    "expected_reasons": [
+      "ABI: convention, receiver register, three out-pointer slots, callee-owned 12-byte cleanup, saved ESI, RET 0xc",
+      "CALLS: three direct callees, each declared and defined as an observer, each with its argument order and result register fixed by its own two instructions",
+      "GLOBALS: one, 0x0140f334, read as a memory operand and modelled as a word the test can change",
+      "FIELDS/OFFSETS: one receiver displacement (0x20c) and three pointee displacements (0x08, 0x5c0, 0x5c4), each traced to an instruction",
+      "CONSTANTS: 64.0f at 0x0140f334, 1 as the decrement, 0x0c as the cleanup, all from the listing or the image bytes",
+      "CONTROL FLOW: one block, zero branch instructions, one CMOVC modelled as a conditional",
+      "VIRTUAL DISPATCH: none in the body; the entry's own vtable slot recorded as structure only and used as no evidence for a member",
+      "RETURN SEMANTICS: void, argued from the listing against the derived record's ST0 claim and recorded as a disagreement",
+      "EVIDENCE COVERAGE: every constant, displacement, branch condition, callee and argument order annotated with the instruction it came from"
+    ],
+    "not_verified": [
+      "Nothing was validated at runtime. RUNTIME is gated at 0 and no trace was run; see runtime_gate.conditions.",
+      "The class that owns vtable 0x01490be8 and therefore anything about the receiver beyond its 0x210-byte extent.",
+      "The one unparsed line in the derived ABI record.",
+      "The counterfactual at the CVTSS2SI upper bound and the FSTP's rounding step, for the reasons in validation.mutation_checking."
+    ],
+    "observed": "Build clean under -m32 -std=c++17 -Wall -Wextra -Werror with no warnings, at every optimisation level from -O0 to -Os. Test binary exits 0. Header compiles standalone. No repo-wide cmake/ctest was run and `python3 tools/openspore.py validate` was deliberately not run: the parent owns both, and a shared build directory with many concurrent workers is not this package's to touch."
+  },
+  "known_blockers": [
+    "RUNTIME validation is gated at 0. The reconstruction is static-only; the runtime_gate conditions list what a trace would have to capture.",
+    "The receiver's class is unnamed. The vtable association is recorded as structure and is deliberately not used to name a member, so the model cannot be cross-checked against any SDK type for this VA.",
+    "The three direct callees' semantics are unknown beyond their own two instructions. All three fail to decompile, so the reconstruction depends on their raw listings; if a callee were inlined or its listing wrong, the three pointee displacements would move with it.",
+    "The briefing's abi block disagrees with the listing about the return register (ST0). The model follows the listing and records the disagreement; if the derived record is right about something the listing does not show, this package would not see it."
+  ],
+  "blockers": [
+    "RUNTIME validation is gated at 0",
+    "The receiver's class is unnamed",
+    "The three direct callees' semantics are unknown beyond their own two instructions",
+    "The briefing's abi block disagrees with the listing about the return register (ST0)"
+  ],
+  "runtime_gates": [
+    "RUNTIME is required and gated at 0: no trace was run and no differential evidence was gathered for this VA.",
+    "Conditions are listed in full under runtime_gate.conditions; the shortest form is that a live receiver of this vtable's class, with a non-null word at +0x20c, must be driven through both floor arms and through a NaN, and the three callee returns plus the three out-pointer addresses must be captured at the call sites."
+  ]
+}

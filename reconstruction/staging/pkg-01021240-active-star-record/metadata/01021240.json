@@ -1,0 +1,108 @@
+{
+  "schema": "pkg-01021240-active-star-record.function-handoff.v1",
+  "package": "PKG-01021240-ACTIVE-STAR-RECORD",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x01021240",
+  "normalized_symbol": "FUN_01021240",
+  "implementation_status": "implemented in staging; canonical promotion not performed",
+  "staging_files": [
+    "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.hpp",
+    "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.cpp",
+    "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor_model_test.cpp"
+  ],
+  "function_extent": {
+    "entry": "0x01021240",
+    "body_end_inclusive": "0x01021252",
+    "last_instruction": "0x01021252: RET",
+    "instruction_count": 8,
+    "size_bytes": 19,
+    "body_span_bytes": 19,
+    "ghidra_function_record": "Ghidra holds a standalone function object for 0x01021240..0x01021252 with 19 bytes, matching the 8-instruction live listing."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__cdecl",
+    "convention_confidence": "UNKNOWN",
+    "convention_evidence": "The derived ABI record abstains: no stack-argument read and no positive receiver evidence, and the body is byte-identical under __cdecl, __stdcall, __thiscall and __fastcall. A zero-parameter leaf ending in a bare RET is declared __cdecl so the caller owns cleanup, which the record states as INFERRED.",
+    "receiver": null,
+    "receiver_evidence": "ECX is never read in any form (derived inference R2, OBSERVED).",
+    "ordinary_stack_arguments": [],
+    "return": "uint32 in EAX",
+    "return_semantics": "integral_in_EAX",
+    "ret_form": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller"
+  },
+  "observed_contract": {
+    "summary": "Reads the word the container holds at its active-star displacement, and when that word is non-zero returns the word stored at displacement 0x48 of the object it points at. When the star word is zero the function returns zero.",
+    "no_container_guard": "The absolute word 0x016dda8c is loaded with no test of its own and dereferenced immediately. The only null test in the body guards the active-star word, not the container. A null container therefore faults here exactly as the machine does; the reconstruction reproduces this and does not add a guard.",
+    "read_only": "Both loads are plain reads. The body contains no store, so neither the container nor the star object is written.",
+    "two_exits": "Two RET sites. The taken path returns the word at star+0x48; the fallthrough zero-extends EAX and returns it, so the not-taken path yields zero rather than leaving the loaded word in EAX.",
+    "no_dispatch": "The body names no indirect transfer, so the two loads cannot be a virtual call and the return value is data, not a dispatch result."
+  },
+  "sdk_named_context": {
+    "container": "Simulator::sSpacePlayerData at 0x016dda8c",
+    "container_displacement_0x08": "mpActiveStar, intrusive_ptr<cStar>",
+    "star_displacement_0x48": "mpStarRecord, intrusive_ptr<cStarRecord>",
+    "offsets_decimal_note": "The SDK export's offset column is decimal: cStar mpStarRecord is at column 72, which is 0x48, and mpSolarSystem at column 64, which is 0x40.",
+    "authority": "The listing fixes the two displacements as local facts. The member names come from the SDK export and the committed SpacePlayerData lifecycle research, and are recorded here as corroboration, not as machine-derived layout. The source names no member; it declares displacement constants only.",
+    "prior_work_consistency": "Consistent with the already-recovered family: 0x01021230 is the +0x08 star-word read view and 0x01021260 is the +0x04 planet read view (src/reconstruction/pkg01_roots/space_player_data_accessors.cpp). This target is a second-order read view, one dereference deeper, and does not contradict 0x010219b0 or 0x010221f0 (the two active-reference replacers) or 0x01022460 (field teardown)."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "image_base": "0x400000",
+    "rva": "0xc21240",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "analysis_basis": "Read-only live Ghidra queries.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "openspore_function_context",
+      "ghidra_disassemble_function",
+      "ghidra_decompile_function",
+      "ghidra_read_memory",
+      "ghidra_list_globals"
+    ],
+    "disassembly": "a18cda6d018b400885c074048b4048c333c0c3 at 0x01021240, 19 bytes, 8 instructions: MOV EAX,[0x016dda8c]; MOV EAX,[EAX+0x8]; TEST EAX,EAX; JZ 0x01021250; MOV EAX,[EAX+0x48]; RET; XOR EAX,EAX; RET.",
+    "memory_confirmation": "ghidra_read_memory at 0x01021240 returned a18cda6d018b400885c074048b4048c333c0c3, matching the evidence pack's listing byte for byte.",
+    "global_confirmation": "ghidra_list_globals name_substring=sSpacePlayerData returns exactly one entry: Simulator::sSpacePlayerData @ 016dda8c [Label] (undefined4) xrefs=56.",
+    "decompile": "undefined4 FUN_01021240(void) { if (*(int *)(Simulator__sSpacePlayerData + 8) != 0) return *(undefined4 *)(*(int *)(Simulator__sSpacePlayerData + 8) + 0x48); return 0; }",
+    "callees": {
+      "addresses": [],
+      "indirect": []
+    },
+    "callers": {
+      "count": 74,
+      "address_note": "The evidence pack records 16 callers; the live Ghidra function record reports 74 caller functions and 100 xref sites, all of them direct calls at 0x00bb4b.. through 0x0106cc.. No caller was decompiled; fan-in alone does not identify a domain."
+    },
+    "xrefs": {
+      "data_count": 1,
+      "data_addresses": ["0x016dda8c"],
+      "access_mode": "read=1",
+      "note": "The committed data-reference sidecar records one reference row out of this body, a read of 0x016dda8c, which is what closes the GLOBALS check's machine-vs-machine arm."
+    },
+    "vtable_memory": {
+      "table_base": null,
+      "slot_displacement": null,
+      "note": "No vtable involvement: the Ghidra record lists no vtable associations in either direction."
+    }
+  },
+  "dependencies": [
+    "Simulator::sSpacePlayerData at 0x016dda8c (read, unguarded)",
+    "container displacement 0x08 (mpActiveStar)",
+    "star displacement 0x48 (mpStarRecord)"
+  ],
+  "runtime_gate": "Observe the returned word against a live session: that it is the active star's record pointer, and that it is zero whenever the active star word is zero. Runtime validation was not attempted; no original-process trace exists in this repository.",
+  "listener_timing": "Not applicable: the body is a straight-line pair of loads with no call, no loop and no wait.",
+  "coordination": {
+    "shared_global_definition": "Simulator__sSpacePlayerData is also defined by src/reconstruction/pkg01_roots/space_player_data_accessors.cpp. This package defines its own copy so the model test is self-contained. If the integrator merges both into one target, exactly one definition must survive.",
+    "not_touched": "0x01021090 is owned by another worker and was neither read from nor written to."
+  },
+  "stale_metadata_safety": "No canonical record, index.json entry or integrated projection was written; this file and the three source files are the whole of the stage.",
+  "unresolved_questions": [
+    "The calling convention is undetermined by the body. __cdecl is declared because it is the least committal zero-parameter leaf shape and agrees with caller cleanup; __stdcall with zero callee cleanup is byte-identical here.",
+    "Whether the returned word is genuinely an intrusive_ptr<Simulator::cStarRecord> payload, as the SDK offset column suggests, or a differently-typed 32-bit word that merely sits at 0x48, is not settled by this body's own listing. The reconstruction claims the displacement and the zero-guard and nothing about what the word addresses.",
+    "The caller's domain is not established. 74 caller functions is consistent with a widely-used identity accessor but fan-in alone does not show what any of them do with the value."
+  ]
+}

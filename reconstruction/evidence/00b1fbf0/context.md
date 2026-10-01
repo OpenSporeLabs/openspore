@@ -1,7 +1,7 @@
 # Reconstruction context 0x00b1fbf0
 
 - Status: `partial`
-- Content SHA-256: `b99e84579e52743ca98270ef093663900ef456d012b0c5daf44759fd6fb08ee9`
+- Content SHA-256: `1016a723f590ab23a869696de3c1e430aed117d1b56feba7e217115a6b10fd09`
 
 ## 01_assignment
 
@@ -54,10 +54,18 @@
 
 ```json
 {
-  "content_sha256": "78f01b2af698ca5c3c324c6b26960b2b29ce9eff248df6083e013f9520a2609b",
-  "live_attempts": [],
-  "live_requested": false,
-  "overall": "PERSISTED"
+  "content_sha256": "99f94b431be6bf704c07e192b4fe404261e565d8c3d59f325f7753407f95afce",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00b1fbf0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
 }
 ```
 
@@ -74,13 +82,13 @@
 ```json
 {
   "architecture": "x86-32",
-  "calling_convention": null,
+  "calling_convention": "__thiscall",
   "hidden_receiver": "unread",
-  "hidden_this_register": "ECX is never read; 0x00b1fbf0 has no instruction that mentions any register other than AL",
+  "hidden_this_register": "ECX is the register V1-VFT names as carrying the receiver, and 0x00b1fbf0 never reads it: the two instructions mention no register other than AL. The port therefore carries a receiver the body discards.",
   "ordinary_stack_argument_slots": 0,
   "receiver": false,
   "ret_form": "RET",
-  "return_observation": "0x00b1fbf0: MOV AL,0x1 writes only the low byte of EAX, so bits 8..31 of EAX are undefined on exit rather than zero. Every consumer inspected tests the AL byte, never the full dword.",
+  "return_observation": "0x00b1fbf0: MOV AL,0x1 writes only the low byte of EAX, so bits 8..31 of EAX are left as the caller left them rather than zeroed. Every consumer inspected tests the AL byte and never the full dword, and 0x00e81139 goes further and compares it against the immediate 1 (CMP AL,0x1), which is what makes the one-byte width falsifiable rather than decorative. The derived return record names register EAX and register_class integral and names NO width and NO type; the one-byte width here is established from the opcode (B0 is MOV r8,imm8, whose register field is fixed at AL), not copied from a recor...",
   "return_register": "EAX",
   "return_semantics": "std::uint8_t",
   "return_type": "std::uint8_t",
@@ -347,75 +355,79 @@
 [
   {
     "match_basis": [
-      "shared_vtable:vtable:0x01485550",
-      "direct_xref_neighbor"
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
+      "same_calling_convention"
     ],
-    "package": "PKG-GAME-INPUT-WAVE8",
-    "score": 7,
-    "symbol": "cell_mode_strategy_on_mouse_wheel_00e7d660",
-    "va": "0x00e7d660"
+    "package": "pkg-swarm-w2-00586700",
+    "score": 12,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013fc06c,vtable:0x01409bec"
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
+      "same_calling_convention"
     ],
-    "package": "PKG-WAVE6-CONTAINERS-MEMORY",
-    "score": 4,
-    "symbol": "wave6_reference_00432a50",
-    "va": "0x00432a50"
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 12,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
   },
   {
     "match_basis": [
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 12,
+    "symbol": "re_005ba0d0",
+    "va": "0x005ba0d0"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
       "shared_vtable:vtable:0x013f57f8"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_005737d0",
-    "va": "0x005737d0"
+    "package": "pkg-editor-child-007f30d0",
+    "score": 10,
+    "symbol": "FUN_007f30d0",
+    "va": "0x007f30d0"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x014186c4"
+      "same_subsystem",
+      "same_calling_convention"
     ],
-    "package": "PKG-UTFWIN-CORE-WAVE6",
-    "score": 4,
-    "symbol": "re_00575ea0",
-    "va": "0x00575ea0"
+    "package": "pkg-vft-preinc-0051e340",
+    "score": 8,
+    "symbol": "vft_preinc_0051e340",
+    "va": "0x0051e340"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem",
+      "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00585890",
-    "va": "0x00585890"
+    "package": "subobject-forward-0051e380",
+    "score": 8,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem",
+      "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00585d10",
-    "va": "0x00585d10"
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 8,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
   },
   {
-    "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
-    ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00588570",
-    "va": "0x00588570"
-  },
-  {
-    "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
-    ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_0058a
+    "match_basis"
 [TRUNCATED]
 ```
 
@@ -456,18 +468,17 @@
     "Is the always-true body a shipped default, a build-configuration stub, or a patch target at runtime? No differential trace has been captured for this function, so runtime patching cannot be excluded.",
     "No original-process trace has been captured for 0x00b1fbf0, so every claim here is static. A runtime differential test must confirm that the answer is still 1 in the shipping build and that no runtime patch retargets the address.",
     "The 0x00ee8860 virtual dispatch site must be observed with a concrete receiver before the slot's owning class can be named.",
-    "The 356 and 20 vtable-reference counts are raw pointer-scan totals, not proven distinct vtables. The true count is unmeasured.",
-    "What is the correct port spelling for a slot that is dispatched with ECX populated but implemented as a bare RET? The reconstruction keeps an unread receiver parameter, which is a modelling choice rather than an observed fact.",
-    "What predicate is this? The body is a constant yes, but nothing in the observed evidence names the question it answers.",
-    "Which class or classes own the slots that point here? Three distinct slot offsets across three distinct tables are recorded above and they cannot all describe one method.",
-    "Why does caller 0x00a43050 and caller 0x0082c210 call the function and discard the answer? A constant with no side effects make
+    "The 356 and 20 vtable-reference counts are raw pointer-scan totals, not proven distinct vtables. The true count is unmeasured. A scan of the image's own .rdata for the little-endian dword of this address finds 521 occurrences, and .data finds 17; those are also raw totals and are not a table count.",
+    "The Spore-ModAPI correspondence to IGameMode::func0Ch is a CANDIDATE for the 0x01485550 table only, recorded in sdk_correspondence and deliberately not asserted. Four offsets across three tables are why.",
+    "The six ECX receipt sites establish that a value is in ECX at the transfer. They do NOT establish that the body reads it, and the record's R2 says it does not. Whether the six sites pass the same object or six different ones is not determinable from the call sites alone.",
+    "Wha
 [TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-shared-default-true-wave12/00b1fbf0.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-shared-default-true-wave12/00b1fbf0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -476,6 +487,21 @@
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
       "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
     },
     {
       "mode": "persisted",
@@ -508,19 +534,6 @@
       "source_class": "committed_artifact"
     }
   ],
-  "read_first": [
-    "reconstruction/knowledge/index.json"
-  ],
-  "required_categories": [
-    "ABI",
-    "CALLS",
-    "GLOBALS",
-    "FIELDS/OFFSETS",
-    "CONSTANTS",
-    "CONTROL FLOW",
-    "VIRTUAL DISPATCH",
-    "RETURN SEMANTICS",
-    "EVIDENCE COVERAGE"
-  ]
-}
+  "re
+[TRUNCATED]
 ```

@@ -2,9 +2,44 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `067e842de9d5f9043c53d3fb359fd7215c4aadc372847eaa24e6c8b9b82cdb1f`
+- Content SHA-256: `d7b2856e1c4e6ce1adf1185e9f13212579647aa1ab3cde22341e3cde189a0355`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read; the receiver's +0x1A4, +0x1A8 and +0x1AC fields are the comparison targets and the write destinations",
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x8",
+  "return_observation": "0x00b8dde1e is a bare RET 0x8 with no value in EAX that any caller reads; the twelve inspected callsites all discard EAX or reload it immediately.",
+  "return_register": "none - EAX is used as a scratch load at 0x00b8dde3 and 0x00b8dde15 and its exit value is never consumed",
+  "return_semantics": "none; the function's only effect is the conditional write of three dwords into the receiver",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [],
+  "stack_arguments": [
+    {
+      "instruction": "0x00b8dde0: MOV EAX,dword ptr [ESP + 0x4]",
+      "offset": "ESP+0x4",
+      "role": "pointer to a 12-byte ResourceKey {instanceID, typeID, groupID}",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 8,
+  "stack_cleanup_owner": "callee",
+  "termination": "single exit at 0x00b8dde1e"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -65,23 +100,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "e575115b425fda6b855311d0b9a74ca9ca5ab557e91ea1fd81dca28f1dbb05e4",
+  "content_sha256": "68aad9f281c32b32bc6e2ce0f1459bbe749c1b20f0e79fa663e8d4df9704b5fd",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -276,7 +311,7 @@
       "mov_ebp_esp_at": null,
       "push_ebp": false,
       "push_ebp_at": null,
-      "sub
+      "
 [TRUNCATED]
 ```
 
@@ -288,9 +323,74 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba5fd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba6120"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba6310"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba64a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba7c20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba8830"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb2a50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bbaa80"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bbac80"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c713c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00de6f20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00f37690"
+  }
+]
+```
 
 ## contradictions
 
@@ -300,13 +400,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __thiscall FUN_00b8dde0(int param_1,int *param_2)\n\n{\n  if (((*param_2 != *(int *)(param_1 + 0x1a4)) || (param_2[1] != *(int *)(param_1 + 0x1a8))) ||\n     (param_2[2] != *(int *)(param_1 + 0x1ac))) {\n    *(int *)(param_1 + 0x1a4) = *param_2;\n    *(int *)(param_1 + 0x1a8) = param_2[1];\n    *(int *)(param_1 + 0x1ac) = param_2[2];\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -398,9 +494,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 11672,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read; the receiver's +0x1A4, +0x1A8 and +0x1AC fields are the comparison targets and the write destinations\",\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x8\",\n    \"return_observation\": \"0x00b8dde1e is a bare RET 0x8 with no value in EAX that any caller reads; the twelve inspected callsites all discard EAX or reload it immediately.\",\n    \"return_register\": \"none - EAX is used as a scratch load at 0x00b8dde3 and 0x00b8dde15 and its exit value is never consumed\",\n    \"return_semantics\": \"none; the function's only effect is the conditional write of three dwords into the receiver\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [],\n    \"stack_arguments\": [\n      {\n        \"instruction\": \"0x00b8dde0: MOV EAX,dword ptr [ESP + 0x4]\",\n        \"offset\": \"ESP+0x4\",\n        \"role\": \"pointer to a 12-byte ResourceKey {instanceID, typeID, groupID}\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 8,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"single exit at 0x00b8dde1e\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba5fd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba6120\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba6310\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba64a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba7c20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba8830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb2a50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bbaa80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bbac80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c713c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00de6f20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00f37690\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00ba6073\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba5fd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba6169\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba6120\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba6355\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba6310\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba6550\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba64a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba7d36\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba7c20\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba8938\",\n   
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -417,18 +520,18 @@
   "body_start": "00b8dde0",
   "callees": [],
   "callers": [
-    "FUN_00bb2a50",
-    "FUN_00ba6120",
-    "FUN_00ba6310",
-    "FUN_00bbac80",
-    "FUN_00ba64a0",
-    "FUN_00bbaa80",
     "FUN_00ba5fd0",
-    "FUN_00f37690",
     "FUN_00ba8830",
+    "FUN_00ba6120",
+    "FUN_00bbaa80",
+    "FUN_00ba6310",
+    "FUN_00bb2a50",
+    "FUN_00bbac80",
+    "FUN_00de6f20",
     "FUN_00ba7c20",
     "FUN_00c713c0",
-    "FUN_00de6f20"
+    "FUN_00f37690",
+    "FUN_00ba64a0"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -439,19 +542,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "int *"
-    }
-  ],
-  "locals_count": 2,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00b8dde0",
   "namespace": null,
@@ -538,9 +630,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b06/b8dde0_planet_record_store_terrain_key.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b06/00b8dde0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -550,9 +657,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+    "No runtime evidence can distinguish 'write the same value' from 'skip the write' by observing memory alone, so any differential fixture for this function must observe side channels, not state.",
+    "The change check is only observable through a watcher. A differential test must instrument the field or the paired getter to confirm that a redundant write really is suppressed, and to establish why the compiler emitted the check.",
+    "The consume-once behaviour of the paired getter 0x00b8dd60 is a runtime claim about the materialisation service obtained from 0x00f48a80; a write watchpoint on record+0x1A4 across a full planet load is required to confirm it."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -562,15 +682,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

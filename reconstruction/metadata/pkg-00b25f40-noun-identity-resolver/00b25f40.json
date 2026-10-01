@@ -1,0 +1,228 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00B25F40-NOUN-IDENTITY-RESOLVER",
+  "subsystem": "Simulator",
+  "cluster": "b0b2xx-noun-getdata",
+  "queue_id": "",
+  "va": "0x00b25f40",
+  "address": "0x00b25f40",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "noun_identity_resolver_00b25f40",
+  "reconstructed_symbol": "noun_identity_resolver_00b25f40",
+  "target_state": "implemented in worker-owned staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40.hpp",
+    "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40.cpp",
+    "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40.hpp",
+    "source": "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40.cpp",
+    "model_test": "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "callee-cleans (RET 0x4). The persisted ABI record names __thiscall and the derived record names __stdcall; both describe callee cleanup and neither is discriminated by the listing, which never reads or writes ECX. The source declares the callee-cleans convention and claims nothing further.",
+    "receiver": "ECX is never read and never written by the body (the derived ABI record states the same absence: 'ECX is never read in any form, so there is no register receiver'). The word is forwarded unchanged to 0x00b21340, which copies ECX to ESI at 0x00b21346 (`8b f1` MOV ESI,ECX). No receiver type is claimed.",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "address_at_entry": "entry_ESP+0x4",
+        "listing_reads": "0x00b25f84 `3b 44 24 14` CMP EAX,[ESP+0x14]; at that point ESP is entry_ESP-0x10 after the four register pushes, so [ESP+0x14] is exactly entry_ESP+0x4",
+        "width_bytes": 4,
+        "use": "compared whole against the identity probe's 32-bit result; never written, never address-taken"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "termination": "c2 04 00 RET 0x4 at 0x00b25f95 (null path) and 0x00b25f9e (match path)",
+    "saved_registers": [
+      "EBX",
+      "EBP",
+      "ESI",
+      "EDI"
+    ],
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_paths": {
+      "match": "0x00b25f98..0x00b25f9e: POP EDI/ESI/EBP, MOV EAX,EBX, POP EBX, RET 0x4",
+      "exhausted": "0x00b25f8f..0x00b25f95: POP EDI/ESI/EBP, XOR EAX,EAX, POP EBX, RET 0x4"
+    }
+  },
+  "observed_mechanics": [
+    "0x00b25f40..0x00b25f43 PUSH EBX/EBP/ESI/EDI: four saved registers, no frame pointer established.",
+    "0x00b25f44..0x00b25f58 five PUSH immediates, in order 0x018c816a, 0x00b1e500, 0x00b236c0, 0x00d3d420, 0x00b21080. The stack grows down, so the callee reads them as 0x00b21080, 0x00d3d420, 0x00b236c0, 0x00b1e500, 0x018c816a.",
+    "0x00b25f5d CALL 0x00b21340, the only direct transfer out of the body. That callee's terminator is c2 14 00 RET 0x14 at 0x00b21407, so it pops all five words itself.",
+    "0x00b25f62..0x00b25f6d: EDI = result; ESI = [EDI+0x8] - [EDI+0x4]; EDI += 4; SAR ESI,2. The count is computed once, from an arithmetic shift, so a negative span yields a negative count.",
+    "0x00b25f70..0x00b25f74 XOR EBP,EBP / TEST ESI,ESI / JLE: a zero or negative count skips the loop entirely with no probe.",
+    "0x00b25f76 MOV EAX,[EDI] is the LOOP HEAD, inside the loop: the container's +0x4 begin word is re-read on every iteration, so a probe that repoints the container mid-walk changes what the next iteration loads.",
+    "0x00b25f78..0x00b25f82: EBX = [EAX+EBP*4]; EDX = [EBX] (the candidate's function table); EAX = [EDX+0x4c]; ECX = EBX; CALL EAX. One two-level table load, one indirect transfer, receiver is the candidate, no stack argument is pushed.",
+    "0x00b25f84 CMP EAX,[ESP+0x14] compares the full 32-bit probe result against the incoming identity word; no truncation and no sign extension.",
+    "0x00b25f88 JZ takes the match path immediately; otherwise INC EBP / CMP EBP,ESI / JL loops back to 0x00b25f76.",
+    "The body performs no memory store other than the saved-register pops."
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "confidence": "OBSERVED",
+      "statement": "The complete body is 41 instructions spanning 0x00b25f40..0x00b25f9e. objdump and the pack's Ghidra listing agree byte for byte on every instruction and every operand."
+    },
+    {
+      "id": "C2",
+      "confidence": "OBSERVED",
+      "statement": "ECX is never read and never written by this body. It is therefore not established by this body that a hidden receiver exists; the word is simply forwarded unchanged to 0x00b21340."
+    },
+    {
+      "id": "C3",
+      "confidence": "OBSERVED",
+      "statement": "One ordinary stack argument at entry_ESP+0x4, callee-cleaned (RET 0x4 on both exits). Both the persisted __thiscall claim and the derived __stdcall claim agree on the cleanup and neither is discriminated further by the listing."
+    },
+    {
+      "id": "C4",
+      "confidence": "OBSERVED",
+      "statement": "The element count is (end - begin) >> 2 with an arithmetic shift, computed once before the loop from the container's +0x8 and +0x4 words."
+    },
+    {
+      "id": "C5",
+      "confidence": "OBSERVED",
+      "statement": "The container's +0x4 begin word is re-read on every iteration: the load that yields it is the loop head at 0x00b25f76."
+    },
+    {
+      "id": "C6",
+      "confidence": "OBSERVED",
+      "statement": "The single indirect transfer dispatches the candidate's function-table word at displacement 0x4c, with ECX holding the candidate and no ordinary stack argument."
+    },
+    {
+      "id": "C7",
+      "confidence": "OBSERVED",
+      "statement": "The probe's 32-bit result is compared whole against the incoming identity word; the first exact match returns that candidate and stops, and exhaustion returns null."
+    },
+    {
+      "id": "C8",
+      "confidence": "OBSERVED",
+      "statement": "The body performs no memory store other than the saved-register pops, allocates nothing, and transfers no ownership: the returned candidate is borrowed from the container."
+    },
+    {
+      "id": "C9",
+      "confidence": "OBSERVED",
+      "statement": "The body pushes the address 0x018c816a and never dereferences it. The data-reference artifact records one row out of this body to that address, in .reloc, access mode 'other'."
+    },
+    {
+      "id": "C10",
+      "confidence": "OBSERVED",
+      "statement": "A null container is dereferenced at +0x8 and +0x4 with no guard, and a null candidate table or a null 0x4c word reaches the indirect call. No null guard is claimed in either direction."
+    }
+  ],
+  "types": [
+    "NounProjection",
+    "NounObject",
+    "NounObjectVtable",
+    "NounProjectionVector"
+  ],
+  "virtual_dispatch": [
+    {
+      "address": "0x00b25f82",
+      "shape": "VTABLE_SLOT",
+      "slot_offset": "0x4c",
+      "receiver": "ECX = candidate"
+    }
+  ],
+  "global_refs": [],
+  "unresolved_questions": [
+    "What concrete type is the hidden ECX receiver? The body neither reads nor writes ECX, so this package declares NounProjection as an opaque forwarded word and claims no layout, no owner and no SDK identity for it.",
+    "What are the five pushed words 0x00b21080, 0x00d3d420, 0x00b236c0, 0x00b1e500 and the address 0x018c816a? They are code addresses except the last, and nothing in this body says what any of them denotes or how 0x00b21340 uses them.",
+    "What class owns the candidate's function table, and what does the method at +0x4c mean? It is called with the candidate as its only argument and returns a raw 32-bit word that this body compares against its caller's word; no name is claimed.",
+    "Does the container's +0x4/+0x8 pair belong to a known SDK container, and what is its element type beyond 'a pointer to something with a function table at +0x00'? No capacity, size, allocator or owning-class claim is made, because the body reads neither.",
+    "Can the container be mutated between the count being computed and the loop finishing, in a way that makes the frozen count wrong rather than merely re-read? The listing fixes that the count is computed once and the begin word is re-read; whether any caller or the callee does so at runtime is unobserved.",
+    "Is the persisted __thiscall claim or the derived __stdcall claim the right SDK identity? Both name callee cleanup and the listing discriminates neither, and the pack records the conflict as unresolved. This package claims only the cleanup."
+  ],
+  "blockers": [],
+  "runtime_gates": [
+    "The hidden receiver word must be valid for whatever 0x00b21340 does with it; this body does not read it, so nothing here constrains it.",
+    "The container returned by 0x00b21340 must have readable +0x04 and +0x08 words and a span whose arithmetic shift by two yields a usable count.",
+    "Every candidate reached must have a readable function table whose +0x4c word is a callable probe; the body has no guard on any of these.",
+    "The five pushed words and 0x00b21340's own behaviour require original-process observation; nothing about them is established statically here.",
+    "The lifetime of a returned candidate is owned by the container and its callees, not by this body, which performs no AddRef, Release, allocation or store."
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40_model_test.cpp",
+    "coverage": [
+      "receiver forwarded unchanged and the five words forwarded in callee-argument order",
+      "first exact match returns that candidate and stops probing",
+      "probe order and the middle/last match cases",
+      "no match returns null after every candidate is probed",
+      "zero span and negative span both return null with no probe",
+      "UINT32_MAX accepted as an identity, not rejected as a sentinel",
+      "high-bit identity compared as a full word, not sign-extended",
+      "two candidates sharing a low byte are distinguished by the full word",
+      "the container's begin word re-read on every iteration",
+      "no memory store: relationship, political and the published address word all unchanged",
+      "the container's begin word re-read on every iteration while the count is computed once"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-00b25f40-noun-identity-resolver reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40.cpp reconstruction/staging/pkg-00b25f40-noun-identity-resolver/noun_identity_resolver_00b25f40_model_test.cpp",
+    "gate_command": "clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<dir> -c <src>.cpp -o s.o && clang++ -std=c++17 -Wall -Wextra -Werror -m32 -I<dir> -c <test>.cpp -o t.o && ar qc p.a s.o && ranlib p.a && clang++ -Wall -Wextra -Werror -m32 t.o -o p_test p.a && ./p_test",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' <the three files>",
+    "results": {
+      "gate": "passed",
+      "secondary_gate": "passed (g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -m32)",
+      "format": "passed",
+      "runtime": "not run"
+    },
+    "mutation_test": {
+      "in_file_mutants": 12,
+      "in_file_all_refuted": true,
+      "external_perturbations": 20,
+      "external_all_detected": true,
+      "unperturbed_passes": true,
+      "note": "In-file mutants run in forked children so an abort is observed as a refutation. The 20 external perturbations cover a wrong pushed word, an off-by-one published address word, a wrong element shift, an unsigned loop bound, a missing early return, a narrowed compare, a wrong probe receiver, a frozen begin pointer, a store through the published address word, a returned container instead of the candidate, an unforwarded receiver, a weakened header displacement assertion, a perturbed slot offset, a caller-cleanup declaration, a flipped span sign, a dispatch of the neighbouring slot, a zeroed published word, a walk from the end pointer, and both container displacements moved."
+    },
+    "runtime_validation": 0
+  },
+  "evidence": [
+    "ghidra_disassemble_function 0x00b25f40: 41 instructions 0x00b25f40..0x00b25f9e",
+    "ghidra_decompile_function 0x00b25f40: pseudocode resolving the projection lookup and the 0x4c probe",
+    "objdump -d -M intel SPORE/SporeBin/SporeApp.exe --start-address=0x00b25f40 --stop-address=0x00b25fa0",
+    "objdump 0x00b21340..0x00b214b4: the callee reads ECX (8b f1 MOV ESI,ECX) and ends in c2 14 00 RET 0x14",
+    "objdump 0x00b25fb0..0x00b25fd6: a caller loads ECX from ESI and pushes one word before CALL 0x00b25f40",
+    "reconstruction/evidence/00b25f40/evidence.json categories.disassembly, categories.abi_derived (parse 41/41 unparsed 0, dispatch indirect_calls 1, receiver present false), record.dependencies",
+    "knowledgegraph/triage/xrefs-2540f2ca.tsv: one outgoing edge 00b25f40 -> 00b21340 direct-call",
+    "knowledgegraph/triage/datarefs-2540f2ca.tsv: one row 00b25f40 -> 018c816a, access mode other, segment .reloc",
+    "docs/tooling/reconstruction-failure-modes.md sections 1, 2, 5, 6, 7 and 8",
+    "docs/analysis/simulator-root-closure.md (00b25f40 is named there as the 00b25fb0 -> 00b21340 hop; nothing from that document is claimed about this body)"
+  ],
+  "static_vs_runtime_boundary": {
+    "static": "The instruction sequence, the five pushed words and their argument order, the callee, the count arithmetic, the loop shape including the begin-word re-read, the table displacement, the probe receiver, the comparison width, both return paths and the terminator are fixed by the complete 41-instruction listing and confirmed by objdump and by the live decompilation.",
+    "runtime": "No original-process execution, no pointer-validity trace, no probe-behaviour trace, no ownership trace and no differential test was performed.",
+    "claims_not_made": [
+      "the concrete type, owner, lifetime or SDK identity of the hidden receiver",
+      "the meaning of the five pushed words or of the address 0x018c816a",
+      "the identity of the +0x4c method or of the class owning that table",
+      "the container's owning type, its capacity or size word, or its element type beyond what the body reads",
+      "any relationship, political, tribe, civilization or event state transition",
+      "any ownership, AddRef, Release or lifetime guarantee for a returned candidate",
+      "whether the persisted __thiscall or the derived __stdcall claim is the correct SDK name"
+    ]
+  },
+  "validation_status": {
+    "checked_on": "2026-10-01",
+    "command": "python3 tools/openspore.py --json validate 0x00b25f40 --no-write",
+    "source_role": "staging",
+    "results": {
+      "CALLS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "GLOBALS": "PASS",
+      "RETURN SEMANTICS": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "FIELDS/OFFSETS": "NOT_AVAILABLE",
+      "ABI": "FAIL",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "note": "ABI FAIL is evidence-side and not a source defect: the evidence pack's derived ABI record carries an unresolved inferred_vs_persisted conflict on calling_convention (__stdcall inferred against __thiscall persisted), and the validator declines to pick a winner between them. Both agree the callee pops the four-byte stack argument, which is the whole of the convention this package claims and all this package declares. FIELDS/OFFSETS is NOT_AVAILABLE because the machine-derived receiver record is present:false with a null base register and an empty offset set -- a correct reflection of this body, which never addresses a receiver. The source therefore declares no member name and reaches its two container words by pinned displacement, so there is no field claim to ground."
+  }
+}

@@ -2,7 +2,7 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `c51aff10f3b62bb4f6364507a3529b07ebc211ce48a58ec39a9fa6330d9cff56`
+- Content SHA-256: `60e436a626c30923b8e4434cbbfbae625bcef11c0ff3df2404f2fe3f629cf300`
 
 ## abi
 
@@ -56,7 +56,6 @@
     "termination": "RET"
   },
   "abstained_because": [
-    "unparsed_lines_present: 2 line(s) matched no grammar rule",
     "receiver_not_determinable: ecx_read_without_deref",
     "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_read_without_deref), and the convention rule that would apply discriminates on receiver absence"
   ],
@@ -69,7 +68,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "1c42bf207b9b30aafa60593e76c9539dc47d23dabf8542a06660ae83db239885",
+  "content_sha256": "123d91d331e06b7f9cd0ec2bfa4460702be8a75cddb8436db2ade56519ace09c",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -98,7 +97,7 @@
   "inferences": [
     {
       "based_on": [
-        "obs-0070"
+        "obs-0068"
       ],
       "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
       "confidence": "INFERRED",
@@ -133,10 +132,10 @@
         "obs-0036",
         "obs-0038",
         "obs-0042",
-        "obs-0051",
-        "obs-0055",
-        "obs-0059",
-        "obs-0065"
+        "obs-0049",
+        "obs-0053",
+        "obs-0057",
+        "obs-0063"
       ],
       "claim": "the register receiver is undetermined: ecx_read_without_deref",
       "confidence": "UNKNOWN",
@@ -158,10 +157,10 @@
         "obs-0036",
         "obs-0038",
         "obs-0042",
-        "obs-0051",
-        "obs-0055",
-        "obs-0059",
-        "obs-0065"
+        "obs-0049",
+        "obs-0053",
+        "obs-0057",
+        "obs-0063"
       ],
       "claim": "the calling convention is unknown: the receiver is undetermined (ecx_read_without_deref) and every remaining discriminator needs receiver absence",
       "confidence": "UNKNOWN",
@@ -169,7 +168,7 @@
     },
     {
       "based_on": [
-        "obs-0070"
+        "obs-0068"
       ],
       "claim": "entry slot 0 is not written through a pointer",
       "confidence": "APPROXIMATION",
@@ -180,7 +179,7 @@
     },
     {
       "based_on": [
-        "obs-0070"
+        "obs-0068"
       ],
       "claim": "the return value is carried in EAX",
       "confidence": "INFERRED",
@@ -189,7 +188,7 @@
     },
     {
       "based_on": [
-        "obs-0070"
+        "obs-0068"
       ],
       "claim": "the last value written to EAX classifies as integral",
       "confidence": "INFERRED",
@@ -272,7 +271,284 @@
     },
     {
       "at": "0x0055230b",
-    
+      "base": "EBP",
+      "disp": -4,
+      "id": "obs-0008",
+      
+[TRUNCATED]
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "ebp_offset": "EBP+0x8",
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "saved_registers": [
+      "EBP"
+    ],
+    "stack_arguments": [
+      {
+        "ebp_offset": "EBP+0x8",
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [
+    "receiver_not_determinable: ecx_read_without_deref",
+    "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_read_without_deref), and the convention rule that would apply discriminates on receiver absence"
+  ],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate",
+    "side": "caller"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "123d91d331e06b7f9cd0ec2bfa4460702be8a75cddb8436db2ade56519ace09c",
+  "conventions": {
+    "ambiguities": [
+      "receiver_undetermined"
+    ],
+    "calling_convention": null,
+    "candidate_conventions": [
+      "__cdecl",
+      "__thiscall"
+    ],
+    "confidence": "UNKNOWN",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 5,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0068"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0012",
+        "obs-0013",
+        "obs-0014",
+        "obs-0027",
+        "obs-0028",
+        "obs-0031",
+        "obs-0034",
+        "obs-0036",
+        "obs-0038",
+        "obs-0042",
+        "obs-0049",
+        "obs-0053",
+        "obs-0057",
+        "obs-0063"
+      ],
+      "claim": "the register receiver is undetermined: ecx_read_without_deref",
+      "confidence": "UNKNOWN",
+      "id": "R0",
+      "value": {
+        "reason": "ecx_read_without_deref",
+        "register": null
+      }
+    },
+    {
+      "based_on": [
+        "obs-0012",
+        "obs-0013",
+        "obs-0014",
+        "obs-0027",
+        "obs-0028",
+        "obs-0031",
+        "obs-0034",
+        "obs-0036",
+        "obs-0038",
+        "obs-0042",
+        "obs-0049",
+        "obs-0053",
+        "obs-0057",
+        "obs-0063"
+      ],
+      "claim": "the calling convention is unknown: the receiver is undetermined (ecx_read_without_deref) and every remaining discriminator needs receiver absence",
+      "confidence": "UNKNOWN",
+      "id": "C10"
+    },
+    {
+      "based_on": [
+        "obs-0068"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0068"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0068"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00552300",
+      "count": 47,
+      "first_use": 0,
+      "first_write_index": 1,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "reg": "EBP"
+    },
+    {
+      "and_esp": null,
+      "at": "0x00552300",
+      "ebp_is_general_register": true,
+      "fp": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "FRAME",
+      "lea_esp": null,
+      "mov_ebp_esp": true,
+      "mov_ebp_esp_at": 1,
+      "push_ebp": true,
+      "push_ebp_at": 0,
+      "sub": 64
+    },
+    {
+      "at": "0x00552301",
+      "count": 1,
+      "first_use": 1,
+      "first_write_index": 2,
+      "id": "obs-0003",
+      "index": 1,
+      "kind": "REG_READ",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00552301",
+      "definite": true,
+      "id": "obs-0004",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "reg": "EBP",
+      "write_kind": "reg"
+    },
+    {
+      "at": "0x00552303",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 2,
+      "kind": "REG_WRITE",
+      "reg": "ESP",
+      "write_kind": "arith"
+    },
+    {
+      "at": "0x00552306",
+      "id": "obs-0006",
+      "index": 3,
+      "kind": "CALL_DIRECT",
+      "target": "0x0067cb30"
+    },
+    {
+      "at": "0x0055230b",
+      "count": 22,
+      "first_use": 4,
+      "first_write_index": 7,
+      "id": "obs-0007",
+      "index": 4,
+      "kind": "REG_READ",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x0055230b",
+      "base": "EBP",
+      "disp": -4,
+      "id": "obs-0008",
+      
 [TRUNCATED]
 ```
 
@@ -296,13 +572,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nundefined4 FUN_00552300(undefined4 *param_1)\n\n{\n  bool bVar1;\n  char cVar2;\n  int iVar3;\n  int *piVar4;\n  int *local_20;\n  undefined4 local_1c;\n  IGameModeManager *local_18;\n  IGameModeManager local_14;\n  undefined4 local_10;\n  undefined4 local_c;\n  int local_8;\n  \n  local_8 = FUN_0067cb30();\n  if (local_8 == 0) {\n    return 0;\n  }\n  local_14._vftable0 = (IGameModeManager__vftable *)*param_1;\n  local_c = param_1[2];\n  local_10 = 0x30bdee3;\n  local_20 = (int *)0x0;\n  local_18 = App__IGameModeManager__Get();\n  piVar4 = local_20;\n  local_1c = 0;\n  if (local_20 != (int *)0x0) {\n    local_20 = (int *)0x0;\n    (**(code **)(*piVar4 + 4))();\n  }\n  bVar1 = (*local_18->_vftable0->Initialize)(&local_14);\n  if ((bVar1) && (iVar3 = FUN_00421f60(&local_20), iVar3 != 0)) {\n    piVar4 = (int *)FUN_005507a0();\n    if ((piVar4[1] == 0) && (*piVar4 != -1)) {\n      if (local_20 == (int *)0x0) {\n        return 0;\n      }\n      (**(code **)(*local_20 + 4))();\n      return 0;\n    }\n    cVar2 = FUN_00550970();\n    if (cVar2 != '\\0') {\n      if (local_20 != (int *)0x0) {\n        (**(code **)(*local_20 + 4))();\n      }\n      return 1;\n    }\n  }\n  if (local_20 != (int *)0x0) {\n    (**(code **)(*local_20 + 4))();\n  }\n  return 2;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -614,33 +886,33 @@
   "body_span_bytes": 324,
   "body_start": "00552300",
   "callees": [
-    "FUN_0067cb30",
-    "FUN_00421f60",
-    "FUN_00550970",
     "App::IGameModeManager::Get",
-    "FUN_005507a0"
+    "FUN_00550970",
+    "FUN_00421f60",
+    "FUN_005507a0",
+    "FUN_0067cb30"
   ],
   "callers": [
-    "FUN_00f259b0",
-    "FUN_0058a350",
-    "FUN_00ed7060",
-    "FUN_00f2c330",
-    "FUN_0058cee0",
-    "FUN_0066daf0",
     "FUN_0064b4b0",
-    "FUN_00610d40",
-    "FUN_00dfda50",
-    "FUN_00641490",
-    "FUN_00646370",
-    "FUN_00f3b950",
-    "FUN_00ef6700",
-    "FUN_005dc800",
-    "Editors::cEditor::HandleMessage",
-    "Editor_Save",
-    "FUN_0065a070",
     "FUN_00f2ac30",
+    "Editor_Save",
+    "FUN_00dd15a0",
+    "FUN_00641490",
+    "FUN_0058a350",
+    "FUN_00610d40",
+    "FUN_00f259b0",
+    "FUN_005dc800",
+    "FUN_00f3b950",
+    "FUN_0065a070",
+    "FUN_00ed7060",
     "FUN_00f27990",
-    "FUN_00dd15a0"
+    "FUN_00dfda50",
+    "FUN_0066daf0",
+    "FUN_00ef6700",
+    "FUN_0058cee0",
+    "Editors::cEditor::HandleMessage",
+    "FUN_00646370",
+    "FUN_00f2c330"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -653,9 +925,9 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "bVar1",
-      "storage": "register:00000000:1",
-      "type": "bool"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_c",
@@ -663,34 +935,19 @@
       "type": "undefined4"
     },
     {
-      "name": "cVar2",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar3",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "local_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "IGameModeManager"
-    },
-    {
       "name": "local_10",
       "storage": "Stack[-0x10]:4",
       "type": "undefined4"
     },
     {
-      "name": "piVar4",
-      "storage": "register:00000000:4",
-      "type": "int *"
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "undefined4"
     },
     {
       "name": "local_1c",
@@ -698,22 +955,52 @@
       "type": "undefined4"
     },
     {
-      "name": "local_18",
-      "storage": "Stack[-0x18]:4",
-      "type": "IGameModeManager *"
-    },
-    {
       "name": "local_20",
       "storage": "Stack[-0x20]:4",
-      "type": "int *"
+      "type": "undefined4"
     },
     {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "undefined4 *"
+      "name": "local_28",
+      "storage": "Stack[-0x28]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_2c",
+      "storage": "Stack[-0x2c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_30",
+      "storage": "Stack[-0x30]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_34",
+      "storage": "Stack[-0x34]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_38",
+      "storage": "Stack[-0x38]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_3c",
+      "storage": "Stack[-0x3c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_40",
+      "storage": "Stack[-0x40]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_44",
+      "storage": "Stack[-0x44]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 12,
+  "locals_count": 15,
   "mode": "live",
   "name": "FUN_00552300",
   "namespace": null,

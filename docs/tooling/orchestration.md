@@ -2,14 +2,15 @@
 
 `orchestrate` is the claim-aware half of the tooling layer. `frontier`, `swarm`, `evidence`, `context` and `validate` answer questions about targets. The orchestrator answers the question "who is working on this target right now, and what happens to it when they finish". It owns no analysis of its own: every fact it hands a worker was already produced by one of the read-side tools, and every state transition it performs goes through the existing canonical queue.
 
-Read this alongside [architecture.md](architecture.md) (module boundaries), [concurrency.md](concurrency.md) (who may write what), [commands.md](commands.md) (the CLI surface), [evidence-model.md](evidence-model.md) (what a worker is shown) and [frontier-scoring.md](frontier-scoring.md) (how a target earns priority). The queue stage machine this layer implements is specified separately in [../analysis/ORCHESTRATOR.md](../analysis/ORCHESTRATOR.md).
+Read this alongside [architecture.md](architecture.md) (module boundaries), [concurrency.md](concurrency.md) (who may write what), [commands.md](commands.md) (the CLI surface), [evidence-model.md](evidence-model.md) (what a worker is shown), [frontier-scoring.md](frontier-scoring.md) (how a target earns priority) and [validation-dimensions.md](validation-dimensions.md) (what every validation status means and what evidence a positive verdict requires). The queue stage machine this layer implements is specified separately in [../analysis/ORCHESTRATOR.md](../analysis/ORCHESTRATOR.md).
 
 ## What this is
 
 | Layer | Commands / modules | Owns |
 |---|---|---|
 | Planning, evidence, validation | `openspore frontier`, `swarm`, `evidence`, `context`, `validate`, `recover`, `integrate` | target ranking, evidence packs, context briefs, validator verdicts |
-| Worker lifecycle | `openspore orchestrate`, `claim`, `release`, `worker-template`; `orchestrate.py` | claim, brief, launch, ingest, validate, reconcile, checkpoint, release |
+| Worker lifecycle | `openspore orchestrate`, `claim`, `release`, `worker-template`; `orchestrate.py` | claim, brief, run the worker, ingest, validate, reconcile, checkpoint, release |
+| Worker transport | `orchestrate session-plan` / `session-task` / `session-run`; `session_result_worker` | the child-session brief and the child's final message. The `opencode run` subprocess path is the escape hatch for an external worker |
 | Ownership and leases | `queue_op` over `investigations` in `knowledgegraph/spore.db` | `status`, `implementer_id`, `stage`, `attempts`, `checkpoint`, `block_reason` |
 | Knowledge source of truth | `reconstruction_knowledge` / `spore.db` | the canonical projection, xrefs, node/edge graph |
 
@@ -20,6 +21,8 @@ Three things this layer deliberately does not have:
 - **No second manifest.** Candidate membership comes from the canonical triage queue and the generated index, as it does for `frontier`.
 
 `plan()` writes nothing. It opens the database through a read-only URI and builds the projection ephemerally. `orchestrate plan` is safe to run against a database other agents are holding leases in.
+
+So is the child-session path. `session_plan` and `session_task` are reads that claim nothing, and `session_result_worker` is a transport that writes nothing. Reply files live wherever the orchestrating session put them, outside this repository's state, and they are the orchestrating session's to write and delete — this module only reads them, and only once per target.
 
 ## The pipeline
 
@@ -38,8 +41,9 @@ collect inputs             collect_inputs()  read-only   evidence + context + va
   ↓
 build the briefing         brief()           read-only   reuses the collected inputs
   ↓
-run the worker             launch()          write       child process, cwd-scoped
-  ↓
+run the worker             worker(package)   write       child session, or a child process
+  ↓                                                   (the subprocess path is the
+  ↓                                                    documented escape hatch)
 parse the reply            ingest()          read-only   strict, never guesses
   ↓
 validate the candidate     validate()        read-only
@@ -53,7 +57,84 @@ close or release           close()/release() write       queue_op close / releas
 frontier refresh           next plan()       read-only   nothing is cached between runs
 ```
 
-Two properties fall out of this order. The evidence a worker produced is written before the lease ends, so a crash between the two leaves an `active` row whose `checkpoint` explains itself. And the lease is only ever ended by an explicit `close` or `release`, so a target is never silently returned to the pool by an exception.
+Two properties fall out of this order. The evidence a worker produced is written before the lease ends, so a crash between the two leaves an `active` row whose `checkpoint` explains itself. And the lease is only ever ended by an explicit `close` or `release`, so a target is never silently returned to the pool by an exception: an exception after a successful claim takes the same checkpoint-then-release path, and records itself as an `error` event and as the row's `block_reason`.
+
+The `worker(package)` line is a single contract with two transports behind it, and that is the whole design. A worker is a callable that takes the briefing and returns `(raw, detail)`. `session_result_worker` is backed by a child session's final message; `opencode_worker` and `command_line` are backed by a child process's stdout. `process_target` cannot tell them apart, which is exactly the point: a child session gets no leniency the subprocess path does not already have, and a change to the disposition loop cannot be right for one transport and wrong for the other.
+
+## Worker transports
+
+A reconstruction worker is a **native child session of the orchestrating agent session**. The orchestrating session — not this codebase — spawns the children and hands their replies back. This module is the machine-readable half of that arrangement:
+
+| Function | Answers | Writes |
+|---|---|---|
+| `session_plan(root, limit, targets, live, include_deferred)` | which targets should child sessions work on, and what static evidence each one has | nothing |
+| `session_task(root, entry, implementer_id, live, write, attempt, previous)` | everything one child session needs for one target, in one document | nothing |
+| `session_result_worker(replies, reply_dir, default_raw)` | given a child's final message, hand back the bytes the lifecycle will adjudicate | nothing |
+
+Neither `session_plan` nor `session_task` claims. **A claim happens in `process_target`, through `queue.claim`, and that is where the compare-and-set lives.** A plan that took a lease would be holding work nobody is about to do, and two orchestrating sessions that read the same plan would both believe they owned the same target until the CAS told one of them otherwise. Read the plan, spawn the children, run the batch: the claim happens in the middle of that and nowhere else.
+
+### The child's final message is the transport
+
+There is no stdout scraping, no log file, and no guessing which block of a reply is the answer. The child's FINAL message is handed back verbatim and is the authoritative transport. The rules a child session is given (`session_task["reply_format"]`, and the same wording in the briefing's `WORKER_RULES`):
+
+- end the FINAL message with the result object inside a single fenced ` ```json ` block, and put **nothing** after that block — the closing fence is the last thing in the message;
+- emit that result object **exactly once**. Two result objects are refused as ambiguous, never merged and never picked between;
+- the parser reads the **final** text block when the reply carries several, and the whole reply when it carries one. An earlier block is never read as a fallback: a worker that answers and then keeps talking has produced a superseded answer, and recording that as the conclusion of the run is the failure this restriction exists to prevent;
+- a reply with **no** result object is discarded and retried. An unfinished investigation is worth nothing; a `PARTIAL` result that names its open questions is worth everything.
+
+The reply text goes into `ingest` → `parse_result` **unchanged**. There is no pre-parsing and no per-field leniency in the adapter, because a child session is not more trusted than a subprocess worker and the only thing that should decide whether a reply is a result is the one strict contract.
+
+### Reply files
+
+`session_result_worker(reply_dir=...)` reads one file per target, named `<va8>.txt` — the bare 8-hex queue spelling of the VA, in the directory the orchestrating session chose. The directory is read **lazily at call time**, not when the adapter is built, which is the normal case: the plan is built first and the children answer afterwards, so a reply routinely lands after the plan that named the target.
+
+`replies=` takes a mapping of VA → reply text instead, for a caller that already has the replies in hand, and `default_raw=` supplies a fallback for either. The naming convention is spelled out in the tests rather than generated from the adapter, because it is the contract between an orchestrating session and this transport.
+
+### A retry is a new child session
+
+A reply is **popped** once it is consumed. A second call for the same VA reports `source: "absent"` and `exhausted: True` rather than silently replaying the same bytes, and that is what keeps the in-process retry loop honest: `process_target`'s loop asks the same worker again, so a retry must be a *new child session*, not a re-read of the last one. Replaying a reply would re-adjudicate one answer as if it were two — spending the retry budget on nothing, and letting a target that cannot improve close on its first answer.
+
+`absent` is the intended "this transport has no more replies" signal. It returns `(None, ...)`, so `parse_result(None)` produces the existing `worker produced no output` refusal: counted, bounded, fail-closed, and byte-identical to what a subprocess worker that printed nothing produces. Producing a *further* reply is not the adapter's job — the orchestrating session spawns another child session and writes another `<va8>.txt`.
+
+### The `detail` dict
+
+`session_result_worker` returns the same detail shape `launch()` does, so `process_target` reads it with the same code:
+
+```json
+{
+  "returncode": 0,
+  "timed_out": false,
+  "failure": null,
+  "channel": "native-session",
+  "transport": "child_session",
+  "source": "reply_map",
+  "exhausted": false
+}
+```
+
+`returncode: 0` and `timed_out: false` because a child session that answered did not crash, and `failure: null` for the same reason — a child session has no exit status, and inventing one would file a real answer as a launch failure. `source` is `reply_map`, `reply_dir` or `absent`, and it is what distinguishes "the child wrote no file" from "the child wrote an empty one" when the ingest event says `worker produced no output`.
+
+### `session_plan` reports evidence, never a verdict
+
+Per target, `session_plan` reports `va`, `queue_id`, `name`, `package`, `subsystem`, `cluster`, `role`, `reason`, `dispatchable`, `priority`/`score`, `open_callees`, `claim_state`, `scc`, `evidence_level` and `expected_static_evidence`. The scheduling facts are `plan()`'s own; the selection is `plan()`'s own `dispatchable`/`deferred`/`excluded` split, not a second one.
+
+`expected_static_evidence` is three facts, and they are the three the validator's checks are decided by:
+
+| Field | Meaning |
+|---|---|
+| `evidence_pack.state` / `.verified` | the persisted pack exists **and** reproduces its own `content_sha256` (`verified`), or which of `absent` / `unreadable` / `schema_mismatch` / `target_mismatch` / `digest_mismatch` it is |
+| `listing.available` / `.instructions` | a complete, untruncated machine listing exists. A `{"truncated": true}` preview is **not** a listing, so a partial body can never be read as an oracle |
+| `source_span.artifact` / `.role` / `.resolved` | the source artifact resolves under `src/` or `reconstruction/staging/`, and a function span for this target resolves inside it |
+
+No verdict is derived and none is implied. A target with all three available is not thereby validatable: whether the checks then *agree* is a question for `validate`, against a candidate that does not exist yet. Predicting a verdict from evidence availability would be guessing about a future artefact, and a wrong guess would be indistinguishable from a real result. Each fact is read through the validator's own resolver, so a plan can never disagree with the verdict it precedes about what evidence is there.
+
+The document is deterministic to the same standard as `plan()`: no clock, no absolute path except the `database` it was computed against, no dependence on dict iteration order. Two calls against the same root and the same queue state are byte-identical.
+
+`counts` describes *this selection*, so `deferred` is `0` at the default: `plan()` drops a frontier-deferred target entirely when called with `include_deferred=False`, and this module does not count a target it did not return. Pass `--include-deferred` to schedule the continuation of the batch as well, which is what makes a later wave visible in the plan.
+
+### The subprocess path is the escape hatch
+
+`launch()`, `agent_argv()`, `opencode_worker()`, `command_line()`, `subprocess_worker()`, `opencode_route()` and `worker_adapter()` are unchanged and remain the documented route for an **external** worker. Use them when the worker is a command you spawn — a fixed argv for a worker you did not write, or an `opencode run` invocation on a machine where spawning a child session is not an option. Everything said about the two validation axes, the result contract, the bounds and the compare-and-set applies to it unchanged, and it is the path every worker-channel test still exercises.
 
 ## Planning and the dependency scheduler
 
@@ -361,7 +442,7 @@ Every report also carries `static.evidence_basis`, which states how many of the 
 
 `review` releases to `blocked`, never to `queued`, and never closes. A target is not completed on a warning.
 
-`NOT_AVAILABLE` on a check is an absence of evidence, never evidence of failure, and it is neutral: it neither passes nor poisons the aggregate. A check reaches `PASS` only where an oracle **independent of the reconstruction** exists and agreement is provable — today that is `CALLS` against the Ghidra xref export, and `CONSTANTS` / `VIRTUAL DISPATCH` against a collected disassembly. `GLOBALS`, `FIELDS/OFFSETS` and `CONTROL FLOW` have no `PASS` branch at all, because the repository holds no independent global-reference or struct-layout evidence and the bridge never populates the `dispatch` field.
+`NOT_AVAILABLE` on a check is an absence of evidence and never evidence of failure, but it is **not** neutral: a static `PASS` requires all eight structural checks to have been adjudicated, so a single `NOT_AVAILABLE` anywhere holds the aggregate at `NOT_AVAILABLE`. It used to be neutral, which let a `PASS` rest on one evaluated check while seven went unjudged and nothing in the verdict said so. A check reaches `PASS` only where a complete, bounded machine oracle exists and the reconstruction either makes no claim in that dimension or every claim it makes is grounded in that oracle — agreement, or an absence the oracle itself evidences. The per-check oracles, the full status truth table, the rule and its converse, and what a static `PASS` does and does not license are specified in [validation-dimensions.md](validation-dimensions.md).
 
 ### Bounds
 
@@ -390,6 +471,20 @@ The checkpoint that records `evidence_refs`, the outcome, the verdict, the faile
 
 The same ordering appears on the malformed path, where the checkpoint records the failure reason, the raw reply digest, and `next_action: respawn_worker` before the release to `queued`.
 
+### Launch failures are not reply failures
+
+`launch()` reports three failure classes, and `process_target()` decides each one rather than passing them all to the reply parser:
+
+| `launch_detail["failure"]` | meaning | disposition |
+|---|---|---|
+| `timeout` | the child was killed by the timeout | the malformed path, with `code: worker_timeout`. The partial reply is discarded, never half-parsed |
+| `spawn_failed` | the child never ran; the `OSError` is in `stderr` | its own branch: `checkpoint(stage=LAUNCH)` naming the command, then `release(to=blocked, reason=escalated:worker_spawn_failed)`. `_malformed` is **not** bumped, and there is no `ingest` event, because there was no reply to be malformed. Filing this as `malformed_worker_output` would blame the model for an operator's typo and spend a budget no reply can influence |
+| `nonzero_exit` | the child ran and exited nonzero | **the reply is still parsed.** The document is the deliverable; the exit status only describes the process that printed it. A worker that answered correctly and then crashed has still answered, and a static validator `PASS` is the only thing that can complete the target either way. The exit is recorded — on the `launch` event and as `launch_failure` in the checkpoint — and never acted on |
+
+`nonzero_exit` and a malformed reply are therefore two different facts about the same launch, and the record keeps them apart: the launch event carries `failure`, the ingest event carries the contract verdict. Neither is ever converted into the other, and neither is ever laundered into a validation verdict.
+
+A child session has no exit status, so `session_result_worker` reports `returncode: 0`, `timed_out: false` and `failure: null` for any reply it has, and none of the three classes above can arise on that transport. That is deliberate: a child session that answered did not crash, and inventing a failure for it would file a real answer as a launch failure. The one thing that *can* go wrong — no reply at all — is reported as `source: "absent"` on the launch event and reaches `parse_result(None)`, which is the malformed path with the existing `worker produced no output` refusal.
+
 ## Failure recovery
 
 | Failure | State transition | Ops issued | Recovery |
@@ -397,6 +492,9 @@ The same ordering appears on the malformed path, where the checkpoint records th
 | Worker crash, lease still fresh | stays `active` | none | wait for the TTL. The target is `claimed` in the plan and will not be dispatched |
 | Worker crash, lease stale | `active` → `active` under a new owner | `claim(allow_stale=true)` | the displaced holder is recorded in `checkpoint.lease_history` with its stage and TTL. Re-brief from the new owner's checkpoint |
 | Malformed worker reply | `active` → checkpoint → `queued` | `checkpoint(stage=REPLACE)`, `release(to=queued)` | `_malformed` is bumped. Two in a row stops the loop with `escalated:malformed_worker_output` |
+| Worker command does not exist / cannot be executed | `active` → checkpoint → `blocked` | `checkpoint(stage=LAUNCH)`, `release(to=blocked, reason=escalated:worker_spawn_failed)` | the dominant cause is a wrong `--worker`, so the row is parked rather than requeued. No `ingest` event and no `_malformed` bump, because there was no reply. `unblock` it by hand after fixing the command |
+| Worker exits nonzero after a valid reply | unchanged; the launch event records `failure: nonzero_exit` and the checkpoint records `launch_failure` | none beyond the normal `checkpoint(stage=VALIDATE)` | the reply is adjudicated normally. The exit status is metadata; a nonzero exit is never a verdict and never a malformed reply |
+| An exception after a successful claim (worker callable, `validate`, a queue write) | `active` → checkpoint → `blocked` | `checkpoint(next_action=human_review, stop_reason=orchestrator_exception)`, `release(to=blocked, reason=escalated:<exception>)` | the record is `status: error` with the exception's `code` and `message`, and the events are kept. The lease is released only by this call (`lease_open`), and `queue.release` independently refuses a non-owner, so a displaced worker can never release the new owner's lease. If the release write itself is broken, the failure is recorded as `queue_write_failed` and `lease_released: false` rather than raised — the lease then falls to the TTL and `reap` |
 | Worker times out | same as malformed, with `code: worker_timeout` | same | the timeout is enforced by `launch()`, and the reply is discarded rather than half-parsed |
 | Validator `FAIL` | `active` → checkpoint → `queued` | `checkpoint(stage=VALIDATE)`, `release(to=queued)` | the next iteration re-claims with the same worker identity, so the retry is a continuation of the same lease. Three `FAIL`s stop the loop |
 | Validator `WARN` | `active` → checkpoint → `blocked` | `checkpoint(stage=VALIDATE)`, `release(to=blocked, reason=validation_warn)` | human review. No attempt is burned and the row is never closed on a warning |
@@ -526,25 +624,103 @@ python3 tools/openspore.py orchestrate run --limit 20 \
   --timeout 3600
 ```
 
-`--worker` is split with `shlex`, so it is a command plus its own flags; the worker is spawned once per target with no shell in between. The run output is `$schema: openspore-orchestration-run-1` with `status`, the full `plan` it executed, a `results` array sorted by VA, and a `summary`:
+`--worker` is split with `shlex`, so it is a command plus its own flags; the worker is spawned once per target with no shell in between. **The command is not necessarily the one that runs**: a `--worker` that names `opencode` without an explicit `--format` is routed through `orchestrate.opencode_worker`, which builds its argv with `agent_argv` and forces `--format json`. See [Worker channels](#worker-channels) below for the full decision table, the `--worker-channel` / `OPENSPORE_WORKER_CHANNEL` override, and why the structured channel is the contract rather than a preference.
+
+The run output is `$schema: openspore-orchestration-run-1` with `status`, the full `plan` it executed, a `results` array sorted by VA, and a `summary`:
 
 | `summary` key | Meaning |
 |---|---|
 | `targets` | results produced |
 | `complete` | closed with `disposition: done` |
 | `review_required` | released to `blocked` for a human |
-| `blocked` | stopped on a bound, or the worker returned `BLOCKED` |
+| `blocked` | stopped on a bound, the worker returned `BLOCKED`, or the worker command could not be executed |
 | `skipped` | the claim was lost to another orchestrator |
 | `partial` | released to `queued` after a malformed or timed-out reply |
-| `error` | an exception escaped `process_target` |
+| `error` | an exception escaped the lifecycle; the lease was released, or the record says the release failed |
+| `static_validated` | closed on a **STATIC** `PASS` of a terminal outcome — the same condition `reconcile` completes on, read back off the record |
+| `runtime_validated` | the **RUNTIME** axis is `PASS`, and nothing else. See below |
+| `runtime_gated` | the RUNTIME axis is `GATED`: a gate is open, nothing was attempted, nothing failed |
 | `waves` | waves actually dispatched |
+| `worker_channel` | `native-session`, `opencode-jsonl`, `argv-passthrough` or `custom` — which reply channel this run used |
+| `worker_route` | the routing decision and its reason, or `null` for a worker the CLI did not build |
+| `worker_transport` | the transport behind `worker_channel`, where the worker names one (`child_session` for a child session) |
 | `seconds`, `implementer_id`, `errors` | run metadata and any per-unit thread failures |
 
-Each entry in `results` carries `va`, `queue_id`, `status`, `code`, `outcome`, `validation`, `attempts`, and an ordered `events` list recording every `claim`, `brief`, `launch`, `ingest`, `validate`, `checkpoint`, `close` and `release` the run performed on that target. The event list is the audit trail; read it first when a run surprises you.
+Each entry in `results` carries `va`, `queue_id`, `status`, `code`, `outcome`, `validation`, `validation_dimension`, `static_validation`, `runtime_status`, `runtime`, `attempts`, and an ordered `events` list recording every `claim`, `brief`, `launch`, `ingest`, `validate`, `checkpoint`, `close`, `release` and `error` the run performed on that target. The event list is the audit trail; read it first when a run surprises you. A `launch` event carries `returncode`, `timed_out`, `failure` (`timeout`, `spawn_failed`, `nonzero_exit` or `null`), `channel`, `transport` and `source`, so a run can prove which transport answered, where its bytes came from, and how the process exited.
 
-`--dry-run` returns the plan with `dry_run: true`, an empty `results` array, and `summary.planned` set. It takes no lease, so it is the safe way to see what a run would dispatch.
+`--dry-run` returns the plan with `dry_run: true`, an empty `results` array, and `summary.planned` set. It takes no lease, so it is the safe way to see what a run would dispatch. In the human rendering a dry run prints one line — `dry_run: planned=N (no lease was taken)` — because it has no counters, no channel and no lease, and the full document was saying nothing an operator could not already get from `--json`.
 
 Two flags matter for safety. `--allow-stale` is the only way to take a lease from a holder who has gone away, and it is per run, so use it deliberately. `--worker-id` is the lease holder identity; the orchestrator appends the scheduling unit to it, so one run holds `orch-main/scc-0064` rather than `orch-main` for a coordinated unit.
+
+### The two axes in the summary
+
+`complete` is a *closure*: a queue row was closed with `disposition: done`. It is a static claim — the reconstruction was accepted against the binary — and it is not a claim about the original process. So the summary counts the axes apart:
+
+| Counter | Reads | Value today |
+|---|---|---|
+| `static_validated` | `status == "complete" and validation_dimension == "STATIC" and validation == "PASS"` | the number of accepted reconstructions |
+| `runtime_validated` | `runtime.status == "PASS"` on the record — **and nothing else** | `0` |
+| `runtime_gated` | `runtime.status == "GATED"` on the record | the number of open gates |
+
+`runtime_validated` is `0` and that is the correct, honest answer, not a missing one. `RUNTIME: PASS` is only reachable when the canonical record reports `runtime.validated > 0`, i.e. when the original process was actually observed — and nothing in this repository has run it. **A static `PASS` must never reach this counter.** That is precisely the conflation `validation_dimension: "STATIC"` exists to prevent, and letting a static acceptance masquerade as an observation of the original process would be the single worst lie this summary could tell. `runtime_gated` is the honest resting state: a gate is open, nothing was attempted, nothing failed. See [validation-dimensions.md](validation-dimensions.md) for what each axis means.
+
+Every terminal record carries both axes as a named pair, `static_validation` and `runtime_status`, and the runtime axis whole under `runtime` (`status`, `validated`, `gated`, `gates`). `validated` is there so a reader can check the axis was not asserted rather than take it on trust: a `RUNTIME: PASS` is only reachable when it is positive. The full validation report is deliberately **not** attached to a record — a run over twenty targets would carry twenty complete reports, and these are the numbers a caller reads off them. `validation` alone would be the static verdict under a name that reads like both.
+
+### `orchestrate session-plan`, `session-task`, `session-run`
+
+The three verbs an orchestrating agent session drives a batch with. Each is documented in [Worker transports](#worker-transports); this is the argv-free call sequence.
+
+```bash
+# 1. Which targets, and what evidence each one has. Claims nothing.
+python3 tools/openspore.py orchestrate session-plan --limit 8 --json --out /tmp/plan.json
+
+# 2. One document per target, for one child session each. Claims nothing.
+python3 tools/openspore.py orchestrate session-task 0x006a2a80 \
+  --worker-id orch-main --json --out /tmp/task-006a2a80.json
+
+# 3. (outside this repo) spawn one child session per target, hand each the
+#    task document, and write each child's FINAL message verbatim to
+#    <replies>/<va8>.txt
+
+# 4. The whole lifecycle over those replies. This is where the claim happens.
+python3 tools/openspore.py orchestrate session-run \
+  --replies /tmp/openspore-replies --worker-id orch-main --limit 8 --json
+```
+
+`session-plan` flags: `--limit N`, `--va ...` (repeatable, narrows the batch), `--include-deferred` (also schedule frontier-deferred targets, which is what makes a later wave visible), `--format`, `--out`.
+`session-task` flags: `--worker-id` (required — there is no honest default lease identity), `--attempt N`, `--format`, `--out`. The human rendering prints the briefing digest and the reply format, which is the whole point of the verb.
+`session-run` flags: `--replies DIR` (required), `--worker-id` (required), `--limit N`, `--va ...`, `--max-workers N`, `--timeout N`, `--ttl N`, `--allow-stale`, `--dry-run`, `--out`.
+
+Two envelope details worth knowing. `session-run` reports the **batch** outcome at the top level, because `_envelope` treats a top-level `status` of `error`/`FAIL`/`blocked` as a failed command and the lifecycle sets none of those words: a target that ended `blocked` is a per-target disposition inside `results`, and the run itself succeeded. A run where some targets were `error` or `partial` — the batch was not fully adjudicated — is reported `ok: false` with `code: batch_not_adjudicated`; a run that dispatched nothing is `no_dispatchable_targets`; and a batch that closed targets and *also* left some blocked gets `ok: true` plus a `batch_ok_with_blocked_targets` warning. The per-target statuses are never rewritten.
+
+### Worker channels
+
+The subprocess channels. This is the escape hatch for a worker that is a command you spawn rather than a child session of the orchestrating session; see [Worker transports](#worker-transports) for the primary path.
+
+`command_line(targets, worker_command, ...)` runs the operator's argv **verbatim**: whatever `--worker` says is what is spawned, briefing on stdin, reply on stdout. That is the documented escape hatch for an arbitrary worker and it is deliberately dumb.
+
+`opencode_worker(...)` builds its argv with `agent_argv(briefing)`, so the documented launch contract is what actually runs:
+
+```text
+opencode run "<briefing digest>" --print-logs --format json
+```
+
+The digest is `agent_argv`'s Markdown rendering, placed immediately after `run` so it is a positional and not swallowed by `--file`; the full briefing JSON still travels on stdin, which remains the authoritative data channel. `--model`, `--agent` and `--print-logs` pass through, and `attach=path` additionally hands the briefing to `--file` for an agent that ignores stdin.
+
+Why the channel is not a preference: with `--format default`, OpenCode writes *every* assistant text block to stdout joined by newlines. A real reconstruction narrates, calls a tool, then answers, so the blob contains the preamble and the answer together and `json.loads` of it dies on the first character. With `--format json`, stdout is a newline-delimited event stream in which text, tool calls and tool results are separate typed events, so the result block is separable from the narration by structure instead of by guessing. This was the origin of the observed `malformed_worker_output` rate: production went through `command_line`, and the documented invocation carried no `--format`.
+
+`orchestrate.worker_adapter(worker_argv, ...)` applies the routing and returns the adapter with `channel` and `route` attached:
+
+| `argv[0]` basename | explicit `--format` | adapter | `summary.worker_channel` |
+|---|---|---|---|
+| `opencode`, `opencode.exe`, any path | no | `opencode_worker`, `--format json` forced | `opencode-jsonl` |
+| `opencode` | yes | `command_line`, verbatim | `argv-passthrough` |
+| anything else | no | `command_line`, verbatim | `argv-passthrough` |
+| anything else | yes | `command_line`, verbatim | `argv-passthrough` |
+
+The operator's own flags survive the routing: everything after the `run` subcommand and before the first flag is their prompt (replaced by the briefing digest), and the flags after it are forwarded verbatim, minus `--print-logs` and `--format`, which `agent_argv` owns. So `--worker "opencode run --agent build"` runs as `opencode run <digest> --print-logs --format json --agent build`.
+
+`mode` moves the whole table: `argv` pins the last three rows for every command, and `jsonl` demands the first row for every command — which is an error (`worker_channel_unsupported`) for a command that cannot provide the channel, because a silent downgrade there is exactly the failure this routing exists to prevent. The CLI exposes it as `--worker-channel` and `OPENSPORE_WORKER_CHANNEL`, and an unrecognised value is an error rather than a silent fallback.
 
 ### `orchestrate reap`
 
@@ -689,20 +865,28 @@ The recorded `va` is `0x008db310` and the recorded `queue_id` is `fun:008db310:R
 
 ### Wiring an agent launcher: the two gates
 
-`orchestrate.agent_argv(briefing, command="opencode", model=None)` is the reference launcher shape. It is a pure function, which is what makes the launch path testable without asserting anything about model output. Two gates:
+`orchestrate.agent_argv(briefing, command="opencode", model=None, output_format="json", attach=None, agent=None)` is the reference launcher shape. It is a pure function, which is what makes the launch path testable without asserting anything about model output. It is also the *only* definition of the launch contract: `opencode_worker` builds on it rather than assembling an argv of its own, so the documented `--format json` and the argv production runs cannot drift apart. Two gates:
 
 1. **argv is always a list, never a shell string.** `launch()` calls `subprocess.run(argv, ..., check=False)` with no `shell=True`. If you build a command line, split it once with `shlex.split` at the boundary and pass the list down. Nothing downstream is allowed to re-join it. A worker id, a package name or a briefing field that reaches a command line is a shell-injection risk the moment somebody re-joins it.
 
 2. **The briefing travels as data, not as a prompt fragment.** The authoritative channel is stdin: `launch()` writes `canonical_json(briefing)` to the child. `agent_argv()` additionally appends a human-readable Markdown rendering of the same package as the final argv element, and the rendering is deliberately not the only channel. Because that rendering is inlined into argv, it is subject to the single-argument length limit; if a briefing can exceed it, have the worker read the stdin JSON, or write the briefing to a file and pass the path as a flag. Do not truncate the data channel to fit a convenience one.
 
-Wire it like this:
+Wire it like this, for a real agent:
 
 ```python
 from tools.reconstruction_tooling import orchestrate as orch
 
+# production opencode: the deterministic JSONL channel
+worker = orch.opencode_worker(command="opencode", model=None, agent=None,
+                              cwd=ROOT, timeout=3600)
+```
+
+or, when you must pin the argv yourself, for an arbitrary worker:
+
+```python
 worker = orch.command_line(
     None,                                   # unused; the argv is fixed per run
-    ["opencode", "run", "--print-logs"],    # argv list, never a string
+    ["python3", "my_worker.py"],            # argv list, never a string
     implementer_id, cwd=ROOT, timeout=3600)
 ```
 
@@ -713,6 +897,8 @@ worker = orch.subprocess_worker(
     argv_builder=lambda package: orch.agent_argv(package, command="opencode"),
     cwd=ROOT, timeout=3600)
 ```
+
+All three expose an optional `configure_launch(cwd=, env=, timeout=)` hook and a `channel` attribute. `process_target` uses the hook to forward its per-run `cwd` / `worker_env` / `worker_timeout`, so a run's launch parameters actually reach the child instead of being accepted and dropped; an explicit value wins over the adapter's own default, and a caller that passes nothing leaves the adapter's default alone. A worker callable without the hook keeps whatever it was built with.
 
 In-process workers are also supported and are the fastest way to test a lifecycle: `orch.callable_worker(fn)` wraps any `package -> dict` function, and `orch.run(worker=..., dry_run=True)` shows you the plan without taking a lease.
 
@@ -725,4 +911,5 @@ In-process workers are also supported and are the fastest way to test a lifecycl
 - **The frontier is repository-derived.** `frontier`, and therefore `plan()`, reads the manifest, the triage queue, the xref export and the SQLite claims. A concurrent agent editing the manifest or the triage queue changes the plan between two calls, so a plan you printed five minutes ago is not the plan you will execute. Re-read it, and treat a `queue_id` from an old plan as a hint rather than a guarantee. The plan does re-verify the row before claiming, so a stale id fails cleanly rather than corrupting a row.
 - **`orchestrate brief` can insert a queue row.** Use it on a target that is already in the queue, or via `swarm` / `plan` output, if you want a strictly read-only inspection.
 - **Terminal rows are permanent.** `done` and `dropped` are never deleted and never rewritten. They are the dedup memory that stops a function being reconstructed twice for the same build. A target closed by mistake is corrected with an explicit new row under a new `binary_sha256`, not by editing the closed one.
-- **The Python version matters for subprocess workers.** `launch()` hands `subprocess.run` the canonical briefing as a `str`. Python 3.13 and newer require `bytes` there, and a `str` raises `TypeError` before the child is spawned. That `TypeError` is not one of the exception types `process_target` catches, so it escapes to the per-unit thread handler and the target simply produces no result. If you are wiring a subprocess worker, confirm `launch` round-trips on your interpreter before relying on it; passing the briefing to `launch` as encoded bytes works.
+- **`launch()` encodes the briefing itself.** It hands `subprocess.run` bytes, because Python 3.13 and newer reject a `str` for `input` with byte pipes. If you write your own launcher, do the same at the boundary rather than relying on the version: a `TypeError` there is not one of the exception types the lifecycle's own path converts into a record.
+- **A blocked row is a human's decision.** `worker_spawn_failed` and `escalated:<exception>` park the row on purpose — a bad `--worker` and a defect in the orchestrator are not things a second attempt fixes. Read `block_reason`, fix the cause, then `orchestrate claim --worker-id ... --allow-blocked` or `unblock` by hand. Do not clear them by re-running.

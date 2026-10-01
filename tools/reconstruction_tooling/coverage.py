@@ -36,6 +36,7 @@ or ``git rm --cached`` therefore changes those fields with no artifact content
 changing. See ``generator_status.host_probes``.
 """
 
+import bisect
 import hashlib
 import json
 import os
@@ -300,6 +301,43 @@ def _bare(value):
     """Normalize a VA to the bare 8-hex form the coverage ledger uses."""
     normalized = _va(value)
     return normalized[2:] if normalized else None
+
+
+def _resolve_to_entries(vas, ledger_rows):
+    """Map each VA onto a function entry, resolving interior addresses.
+
+    Membership of the ledger is the admission test for "names a function". An
+    address that falls strictly inside an entry's body is resolved to that entry;
+    an address that is already an entry, or that falls in no body at all, is
+    returned unchanged. Deliberately conservative in the second direction -- an
+    address the ledger cannot place is left exactly as it was rather than guessed
+    at, because re-pointing a real target would be the same class of error.
+    """
+    bounds = []
+    for row in ledger_rows:
+        va = _bare(row.get("va"))
+        size = row.get("function_body_size_bytes")
+        if not va or not isinstance(size, int) or size <= 0:
+            continue
+        bounds.append((int(va, 16), size, va))
+    if not bounds:
+        return set(vas)
+    bounds.sort()
+    starts = [item[0] for item in bounds]
+    resolved = set()
+    for value in vas:
+        try:
+            address = int(value, 16)
+        except (TypeError, ValueError):
+            resolved.add(value)
+            continue
+        position = bisect.bisect_right(starts, address) - 1
+        if position < 0:
+            resolved.add(value)
+            continue
+        start, size, entry = bounds[position]
+        resolved.add(entry if start <= address < start + size else value)
+    return resolved
 
 
 def _pct(covered, universe):
@@ -862,6 +900,14 @@ def _assemble(root, reader, ledger, manifest, queue, semantic_decomp, blueprint,
     # -- triage queue --------------------------------------------------------
     queue_vas = {_bare(record.get("va")) for record in queue_rows}
     queue_vas.discard(None)
+    # Three queue rows name an address that is not a function entry: each is the
+    # inclusive last byte of the instruction before it. They are resolved here to
+    # the entry that contains them, from the ledger's own ``va`` and
+    # ``function_body_size_bytes``, so this census and the knowledge index count
+    # the same work items. Without it the two disagree by construction and the
+    # cross-check below can never pass -- and the disagreement would be a count of
+    # impossible targets, not of work.
+    queue_vas = _resolve_to_entries(queue_vas, ledger_rows)
     queue_out_of_universe = sorted(queue_vas - universe)
     # Derived as queue minus manifest, NOT intersected with the universe: the
     # three out-of-universe queue rows are real actionable work items, and

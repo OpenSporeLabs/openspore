@@ -2,9 +2,272 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `11d21b80f62181503f1ffa9842c4a5b2eb57ce2d6acb5d7375e6a333cb4b1bf8`
+- Content SHA-256: `c1a28333583bb56abb404f3fae3fb985dbc1498455fab05be8289135551645de`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics": "unclassified_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x4"
+  },
+  "abstained_because": [
+    "receiver_not_determinable: ecx_address_taken_without_memory_access",
+    "ecx_address_taken_without_memory_access: LEA takes ECX's address without any memory access through it",
+    "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_address_taken_without_memory_access), and the convention rule that would apply discriminates on receiver absence"
+  ],
+  "cleanup": {
+    "bytes": 4,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x4",
+    "side": "callee"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "d2d06b355a315a953a429139f66cb2d556a62aab89cd2fe084ee864fa6e5af42",
+  "conventions": {
+    "ambiguities": [
+      "receiver_undetermined"
+    ],
+    "calling_convention": null,
+    "candidate_conventions": [
+      "__stdcall",
+      "__thiscall"
+    ],
+    "confidence": "UNKNOWN",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "the callee pops 4 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 4,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0002"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0005"
+      ],
+      "claim": "the register receiver is undetermined: ecx_address_taken_without_memory_access",
+      "confidence": "UNKNOWN",
+      "id": "R0",
+      "value": {
+        "reason": "ecx_address_taken_without_memory_access",
+        "register": null
+      }
+    },
+    {
+      "based_on": [
+        "obs-0005"
+      ],
+      "claim": "the calling convention is unknown: the receiver is undetermined (ecx_address_taken_without_memory_access) and every remaining discriminator needs receiver absence",
+      "confidence": "UNKNOWN",
+      "id": "C10"
+    },
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0007"
+      ],
+      "claim": "the last value written to EAX classifies as aggregate_unknown",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "aggregate_unknown"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x0104c4f0",
+      "count": 1,
+      "first_use": 0,
+      "first_write_index": null,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x0104c4f0",
+      "base": "ESP",
+      "disp": 4,
+      "id": "obs-0002",
+      "index": 0,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x0104c4f0",
+      "definite": true,
+      "id": "obs-0003",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ESP + 0x4]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x0104c4f4",
+      "count": 4,
+      "first_use": 1,
+      "first_write_index": 0,
+      "id": "obs-0004",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "LEA EAX,[EAX + EAX*0x4]",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x0104c4f7",
+      "count": 2,
+      "first_use": 2,
+      "first_write_index": null,
+      "id": "obs-0005",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "LEA ECX,[ECX + EAX*0x4 + 0x74]",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x0104c4fb",
+      "id": "obs-0006",
+      "index": 3,
+      "kind": "CALL_DIRECT",
+      "raw": "CALL 0x006b55c0",
+      "target": "0x006b55c0"
+    },
+    {
+      "at": "0x0104c500",
+      "form": "RET 0x4",
+      "id": "obs-0007",
+      "imm": 4,
+      "index": 4,
+      "kind": "RET",
+      "raw": "RET 0x4"
+    }
+  ],
+  "parse": {
+    "declared_count": 5,
+    "degraded": false,
+    "esp_unresolved": false,
+    "flow_complete": true,
+    "frame": {
+      "and_esp": null,
+      "ebp_is_general_register": false,
+      "fp": false,
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "sub": null
+    },
+    "layout": "json_instruction_list",
+    "local_extent": 0,
+    "unparsed": 0
+  },
+  "receiver": {
+    "bound
+[TRUNCATED]
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -287,13 +550,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_0104c4f0(void)\n\n{\n  FUN_006b55c0();\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -358,10 +617,10 @@
     "FUN_006b55c0"
   ],
   "callers": [
-    "FUN_01056160",
-    "FUN_01052880",
     "FUN_01056d30",
-    "FUN_01057bd0"
+    "FUN_01057bd0",
+    "FUN_01052880",
+    "FUN_01056160"
   ],
   "classification": "wrapper",
   "dispatch": null,

@@ -2,18 +2,45 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `74d83e8afe9e0be7a6ecc140f3e1a08617c12499cc3c4ae1131064c49eab29b6`
+- Content SHA-256: `379f2db0db0f8490ce1f95188058cc30574cc7a11d7cbaaedeb77f51bae73a5a`
 
 ## abi
 
 - Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": 0,
+  "ordinary_stack_arguments": [],
+  "receiver_register": "ECX",
+  "ret_form": "RET (bare, no immediate)",
+  "return_register": "EAX",
+  "return_semantics": "integral_in_EAX",
+  "return_type": "std::uint32_t",
+  "saved_registers": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET"
+}
+```
+
+## abi_derived
+
+- Availability: `available`
 - Evidence state: `DERIVED`
-- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function, tools/reconstruction_tooling/vftables.py@25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e`
 
 ```json
 {
   "abi": {
     "architecture": "x86-32",
+    "calling_convention": "__thiscall",
     "receiver": false,
     "ret_form": "RET",
     "return_register": "EAX",
@@ -22,9 +49,7 @@
     "stack_cleanup_owner": "caller",
     "termination": "RET"
   },
-  "abstained_because": [
-    "no_discriminator: no stack-argument read and no positive receiver evidence"
-  ],
+  "abstained_because": [],
   "cleanup": {
     "bytes": 0,
     "confidence": "INFERRED",
@@ -32,28 +57,26 @@
     "evidence": "ret with no immediate, no stack reads",
     "side": "caller"
   },
-  "completeness": "PARTIAL",
+  "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "7c7889c3efdaa01276a08b3911e660efda4ae16d9e9db5a6c182c640efb982c1",
+  "content_sha256": "d6ddc540e74b12647df7a1bdca9692b7534fc432cbe9a4f07e0748b9720970ec",
   "conventions": {
     "ambiguities": [],
-    "calling_convention": null,
+    "calling_convention": "__thiscall",
     "candidate_conventions": [
-      "__cdecl",
-      "__stdcall",
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "UNKNOWN",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 1,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -88,9 +111,17 @@
       "based_on": [
         "obs-0002"
       ],
-      "claim": "the function is byte-identical under all four conventions",
-      "confidence": "UNKNOWN",
-      "id": "C10"
+      "claim": "calling convention is __thiscall: 0x00980510 is slot 5 of the vptr-backed vftable at 0x014440d0, so it is a virtual member of some class; the callee pops nothing and no stack word is read as an argument, so the receiver is in a register, and ECX is the only one that carries one",
+      "confidence": "INFERRED",
+      "id": "V1-VFT",
+      "value": {
+        "cleanup_side": "caller",
+        "membership_count": 1,
+        "receiver_provenance": "vftable_slot",
+        "receiver_register": "ECX",
+        "slot_index": 5,
+        "table": "0x014440d0"
+      }
     },
     {
       "based_on": [
@@ -172,7 +203,8 @@
     "max_offset": null,
     "offsets": [],
     "present": false,
-    "register": null,
+    "provenance": "vftable_slot",
+    "register": "ECX",
     "shape": null,
     "written_through": 0
   },
@@ -223,7 +255,7 @@
     "va": "0x00980510"
   },
   "variadic": "UNKNOWN",
-  "verdict": "ABI_UNKNOWN"
+  "verdict": "ABI_INFERRED"
 }
 ```
 
@@ -247,13 +279,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Unknown calling convention */\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n\nuint32_t UTFWin__PerspectiveEffect__GetProxyID(ILayoutElement *this)\n\n{\n  return 0x202;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -291,131 +319,9 @@
 
 ```json
 {
-  "abi": {},
-  "analogues": [
-    {
-      "match_basis": [
-        "shared_vtable:vtable:0x014440d0"
-      ],
-      "package": "PKG-UTFWIN-CORE-WAVE6",
-      "score": 4,
-      "symbol": "re_00951220",
-      "va": "0x00951220"
-    },
-    {
-      "match_basis": [
-        "shared_vtable:vtable:0x014440d0"
-      ],
-      "package": "PKG-UTFWIN-CORE-WAVE6",
-      "score": 4,
-      "symbol": "re_00951230",
-      "va": "0x00951230"
-    }
-  ],
-  "audit_evidence_boundary": null,
-  "audit_findings": [],
-  "audit_status": null,
-  "blocked": false,
-  "blockers": [],
-  "body_status": null,
-  "class_type": null,
-  "cluster": "utfwin-framework",
-  "confidence": null,
-  "dependencies": {
-    "callees": [],
-    "callees_truncated": false,
-    "callers": [],
-    "callers_truncated": false,
-    "data_reference_count": 0,
-    "edges": [],
-    "edges_truncated": false,
-    "external_callees": [],
-    "fan_in": 0,
-    "fan_out": 0,
-    "manifest_callees": [],
-    "manifest_callers": [],
-    "nearby_reconstructed": [],
-    "scc": {
-      "id": "scc-0291",
-      "size": 1
-    },
-    "vtable_reference_count": 0
-  },
-  "evidence_level": "CONFIRMED",
-  "globals": [],
-  "integration_status": null,
-  "name": "UTFWin::PerspectiveEffect::GetProxyID",
-  "normalized_symbol": "UTFWin::PerspectiveEffect::GetProxyID",
-  "observed_mechanics": [],
-  "ownership": {
-    "claimability": "queue_candidate",
-    "handoff_packages": [],
-    "manifest": {
-      "record": null,
-      "worker_ownership": null
-    },
-    "package": null,
-    "queue_state": "queued"
-  },
-  "package": null,
-  "reconstructed": false,
-  "review_status": null,
-  "runtime": {
-    "blocking_reason": null,
-    "gates": [],
-    "validated": 0
-  },
-  "runtime_gated": false,
-  "runtime_validated": 0,
-  "semantic": null,
-  "semantic_status": null,
-  "services": [],
-  "source": {
-    "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
-    "file": null,
-    "files": [
-      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c"
-    ],
-    "handoffs": [],
-    "metadata": [],
-    "provenance": []
-  },
-  "status": "queued",
-  "subsystem": "UTFWin",
-  "triage": {
-    "category": "ENGINE_INTERFACE",
-    "cluster": "utfwin-framework",
-    "db_triage_status": "QUEUED",
-    "decomp_path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
-    "dependencies": [
-      "app-lifecycle",
-      "resource-io"
-    ],
-    "evidence": "CONFIRMED",
-    "kg_node_id": "fun:00980510",
-    "name": "UTFWin::PerspectiveEffect::GetProxyID",
-    "priority": "P0",
-    "provenance": {
-      "classifier": "triage-v4",
-      "generated_at": "2026-09-23T10:12:09Z",
-      "generator": "subagent-7-sequential-triage",
-      "sdk_name": "UTFWin::PerspectiveEffect::GetProxyID",
-      "snapshot": "2540f2ca",
-      "snapshot_sha256": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
-      "vtable_addrs": [
-        "014440d0"
-      ]
-    },
-    "queue_state": "queued",
-    "rank": 141
-  },
-  "types": [],
-  "unresolved_questions": [],
-  "va": "0x00980510",
-  "vtables": [
-    "vtable:0x014440d0"
-  ]
-}
+  "original_bytes": 10614,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"ordinary_stack_arguments\": [],\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET (bare, no immediate)\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"integral_in_EAX\",\n    \"return_type\": \"std::uint32_t\",\n    \"saved_registers\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x014440d0\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"re_00951220\",\n      \"va\": \"0x00951220\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_vtable:vtable:0x014440d0\"\n      ],\n      \"package\": \"PKG-UTFWIN-CORE-WAVE6\",\n      \"score\": 4,\n      \"symbol\": \"re_00951230\",\n      \"va\": \"0x00951230\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": \"utfwin-framework\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [],\n    \"edges_truncated\": false,\n    \"external_callees\": [],\n    \"fan_in\": 0,\n    \"fan_out\": 0,\n    \"manifest_callees\": [],\n    \"manifest_callers\": [],\n    \"nearby_reconstructed\": [],\n    \"scc\": {\n      \"id\": \"scc-0325\",\n      \"size\": 1\n    },\n    \"vtable_reference_count\": 0\n  },\n  \"evidence_level\": \"CONFIRMED\",\n  \"globals\": [\n    \"global:PASS\",\n    \"global:none. The listing names no data-segment address, and the body reaches memory nowhere.\"\n  ],\n  \"integration_status\": null,\n  \"name\": \"UTFWin::PerspectiveEffect::GetProxyID\",\n  \"normalized_symbol\": \"UTFWin::PerspectiveEffect::GetProxyID\",\n  \"observed_mechanics\": [],\n  \"ownership\": {\n    \"claimability\": \"queue_candidate\",\n    \"handoff_packages\": [],\n    \"manifest\": {\n      \"record\": null,\n      \"worker_ownership\": null\n    },\n    \"package\": null,\n    \"queue_state\": \"queued\"\n  },\n  \"package\": null,\n  \"reconstructed\": false,\n  \"review_status\": null,\n  \"runtime\": {\n    \"blocking_reason\": null,\n    \"gates\": [],\n    \"validated\": 0\n  },\n  \"runtime_gated\": false,\n  \"runtime_validated\": 0,\n  \"semantic\": null,\n  \"semantic_status\": null,\n  \"services\": [],\n  \"source\": {\n    \"decomp\": \".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c\",\n    \"file\": null,\n    \"files\": [\n      \".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c\",\n      \"reconstruction/staging/pkg-dfw-00980510/dfw_00980510.cpp\",\n      \"reconstruction/staging/pkg-dfw-00980510/dfw_00980510_model_test.cpp\",\n      \"reconstruction/staging/pkg-dfw-00980510/dfw_00980510_types.hpp\",\n      \"reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.cpp\",\n      \"reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.hpp\",\n      \"reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510_model_test.cpp\"\n    ],\n    \"handoffs\": [],\n    \"metadata\": [\n      \"reconstruction/metadata/pkg-dfw-00980510/00980510.json\",\n      \"reconstruction/metadata/pkg-utfwin-perspective-proxyid-00980510/00980510.json\"\n    ],\n    \"provenance\": []\n  },\n  \"status\": \"queued\",\n  \"subsystem\": \"UTFWin\",\n  \"triage\": {\n    \"category\": \"ENGINE_INTERFACE\",\n    \"cluster\": \"utfwin-framework\",\n    \"db_triage_status\": \"QUEUED\",\n    \"decomp_path\": \".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c\",\n    \"dependencies\": [\n      \"app-lifecycle\",\n      \"resource-io\"\n    ],\n    \"evidence\": \"CONFIRMED\",\n    \"kg_node_id\": \"fun:00980510\",\n    \"name\": \"UTFWin::PerspectiveEffect::GetProxyID\",\n    \"priority\": \"P0\",\n    \"provenance\": {\n      \"classifier\": \"triage-v4\",\n      \"generated_at\": \"2026-09-23T10:12:09Z\",\n      \"generator\": \"subagen
+[TRUNCATED]
 ```
 
 ## ghidra_function
@@ -442,14 +348,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "this",
-      "storage": "Stack[0x4]:4",
-      "type": "ILayoutElement *"
-    }
-  ],
-  "locals_count": 1,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "UTFWin::PerspectiveEffect::GetProxyID",
   "namespace": "UTFWin",
@@ -494,9 +394,16 @@
 
 ## globals
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "global:PASS",
+  "global:none. The listing names no data-segment address, and the body reaches memory nowhere."
+]
+```
 
 ## reconstruction
 
@@ -508,10 +415,19 @@
 {
   "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
   "files": [
-    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c"
+    ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__PerspectiveEffect__GetProxyID.c",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510.cpp",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510_model_test.cpp",
+    "reconstruction/staging/pkg-dfw-00980510/dfw_00980510_types.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.cpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510.hpp",
+    "reconstruction/staging/pkg-utfwin-perspective-proxyid-00980510/get_proxy_id_00980510_model_test.cpp"
   ],
   "handoffs": [],
-  "metadata": []
+  "metadata": [
+    "reconstruction/metadata/pkg-dfw-00980510/00980510.json",
+    "reconstruction/metadata/pkg-utfwin-perspective-proxyid-00980510/00980510.json"
+  ]
 }
 ```
 
@@ -557,9 +473,15 @@
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t"
+]
+```
 
 ## vtables
 
@@ -569,6 +491,7 @@
 
 ```json
 [
+  "vtable:0x014440cc",
   "vtable:0x014440d0"
 ]
 ```

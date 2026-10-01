@@ -2,9 +2,265 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `bbecb4ffca0634b50922643d19a7fbccbb3c2c6fc9c61ad7a9880e6c81c544dd`
+- Content SHA-256: `6c51a68f112ca38f7e78b62ef2c27b0e0f27e8767bcff856664570973b5a5b6b`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4",
+      "entry_ESP+0xc"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0xc",
+        "observed": true,
+        "ordinal": 3,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0xc",
+        "observed": true,
+        "ordinal": 3,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at -4, so the listing is not one path",
+    "slot_gaps_present: argument ordinal(s) below the highest read slot are never touched",
+    "receiver_not_determinable: ecx_read_without_deref",
+    "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_read_without_deref), and the convention rule that would apply discriminates on receiver absence",
+    "sret_vs_out_param: entry slot 0 is written through a pointer"
+  ],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate",
+    "side": "caller"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "4c925e736db8b1394e400ca2d4b96fa9a1a853c6aeeaadc6cc63f26e7cc130c4",
+  "conventions": {
+    "ambiguities": [
+      "receiver_undetermined"
+    ],
+    "calling_convention": null,
+    "candidate_conventions": [
+      "__cdecl",
+      "__thiscall"
+    ],
+    "confidence": "UNKNOWN",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0021",
+        "obs-0022"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0008",
+        "obs-0020"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 1,
+        "observed_slots": 2,
+        "total_bytes": 12
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0011",
+        "obs-0017",
+        "obs-0019"
+      ],
+      "claim": "the register receiver is undetermined: ecx_read_without_deref",
+      "confidence": "UNKNOWN",
+      "id": "R0",
+      "value": {
+        "reason": "ecx_read_without_deref",
+        "register": null
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0011",
+        "obs-0017",
+        "obs-0019"
+      ],
+      "claim": "the calling convention is unknown: the receiver is undetermined (ecx_read_without_deref) and every remaining discriminator needs receiver absence",
+      "confidence": "UNKNOWN",
+      "id": "C10"
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0020"
+      ],
+      "claim": "a hidden struct-return pointer is a hypothesis only: entry slot 0 is written through a pointer",
+      "confidence": "INFERRED",
+      "id": "S1",
+      "value": {
+        "ambiguity": "sret_vs_out_param",
+        "present": null,
+        "slot": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0021",
+        "obs-0022"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0021",
+        "obs-0022"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "and_esp": null,
+      "at": "0x00c0b1c0",
+      "ebp_is_general_register": false,
+      "fp": false,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "FRAME",
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": false,
+      "push_ebp_at": null,
+      "raw": "SUB ESP,0x8",
+      "sub": 8
+    },
+    {
+      "at": "0x00c0b1c0",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "SUB ESP,0x8",
+      "reg": "ESP",
+      "write_kind": "arith"
+    },
+    {
+      "at": "0x00c0b1c3",
+      "count": 9,
+      "first_use": 1,
+      "first_write_index": 0,
+      "id": "obs-0003",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "MOV EDX,dword ptr [ESP + 0xc]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00c0b1c3",
+      "base": "ESP",
+      "disp": 12,
+      "id": "obs-0004",
+      "index": 1,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV EDX,dword ptr [ESP + 0xc]",
+      "resolved": true,
+      "size": 4
+    }
+[TRUNCATED]
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -280,13 +536,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nundefined4 FUN_00c0b1c0(uint32_t param_1,uint *param_2,PropertyList *param_3)\n\n{\n  bool bVar1;\n  int iVar2;\n  size_t local_8;\n  uint *local_4;\n  \n  local_8 = 0;\n  local_4 = (uint *)0x0;\n  bVar1 = App__Property__GetArrayUInt32(param_3,param_1,&local_8,&local_4);\n  if ((bVar1) && (0 < (int)local_8)) {\n    iVar2 = FUN_00a68fb0(local_8);\n    *param_2 = local_4[iVar2];\n    return 1;\n  }\n  return 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -470,42 +722,17 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
-      "type": "size_t"
-    },
-    {
-      "name": "bVar1",
-      "storage": "register:00000000:1",
-      "type": "bool"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0xc]:4",
-      "type": "PropertyList *"
-    },
-    {
       "name": "local_4",
       "storage": "Stack[-0x4]:4",
-      "type": "uint *"
+      "type": "undefined4"
     },
     {
-      "name": "iVar2",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x8]:4",
-      "type": "uint *"
-    },
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "uint32_t"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 7,
+  "locals_count": 2,
   "mode": "live",
   "name": "FUN_00c0b1c0",
   "namespace": null,

@@ -1,7 +1,7 @@
 # Reconstruction context 0x00fc7e10
 
-- Status: `complete`
-- Content SHA-256: `af9afda8868546ca6304eab20b3f99db447548395a51bff90af6c273af5e6cde`
+- Status: `partial`
+- Content SHA-256: `6877fceb9b1af6b1a216e89228eba30d5484301fc49c8679a971b183cd32a7d4`
 
 ## 01_assignment
 
@@ -26,7 +26,7 @@
 {
   "class_type": null,
   "name": "UTFWin::ImageDrawable::GetTiling",
-  "package": null,
+  "package": "pkg-utfwin-slot7-wave12",
   "subsystem": "UTFWin",
   "va": "0x00fc7e10"
 }
@@ -40,10 +40,10 @@
 ```json
 {
   "blocked": false,
-  "reconstructed": false,
+  "reconstructed": true,
   "runtime_gated": true,
   "runtime_validated": 0,
-  "status": "queued"
+  "status": "reconstructed"
 }
 ```
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "df4dc2c136bac6df623b4a2bf4994bc236fbc5cb9c24f66b640884d0038bcb9b",
-  "live_attempts": [],
+  "content_sha256": "44995772e3c70c4e226b3cb9104adbb6822822e75016d7e514f850fa2479093d",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00fc7e10 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,27 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Unknown calling convention */
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-
-ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
-
-{
-  int in_ECX;
-  undefined4 in_stack_00000008;
-  
-  *(IImageDrawable **)(in_ECX + 8) = this;
-  *(undefined4 *)(in_ECX + 0x10) = in_stack_00000008;
-  return (ImageTiling)this;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -216,7 +205,7 @@ ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
   "manifest_callers": [],
   "nearby_reconstructed": [],
   "scc": {
-    "id": "scc-0511",
+    "id": "scc-0583",
     "size": 1
   },
   "vtable_reference_count": 0
@@ -232,77 +221,79 @@ ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
 [
   {
     "match_basis": [
+      "same_subsystem",
+      "shared_types:opaque 32-bit word",
+      "same_calling_convention"
+    ],
+    "package": "pkg-utfwin-settiling-wave13",
+    "score": 11,
+    "symbol": "set_tiling_00fd9460",
+    "va": "0x00fd9460"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-dfw-00980510",
+    "score": 8,
+    "symbol": "dfw_get_proxy_id_00980510",
+    "va": "0x00980510"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-0095fa30-utfwin-isancestorof",
+    "score": 6,
+    "symbol": "is_ancestor_of_0095fa30",
+    "va": "0x0095fa30"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-utfwin-func35-wave12",
+    "score": 6,
+    "symbol": "func35_0095fd60",
+    "va": "0x0095fd60"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-dfw-0096ff70",
+    "score": 6,
+    "symbol": "dfw_func88h_0096ff70",
+    "va": "0x0096ff70"
+  },
+  {
+    "match_basis": [
+      "same_subsystem"
+    ],
+    "package": "pkg-dfw-00980c50",
+    "score": 6,
+    "symbol": "dfw_00980c50_func88h",
+    "va": "0x00980c50"
+  },
+  {
+    "match_basis": [
+      "shared_vtable:vtable:0x01491730,vtable:0x01492140",
+      "same_calling_convention"
+    ],
+    "package": "pkg-sporepedia-nop-slot",
+    "score": 6,
+    "symbol": "sporepedia_nop_slot_FUN_00c2e4e0",
+    "va": "0x00c2e4e0"
+  },
+  {
+    "match_basis": [
       "shared_types:OpaqueWord",
       "same_calling_convention"
     ],
     "package": "PKG-APP-SERVICES-SAFE-WAVE11",
     "score": 5,
-    "symbol": "service_005f9230",
-    "va": "0x005f9230"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005f9310",
-    "va": "0x005f9310"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005fa8d0",
-    "va": "0x005fa8d0"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005fc330",
-    "va": "0x005fc330"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-12-SIM-SPACE",
-    "score": 5,
-    "symbol": "FUN_00aeb160",
-    "va": "0x00aeb160"
-  },
-  {
-    "match_basis": [
-      "shared_vtable:vtable:0x01492140"
-    ],
-    "package": "PKG-16-SPOREPEDIA-ONLINE",
-    "score": 4,
-    "symbol": "Sporepedia_cSPAssetDataOTDB_HasName_raw_00641770",
-    "va": "0x00641770"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord"
-    ],
-    "package": "PKG-UTFWIN-CORE-WAVE6",
-    "score": 3,
-    "symbol": "re_00575ea0",
-    "va": "0x00575ea0"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord"
-    ],
-    "package": "PKG-APP-CANVAS-WAVE6",
+  
 [TRUNCATED]
 ```
 
@@ -356,7 +347,7 @@ ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__ImageDrawable__GetTiling.c', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-utfwin-slot7-wave12/00fc7e10.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/.clang-format', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__ImageDrawable__GetTiling.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-utfwin-slot7-wave12/00fc7e10.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/.clang-format', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -374,11 +365,6 @@ ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {
@@ -413,6 +399,11 @@ ImageTiling UTFWin__ImageDrawable__GetTiling(IImageDrawable *this)
     },
     {
       "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-utf
+      "ref": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "r
 [TRUNCATED]
 ```

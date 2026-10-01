@@ -2,6 +2,7 @@ import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.listing.FunctionManager;
 import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.InstructionIterator;
@@ -45,6 +46,48 @@ import java.util.TreeMap;
  * Indirect calls with no concrete destination are NEVER fabricated: they are
  * counted (computed_unresolved) and skipped.
  *
+ * -- Data references (the sidecar output) ----------------------------------
+ *
+ * The edge TSV above answers "which functions call which functions". It cannot
+ * answer "which global does this body touch", because the ``data-ref`` row it
+ * emits is defined as a reference to a *function entry* and every reference to
+ * anything else -- a global, a TLS slot, a jump table -- falls through to
+ * ``dataSkipped`` and is discarded. That discard is what this sidecar stops.
+ *
+ * The sidecar is emitted by the same run, from the same pinned universe, over
+ * the same snapshot, so it carries the same provenance as the edge file and is
+ * never an independent claim about the binary. It is a *separate file* rather
+ * than more rows in the edge TSV, for one reason: ``tools/triage/export_xrefs.py``
+ * proves on the edge file that every non-EXT/non-VT endpoint is a member of the
+ * pinned function universe, and that assertion is true and worth keeping. A data
+ * address is by construction not a member of that universe, so folding the rows
+ * in would mean weakening a check that currently catches real corruption, in
+ * order to carry evidence that needs no such check of its own.
+ *
+ * Columns: caller_va, target_va, access_mode, segment, callsite_va,
+ *          source, snapshot_sha256
+ *
+ *   access_mode  read | write | readwrite | other
+ *                read/write come from Ghidra's own RefType, so a write to a
+ *                read-only segment is reported as the write it is and is NOT
+ *                softened; "other" is a DATA-typed reference Ghidra records
+ *                without a read or write class (an address-taken marker).
+ *   segment      the Ghidra memory block name the target lies in, or "-" when
+ *                the address is not backed by any block. This is what keeps a
+ *                global distinguishable from a jump-table entry in .text or a
+ *                relocation record, which are data references too and are NOT
+ *                globals; the segment is the only thing that separates them and
+ *                it is Ghidra's own classification of the address.
+ *
+ * What is deliberately NOT in the sidecar, and why:
+ *   - references in the ``stack`` address space. They are stack slots, not
+ *     globals, and they are the large majority of what the edge file discards
+ *     (measured: 573,206 of 731,045 discarded references). Emitting them would
+ *     make the file about stack frames, not globals.
+ *   - destinations that are function entries (already a ``data-ref`` edge row)
+ *     or inside a known vtable range (already a ``vtable-ref`` edge row).
+ *   - external addresses. An import thunk is not a global in the image.
+ *
  * Params (GhidraScript args, in order):
  *   0 functionsTsv   frozen universe, header: address name size is_thunk ...
  *   1 rangesTsv      vtable ranges, headerless: <va8> <slots>
@@ -54,6 +97,9 @@ import java.util.TreeMap;
  *   5 outExt         externals allowlist output path (token, addr, name)
  *   6 shard          this shard index (0-based)
  *   7 shards         total shard count (partition by sorted-VA index mod)
+ *   8 outData        (optional) data-reference sidecar path; when absent the
+ *                    sidecar is not written at all and the edge file is
+ *                    byte-for-byte what it has always been.
  *
  * Fallback: when no script args are present (e.g. MCP inline execution),
  * params are read from /tmp/opencode/xref-job/params.tsv as key\tvalue rows
@@ -71,6 +117,17 @@ public class ExportXrefs extends GhidraScript {
 
     private final TreeMap<Long, Long> vtEnd = new TreeMap<Long, Long>();
     private final TreeMap<Long, String> vtBase = new TreeMap<Long, String>();
+
+    // Set when the sidecar was requested, so the reporting line can say what it
+    // actually produced rather than what it would have produced.
+    private boolean dataSidecarRequested = false;
+    // Sidecar tallies. ``dataSkippedStack`` is references whose destination is a
+    // frame slot rather than storage, ``dataSkippedDup`` references with no
+    // backing memory block, and ``errors`` is shared with the edge pass so a
+    // failure to classify a destination is counted once, not twice.
+    private long dataSkippedStack = 0;
+    private long dataSkippedDup = 0;
+    private long errors = 0;
 
     /** VTable base VA8 containing `to`, or null. Ranges are [base, base+4*slots). */
     private String vtableBaseFor(long to) {
@@ -102,6 +159,11 @@ public class ExportXrefs extends GhidraScript {
             p.put("outExt", a[5]);
             p.put("shard", a[6]);
             p.put("shards", a[7]);
+            // Arg 8 is optional: without it no sidecar is written and the edge
+            // file is exactly what the pre-extension exporter produced.
+            if (a.length >= 9) {
+                p.put("outData", a[8]);
+            }
         }
         else {
             BufferedReader br = new BufferedReader(new FileReader(PARAMS_FALLBACK));
@@ -125,6 +187,8 @@ public class ExportXrefs extends GhidraScript {
         String source = p.get("source");
         String outTsv = p.get("outTsv");
         String outExt = p.get("outExt");
+        String outData = p.get("outData");
+        dataSidecarRequested = (outData != null);
         int shard = Integer.parseInt(p.get("shard"));
         int shards = Integer.parseInt(p.get("shards"));
 
@@ -188,12 +252,19 @@ public class ExportXrefs extends GhidraScript {
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(outTsv));
+        long dataRows = 0;
+        PrintWriter data = null;
+        if (outData != null) {
+            data = new PrintWriter(new FileWriter(outData));
+            data.println("caller_va\ttarget_va\taccess_mode\tsegment\tcallsite_va"
+                + "\tsource\tsnapshot_sha256");
+        }
         Map<String, String[]> externals = new HashMap<String, String[]>();
         long rows = 0;
         long funcsSeen = 0;
         long missingAtAddress = 0;
         long nDirect = 0, nThunk = 0, nExt = 0, nComputed = 0, nVtable = 0, nData = 0;
-        long computedUnresolved = 0, callToOther = 0, dataSkipped = 0, errors = 0;
+        long computedUnresolved = 0, callToOther = 0, dataSkipped = 0;
 
         out.println("caller_va\tcallee_va\treference_type\tcallsite_va\tsource\tsnapshot_sha256");
 
@@ -338,7 +409,18 @@ public class ExportXrefs extends GhidraScript {
                                         rows++;
                                     }
                                     else {
+                                        // Not a function entry and not a vtable
+                                        // slot: this is where the old exporter
+                                        // ended. Everything the sidecar carries is
+                                        // decided here, and the edge file's own
+                                        // rows are untouched by that decision.
                                         dataSkipped++;
+                                        if (data != null
+                                                && emitDataReference(data, program, fm,
+                                                    va, to, rt, callsite, source,
+                                                    snapshot)) {
+                                            dataRows++;
+                                        }
                                     }
                                 }
                             }
@@ -355,10 +437,14 @@ public class ExportXrefs extends GhidraScript {
                 errors++;
             }
             if ((funcsSeen % 5000) == 0) {
-                println("EXPORT_XREFS progress funcs=" + funcsSeen + " rows=" + rows);
+                println("EXPORT_XREFS progress funcs=" + funcsSeen + " rows=" + rows
+                    + " dataRows=" + dataRows);
             }
         }
         out.close();
+        if (data != null) {
+            data.close();
+        }
 
         PrintWriter ex = new PrintWriter(new FileWriter(outExt));
         ex.println("token\taddress\tname");
@@ -381,6 +467,87 @@ public class ExportXrefs extends GhidraScript {
             + " errors=" + errors
             + " externals=" + externals.size()
             + " liveFunctions=" + fm.getFunctionCount());
+        if (dataSidecarRequested) {
+            println("EXPORT_XREFS datarefs rows=" + dataRows
+                + " skippedStackSpace=" + dataSkippedStack
+                + " skippedUnbacked=" + dataSkippedDup
+                + " out=" + outData);
+        }
+    }
+
+    /**
+     * Write one data-reference sidecar row, or return false and record why not.
+     *
+     * The predicate is the whole contract, so it is stated in one place and is
+     * deliberately narrow. A reference reaches the sidecar only when ALL of the
+     * following hold, and each clause names what it excludes and why:
+     *
+     * 1. The destination is not external. An import thunk is not a global in
+     *    this image; it has no storage here.
+     * 2. The destination is in the default (RAM) address space. A ``stack``
+     *    address is a frame slot: it is a data reference to Ghidra, but it is
+     *    not a global, and it is the majority of what the edge file discards
+     *    (measured 573,206 of 731,045). Including it would make the file a
+     *    statement about stack frames.
+     * 3. Some memory block backs the address. ``nomem`` addresses are unmapped;
+     *    Ghidra records the reference but there is no global there to name.
+     * 4. The destination is not a function entry and not inside a known vtable
+     *    range. Those already have edge rows (``data-ref`` / ``vtable-ref``);
+     *    re-emitting them here would put the same fact in two files with two
+     *    definitions, and a consumer reading both would double-count.
+     *
+     * Clauses 1-3 are what "is a global" means here, and none of them is
+     * inferred from the reference: each is a property of the address Ghidra
+     * itself reports. Clause 4 is about not duplicating the edge file.
+     *
+     * Read/write comes from Ghidra's RefType and is passed through verbatim.
+     * In particular a WRITE into a read-only block is emitted as a write; the
+     * block's permissions are recorded alongside it and the contradiction, if
+     * any, is left for a reader to see rather than smoothed over here.
+     *
+     * Returns true when a row was written.
+     */
+    private boolean emitDataReference(PrintWriter data, Program program,
+                                      FunctionManager fm, String caller,
+                                      Address to, RefType rt, String callsite,
+                                      String source, String snapshot) {
+        if (to.isExternalAddress()) {
+            return false;
+        }
+        AddressSpace space = to.getAddressSpace();
+        if (!space.equals(program.getAddressFactory().getDefaultAddressSpace())) {
+            dataSkippedStack++;
+            return false;
+        }
+        MemoryBlock block;
+        try {
+            block = program.getMemory().getBlock(to);
+        }
+        catch (Exception e) {
+            errors++;
+            return false;
+        }
+        if (block == null) {
+            dataSkippedDup++;
+            return false;
+        }
+        if (fm.getFunctionAt(to) != null) {
+            // Already a ``data-ref`` edge row; see clause 4.
+            return false;
+        }
+        if (vtableBaseFor(to.getOffset()) != null) {
+            // Already a ``vtable-ref`` edge row; see clause 4.
+            return false;
+        }
+        String mode = rt.isWrite() ? (rt.isRead() ? "readwrite" : "write")
+            : (rt.isRead() ? "read" : "other");
+        String perms = (block.isExecute() ? "x" : "-")
+            + (block.isWrite() ? "w" : "-")
+            + (block.isRead() ? "r" : "-");
+        data.println(caller + "\t" + va8(to.getOffset()) + "\t" + mode
+            + "\t" + block.getName() + " " + perms + "\t" + callsite
+            + "\t" + source + "\t" + snapshot);
+        return true;
     }
 
     private String extToken(Function dest, Address to) {

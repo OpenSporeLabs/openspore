@@ -1,5 +1,5 @@
 {
-  "content_sha256": "5bada0d10ed6c381925f51cdbca2bd30881b074e71cc8243ddcb79a1fee6a47f",
+  "content_sha256": "8cccc66c3c98c22d5227d0c58c137c48df22f82534c5d588677efce124f2f032",
   "context_state_counts": {
     "conflicted": 0,
     "missing": 2,
@@ -43,7 +43,7 @@
       "data": {
         "blocked": false,
         "reconstructed": false,
-        "runtime_gated": false,
+        "runtime_gated": true,
         "runtime_validated": 0,
         "status": "unresolved"
       },
@@ -57,8 +57,16 @@
     },
     "04_evidence_state": {
       "data": {
-        "content_sha256": "c436e92480bc43932c531501e7c2d14b69b0627e5c247d789753af4180063c0c",
-        "live_attempts": [],
+        "content_sha256": "5969882cb396c3adae2aafd53ff855e315911d5fb2e53757202bf776b8edea3f",
+        "live_attempts": [
+          {
+            "code": "ghidra_rest_error",
+            "kind": "decompilation",
+            "message": "decompile 0x005dc310 failed: Decompilation did not complete. Reason: ",
+            "mode": "LIVE",
+            "status": "unavailable"
+          }
+        ],
         "live_requested": true,
         "overall": "LIVE"
       },
@@ -71,29 +79,38 @@
       "state": "present"
     },
     "05_decompilation": {
-      "data": "\nvoid FUN_005dc310(undefined4 param_1)\n\n{\n  int iVar1;\n  \n  iVar1 = FUN_008105b0(param_1,1);\n  if (iVar1 == 0) {\n    FUN_008105b0(param_1,1);\n  }\n  return;\n}\n\n",
+      "data": null,
       "omitted": {
         "count": 0
       },
-      "provenance": [
-        "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089"
-      ],
-      "state": "present"
+      "provenance": [],
+      "state": "missing"
     },
     "06_abi": {
       "data": {
+        "architecture": "x86-32",
         "calling_convention": "__thiscall",
+        "hidden_receiver": "ECX, copied to ESI at 0x005dc316 and never reloaded",
         "hidden_this_register": "ECX",
-        "return_type": "void*",
-        "stack_arguments": [
-          {
-            "entry_offset": "ESP+4",
-            "name": "lookup_key",
-            "type": "uint32_t",
-            "width_bytes": 4
-          }
+        "ordinary_stack_argument_slots": 1,
+        "receiver": true,
+        "ret_form": "RET 0x4",
+        "return_note": "(a pointer, in EAX); Opaque5dc310Window*; void*",
+        "return_observation": "0x005dc323 TEST EAX,EAX and 0x005dc325 JNZ read the first call's EAX; when the branch is not taken the second call at 0x005dc32d leaves its own answer in EAX. Neither POP EDI (0x005dc332) nor POP ESI (0x005dc333) touches EAX, and the epilogue is only those two pops plus RET. The Ghidra decompilation types this function 'void' and drops the result entirely; that typing is a decompiler miss, contradicted by every inspected caller.",
+        "return_register": "EAX",
+        "return_semantics": "the EAX produced by the last 0x008105b0 call that executed: the +0x14 sub-object's answer when it was non-null, otherwise the +0x2c sub-object's answer (which may itself be null)",
+        "return_width_bytes": 4,
+        "saved_registers": [
+          "EDI",
+          "ESI"
         ],
-        "stack_cleanup_bytes": 4
+        "stack_arguments": [
+          "{'entry_offset': 'ESP+4', 'name': 'lookup_key', 'type': 'uint32_t', 'width_bytes': 4}",
+          "{'offset_in_callee': '[ESP + 0xc] before the two pushes', 'read_by': '0x005dc312: MOV EDI,dword ptr [ESP + 0xc]', 'role': 'the control id, forwarded to both 0x008105b0 calls', 'slot': 1, 'width_bytes': 4}"
+        ],
+        "stack_cleanup_bytes": 4,
+        "stack_cleanup_owner": "callee",
+        "termination": "RET 0x4"
       },
       "omitted": {
         "count": 0
@@ -348,8 +365,14 @@
       "data": {
         "globals": [],
         "types": [
+          "EditorUI*",
           "Opaque void* for the lookup result; no concrete target owner or ownership contract is asserted",
+          "Opaque5dc310Window* (a pointer, in EAX)",
           "OpaqueEditorModeManager for ECX",
+          "pointer (nullable)",
+          "pointer one past the last array element",
+          "pointer to the first array element",
+          "sub-object address (opaque)",
           "uint32_t",
           "uint32_t for the lookup key",
           "void*"
@@ -368,7 +391,12 @@
       "data": {
         "runtime": {
           "blocking_reason": null,
-          "gates": [],
+          "gates": [
+            "A runtime differential test is required to resolve vtable slots +0x0c, +0x1c and +0xf0 on a live editor element, and to confirm that the +0x14 candidate really does shadow the +0x2c candidate in the shipping build.",
+            "No original-process trace exists for 0x005dc310; every claim is static and the Cell stage has never been entered in any recorded run.",
+            "The SDK's UILayoutObjects offsets must be re-derived before the +0x64/+0x68 scan bounds can be attributed to a named member.",
+            "Whether the +0x2c fallback is ever load-bearing cannot be settled statically; only a run with the main layout empty would show it."
+          ],
           "validated": 0
         },
         "semantic": {}
@@ -380,7 +408,7 @@
         "knowledgegraph/research/semantic-decomp.json",
         "reconstruction/knowledge/index.json"
       ],
-      "state": "missing"
+      "state": "present"
     },
     "10_dependencies": {
       "data": {
@@ -708,7 +736,7 @@
           "0x005dfd00"
         ],
         "scc": {
-          "id": "scc-0103",
+          "id": "scc-0129",
           "size": 1
         },
         "vtable_reference_count": 0
@@ -778,28 +806,30 @@
             "shared_types:void*",
             "same_calling_convention"
           ],
+          "package": "pkg-swarm-w1-00641fd0",
+          "score": 5,
+          "symbol": "sporepedia_cached_handle_00641fd0",
+          "va": "0x00641fd0"
+        },
+        {
+          "match_basis": [
+            "shared_types:void*",
+            "same_calling_convention"
+          ],
+          "package": "pkg-vft-slot-006e64f0",
+          "score": 5,
+          "symbol": "re_006e64f0",
+          "va": "0x006e64f0"
+        },
+        {
+          "match_basis": [
+            "shared_types:void*",
+            "same_calling_convention"
+          ],
           "package": "PKG-12-SIM-SPACE",
           "score": 5,
           "symbol": "FUN_00aea230",
           "va": "0x00aea230"
-        },
-        {
-          "match_basis": [
-            "direct_xref_neighbor"
-          ],
-          "package": "PKG-10-EDITOR-DISPATCH",
-          "score": 3,
-          "symbol": "editor_query_dispatch_005dfd00",
-          "va": "0x005dfd00"
-        },
-        {
-          "match_basis": [
-            "shared_types:void*"
-          ],
-          "package": "PKG-UTFWIN-CORE-WAVE6",
-          "score": 3,
-          "symbol": "re_00835380",
-          "va": "0x00835380"
         }
       ],
       "omitted": {
@@ -812,10 +842,14 @@
     },
     "12_existing_reconstruction": {
       "data": {
-        "files": [],
+        "files": [
+          "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp",
+          "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp"
+        ],
         "handoffs": [],
         "metadata": [
-          "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json"
+          "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json",
+          "reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json"
         ]
       },
       "omitted": {
@@ -840,8 +874,19 @@
       "data": {
         "conflicts": [],
         "unresolved_questions": [
+          "A runtime differential test is required to resolve vtable slots +0x0c, +0x1c and +0xf0 on a live editor element, and to confirm that the +0x14 candidate really does shadow the +0x2c candidate in the shipping build.",
           "Are the two internal subobjects at this+0x14 and this+0x2c distinct registries or alternate lookup paths?",
-          "What concrete type, if any, owns the opaque void* lookup result?"
+          "Is 0x005dc310 itself an interface method or a vtable entry? No vtable was located for the EditorUI aggregate and no pointer scan for this address was performed.",
+          "Is slot +0xf0 a recursive descent into children, or a lookup in a sibling container? Its (id, 1) shape is consistent with both.",
+          "Is the flag argument ever 0 for this function? Both call sites here hard-code 1, and all 25 recorded callers route through those two sites, so the non-recursive path may be dead in this build. Not proven, because 0x008105b0 has other callers that were not enumerated.",
+          "No original-process trace exists for 0x005dc310; every claim is static and the Cell stage has never been entered in any recorded run.",
+          "The SDK's UILayoutObjects offsets must be re-derived before the +0x64/+0x68 scan bounds can be attributed to a named member.",
+          "The element array scanned by 0x00810200 lives at +0x64..+0x68 of the layout-objects target, but the SDK declares UILayoutObjects::mRootComponents at +0x5c. Either the SDK offsets for that class are wrong, or the scanned array is a different member. Not reconciled.",
+          "The other 14 of the 25 callers were not inspected, so the argument distribution across the fan-in is not established.",
+          "What are the control ids 0x630c829, 0x578ec50, 0xf006efa5, 0xb006ef6e and 0x1140129d? None is named in the SDK. 0x578EC50 appears as a comment on an unrelated EditorUI field, which is suggestive and unproven.",
+          "What concrete type, if any, owns the opaque void* lookup result?",
+          "What do vtable slots +0x0c, +0x1c and +0xf0 do on a UTFWin element? The 0xEEEE8218 argument makes +0x0c a cast/filter, but neither the other two is named. The id compared at +0x1c is probably a control id, but that is an inference from the argument the callers pass.",
+          "Whether the +0x2c fallback is ever load-bearing cannot be settled statically; only a run with the main layout empty would show it."
         ]
       },
       "omitted": {
@@ -873,11 +918,6 @@
           },
           {
             "mode": "live",
-            "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-            "source_class": "ghidra"
-          },
-          {
-            "mode": "live",
             "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
             "source_class": "ghidra"
           },
@@ -894,6 +934,21 @@
           {
             "mode": "persisted",
             "ref": "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json",
+            "source_class": "committed_artifact"
+          },
+          {
+            "mode": "persisted",
+            "ref": "reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json",
+            "source_class": "committed_artifact"
+          },
+          {
+            "mode": "persisted",
+            "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp",
+            "source_class": "committed_artifact"
+          },
+          {
+            "mode": "persisted",
+            "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp",
             "source_class": "committed_artifact"
           }
         ],
@@ -933,11 +988,6 @@
         },
         {
           "mode": "live",
-          "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
-          "source_class": "ghidra"
-        },
-        {
-          "mode": "live",
           "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
           "source_class": "ghidra"
         },
@@ -955,11 +1005,26 @@
           "mode": "persisted",
           "ref": "reconstruction/metadata/pkg10-editor-dispatch/005dc310.json",
           "source_class": "committed_artifact"
+        },
+        {
+          "mode": "persisted",
+          "ref": "reconstruction/metadata/wave13-w1-dispatch-b00/005dc310.json",
+          "source_class": "committed_artifact"
+        },
+        {
+          "mode": "persisted",
+          "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.cpp",
+          "source_class": "committed_artifact"
+        },
+        {
+          "mode": "persisted",
+          "ref": "reconstruction/staging/wave13-w1-dispatch-b00/editor_ui_005dc310.hpp",
+          "source_class": "committed_artifact"
         }
       ],
       "state": "present"
     }
   },
-  "status": "complete",
+  "status": "partial",
   "target": "0x005dc310"
 }

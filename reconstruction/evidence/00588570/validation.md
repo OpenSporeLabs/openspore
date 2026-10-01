@@ -1,0 +1,54 @@
+# Validation 0x00588570
+
+- Static reconstruction: `WARN`
+- Runtime (original process): `GATED`
+- Source: `src/reconstruction/pkg_editor_input_wave6/editor_input.cpp`
+
+The two axes are independent. A static verdict says the reconstruction agrees with the
+binary; it says nothing about the original process, and is never a runtime claim.
+
+## Static checks
+
+| Check | Status | Coverage | Detail |
+|---|---|---|---|
+| ABI | `WARN` | `partial` | derived calling-convention confidence is UNKNOWN; the oracle is not proven |
+| CALLS | `PASS` | `complete` | the machine-vs-machine rule: the xref export and the complete 1749-instruction listing name the same 92 direct transfer target(s); 29 intra-procedural jump(s) target inside the recovered body span 0x00588570..0x00589cd2 are excluded, because a jump that lands back in the body is control flow and not a transfer out of it: 0x005887b0, 0x00588882, 0x00588b3f, 0x00588e7a, 0x00588f35, 0x0058900d, 0x0058909a, 0x005890db, 0x00589158, 0x00589205, 0x0058929c, 0x0058932e, 0x005893f6, 0x005894ce, 0x00589584, 0x00589618, 0x00589631, 0x005896c3, 0x005896dc, 0x005897ef, 0x005898bc, 0x00589964, 0x00589a1b, 0x00589b31, 0x00589b83, 0x00589b84, 0x00589b8f, 0x00589ba4, 0x00589cbf; the xref export at /home/juanr/Proyectos/OpenSpore/knowledgegraph/triage/xrefs-2540f2ca.tsv is read whole: 203 outgoing call edge row(s) over 92 distinct address(es) for 0x00588570; the record's dependency edge list is a scheduler projection of this export, not the export itself: it holds 30 row(s) and 20 address-named callee(s), against the 203 outgoing call edge row(s) and 92 distinct callee(s) the export records; 72 callee(s) the export records are absent from it, and the 30-row window capped at MAX_DEPENDENCY_EDGES=30 is why: 0x00496bb0, 0x004a5e10, 0x004a60a0, 0x004a6120, 0x004a6d20, 0x004a7f30, 0x004a88d0, 0x004aa030, 0x004adc40, 0x004adfc0, 0x004ae250, 0x004b09b0 and 60 more; the record's edges_truncated flag is set, and it is computed over this record's incoming and outgoing call rows together, so incoming edges alone can set it; the export records 203 outgoing call edge row(s) for this target, which is the count that bounds a callee set; the source span names 0 of them and no others |
+| GLOBALS | `WARN` | `partial` | the complete 1749-instruction listing names 4 data address(es) (0x13eb430, 0x150ce00, 0x150ce04, 0x150ce08) and the xref export carries no data-reference edge type, so there is nothing to corroborate them against; read/write mode still needs per-access evidence |
+| FIELDS/OFFSETS | `WARN` | `partial` | the source span declares 0 displacement(s) (none) and the alias-aware scan of the listing attributes 2 receiver displacement(s) (0x68, 0x397) to ECX, so nothing the source states is missing from what the machine shows; but the listing is not known to be the whole body (it was not consumed in full by the machine parse (1747 of 1749 instruction(s) read, degraded=True, unparsed=2)), so that enumeration is a lower bound and is reported as one rather than as a pass; the 1749-instruction listing is the governing witness for what this body reaches -- it was not consumed in full by the machine parse (1747 of 1749 instruction(s) read, degraded=True, unparsed=2) -- and it is read alias-aware over receiver register ECX, so that a copy, an XCHG, an address chain and a push/pop pair all keep the receiver attribution; the scan attributes 2 displacement(s) to the receiver as proven (0x68, 0x397) and 0 more only on one arm of a branch, which is a may and grounds nothing (none); the machine-derived receiver record enumerates 33 displacement(s) (0x34, 0x3c, 0x68, 0x7c, 0x84, 0x98, 0xcc, 0xd0, 0xe4, 0xe8, 0xe9, 0xf4, 0x140, 0x142, 0x143, 0x148, 0x14c, 0x150, 0x2a0, 0x2b1, 0x2b4, 0x2f0, 0x31c, 0x385, 0x397, 0x39c, 0x3a0, 0x3b0, 0x3c4, 0x434, 0x472, 0x4b2, 0x4d4), which is its own observation of where the body was seen reaching; its bounds_only flag is its own statement that the enumeration is open, so it widens what a claim may be grounded in and refutes nothing; 31 of those (0x34, 0x3c, 0x7c, 0x84, 0x98, 0xcc, 0xd0, 0xe4, 0xe8, 0xe9, 0xf4, 0x140, 0x142, 0x143, 0x148, 0x14c, 0x150, 0x2a0, 0x2b1, 0x2b4, 0x2f0, 0x31c, 0x385, 0x39c, 0x3a0, 0x3b0, 0x3c4, 0x434, 0x472, 0x4b2, 0x4d4) the scan does not attribute to the receiver, and the listing governs there; all of that is a lower bound: the evidence is not known to be the whole body, so no absence is claimed from it |
+| CONSTANTS | `WARN` | `partial` | the machine listing is not fully parsed: 1749 of 1749 instruction(s) consumed, degraded=True, unparsed=2 |
+| CONTROL FLOW | `PASS` | `complete` | all 171 conditional branch target(s) in the complete 1749-instruction listing lie inside the recovered body span 0x00588570..0x00589cd2, so the branch graph is closed inside it; the source span declares if, and keyword shape is a source-side signal that is not part of this verdict |
+| VIRTUAL DISPATCH | `WARN` | `partial` | the complete 1749-instruction body names 21 indirect transfer(s): 0x005885f1 dispatches slot 0x34 through the table word in EDX; 0x005886ad dispatches slot 0x10 through the table word in EAX; 0x005888e2 dispatches slot 0x34 through the table word in EDX; 0x00588976 dispatches slot 0x58 through the table word in EDX; 0x00588aa7 dispatches slot 0x10 through the table word in EAX; 0x00588b93 dispatches slot 0x38 through the table word in EDX; 0x00588c3e dispatches slot 0x4 through the table word in EDX; 0x00588c4b dispatches slot 0x10 through the table word in EDX; 0x00588c5f dispatches slot 0x30 through the table word in EDX; 0x00589768 dispatches slot 0x10 through the table word in EDX; 0x00589794 dispatches slot 0x10 through the table word in EDX; 0x0058984d dispatches slot 0x10 through the table word in EDX; 0x00589900 dispatches slot 0x8 through the table word in EAX; 0x00589923 dispatches slot 0x10 through the table word in EAX; 0x005899d8 dispatches slot 0x10 through the table word in EAX; 0x00589a96 dispatches slot 0x10 through the table word in EAX; 0x00589aa6 dispatches slot 0x10 through the table word in EAX; 0x00589b9c dispatches slot 0x4 through the table word in EAX; 0x00589c23 dispatches slot 0x14 through the table word in EDX; 0x00589c50 dispatches slot 0x1c through the table word in EAX; 0x00589c5f dispatches slot 0x24 through the table word in EAX; the machine parse consumed 1749 of 1749 instruction(s) with 2 unparsed and degraded=True, and the machine dispatch record independently counts 21, so the dispatch is visible in the machine listing but is not proven: the machine parse is degraded and 2 instruction(s) were left unparsed |
+| RETURN SEMANTICS | `PASS` | `partial` | return type agrees with the bounded ABI record |
+
+Static evidence basis: 8 of 8 static checks evaluated, 3 passed, 0 had no evidence to evaluate; 12 of 17 static evidence categories available.
+
+Evidence coverage is a measurement, not a verdict: `WARN` -- 12 of 17 static evidence categories are available
+
+## Binary evidence
+
+- Evidence state: `LIVE`
+- Pack source: `persisted_pack`
+- Pack integrity: `verified`
+- Content SHA-256: `49bb46426b6d9f586d78ebeb4ab9d816253454eb1aa0331afd9cacbe1ca1ccb3`
+
+## Worker briefing
+
+- Source: `built_from_judged_pack`
+- Briefing status: `partial`
+- Content SHA-256: `188358ddf725586a369db0473108a8fa8e36c767d6fb5ab4f95ea074ca878ad2`
+- Pack digest quoted by the briefing: `49bb46426b6d9f586d78ebeb4ab9d816253454eb1aa0331afd9cacbe1ca1ccb3`
+
+## Runtime
+
+- Status: `GATED`
+- Original-process observations validated: `0`
+- Reason: no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed
+- Open runtime gates: `graphics availability, mode-specific input targets, and runtime button ownership remain gated`, `runtime validation not run`
+
+A gated runtime is an open capability gate on the original process. Nothing was
+attempted and nothing failed.
+
+## Unresolved questions
+
+- graphics availability, mode-specific input targets, and runtime button ownership remain gated
+- runtime validation not run

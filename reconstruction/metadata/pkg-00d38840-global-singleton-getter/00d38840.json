@@ -1,0 +1,91 @@
+{
+ "address": "0x00d38840",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "reconstruction/evidence/00d38840/evidence.json (content_sha256 82e9e391470ea513006896ee31d2ecc459ccb285f49c973d8e7cc74eede14e85, verified intact)",
+  "GhidraMCP /disassemble_function @ 0x00d38840",
+  "GhidraMCP /read_memory @ 0x00d38840 (10 bytes: a1 94 e2 69 01 c3 cc cc cc cc)",
+  "GhidraMCP /read_memory @ 0x0169e294 (8 bytes, zero)",
+  "GhidraMCP /get_function_by_address + /analyze_function_complete @ 0x00d38840 and @ 0x00d3b9b0",
+  "GhidraMCP /decompile_function @ 0x00d38840, 0x00d3b9b0, 0x00d39360, 0x00d4c5e0, 0x00d2b6e0, 0x00d2c280",
+  "GhidraMCP /get_xrefs_to + /list_globals @ 0x0169e294",
+  "GhidraMCP /disassemble_bytes @ 0x00d39590..0x00d395df and @ 0x00d3ba98..0x00d3baef",
+  "tools/reconstruction_tooling/abi_infer.py (derived ABI record, INFERRED)",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv (59 direct-call edges in, 39 distinct callers, 0 out)",
+  "knowledgegraph/triage/datarefs-2540f2ca.tsv (1 row as referencer, 0 as target; 47 read + 1 write to 0x0169e294)",
+  "reconstruction/staging/pkg-00d38840-global-singleton-getter/metadata/00d38840.json"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840.hpp",
+  "model_test": "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840_model_test.cpp",
+  "source": "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840.cpp"
+ },
+ "normalized_symbol": "global_singleton_00d38840",
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "none asserted. Byte-identical under __cdecl, __stdcall, __thiscall and __fastcall: the body names no memory operand relative to ESP or to any register, so it has 0 ordinary stack arguments, and its bare RET pops nothing. The derived ABI record lists all four as candidates and abstains ('no_discriminator: no stack-argument read and no positive receiver evidence'). The entry is declared with no convention macro at all.",
+  "locals": "none; the body allocates no frame, saves no register and builds no record",
+  "ordinary_stack_argument_slots": 0,
+  "ordinary_stack_arguments": [],
+  "outgoing_calls": "none; no CALL, no JMP, no indirect transfer, and 0 recorded edges out",
+  "receiver": "none. Opcode 0xa1 takes a 32-bit absolute address as its only operand, with no ModRM byte and no base register. The derived record agrees: receiver.present false, distinct_offsets 0, register null, bounds_only true.",
+  "ret_form": "RET (0x00d38845, byte 0xc3, no imm16)",
+  "return_register": "EAX",
+  "return_semantics": "the 32-bit word STORED at the absolute address 0x0169e294, copied bit for bit into EAX and re-typed as a pointer; no arithmetic, no masking, no sign extension, no comparison and no branch.",
+  "return_type": "void*",
+  "return_type_rationale": "Modelled as a pointer on writer and caller evidence, NOT on the derived record's register_class pointer_like, which is INFERRED with corroboration not_available and cannot distinguish a loaded word from a computed address. void* is the weakest C type stating the observed use; it is spelled without a space so the validator's declaration regex binds the span, and the machine width (4 bytes) and void* (4 bytes on x86-32) agree. The class identity cCreatureModeStrategy is deliberately NOT promoted into the C type.",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller"
+ },
+ "package": "PKG-00D38840-GLOBAL-SINGLETON-GETTER",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "global_singleton_00d38840",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  "The single recorded writer of the slot, 0x00d3b9b0, is a constructor-shaped body: it writes four vtable-ish pointers into the object (*param_1 = &PTR_FUN_0147ac70 and three more at +4/+8/+0xc), zeroes a long run of fields, then ends with App__sCreatureModeStrategy = param_1; return param_1;. Its tail reads live as 00d3baae 89 35 94 e2 69 01 MOV [0x0169e294],ESI / 8b c6 MOV EAX,ESI / 5e / 5b / c3. It publishes its own incoming object pointer, which is what makes the slot's contents an object address.",
+  "Caller 0x00d4c5e0 calls this entry twice and each time moves the result into ECX before a member call: 00d4c624 CALL 0x00d38840 / 00d4c629 MOV ECX,EAX / 00d4c62b CALL 0x00d39360, then 00d4c635 CALL 0x00d38840 / 00d4c63a MOV ECX,EAX / 00d4c63c CALL 0x00d3cdc0. 0x00d39360 decompiles with the signature App__cCreatureModeStrategy__ExecuteAction(cCreatureModeStrategy *this, uint32_t actionID, void *actionData), so ECX is that method's `this`.",
+  "Readers index through the loaded word: 0x00d395a4 does MOV EAX,[0x0169e294] then DEC/INC dword ptr [EAX+0x24]; 0x00d2b6e0 writes a byte at +0xdc; 0x00d2c280 loads a dword at +0xb4. These are recorded as facts about THOSE functions' reach and are explicitly not used to size or type anything in this package.",
+  "0x00d395a4 is a sibling that loads the same absolute address INLINE rather than calling this entry - the same read spelled differently, and the reason this accessor has callers that also read the slot themselves.",
+  "Pinned sidecars agree on shape: knowledgegraph/triage/xrefs-2540f2ca.tsv records 59 direct-call edges in from 39 distinct callers, 0 edges out, and no other reference type. knowledgegraph/triage/datarefs-2540f2ca.tsv records exactly one row with 0x00d38840 as referencer (the read of 0x0169e294 at callsite 0x00d38840, access mode read, segment .data -wr) and zero rows with 0x00d38840 as target. For the slot itself: 47 read rows and exactly ONE write row, at 0x00d3baae. The single-writer claim is therefore measured, not assumed."
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840.cpp",
+  "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840.hpp",
+  "reconstruction/staging/pkg-00d38840-global-singleton-getter/global_singleton_00d38840_model_test.cpp"
+ ],
+ "staging_package": "pkg-00d38840-global-singleton-getter",
+ "subsystem": "Simulator",
+ "summary": "FUN_00d38840 is a six-byte global-instance accessor: `MOV EAX,[0x0169e294]; RET`. Opcode 0xa1 is MOV r32,moffs32, an absolute form with no ModRM byte and no base register, so there is no receiver and no displacement/index hazard. The address 0x0169e294 is the Ghidra-labelled global `App::sCreatureModeStrategy` in .data. The return is declared void* on writer-and-caller evidence, not on the derived record's pointer_like heuristic: the only recorded writer (0x00d3b9b0) is a constructor-shaped body that stores its own incoming object pointer into the slot at 0x00d3baae and returns it, and callers use the result as a receiver (0x00d4c5e0 twice, MOV ECX,EAX before a member call) or index through it at 0x24/0xdc/0xb4. The pointee's CLASS is deliberately not claimed: the slot's label reads App::sCreatureModeStrategy while the callee names a TYPE App::cCreatureModeStrategy, and the binary has no MSVC RTTI to tie them together. No calling convention is asserted because the body is byte-identical under all four candidates. No runtime claim: the axis is GATED and unattempted.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "What TYPE the slot's pointee is. The evidence establishes that it is an object pointer - one writer publishes `this`, and callers use the result as a receiver and index through it - but not its class. The slot's Ghidra label is App::sCreatureModeStrategy while the callee names a TYPE App::cCreatureModeStrategy, and this binary has no MSVC RTTI, so nothing machine-derived ties the two together. Promoting cCreatureModeStrategy to the C type needs RTTI, a vtable-shape match, or an SDK-proven static-member declaration.",
+  "Whether 0x00d3b9b0 is the ONLY writer across the whole program. The pinned sidecar and the live database each record one write row for the slot; neither covers unanalysed or dynamically-reached code.",
+  "Whether the slot is ever null in the running process, and therefore whether any caller has a latent null dereference. The runtime axis is GATED and unattempted, so nothing here answers it.",
+  "Whether all 39 recorded callers use the result the same way. Four were sampled (0x00d4c5e0, 0x00d395a4, 0x00d2b6e0, 0x00d2c280); the other 35 were not, so 'every caller treats it as a receiver' is not claimed.",
+  "Whether the absolute slot address can ever be modelled as a real dereference rather than a stood-up object. That needs the original image mapped, which is outside what this package does."
+ ],
+ "va": "0x00d38840",
+ "validation": {
+  "mutation_test": {
+   "baseline": "passes (exit 0)",
+   "compiler": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Werror",
+   "isolation": "every mutant is built in its own self-contained directory under /tmp/opencode/mut-00d38840-*, and BOTH the impl .cpp and the model test are compiled from THAT directory, so #include \"x.hpp\" resolves to the MUTATED header. The archive is deleted before every link and recreated with `ar rc`.",
+   "mutations_total": 18,
+   "not_refuted_or_inconclusive": 0,
+   "refuted": 18,
+   "refuted_at_compile_time": 10,
+   "refuted_by_fault": 1,
+   "refuted_by_value": 7,
+   "script": "reconstruction/staging/pkg-00d38840-global-singleton-getter/mutation_test.sh"
+  },
+  "runtime_original_process": "GATED - no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed",
+  "static_reconstruction": "NOT_AVAILABLE (pre-existing; the pack's validation.md reports the canonical source artifact as missing)"
+ },
+ "version": "3.1.0.22",
+ "worker_outcome": "IMPLEMENTED"
+}

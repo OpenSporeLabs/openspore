@@ -1,0 +1,670 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-00C71E30-EMPIRE5",
+  "subsystem": "Simulator",
+  "cluster": "two-guard-delegation-and-table-dispatch",
+  "queue_id": "",
+  "va": "0x00c71e30",
+  "address": "0x00c71e30",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": null,
+  "normalized_symbol": "empire5_00c71e30",
+  "reconstructed_symbol": "empire5_00c71e30",
+  "target_state": "implemented in staging; STATIC validation blocked by a machine ceiling on the return width - NOT promoted, integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30.hpp",
+    "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30.cpp",
+    "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30.hpp",
+    "source": "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30.cpp",
+    "model_test": "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (ECX carries the receiver and is dereferenced at 0x00c71e31 before any definite write to it; both exits are the bare 0xc3; no stack word is read as an argument). THE NAME IS NOT DISCRIMINATED BY THE BYTES - see calling_convention_caveat",
+    "calling_convention_caveat": "The derived ABI record names __thiscall but lists candidate_conventions [__thiscall, __fastcall] with ambiguities []. For a function of one register argument and zero stack arguments the two conventions emit byte-identical machine code, and no byte of this body separates them. The only convention the bytes ELIMINATE is __cdecl, because 0x00c71e31 copies ECX on entry and a __cdecl receiver would be at [ESP+4]. Whether the register argument is a C++ `this` on a class or an ordinary first parameter is UNKNOWN: receiver.bounds_only is true and class_type, namespace, sdk_type and sdk_name are all null in the live record. The macro in the header is a NAMING of the record's own conclusion, not a discrimination, and no assertion in the package depends on it.",
+    "receiver": "ECX, read at 0x00c71e31 (`8b f1`, MOV ESI,ECX) before any definite write; copied into ESI and then read back through ESI at 0x00c71e33, 0x00c71e47 and 0x00c71e50. The record's receiver.shape is R-ALIAS, which is exactly this: the body aliases its receiver into a scratch register rather than dereferencing ECX directly.",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (0x00c71e66 and 0x00c71e6a, both the bare 0xc3, no imm16)",
+    "return_register": "EAX",
+    "return_type": "32-bit dword",
+    "return_semantics": "the passing arm returns 0x00ba9370's result verbatim - neither 0x00c71e65 (POP ESI) nor 0x00c71e66 (RET) touches EAX; the null arm returns a full 32-bit zero from `33 c0` at 0x00c71e67",
+    "return_type_rationale": "MODELLED AS A 32-BIT UNSIGNED DWORD, WITH THE GAME-LEVEL TYPE LEFT UNKNOWN. What the machine proves is exact and narrow: EAX is the return register and a full dword arrives in it on BOTH reachable exits - `33 c0` is XOR EAX,EAX with EAX both sides, not the 8-bit form, so no byte of the null arm's return is undefined - and the passing arm's width is 0x00ba9370's to establish, which its own listing does (its only writes to EAX are `33 c0` and `8b 40 14`, both full 32-bit). The derived record's `register_class: integral` and `type: null` are a single heuristic. The source-level type is NOT decided, because the sampled callers point both ways: 0x00ad4a2f is `85 c0` TEST EAX,EAX + JZ, a NULL TEST that a pointer and an integer share, while 0x00ad4a3f is `8b 80 84 00 00 00` MOV EAX,[EAX+0x84], a DEREFERENCE of the result at +0x84. std::uint32_t is the spelling that is true of both readings and asserts neither. `sret.present: false` is an APPROXIMATION whose own basis warns the absence is weak, and `variadic` is UNKNOWN.",
+    "locals": "none; the body allocates no frame, declares no local and builds no record. `PUSH ESI`/`POP ESI` is the callee-saved register contract for ESI, not a local: 0x00c71e31 WRITES ESI (ModRM 0xf1 is reg=110), and the derived record independently lists saved_registers: [ESI].",
+    "outgoing_calls": "three direct and one indirect. 0x00c71e3d CALL 0x00b8dab0 (the receiver hand-over), 0x00c71e59 CALL 0x00b3d2a0 (no argument, bare RET), 0x00c71e60 CALL 0x00ba9370 (one stack argument, RET 0x4), and 0x00c71e56 CALL EDX, the register-indirect table slot."
+  },
+  "observed_mechanics": [
+    "0x00c71e30 56 - PUSH ESI: the prologue. It exists because 0x00c71e31 writes ESI and ESI is callee-saved on i386, NOT because the receiver needs to cross a call in ESI - the receiver's survival across 0x00c71e3d is 0x00b8dab0's obligation to leave ESI alone, which it does in seven bytes.",
+    "0x00c71e31 8b f1 - MOV ESI,ECX: ModRM 0xf1 is mod=11, reg=110 (ESI), rm=001 (ECX). The receiver is aliased into ESI and no register is saved here - the save is the PUSH above.",
+    "0x00c71e33 8b 8e 3c 01 00 00 - MOV ECX,dword ptr [ESI + 0x13c]: ModRM 0x8e is mod=10 (disp32 follows), reg=001 (ECX), rm=110 (ESI); the disp32 is 0x0000013c. Base and destination DIFFER, so the incoming receiver is consumed and the LOADED WORD IS NOW IN ECX, in place of it. Opcode 0x8b, so a LOAD and not a LEA.",
+    "0x00c71e39 85 c9 - TEST ECX,ECX: writes EFLAGS only, and its ModRM is reg=ECX rm=ECX, so the flags come from the word 0x00c71e33 LOADED, not from the incoming receiver.",
+    "0x00c71e3b 74 2a - JZ rel8 = +42: 0x00c71e3d + 2 + 42 = 0x00c71e67.",
+    "0x00c71e3d e8 6e bc f1 ff - CALL 0x00b8dab0: rel32 0xfff1bc6e is -933778, and 0x00c71e3d + 5 + that = 0x00b8dab0. NOTHING between 0x00c71e33 and here writes ECX (0x00c71e39 and 0x00c71e3b write EFLAGS only), so this is a RECEIVER HAND-OVER: 0x00b8dab0's own ECX IS the word at receiver+0x13c.",
+    "0x00b8dab0, read live: 8b 81 94 01 00 00 c3 = MOV EAX,dword ptr [ECX + 0x194] / RET. Its ModRM 0x81 is rm=001 (ECX), so it reads through the register the hand-over left holding the loaded word, and its seven bytes name no register but EAX - which is why ESI survives the call and the receiver can still be read at 0x00c71e47.",
+    "0x00c71e42 83 f8 05 - CMP EAX,imm8 = 5: opcode 0x83 is the sign-extending imm8 form, so this compares all thirty-two bits of EAX against +5; 0x3d would be imm32 and 0x80 a byte-wide compare, and neither occurs. The value compared is therefore the 32-bit word at (word at receiver+0x13c) + 0x194 - a word of the DELEGATED object, not of this body's receiver.",
+    "0x00c71e45 75 20 - JNZ rel8 = +32: 0x00c71e47 + 2 + 32 = 0x00c71e67. BOTH branch operands name the SAME address, so the body has exactly two returns and not three, and the null arm is one arm reached two ways.",
+    "0x00c71e47 8b 86 d4 00 00 00 - MOV EAX,dword ptr [ESI + 0xd4]: ModRM 0x86 is mod=10, reg=000 (EAX), rm=110 (ESI); the disp32 is 0x000000d4. Opcode 0x8b, so a LOAD - the word at +0xd4 is the TABLE POINTER, and EAX now holds an address.",
+    "0x00c71e4d 8b 50 4c - MOV EDX,dword ptr [EAX + 0x4c]: ModRM 0x50 is mod=01, so the displacement is a single disp8 byte and that byte is 0x4c; reg=010 (EDX), rm=000 (EAX). 0x4c is 76, which is nineteen four-byte words. Note the operand-class change from the previous instruction (mod=10 disp32) to mod=01 disp8: 0x4c really is one byte here, not the low half of a larger displacement.",
+    "0x00c71e50 8d 8e d4 00 00 00 - LEA ECX,[ESI + 0xd4]: THE OPCODE IS 0x8d where 0x00c71e47's was 0x8b, over the SAME displacement. That is the load/address distinction, and it is decidable in this body because one instruction dereferences the address and the next forms it. So the dispatch's receiver is the ADDRESS of the embedded object - not the table pointer stored there, and not this body's own receiver.",
+    "0x00c71e56 ff d2 - CALL EDX: ModRM 0xd2 is mod=11, so the target is a REGISTER and there is no displacement operand here to be mistaken for the slot offset; 0x4c was consumed by 0x00c71e4d and is not seen again. The only indirect transfer in the body, and the derived dispatch record counts exactly one.",
+    "0x00c71e58 50 - PUSH EAX: one dword, the value the dispatch returned.",
+    "0x00c71e59 e8 42 b4 ec ff - CALL 0x00b3d2a0: rel32 0xffecb442 gives 0x00c71e59 + 5 + (-1262014) = 0x00b3d2a0.",
+    "0x00b3d2a0, read live: SIX bytes, `a1 e4 ea 67 01 c3` = MOV EAX,moffs32 [0x0167eae4] / RET. The opcode 0xa1 is the moffs form and carries NO ModRM byte at all, so there is no register field a receiver could have arrived in and none a stack argument could have been read through: this callee takes NOTHING. Its RET is the bare 0xc3, so it pops NOTHING either - which is what leaves the word pushed at 0x00c71e58 alive. 0x0167eae4 is that function's data address and is named nowhere in this package.",
+    "0x00c71e5e 8b c8 - MOV ECX,EAX: ModRM 0xc8 is mod=11, reg=001 (ECX), rm=000 (EAX). ECX is OVERWRITTEN with the previous call's result, so the last call's receiver is 0x00b3d2a0's result and nothing about ECX has to survive the call at 0x00c71e59.",
+    "0x00c71e60 e8 0b 75 f3 ff - CALL 0x00ba9370: rel32 0xfff3750b gives 0x00c71e60 + 5 + (-822773) = 0x00ba9370.",
+    "0x00ba9370, read live, is what makes the pushed word's fate decidable: 0x00ba9370 PUSH ECX, then 0x00ba9371 `83 7c 24 08 ff` CMP dword ptr [ESP+0x8],-0x1. At that point [ESP+0x8] IS [ESP+4] of the callee's own ENTRY frame - the PUSH ECX having moved the return address from [ESP] to [ESP+4] - so it is the word 0x00c71e58 pushed, and that word is this callee's ONE stack argument. BOTH of its returns are `RET 0x4` (0x00ba93a1 on the found path, 0x00ba93a8 on the not-found path), so the CALLEE pops it.",
+    "0x00c71e65 5e - POP ESI therefore restores the CALLER'S ESI, the word saved by the PUSH at 0x00c71e30 - and NOT the word pushed at 0x00c71e58, which 0x00ba9370's `RET 0x4` has already taken. A POP cannot reach below a word a callee's RET consumed. The in-binary corroboration is 0x00ba9370 itself, which writes ESI at 0x00ba9377 and so does the identical PUSH ESI (0x00ba9376) / POP ESI (0x00ba939f) for the identical reason, while also ending in `RET 0x4`: one listing, both facts, and the two mechanisms visibly doing different work.",
+    "0x00c71e66 c3 - RET: bare, no imm16, so the entry pops nothing and the caller owns cleanup.",
+    "0x00c71e67 33 c0 - XOR EAX,EAX: ModRM 0xc0 is mod=11, reg=000, rm=000, EAX both sides, so all thirty-two bits of EAX are written with zero. Not the 8-bit `30 c0` and not `33 c8` (XOR EAX,ECX, which would leave EAX dependent on ECX).",
+    "0x00c71e69 5e / 0x00c71e6a c3 - POP ESI / RET: the second exit, restoring ESI the same way.",
+    "The body is 59 bytes, 0x00c71e30..0x00c71e6a, matching the live ghidra_function record's body_span_bytes: 59 and body_end: \"00c71e6a\". The five 0xcc bytes at 0x00c71e6b..0x00c71e6f are INT3 alignment padding between this entry and the next, which begins at 0x00c71e70 with PUSH EBX, and are NOT part of the body.",
+    "Raw bytes at 0x00c71e30..0x00c71e73, read live from the program database via /read_memory and independently re-read from the pinned image with objdump; the two byte streams are IDENTICAL: 568bf18b8e3c01000085c9742ae86ebcf1ff83f80575208b86d40000008b504c8d8ed4000000ffd250e842b4ecff8bc8e80b75f3ff5ec333c05ec3cccccccccc"
+  ],
+  "field_offsets": {
+    "note": "No field of any type is NAMED. The receiver record is bounds_only ('where the body was SEEN reaching', not a layout), so the displacements below are values and not member identities. Both are spelled literally in the source, and neither is written as `receiver->field`.",
+    "receiver": [
+      {
+        "offset": "0x13c",
+        "width_bytes": 4,
+        "access": "read",
+        "name": null,
+        "identity": "UNKNOWN - unnamed",
+        "confidence": "OBSERVED",
+        "listing_evidence": "0x00c71e33 is `8b 8e 3c 01 00 00`; the disp32 is 0x0000013c and ModRM 0x8e selects ESI as the base and ECX as the destination",
+        "modelling_use": "the receiver fixture is sized to 0x140 so the word at +0x13c is addressable; that extent is a MODELLING BOUND through the furthest displacement this body reaches, not a recovered object size",
+        "corroboration": "the same displacement is read by the sibling body 0x00c70e00 at `8b 89 3c 01 00 00`, and by a sampled caller of THIS function at 0x00c3828b (`8b 8e 3c 01 00 00`, MOV ECX,[ESI+0x13c]) - three independent sites"
+      },
+      {
+        "offset": "0xd4",
+        "width_bytes": 4,
+        "access": "read twice - once as a value (0x00c71e47, MOV EAX) and once as an address (0x00c71e50, LEA ECX)",
+        "name": null,
+        "identity": "UNKNOWN - unnamed",
+        "confidence": "OBSERVED",
+        "listing_evidence": "0x00c71e47 is `8b 86 d4 00 00 00` (opcode 0x8b, a LOAD) and 0x00c71e50 is `8d 8e d4 00 00 00` (opcode 0x8d, an LEA) over the SAME disp32",
+        "modelling_use": "the word stored here is planted with a table pointer; its ADDRESS is what the dispatch callee is given, and the model test asserts the two are different pointers"
+      }
+    ],
+    "delegated_object_offsets_observed_but_not_claimed": [
+      "0x194"
+    ],
+    "delegated_object_note": "0x194 belongs to 0x00b8dab0's body, not to this one's. It is the displacement 0x00c71e42's comparison ultimately reads, because the word at receiver+0x13c is handed to that target as its receiver (the chain of ECX). `pkg-00b8dab0-field194-getter` is the promoted record of that address and is not restated here.",
+    "table_slot_offsets_observed_but_not_claimed": [
+      "0x4c"
+    ],
+    "table_slot_note": "0x4c is the slot displacement 0x00c71e4d reads, in bytes, from the table the word at receiver+0xd4 points at. It is 76, which is nineteen four-byte words. The identity behind the table - whether it is a C++ vtable and of which class - is UNKNOWN and not claimed; the two-level load SHAPE is what is proven, and the repository's own VIRTUAL DISPATCH dimension reads this listing as VTABLE_SLOT at 0x4c."
+  },
+  "globals": [],
+  "globals_note": "None, and that is the right answer for this body. All four of its memory operands are REGISTER-relative: `[ESI + 0x13c]`, `[ESI + 0xd4]`, `[EAX + 0x4c]` and `[ESI + 0xd4]` again. No instruction in the 59 bytes names an absolute data address. The one absolute address in the call chain, 0x0167eae4, is read by the body of 0x00b3d2a0 (`a1 e4 ea 67 01`) and not by this one, so it is that function's global and no `g_`-named global appears in this package. knowledgegraph/triage/datarefs-2540f2ca.tsv records ZERO rows for 0x00c71e30, which is a recorded absence and not a missing read.",
+  "vtables": [],
+  "vtables_note": "No vtable is named. The body performs the canonical x86-32 two-level load - a word loaded out of the receiver, a word loaded out of what that word addresses, and a call through the second - which the repository's dispatch classifier reads on this listing as VTABLE_SLOT at slot displacement 0x4c. But knowledgegraph/triage/datarefs-2540f2ca.tsv contains ZERO rows for 0x00c71e30, so on the pinned snapshot the body is not the target of any recorded data reference, and the live record carries `vtable_at: []`, `sdk_associations: []`, `referenced_by_vtables: []`, `namespace: null`, `sdk_type: null` and `sdk_name: null`. The CLASS behind the table is therefore UNKNOWN and no class is named in the source. The derived record's `dispatch.vtable_shaped_loads: 0` beside `dispatch.indirect_calls: 1` is recorded and pinned rather than reconciled: the shape is established from the listing bytes, and the dimension that adjudicates it reads those bytes rather than that count.",
+  "types": [
+    {
+      "name": "OpaqueReceiver",
+      "kind": "opaque fixture",
+      "size": "0x140",
+      "note": "sized to the furthest reached displacement 0x13c plus its four bytes; no member is declared and no class is asserted. The words at 0x13c and 0xd4 are UNNAMED."
+    },
+    {
+      "name": "DelegatedReceiver",
+      "kind": "opaque fixture",
+      "size": "0x198",
+      "note": "the object the word at receiver+0x13c points at, sized so the single word 0x00b8dab0 reads at +0x194 is addressable. A DIFFERENT object from OpaqueReceiver, and a strictly larger one: 0x194 is past this body's own receiver extent, so no object that is a valid OpaqueReceiver can be one of these."
+    },
+    {
+      "name": "DispatchedObject",
+      "kind": "opaque fixture",
+      "size": "4",
+      "note": "the embedded object at receiver+0xd4, whose ADDRESS the dispatch is given and whose FIRST WORD is the table pointer the load picks up. Four bytes is all this body reads of it. The object and its table pointer are NOT the same thing - conflating them was a real defect found while building this package."
+    },
+    {
+      "name": "EmpireIndex",
+      "kind": "opaque fixture",
+      "size": "4",
+      "note": "the receiver of 0x00ba9370, modelled pointer-sized DELIBERATELY and not because the real receiver is four bytes: that body reaches +0x150 and +0x154, so this extent is a token and not a layout. No offset of it is claimed."
+    },
+    {
+      "name": "DispatchTable",
+      "kind": "opaque fixture",
+      "size": "0x64",
+      "note": "the table as this body reads it: a 0x40-byte prefix the body never reaches, then a modelled slot every four bytes from +0x40 to +0x5c, the observed slot at +0x4c, and a callable sentinel immediately past the last modelled slot at +0x60. The decoys and the sentinel exist so a wrong slot index is OBSERVABLE rather than aliased onto a neighbouring valid pointer."
+    }
+  ],
+  "type_scope": "The reconstructed symbol takes an opaque receiver pointer and returns a 32-bit dword. Which game concept that dword names is UNKNOWN and is not claimed: one sampled caller null-tests it and another dereferences it at +0x84. What the word at receiver+0x13c means, and what the class behind the table at receiver+0xd4 is, are both UNKNOWN and neither is claimed.",
+  "analogues": [
+    {
+      "va": "0x00b8dab0",
+      "symbol": "FUN_00b8dab0",
+      "relation": "the promotion target of the hand-over at 0x00c71e3d - `MOV EAX,[ECX+0x194]` / `RET`, seven bytes. The chain of ECX is what makes the call a receiver hand-over rather than a call with no visible argument, and it is why the value 0x00c71e42 compares belongs to a DIFFERENT object at a different displacement"
+    },
+    {
+      "va": "0x00c70e00",
+      "symbol": "FUN_00c70e00",
+      "relation": "the sibling body that reads the SAME displacement 0x13c (`8b 89 3c 01 00 00`, MOV ECX,[ECX+0x13c]) and tail-transfers to the same 0x00b8dab0. Two independent readers of one receiver word, 0x2a20 bytes apart"
+    },
+    {
+      "va": "0x00b3d2a0",
+      "symbol": "FUN_00b3d2a0",
+      "relation": "the argument-less global-slot accessor at 0x00c71e59 - `a1 e4 ea 67 01 c3`, the moffs32 form with no ModRM byte, and a bare RET. It is what proves the word pushed at 0x00c71e58 SURVIVES that call"
+    },
+    {
+      "va": "0x00ba9370",
+      "symbol": "Simulator_LookupEmpireByPoliticalId",
+      "relation": "the one-stack-argument callee at 0x00c71e60 - it READS [ESP+0x8] on entry (0x00ba9371) and both its exits are `RET 0x4`. It is what proves the pushed word is popped by a CALLEE, and therefore that 0x00c71e65's POP ESI restores the caller's ESI instead"
+    },
+    {
+      "va": "0x00ad4a10",
+      "symbol": "FUN_00ad4a10",
+      "relation": "a sampled caller with two call sites into this function, 0x00ad4a2a and 0x00ad4a3a. Both put the receiver in ECX with NOTHING pushed, and the result is used two different ways: 0x00ad4a2f null-tests it, 0x00ad4a3f dereferences it at +0x84"
+    },
+    {
+      "va": "0x00c38270",
+      "symbol": "FUN_00c38270",
+      "relation": "a sampled caller whose call site is 0x00c382b5 - `mov ecx,esi` then the call, nothing pushed. The same function also reads receiver+0x13c itself at 0x00c3828b, so the caller and the callee agree on which word it is"
+    }
+  ],
+  "semantic_findings": [
+    "The entry is a two-guard delegation whose passing arm performs a table-slot dispatch: if the receiver holds a non-null word at +0x13c, and the object that word points at reports the scalar 5, then call slot 0x4c of the table named by receiver+0xd4 - passing that field's ADDRESS - and hand the slot's result to a one-argument lookup whose receiver is a global-slot read.",
+    "The `PUSH ESI`/`POP ESI` pair is the i386 callee-saved contract for ESI, required because 0x00c71e31 WRITES ESI. It is NOT a mechanism for carrying the receiver across a call, and the derived record's `saved_registers: [ESI]` corroborates the reading. The receiver's survival across 0x00c71e3d is 0x00b8dab0's obligation to leave ESI alone, which its seven bytes do.",
+    "0x00c71e3d is a receiver HAND-OVER, proved by the chain of ECX: 0x00c71e33 overwrites ECX with the loaded word and nothing between it and the call writes ECX, so 0x00b8dab0 receives that word as its own receiver and `CMP EAX,0x5` compares (word at receiver+0x13c) + 0x194 against 5.",
+    "Both branch operands name 0x00c71e67, so the body has exactly two returns and the null arm is one arm reached two ways. That is why `XOR EAX,EAX` appears once.",
+    "0x00c71e47 and 0x00c71e50 use the SAME displacement with opcodes 0x8b and 0x8d, so the load/address distinction is decidable inside this one body: the table pointer is LOADED and the embedded object's ADDRESS is FORMED.",
+    "The word pushed at 0x00c71e58 is the LAST callee's argument, not the previous call's: 0x00b3d2a0 takes nothing and pops nothing (opcode 0xa1 has no ModRM byte; its RET is the bare 0xc3), and 0x00ba9370 reads that word on entry and both of its exits are `RET 0x4`. `POP ESI` at 0x00c71e65 therefore restores the CALLER's ESI.",
+    "0x00c71e5e overwrites ECX with 0x00b3d2a0's result, so the last callee's receiver is that result and nothing has to survive the preceding call.",
+    "37 distinct caller functions in the committed xrefs export, and the three direct callees are independently named there at callsites 0x00c71e3d, 0x00c71e59 and 0x00c71e60. Fan-in says nothing about the field's meaning and is not used as evidence for one.",
+    "The derived ABI record's `integral` return class is contradicted by the direction of the sampled callers' use and is recorded rather than adopted; the disagreement does not change the modelled width."
+  ],
+  "not_claimed": [
+    "Whether the register argument is a C++ `this` or an ordinary first parameter. UNKNOWN: the bytes do not discriminate __thiscall from __fastcall (identical encodings for one register argument and zero stack arguments), the record itself lists both candidates, and nothing in the pack names a class for the receiver. Only __cdecl is refuted.",
+    "The source-level type of the return. One sampled caller dereferences the result at +0x84 and one null-tests it; the derived record's `integral` class comes from a single heuristic and `return.type` is null. The 32-BIT WIDTH is proven on both paths and is what the model carries.",
+    "Any name for the word at receiver+0x13c, for the word at receiver+0xd4, or for the receiver's class. UNKNOWN; the receiver record is bounds_only and types/globals/vtables are all MISSING in this pack.",
+    "The class behind the table reached through receiver+0xd4, and whether it is a C++ vtable at all. The two-level load SHAPE is proven and is what the modelled DispatchTable is; the identity is UNKNOWN and no class is named.",
+    "Any name for, or meaning of, the delegated object's word at +0x194. It belongs to 0x00b8dab0's body, whose promoted package is the record of that address.",
+    "0x00ba9370's internals. Its interface is transcribed - receiver in ECX, one stack argument, `RET 0x4`, 32-bit result - and its container walk (the `[EAX+0x14]` load at 0x00ba939c, `LEA ECX,[ESI+0x150]` at 0x00ba9385, `ADD ESI,0x154` at 0x00ba9392) is observed and NOT modelled. EmpireIndex's extent is pointer-sized precisely so it is not read as a recovered layout.",
+    "0x00b3d2a0's global. The real body reads the dword at 0x0167eae4; that address belongs to that function, not to this one, and the modelled mechanism's result is driven from a planted value so the entry's ARGUMENT ROUTING is observable. What 0x00b3d2a0 actually reads is NOT modelled.",
+    "Any interpretation of the constant 5. It is the immediate 0x00c71e42 compares against and nothing in the evidence names what it means.",
+    "The receiver's size or layout. 0x140 is a modelling bound through the furthest reached displacement, not a recovered allocation size.",
+    "Any nullability, ownership, AddRef/Release, thread-safety or lifetime contract for the receiver, for the word it holds at +0x13c, or for the dispatch's result.",
+    "That the word at receiver+0x13c is a pointer to any particular class, or that the word at receiver+0xd4 points at a vtable rather than at anything else that a callee could be dispatched through.",
+    "Any ordinary stack argument of the entry, any variadic behaviour (`variadic: UNKNOWN`), and any callee-side cleanup of the entry.",
+    "Any runtime, Wine, trace, differential or OBSERVED-behaviour claim. No runtime evidence exists for this VA; the runtime gate is left open and nothing was attempted."
+  ],
+  "confidence": "high for the mechanism (twenty-one instructions read byte-for-byte two independent ways, every displacement, operand class, branch displacement and call displacement recomputed from the encoding), none for either field identity, for the class behind the table, for the calling-convention NAME, or for the game-level meaning of the constant 5",
+  "unresolved_questions": [
+    "Is the register argument a C++ `this`? The bytes eliminate __cdecl and eliminate nothing else; deciding __thiscall from __fastcall needs a class name, and no pack layer carries one.",
+    "What does the word at receiver+0x13c mean, and what class is the object it points at? Three sites read the displacement and none of them names a member.",
+    "What class implements the table reached through receiver+0xd4? The shape is a two-level load and the classifier calls it VTABLE_SLOT, but the pack carries zero data references out of this VA and `vtable_at: []`.",
+    "Is the return a pointer or a scalar? One sampled caller dereferences it at +0x84 and one null-tests it; both readings are consistent with everything observed.",
+    "What does the constant 5 name, if anything? `CMP EAX,0x5` is an equality against an immediate and no evidence attaches a concept to it.",
+    "Why does the derived dispatch record count one indirect call and zero vtable-shaped loads for the same listing the repository's VIRTUAL DISPATCH dimension classifies as VTABLE_SLOT at 0x4c? Both numbers are pinned in the source and neither is reconciled here."
+  ],
+  "evidence_provenance": [
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_function @ 0x00c71e30 (21 instructions, complete) and /read_memory @ 0x00c71e30 (64 bytes: 568bf18b8e3c01000085c9742ae86ebcf1ff83f80575208b86d40000008b504c8d8ed4000000ffd250e842b4ecff8bc8e80b75f3ff5ec333c05ec3cccccccccc)"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /decompile_function @ 0x00c71e30 - `undefined4 __fastcall FUN_00c71e30(int param_1)`; the __fastcall spelling and every printed parameter are the rendering of an unregistered prototype (ghidra_has_calling_convention: false, ghidra_parameter_count: 0) and are not treated as evidence"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_function on the three callees 0x00b8dab0 (7 bytes), 0x00b3d2a0 (6 bytes) and 0x00ba9370 (23 instructions), and on the sampled callers 0x00ad4a10, 0x00c38270 - the callee listings are what establish the push/pop split and the receiver hand-over"
+    },
+    {
+      "mode": "derived",
+      "source_class": "read_only_disassembly",
+      "ref": "objdump -d --start-address=0xc71e20 --stop-address=0xc71e80 -M intel SPORE/SporeBin/SporeApp.exe - an INDEPENDENT second read of the same 59 bytes, byte-identical to the Ghidra /read_memory stream, plus the next entry at 0x00c71e70 and the five INT3 pad bytes"
+    },
+    {
+      "mode": "derived",
+      "source_class": "evidence_pack",
+      "ref": "reconstruction/evidence/00c71e30/evidence.json categories: disassembly (OBSERVED), decompilation, ghidra_function, abi/abi_derived (ABI_INFERRED, CORE_RESOLVED), callees_dependencies, callgraph edges"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/xrefs-2540f2ca.tsv - exactly three direct-call edges OUT of 0x00c71e30 (to 0x00b3d2a0, 0x00b8dab0, 0x00ba9370 at callsites 0x00c71e59, 0x00c71e3d, 0x00c71e60) and forty rows INTO it"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/datarefs-2540f2ca.tsv - ZERO rows for 0x00c71e30, which is consistent with all four of the body's memory operands being register-relative"
+    },
+    {
+      "mode": "derived",
+      "source_class": "tooling",
+      "ref": "tools/reconstruction_tooling/evidence_dispatch.py reads this listing as VTABLE_SLOT at slot displacement 0x4c through the table word in EAX, corroborated by dispatch.indirect_calls: 1 and by a fully-consumed parse (declared_count 21 of 21, unparsed 0, degraded false)"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-00c71e30-empire5/empire5_00c71e30_model_test.cpp",
+    "groups": 8,
+    "assertion_style": "abort on the first failure; each group names the hypothesis it refutes; the check function is deliberately NOT inlined so no assertion can be folded or recomputed by the optimizer",
+    "coverage": [
+      "both guards are real and converge on ONE null arm, and the compared constant is exactly 5: the null arm, 4, 5, 6, 0 and 0xffffffff are each exercised, and both branch operands are shown to compute the same address",
+      "0x13c is the word this body reads and it is a BYTE displacement: a decoy object is planted one, two and three words below it reporting something other than 5, so a slip in either direction yields a published zero - caught BY VALUE, never by an out-of-bounds fault, and the fixture is shown to contain the decoys rather than assumed to",
+      "the delegation is a receiver hand-over and the compared value belongs to the DELEGATED object at +0x194: 0x194 is shown to be past this body's own receiver extent, and the two objects are shown to be non-mergeable",
+      "the table word is LOADED and the dispatch's receiver is its ADDRESS: the callee reports the receiver it was handed, and it is shown to differ from the stored table pointer, from the live table, from the trap table and from this body's own receiver; the 0x8b/0x8d pair over one displacement is pinned",
+      "the slot is the word at table+0x4c and a wrong index is OBSERVABLE: every word from +0x40 to +0x5c is a distinct callable slot and a callable sentinel sits immediately past +0x5c, so a one-, two-, three- or four-slot error calls a different function that says so, one further lands on the trap, and one inside the prefix cannot land on a valid pointer. The model test drives all eight neighbours through the ONE accessor the entry uses",
+      "the pushed word reaches the LAST callee and is popped by that callee's `RET 0x4`, while `POP ESI` restores the CALLER's ESI: ESP is sampled before the call and after the return and must agree on both paths; the two cleanup facts are pinned as DIFFERENT; changing only the dispatch's result moves the last call's ARGUMENT and changing only the global slot's result moves the last call's RECEIVER, so neither is a constant and neither is the outer receiver",
+      "the return crosses verbatim on the passing arm and is a full 32-bit zero on the null arm: 8 interesting values and a 4x4 byte sweep cross unchanged, `33 c0` is pinned as a 32-bit XOR rather than the 8-bit or ECX-relative forms, and the two arms are told apart even when the last call returns zero",
+      "the encoding is the observed 59 bytes and the reach is bounded: every ModRM field, opcode, disp8/disp32, rel8 and rel32 is decoded and tied by static_assert to the header's constants, the branch and call addresses are recomputed from the encoded operands rather than restated, and the record's own words (verdict, completeness, both candidate conventions, one indirect call, zero vtable-shaped loads, one saved register, two receiver displacements) are pinned with the disagreement included"
+    ],
+    "build_matrix": "g++ -m32 -std=c++17 -Wall -Wextra and clang++ -m32 -std=c++17 -Wall -Wextra, at -O0, -O1 and -O2: all six build with ZERO warnings and exit 0",
+    "harness_note": "Two harness properties are load-bearing and were both found by measurement, not by taste. `check` is __attribute__((noinline)): with it inlinable, at -O2 on both compilers, the optimizer folded the ESP balance comparison against samples whose storage it had reallocated around the assembly block, and a green reconstruction failed. And the lookup's observation channel is read through a volatile-qualified lvalue, because a `memory` clobber does not order a plain global read against it and one compiler folded a routing assertion onto the PREVIOUS call's observation. Copying inside the assembly block was tried first and is worse: the compiler may allocate an ordinary \"r\" input to EAX, which the call has just overwritten.",
+    "mutation_tests": [
+      {
+        "id": "M1",
+        "perturbation": "read receiver+0x138 instead of +0x13c (one word too low)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M2",
+        "perturbation": "read receiver+0x134 instead of +0x13c (two words too low)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M3a",
+        "perturbation": "load the table pointer from receiver+0xd0 instead of +0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M3b",
+        "perturbation": "load the table pointer from receiver+0xd8 instead of +0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M3c",
+        "perturbation": "load the table pointer from receiver+0xcc instead of +0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (segfault, exit 139) - the word there is not a table pointer"
+      },
+      {
+        "id": "M4a",
+        "perturbation": "pass receiver+0xd0 as the dispatch receiver instead of receiver+0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M4b",
+        "perturbation": "pass receiver+0xd8 as the dispatch receiver instead of receiver+0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M4c",
+        "perturbation": "pass receiver+0x130 as the dispatch receiver instead of receiver+0xd4",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M5",
+        "perturbation": "dispatch slot 0x48 instead of 0x4c",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M6",
+        "perturbation": "dispatch slot 0x50 instead of 0x4c",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M7",
+        "perturbation": "dispatch slot 0x60 instead of 0x4c (the sentinel)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M8",
+        "perturbation": "dispatch slot 0x44 instead of 0x4c",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M9",
+        "perturbation": "dispatch slot 0x58 instead of 0x4c",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M10",
+        "perturbation": "compare against 6 instead of 5",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M11",
+        "perturbation": "compare against 4 instead of 5",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M12",
+        "perturbation": "invert the second guard (`== 0x5` instead of `!= 0x5`)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M13",
+        "perturbation": "invert the first guard (`!= 0` instead of `== 0`)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M14",
+        "perturbation": "drop the first guard entirely",
+        "expected": "test FAILS",
+        "observed": "killed (segfault, exit 139) - a null delegated word is dereferenced, exactly as the machine would"
+      },
+      {
+        "id": "M15",
+        "perturbation": "invert the second guard so the passing arm is the failing one",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M16",
+        "perturbation": "drop the second guard entirely",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M17",
+        "perturbation": "make the second guard's expression a void statement",
+        "expected": "test FAILS",
+        "observed": "killed (compile error)"
+      },
+      {
+        "id": "M18b",
+        "perturbation": "LEA/MOV confusion: pass the STORED table pointer as the dispatch receiver",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134) - the callee's receiver is checked by pointer identity"
+      },
+      {
+        "id": "M19b",
+        "perturbation": "LEA/MOV confusion: pass this body's own receiver as the dispatch receiver",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M20",
+        "perturbation": "route the global slot's value to the lookup's argument instead of the pushed word",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M21",
+        "perturbation": "give the lookup the delegated object as its receiver instead of the global slot's result",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M22",
+        "perturbation": "skip the global-slot call and use the dispatch's result as the lookup's receiver",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M23",
+        "perturbation": "do not call the slot at all",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M24",
+        "perturbation": "return 0 from the passing arm instead of the lookup's result",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M25",
+        "perturbation": "return the pushed word from the passing arm instead of the lookup's result",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M26a",
+        "perturbation": "return 1 from the FIRST null arm",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M26b",
+        "perturbation": "return 5 from the SECOND null arm",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M27",
+        "perturbation": "return 1 from the first null arm's site and leave the second alone",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M28",
+        "perturbation": "add 1 to the delegated object's reported scalar",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M29",
+        "perturbation": "XOR 1 into the delegation target's returned word",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M30",
+        "perturbation": "add 1 to the lookup's returned word",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M31",
+        "perturbation": "make the global-slot accessor return 0 instead of its planted value",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M33",
+        "perturbation": "pass 0 as the lookup's argument, i.e. drop the pushed word",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M34",
+        "perturbation": "perturb the pushed word by the cleanup-byte difference",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M35",
+        "perturbation": "zero the observation channel's argument after recording it",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M36",
+        "perturbation": "record a null receiver in the observation channel",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M35b",
+        "perturbation": "call the slot TWICE, keeping the second result (dead first call)",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "M36b",
+        "perturbation": "make the first guard statically false (`== 0 && false`)",
+        "expected": "test FAILS",
+        "observed": "killed (segfault, exit 139)"
+      },
+      {
+        "id": "M37",
+        "perturbation": "give the lookup the delegated object as its receiver",
+        "expected": "test FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "H1",
+        "perturbation": "header kDelegatedDisplacement 0x13c -> 0x138",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H2",
+        "perturbation": "header kDispatchedDisplacement 0xd4 -> 0xd0",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H3",
+        "perturbation": "header kSlotDisplacement 0x4c -> 0x48",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H4",
+        "perturbation": "header kRequiredDelegatedScalar 5 -> 4",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H5",
+        "perturbation": "header kNullArmValue 0 -> 1",
+        "expected": "FAILS",
+        "observed": "killed (abort, exit 134)"
+      },
+      {
+        "id": "H6",
+        "perturbation": "shrink the receiver fixture to 0x100 so +0x13c is out of extent",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H7",
+        "perturbation": "rename the sentinel member so it no longer occupies table+0x60",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H8",
+        "perturbation": "kLookupCleanupBytes 4 -> 0, making the two cleanups equal",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H9",
+        "perturbation": "kEntryCleanupBytes 0 -> 4",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H10",
+        "perturbation": "kTargetBodyBytes 59 -> 58",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H11",
+        "perturbation": "encoding 0x00c71e50 opcode 0x8d (LEA) -> 0x8b (MOV)",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time - this is the load/address distinction, pinned in the bytes"
+      },
+      {
+        "id": "H12",
+        "perturbation": "encoding 0x00c71e4d disp8 0x4c -> 0x48",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H13",
+        "perturbation": "encoding 0x00c71e42 immediate 5 -> 6",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H14",
+        "perturbation": "encoding 0x00c71e3b JZ rel8 0x2a -> 0x28",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time - the branch arithmetic is recomputed from the encoded operand"
+      },
+      {
+        "id": "H15",
+        "perturbation": "encoding 0x00c71e67 ModRM 0xc0 (XOR EAX,EAX) -> 0xc8 (XOR EAX,ECX)",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H16",
+        "perturbation": "encoding 0x00c71e33 disp32 low byte 0x3c -> 0x40",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      },
+      {
+        "id": "H17",
+        "perturbation": "encoding 0x00c71e65 0x5e (POP ESI) -> 0x56 (PUSH ESI)",
+        "expected": "FAILS",
+        "observed": "killed: static_assert fires at compile time"
+      }
+    ],
+    "mutation_summary": "61 distinct mutants were applied: 44 source-level and 17 encoding/constant-level. 60 of 61 are DETECTED - every source-level mutant except one, and all 17 encoding-level mutants - and the one survivor is an EQUIVALENT MUTANT, reported as equivalent rather than counted as a gap: M32 adds an unused volatile sink, a dead store that changes no observable behaviour on any input. Its nearest non-equivalent relative, M35b (call the slot twice and keep the second result), is killed, so the dead-store blind spot is closed rather than excused. Breakdown by group: wrong 0x13c (2), wrong 0xd4 on each of its two levels (6), wrong slot displacement at 0x44/0x48/0x50/0x58/0x60 (5), wrong compare constant 4 or 6 (2), inverted second guard (1), inverted/dropped first guard (2), inverted or dropped second guard (2), void-expression guard (1), LEA-vs-MOV confusion at the dispatch receiver (2), pushed-word routing into the wrong callee (2), skipped global-slot call (1), slot not called (1), double-called slot (1), wrong return on the passing arm (2), wrong return on each null arm (3), dropped guard sites (2), perturbed delegated scalar (1), perturbed delegation target (1), perturbed lookup result (1), zeroed global-slot result (1), observation channel falsified (2), wrong lookup receiver (1), dropped pushed word (1), perturbed pushed word (1), statically-false guard (1); plus 10 header-constant/layout mutants and 7 encoding-byte mutants, every one of which trips a static_assert at compile time.",
+    "mutation_method": "Each mutation is a single textual replacement applied to a fresh copy of the package under /tmp/opencode/mut/w - never to the staging files - built with g++ -m32 -std=c++17 -O2 -Wall -Wextra and run. A mutation counts as detected when the binary aborts (exit 134), faults (exit 139), or fails to compile. Replacements that matched zero or more than one site were re-anchored until unique, and the two LEA-vs-MOV mutants were first rejected as compile errors for a const-correctness reason rather than for a semantic one, so they were rewritten to compile and were then killed by value. The unmutated baseline was rebuilt and re-run after the battery and passes all six compiler/optimisation configurations.",
+    "mutation_enumeration_note": "The enumerated table lists 60 mutants (43 source-level, 17 encoding-level). The 61st is M32, the dead-store perturbation, which is deliberately NOT in the table because it SURVIVED and is reported as an equivalent mutant in mutation_summary instead - an enumerated 'expected FAILS' row it did not meet would be a false claim."
+  },
+  "runtime_validation": "none",
+  "runtime_validation_status": "not-run",
+  "runtime_gates": [],
+  "review_status": "pending",
+  "integration_status": "staging only; not promoted, not committed",
+  "worker_ownership": {
+    "implementer_id": "orch-final-lap-c71e30",
+    "staging_dir": "reconstruction/staging/pkg-00c71e30-empire5",
+    "note": "This worker claims only 0x00c71e30. The three callees it reads (0x00b8dab0, 0x00b3d2a0, 0x00ba9370), the sibling body 0x00c70e00 and the sampled callers 0x00ad4a10 and 0x00c38270 are read-only references; no other worker's staging package or metadata record is touched. The promoted package pkg-00b8dab0-field194-getter is cited as the record of its own address and is not restated."
+  },
+  "validation_outcome": {
+    "static_status": "NOT_AVAILABLE",
+    "runtime_status": "GATED",
+    "runtime_reason": "no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed",
+    "promotion": "REFUSED - promote plan and promote apply both ran and both refused; `static_not_pass`: \"static.status is 'NOT_AVAILABLE', required 'PASS'\". `changed: false`, nothing was written to src/.",
+    "checks": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "GLOBALS": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "EVIDENCE COVERAGE": "WARN - 12 of 17 static evidence categories available; contradictions, external_callees, globals, semantic_hypotheses and vtables are recorded absences (\"no exact source evidence found\")",
+      "RETURN SEMANTICS": "NOT_AVAILABLE - THE BLOCKER"
+    },
+    "blocker": {
+      "dimension": "RETURN SEMANTICS",
+      "state": "UNCLASSIFIED",
+      "detail": "the return register EAX is written at a width the dimension cannot bound on at least one of the 2 reachable return(s) in the complete 21-instruction listing",
+      "cause": "the last definition of EAX before the RET at 0x00c71e66 is the CALL at 0x00c71e60. The dimension treats a call result as an unbounded width by construction, and says why: on x86-32 whether a caller may read EAX after a call is decided by the CALLEE's signature, which this listing cannot show.",
+      "why_it_is_a_machine_ceiling": "Nothing in the reconstruction can change it. The machine writes EAX on the passing arm only through that call - 0x00c71e65 is POP ESI and 0x00c71e66 is RET, neither touches EAX - so there is no width-bearing EAX write to bound, and there is no second machine source for that width inside this VA's listing. Removing the call or adding an EAX write would each be a claim the bytes refute.",
+      "the_fact_that_is_true_but_outside_this_dimension": "0x00ba9370 DOES establish 32 bits, from its own listing read live: its only writes to EAX are `33 c0` (XOR EAX,EAX) at 0x00ba93a4 and `8b 40 14` (MOV EAX,[EAX+0x14]) at 0x00ba939c, both full 32-bit, and both of its exits are `RET 0x4`. So the modelled 32-bit width is CORRECT and is recorded as observed in this package. It is a fact about a DIFFERENT function's listing, and the dimension deliberately does not read other VAs' listings - it declines to invent a second oracle. This package therefore states the 32-bit width on the evidence of 0x00ba9370's own bytes and does not pretend the dimension granted it.",
+      "not_done": "No validator arm was weakened, no tooling was edited, no evidence was manufactured, and no runtime PASS was asserted. The runtime axis is GATED, which is correct and expected."
+    }
+  }
+}

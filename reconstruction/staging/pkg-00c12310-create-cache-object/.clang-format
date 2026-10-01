@@ -1,0 +1,32 @@
+# Package-local clang-format configuration.
+#
+# WHY THIS FILE EXISTS. The repository has no top-level .clang-format, so
+# `clang-format --style=file` run from inside this package falls back to the
+# LLVM defaults, whose PointerAlignment is Right. That rewrites
+#
+#   OpaqueCreated* PKG_00C12310_THISCALL create_cached_object_00c12310(
+#
+# into
+#
+#   OpaqueCreated *PKG_00C12310_THISCALL create_cached_object_00c12310(
+#
+# and the second form is invisible to validate.RETURN_DECL, whose return-type
+# run is `[A-Za-z_][A-Za-z0-9_:<>*&]*` followed by an optional all-caps
+# convention token and then the symbol name. With the `*` detached from the
+# return type the convention token no longer parses as a convention, the name no
+# longer parses as a name, and the target span -- the one the whole validation
+# reads -- cannot be bound at all. `_target_span` then finds no span and every
+# dimension reports NOT_AVAILABLE for a source that is correct.
+#
+# So the pointer alignment is pinned to Left here, which keeps the `*` inside the
+# return-type run and keeps the declaration readable by the checker. The rest
+# follows AGENTS.md's stated style: a modified Google.
+#
+# This file is scoped to this package directory. It changes no other package and
+# no other file in the repository.
+BasedOnStyle: Google
+PointerAlignment: Left
+DerivePointerAlignment: false
+ColumnLimit: 80
+AllowShortFunctionsOnASingleLine: None
+IncludeBlocks: Preserve

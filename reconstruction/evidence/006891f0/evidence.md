@@ -2,9 +2,52 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `7f4f84f7caf16cbecad379e6c359aa3def61208b34aedaf2ca10a8fac3cfb089`
+- Content SHA-256: `0745e7d192831a0c3046dfc5e45eab7ba3398bd12df86a4de0933e35753628ec`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__cdecl",
+  "hidden_this_register": "ECX is not a receiver: 0x00689205 SUB ESP,0x60 is preceded by PUSH EDI at 0x0068920b, and ECX is only used as a scratch thiscall target for the string and allocator ports (0x00689225, 0x0068924a, 0x00689296, 0x006892ab, 0x0068930f, 0x00689385).",
+  "ordinary_stack_argument_slots": 2,
+  "receiver": false,
+  "ret_form": "RET",
+  "return_observation": "0x006894ca is C3 with no immediate and no preceding MOV EAX; the last value written to EAX is the return of 0x00931fd0 at 0x00689421, which is immediately followed by stack-pointer arithmetic and the epilogue.",
+  "return_register": "EAX (clobbered, unused)",
+  "return_semantics": "no value; EAX is clobbered by the last tail call and none of the 4 observed call sites reads it",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EBX",
+    "EBP",
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "proof": "0x00de48e1 PUSH 0x145fb88 pushes L\"GGEUserData.dat\" first, so it is the second argument; 0x00de48e6 PUSH 0x147e040 pushes L\"GGEUserData.dat.tmp\" second, so it is the first argument, and the reconstruction's source_name is the .tmp name",
+      "role": "source_name",
+      "slot": "[ESP_entry+4]"
+    },
+    {
+      "proof": "same callsite, the argument the reconstruction concatenates to form the destination path",
+      "role": "dest_name",
+      "slot": "[ESP_entry+8]"
+    }
+  ],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single exit at 0x006894ca"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -43,7 +86,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "0d05556cd9904d4e2d136d5510d72dbfbb678c5c48cc44409b9b28408cbf7df1",
+  "content_sha256": "6b0f0afd9728bde2ae1ba730ca7c1c21754f7fc71a4424be2e0c3b2fa3e2f27b",
   "conventions": {
     "ambiguities": [],
     "calling_convention": null,
@@ -62,7 +105,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__cdecl"
   },
   "dispatch": {
     "call_offsets": [],
@@ -333,8 +376,7 @@
     },
     {
       "id": "obs-0056"
-    },
-
+  
 [TRUNCATED]
 ```
 
@@ -346,9 +388,34 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "FUN_00580cb0",
+    "reconstructed": false,
+    "va": "0x00580cb0"
+  },
+  {
+    "name": "ProfilePersistenceBoundary_run_candidate_00b28ec0",
+    "reconstructed": true,
+    "va": "0x00b28ec0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb4ba0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00de4850"
+  }
+]
+```
 
 ## contradictions
 
@@ -358,13 +425,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_006891f0(undefined4 param_1,undefined4 param_2)\n\n{\n  size_t _Size;\n  int iVar1;\n  void *pvVar2;\n  void *_Src;\n  char cVar3;\n  int *piVar4;\n  undefined4 uVar5;\n  int iVar6;\n  int aiStack_6c [4];\n  int aiStack_5c [4];\n  void *pvStack_4c;\n  undefined2 *puStack_48;\n  int iStack_44;\n  void *pvStack_3c;\n  int iStack_38;\n  int iStack_34;\n  int aiStack_2c [4];\n  int aiStack_1c [2];\n  int iStack_14;\n  void *pvStack_c;\n  undefined1 *puStack_8;\n  undefined4 uStack_4;\n  \n  uStack_4 = 0xffffffff;\n  puStack_8 = &LAB_0120c8a0;\n  pvStack_c = ExceptionList;\n  ExceptionList = &pvStack_c;\n  piVar4 = (int *)FUN_006b1f90(0x4729a47);\n  uVar5 = (**(code **)(*piVar4 + 0x28))();\n  pvStack_3c = (void *)0x0;\n  iStack_38 = 0;\n  iStack_34 = 0;\n  FUN_00579a90(uVar5);\n  _Src = pvStack_3c;\n  iVar6 = iStack_38 - (int)pvStack_3c >> 1;\n  uStack_4 = 0;\n  pvStack_4c = (void *)0x0;\n  puStack_48 = (undefined2 *)0x0;\n  iStack_44 = 0;\n  FUN_00429760(iVar6 + 1);\n  pvVar2 = pvStack_4c;\n  _Size = iVar6 * 2;\n  memcpy(pvStack_4c,_Src,_Size);\n  puStack_48 = (undefined2 *)(_Size + (int)pvVar2);\n  *puStack_48 = 0;\n  uStack_4._0_1_ = 1;\n  FUN_00932ae0(pvVar2);\n  aiStack_6c[0] = 0;\n  aiStack_6c[1] = 0;\n  aiStack_6c[2] = 0;\n  FUN_00579a90(param_2);\n  uStack_4._0_1_ = 2;\n  piVar4 = (int *)FUN_00688f00(aiStack_2c,&pvStack_4c,aiStack_6c);\n  uStack_4._0_1_ = 3;\n  if (piVar4 != aiStack_6c) {\n    FUN_00423650(*piVar4,piVar4[1]);\n  }\n  uStack_4._0_1_ = 2;\n  if ((2 < (int)(aiStack_2c[2] - aiStack_2c[0] & 0xfffffffeU)) && (aiStack_2c[0] != 0)) {\n    FUN_00f47380(aiStack_2c[0]);\n  }\n  aiStack_5c[0] = 0;\n  aiStack_5c[1] = 0;\n  aiStack_5c[2] = 0;\n  FUN_00579a90(param_1);\n  uStack_4._0_1_ = 4;\n  piVar4 = (int *)FUN_00688f00(aiStack_2c,&pvStack_4c,aiStack_5c);\n  uStack_4._0_1_ = 5;\n  if (piVar4 != aiStack_5c) {\n    FUN_00423650(*piVar4,piVar4[1]);\n  }\n  uStack_4._0_1_ = 4;\n  if ((2 < (int)(aiStack_2c[2] - aiStack_2c[0] & 0xfffffffeU)) && (aiStack_2c[0] != 0)) {\n    FUN_00f47380(aiStack_2c[0]);\n  }\n  aiStack_2c[0] = 0;\n  aiStack_2c[1] = 0;\n  aiStack_2c[2] = 0;\n  FUN_00579a90(L\".old\");\n  uStack_4._0_1_ = 6;\n  FUN_00688f00(aiStack_1c,aiStack_6c,aiStack_2c);\n  uStack_4 = CONCAT31(uStack_4._1_3_,8);\n  if ((2 < (int)(aiStack_2c[2] - aiStack_2c[0] & 0xfffffffeU)) && (aiStack_2c[0] != 0)) {\n    FUN_00f47380(aiStack_2c[0]);\n  }\n  iVar6 = aiStack_6c[0];\n  cVar3 = IO_File_Remove(aiStack_6c[0]);\n  if (cVar3 != '\\0') {\n    FUN_00931ff0(iVar6,aiStack_1c[0],1);\n  }\n  iVar1 = aiStack_5c[0];\n  FUN_00931ff0(aiStack_5c[0],iVar6,1);\n  cVar3 = IO_File_Remove(aiStack_1c[0]);\n  if (cVar3 != '\\0') {\n    FUN_00931fd0(aiStack_1c[0]);\n  }\n  if ((2 < (int)(iStack_14 - aiStack_1c[0] & 0xfffffffeU)) && (aiStack_1c[0] != 0)) {\n    FUN_00f47380(aiStack_1c[0]);\n  }\n  if ((2 < (int)(aiStack_5c[2] - iVar1 & 0xfffffffeU)) && (iVar1 != 0)) {\n    FUN_00f47380(iVar1);\n  }\n  if ((2 < (int)(aiStack_6c[2] - iVar6 & 0xfffffffeU)) && (iVar6 != 0)) {\n    FUN_00f47380(iVar6);\n  }\n  if ((2 < (int)(iStack_44 - (int)pvVar2 & 0xfffffffeU)) && (pvVar2 != (void *)0x0)) {\n    FUN_00f47380(pvVar2);\n  }\n  if ((2 < (int)(iStack_34 - (int)pvStack_3c & 0xfffffffeU)) && (pvStack_3c != (void *)0x0)) {\n    FUN_00f47380(pvStack_3c);\n  }\n  ExceptionList = pvStack_c;\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -374,8 +437,294 @@
 
 ```json
 {
-  "original_bytes": 19745,
-  "preview": "{\n  \"count\": 239,\n  \"instructions\": [\n    {\n      \"address\": \"006891f0\",\n      \"instruction\": \"PUSH -0x1\"\n    },\n    {\n      \"address\": \"006891f2\",\n      \"instruction\": \"PUSH 0x120c8a0\"\n    },\n    {\n      \"address\": \"006891f7\",\n      \"instruction\": \"MOV EAX,FS:[0x0]\"\n    },\n    {\n      \"address\": \"006891fd\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"006891fe\",\n      \"instruction\": \"MOV dword ptr FS:[0x0],ESP\"\n    },\n    {\n      \"address\": \"00689205\",\n      \"instruction\": \"SUB ESP,0x60\"\n    },\n    {\n      \"address\": \"00689208\",\n      \"instruction\": \"PUSH EBX\"\n    },\n    {\n      \"address\": \"00689209\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"0068920a\",\n      \"instruction\": \"PUSH ESI\"\n    },\n    {\n      \"address\": \"0068920b\",\n      \"instruction\": \"PUSH EDI\"\n    },\n    {\n      \"address\": \"0068920c\",\n      \"instruction\": \"PUSH 0x4729a47\"\n    },\n    {\n      \"address\": \"00689211\",\n      \"instruction\": \"CALL 0x006b1f90\"\n    },\n    {\n      \"address\": \"00689216\",\n      \"instruction\": \"MOV EDX,dword ptr [EAX]\"\n    },\n    {\n      \"address\": \"00689218\",\n      \"instruction\": \"MOV ECX,EAX\"\n    },\n    {\n      \"address\": \"0068921a\",\n      \"instruction\": \"MOV EAX,dword ptr [EDX + 0x28]\"\n    },\n    {\n      \"address\": \"0068921d\",\n      \"instruction\": \"ADD ESP,0x4\"\n    },\n    {\n      \"address\": \"00689220\",\n      \"instruction\": \"CALL EAX\"\n    },\n    {\n      \"address\": \"00689222\",\n      \"instruction\": \"XOR EDI,EDI\"\n    },\n    {\n      \"address\": \"00689224\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"00689225\",\n      \"instruction\": \"LEA ECX,[ESP + 0x44]\"\n    },\n    {\n      \"address\": \"00689229\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x44],EDI\"\n    },\n    {\n      \"address\": \"0068922d\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x48],EDI\"\n    },\n    {\n      \"address\": \"00689231\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x4c],EDI\"\n    },\n    {\n      \"address\": \"00689235\",\n      \"instruction\": \"CALL 0x00579a90\"\n    },\n    {\n      \"address\": \"0068923a\",\n      \"instruction\": \"MOV ESI,dword ptr [ESP + 0x44]\"\n    },\n    {\n      \"address\": \"0068923e\",\n      \"instruction\": \"MOV EBX,dword ptr [ESP + 0x40]\"\n    },\n    {\n      \"address\": \"00689242\",\n      \"instruction\": \"SUB ESI,EBX\"\n    },\n    {\n      \"address\": \"00689244\",\n      \"instruction\": \"SAR ESI,0x1\"\n    },\n    {\n      \"address\": \"00689246\",\n      \"instruction\": \"LEA ECX,[ESI + 0x1]\"\n    },\n    {\n      \"address\": \"00689249\",\n      \"instruction\": \"PUSH ECX\"\n    },\n    {\n      \"address\": \"0068924a\",\n      \"instruction\": \"LEA ECX,[ESP + 0x34]\"\n    },\n    {\n      \"address\": \"0068924e\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x7c],EDI\"\n    },\n    {\n      \"address\": \"00689252\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x34],EDI\"\n    },\n    {\n      \"address\": \"00689256\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x38],EDI\"\n    },\n    {\n      \"address\": \"0068925a\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x3c],EDI\"\n    },\n    {\n      \"address\": \"0068925e\",\n      \"instruction\": \"CALL 0x00429760\"\n    },\n    {\n      \"address\": \"00689263\",\n      \"instruction\": \"MOV EBP,dword ptr [ESP + 0x30]\"\n    },\n    {\n      \"address\": \"00689267\",\n      \"instruction\": \"ADD ESI,ESI\"\n    },\n    {\n      \"address\": \"00689269\",\n      \"instruction\": \"PUSH ESI\"\n    },\n    {\n      \"address\": \"0068926a\",\n      \"instruction\": \"PUSH EBX\"\n    },\n    {\n      \"address\": \"0068926b\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"0068926c\",\n      \"instruction\": \"CALL 0x011e0744\"\n    },\n    {\n      \"address\": \"00689271\",\n      \"instruction\": \"LEA EAX,[ESI + EBP*0x1]\"\n    },\n    {\n      \"address\": \"00689274\",\n      \"instruction\": \"XOR EDX,EDX\"\n    },\n    {\n      \"address\": \"00689276\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x40],EAX\"\n    },\n    {\n      \"address\": \"0068927a\",\n      \"instruction\": \"MOV word ptr [EAX],DX\"\n    },\n    {\n      \"address\": \"0068927d\",\n      \"instruction\": \"PUSH EBP\"\n    },\n    {\n      \"address\": \"0068927e\",\n      \"instruction\": \"MOV byte ptr [ESP + 0x88],0x1\"\n    },\n    {\n      \"address\": \"00689286\",\n      \"instruction\": \"CALL 0x00932ae0\"\n    },\n    {\n      \"address\": \"0068928b\",\n      \"instruction\": \"MOV EAX,dword ptr [ESP + 0x94]\"\n    },\n    {\n      \"address\": \"00689292\",\n      \"instruction\": \"ADD ESP,0x10\"\n    },\n    {\n      \"address\": \"00689295\",\n      \"instruction\": \"PUSH EAX\"\n    },\n    {\n      \"address\": \"00689296\",\n      \"instruction\": \"LEA ECX,[ESP + 0x14]\"\n    },\n    {\n      \"address\": \"0068929a\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x14],EDI\"\n    },\n    {\n      \"address\": \"0068929e\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x18],EDI\"\n    },\n    {\n      \"address\": \"006892a2\",\n      \"instruction\": \"MOV dword ptr [ESP + 0x1c],EDI\"\n    },\n    {\n      \"address\": \"006892a6\",\n      \"instruction\": \"CALL 0x00579a90\"\n    },\n    {\n      \"address\": \"006892ab\",\n      \"instruction\": \"LEA ECX,[ESP + 0x10]\"\n    },\n    {\n      \"address\": \"006892af\",\n      \"instruction\": \"PUSH ECX\"\n    },\n    {\n      \"address\": \"006892b0\",\n      \"instruction\": \"LEA EDX,[ESP + 0x34]\"\n    },\n    {\n      \"address\": \"006892b4\",\n      \"instruction\": \"PUSH EDX\"\n    },\n    {\n      \"address\": \"006892b5\",\n      \"instruction\": \"LEA
+  "count": 239,
+  "instructions": [
+    {
+      "address": "006891f0",
+      "instruction": "PUSH -0x1"
+    },
+    {
+      "address": "006891f2",
+      "instruction": "PUSH 0x120c8a0"
+    },
+    {
+      "address": "006891f7",
+      "instruction": "MOV EAX,FS:[0x0]"
+    },
+    {
+      "address": "006891fd",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "006891fe",
+      "instruction": "MOV dword ptr FS:[0x0],ESP"
+    },
+    {
+      "address": "00689205",
+      "instruction": "SUB ESP,0x60"
+    },
+    {
+      "address": "00689208",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "00689209",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "0068920a",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "0068920b",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "0068920c",
+      "instruction": "PUSH 0x4729a47"
+    },
+    {
+      "address": "00689211",
+      "instruction": "CALL 0x006b1f90"
+    },
+    {
+      "address": "00689216",
+      "instruction": "MOV EDX,dword ptr [EAX]"
+    },
+    {
+      "address": "00689218",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "0068921a",
+      "instruction": "MOV EAX,dword ptr [EDX + 0x28]"
+    },
+    {
+      "address": "0068921d",
+      "instruction": "ADD ESP,0x4"
+    },
+    {
+      "address": "00689220",
+      "instruction": "CALL EAX"
+    },
+    {
+      "address": "00689222",
+      "instruction": "XOR EDI,EDI"
+    },
+    {
+      "address": "00689224",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00689225",
+      "instruction": "LEA ECX,[ESP + 0x44]"
+    },
+    {
+      "address": "00689229",
+      "instruction": "MOV dword ptr [ESP + 0x44],EDI"
+    },
+    {
+      "address": "0068922d",
+      "instruction": "MOV dword ptr [ESP + 0x48],EDI"
+    },
+    {
+      "address": "00689231",
+      "instruction": "MOV dword ptr [ESP + 0x4c],EDI"
+    },
+    {
+      "address": "00689235",
+      "instruction": "CALL 0x00579a90"
+    },
+    {
+      "address": "0068923a",
+      "instruction": "MOV ESI,dword ptr [ESP + 0x44]"
+    },
+    {
+      "address": "0068923e",
+      "instruction": "MOV EBX,dword ptr [ESP + 0x40]"
+    },
+    {
+      "address": "00689242",
+      "instruction": "SUB ESI,EBX"
+    },
+    {
+      "address": "00689244",
+      "instruction": "SAR ESI,0x1"
+    },
+    {
+      "address": "00689246",
+      "instruction": "LEA ECX,[ESI + 0x1]"
+    },
+    {
+      "address": "00689249",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "0068924a",
+      "instruction": "LEA ECX,[ESP + 0x34]"
+    },
+    {
+      "address": "0068924e",
+      "instruction": "MOV dword ptr [ESP + 0x7c],EDI"
+    },
+    {
+      "address": "00689252",
+      "instruction": "MOV dword ptr [ESP + 0x34],EDI"
+    },
+    {
+      "address": "00689256",
+      "instruction": "MOV dword ptr [ESP + 0x38],EDI"
+    },
+    {
+      "address": "0068925a",
+      "instruction": "MOV dword ptr [ESP + 0x3c],EDI"
+    },
+    {
+      "address": "0068925e",
+      "instruction": "CALL 0x00429760"
+    },
+    {
+      "address": "00689263",
+      "instruction": "MOV EBP,dword ptr [ESP + 0x30]"
+    },
+    {
+      "address": "00689267",
+      "instruction": "ADD ESI,ESI"
+    },
+    {
+      "address": "00689269",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "0068926a",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "0068926b",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "0068926c",
+      "instruction": "CALL 0x011e0744"
+    },
+    {
+      "address": "00689271",
+      "instruction": "LEA EAX,[ESI + EBP*0x1]"
+    },
+    {
+      "address": "00689274",
+      "instruction": "XOR EDX,EDX"
+    },
+    {
+      "address": "00689276",
+      "instruction": "MOV dword ptr [ESP + 0x40],EAX"
+    },
+    {
+      "address": "0068927a",
+      "instruction": "MOV word ptr [EAX],DX"
+    },
+    {
+      "address": "0068927d",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "0068927e",
+      "instruction": "MOV byte ptr [ESP + 0x88],0x1"
+    },
+    {
+      "address": "00689286",
+      "instruction": "CALL 0x00932ae0"
+    },
+    {
+      "address": "0068928b",
+      "instruction": "MOV EAX,dword ptr [ESP + 0x94]"
+    },
+    {
+      "address": "00689292",
+      "instruction": "ADD ESP,0x10"
+    },
+    {
+      "address": "00689295",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00689296",
+      "instruction": "LEA ECX,[ESP + 0x14]"
+    },
+    {
+      "address": "0068929a",
+      "instruction": "MOV dword ptr [ESP + 0x14],EDI"
+    },
+    {
+      "address": "0068929e",
+      "instruction": "MOV dword ptr [ESP + 0x18],EDI"
+    },
+    {
+      "address": "006892a2",
+      "instruction": "MOV dword ptr [ESP + 0x1c],EDI"
+    },
+    {
+      "address": "006892a6",
+      "instruction": "CALL 0x00579a90"
+    },
+    {
+      "address": "006892ab",
+      "instruction": "LEA ECX,[ESP + 0x10]"
+    },
+    {
+      "address": "006892af",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "006892b0",
+      "instruction": "LEA EDX,[ESP + 0x34]"
+    },
+    {
+      "address": "006892b4",
+      "instruction": "PUSH EDX"
+    },
+    {
+      "address": "006892b5",
+      "instruction": "LEA EAX,[ESP + 0x58]"
+    },
+    {
+      "address": "006892b9",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "006892ba",
+      "instruction": "MOV byte ptr [ESP + 0x84],0x2"
+    },
+    {
+      "address": "006892c2",
+      "instruction": "CALL 0x00688f00"
+    },
+    {
+      "address": "006892c7",
+      "instruction": "ADD ESP,0xc"
+    },
+    {
+      "address": "006892ca",
+      "instruction": "LEA ECX,[ESP + 0x10]"
+    },
+    {
+      "address": "006892ce",
+      "instruction": "MOV byte ptr [ESP + 0x78],0x3"
+    },
+    {
+      "address": "006892d3",
+      "instruction": "CMP EAX,ECX"
+    },
+    {
+      "address": "006892d5",
+      "instruction": "JZ 0x006892e3"
+    },
+    {
+      "address": "006892d7",
+      "instruction": "MOV EDX,dword ptr [EAX + 0x4]"
+    },
+    {
+
 [TRUNCATED]
 ```
 
@@ -387,9 +736,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12728,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__cdecl\",\n    \"hidden_this_register\": \"ECX is not a receiver: 0x00689205 SUB ESP,0x60 is preceded by PUSH EDI at 0x0068920b, and ECX is only used as a scratch thiscall target for the string and allocator ports (0x00689225, 0x0068924a, 0x00689296, 0x006892ab, 0x0068930f, 0x00689385).\",\n    \"ordinary_stack_argument_slots\": 2,\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x006894ca is C3 with no immediate and no preceding MOV EAX; the last value written to EAX is the return of 0x00931fd0 at 0x00689421, which is immediately followed by stack-pointer arithmetic and the epilogue.\",\n    \"return_register\": \"EAX (clobbered, unused)\",\n    \"return_semantics\": \"no value; EAX is clobbered by the last tail call and none of the 4 observed call sites reads it\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EBX\",\n      \"EBP\",\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"proof\": \"0x00de48e1 PUSH 0x145fb88 pushes L\\\"GGEUserData.dat\\\" first, so it is the second argument; 0x00de48e6 PUSH 0x147e040 pushes L\\\"GGEUserData.dat.tmp\\\" second, so it is the first argument, and the reconstruction's source_name is the .tmp name\",\n        \"role\": \"source_name\",\n        \"slot\": \"[ESP_entry+4]\"\n      },\n      {\n        \"proof\": \"same callsite, the argument the reconstruction concatenates to form the destination path\",\n        \"role\": \"dest_name\",\n        \"slot\": \"[ESP_entry+8]\"\n      }\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single exit at 0x006894ca\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-20-PERSISTENCE-BOUNDARY\",\n      \"score\": 3,\n      \"symbol\": \"ProfilePersistenceBoundary_run_candidate_00b28ec0\",\n      \"va\": \"0x00b28ec0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_bake_probe_004bf770\",\n      \"va\": \"0x004bf770\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"dispatch_key_00628450\",\n      \"va\": \"0x00628450\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IStateManager_Get_0067dce0\",\n      \"va\": \"0x0067dce0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"WAVE6-ENGINE-RUNTIME\",\n      \"score\": 2,\n      \"symbol\": \"app_config_manager_get_0067dcf0\",\n      \"va\": \"0x0067dcf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IPropManager_Get_0067ddf0\",\n      \"va\": \"0x0067ddf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"FUN_00b3d3a0\",\n      \"va\": \"0x00b3d3a0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"FUN_00b3d400\",\n      \"va\": \"0x00b3d400\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": \"FUN_00580cb0\",\n        \"reconstructed\": false,\n        \"va\": \"0x00580cb0\"\n      },\n      {\n        \"name\": \"ProfilePersistenceBoundary_run_candidate_00b28ec0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b28ec0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb4ba0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00de4850\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00580dc9\",\n        \"direction\": \"in\",\n        \"other\": \"0x00580cb0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b293d4\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b28ec0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bb4f0a\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bb4ba0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00de48eb\",\n        \"direction\": \"in\",\n        \"other\": \"0x00de4850\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x006892de\",\n        \"direction\": \"out\",\n        \"other\": \"0x00423650\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00689358\",\n        \"direction\": \"out\",\n        \"other\": \"0x00423650\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0068925e\",\n        \"direction\": \"out\",\n        \"other\": \"0x00429760\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00689235\",\n        \"direction\": \"out\",\
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -407,21 +763,21 @@
   "callees": [
     "IO_File_Remove",
     "FUN_006b1f90",
+    "memcpy",
+    "FUN_00f47380",
     "FUN_00931fd0",
+    "FUN_00579a90",
     "FUN_00932ae0",
     "FUN_00688f00",
-    "FUN_00f47380",
-    "FUN_00579a90",
-    "FUN_00429760",
-    "memcpy",
     "FUN_00423650",
+    "FUN_00429760",
     "FUN_00931ff0"
   ],
   "callers": [
+    "FUN_00de4850",
     "FUN_00b28ec0",
-    "FUN_00bb4ba0",
     "FUN_00580cb0",
-    "FUN_00de4850"
+    "FUN_00bb4ba0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -432,129 +788,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "puStack_8",
-      "storage": "Stack[-0x8]:4",
-      "type": "undefined1 *"
-    },
-    {
-      "name": "uStack_4",
-      "storage": "Stack[-0x4]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x8]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "_Size",
-      "storage": "unique:100000da:4",
-      "type": "size_t"
-    },
-    {
-      "name": "iVar1",
-      "storage": "unique:1000028a:4",
-      "type": "int"
-    },
-    {
-      "name": "iStack_44",
-      "storage": "Stack[-0x44]:4",
-      "type": "int"
-    },
-    {
-      "name": "pvStack_3c",
-      "storage": "Stack[-0x3c]:4",
-      "type": "void *"
-    },
-    {
-      "name": "iStack_38",
-      "storage": "Stack[-0x38]:4",
-      "type": "int"
-    },
-    {
-      "name": "iStack_34",
-      "storage": "Stack[-0x34]:4",
-      "type": "int"
-    },
-    {
-      "name": "aiStack_2c",
-      "storage": "Stack[-0x2c]:4",
-      "type": "int[4]"
-    },
-    {
-      "name": "aiStack_1c",
-      "storage": "Stack[-0x1c]:4",
-      "type": "int[2]"
-    },
-    {
-      "name": "iStack_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "int"
-    },
-    {
-      "name": "pvStack_c",
-      "storage": "Stack[-0xc]:4",
-      "type": "void *"
-    },
-    {
-      "name": "aiStack_6c",
-      "storage": "Stack[-0x6c]:4",
-      "type": "int[4]"
-    },
-    {
-      "name": "aiStack_5c",
-      "storage": "Stack[-0x5c]:4",
-      "type": "int[4]"
-    },
-    {
-      "name": "pvStack_4c",
-      "storage": "Stack[-0x4c]:4",
-      "type": "void *"
-    },
-    {
-      "name": "puStack_48",
-      "storage": "Stack[-0x48]:4",
-      "type": "undefined2 *"
-    },
-    {
-      "name": "pvVar2",
-      "storage": "unique:1000028e:4",
-      "type": "void *"
-    },
-    {
-      "name": "_Src",
-      "storage": "unique:10000292:4",
-      "type": "void *"
-    },
-    {
-      "name": "cVar3",
-      "storage": "register:00000000:1",
-      "type": "char"
-    },
-    {
-      "name": "piVar4",
-      "storage": "register:00000000:4",
-      "type": "int *"
-    },
-    {
-      "name": "uVar5",
-      "storage": "register:00000000:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "iVar6",
-      "storage": "register:00000018:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 24,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_006891f0",
   "namespace": null,
@@ -605,9 +840,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b03/006891f0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -617,9 +866,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A trace must record the return value and the observable effect of 0x00932ae0 on the base path, which is the only way to resolve whether the leading delete is live behaviour or a no-op.",
+    "A trace must record whether MoveFileExW at 0x00689406 succeeds in practice, because the body discards the result and static analysis cannot predict the filesystem state.",
+    "No original-process trace exists for this function. A differential trace must record the string returned by the save-area virtual slot +0x28, since the whole path algebra depends on whether it is separator-terminated."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -629,15 +890,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

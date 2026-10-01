@@ -1,0 +1,503 @@
+# Reconstruction context 0x00e7d660
+
+- Status: `partial`
+- Content SHA-256: `814e89f4c45315d8b7abf9add65c84e52d5de4b93f886101a580f27949cd185e`
+
+## 01_assignment
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "assignment_id": "openspore-context",
+  "objective": "recover bounded source semantics for 0x00e7d660",
+  "phase": "reconstruction",
+  "target": "0x00e7d660"
+}
+```
+
+## 02_function_identity
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "class_type": "OpaqueCellModeStrategy",
+  "name": "App::cCellModeStrategy::OnMouseWheel",
+  "package": "PKG-GAME-INPUT-WAVE8",
+  "subsystem": "Input",
+  "va": "0x00e7d660"
+}
+```
+
+## 03_current_status
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocked": false,
+  "reconstructed": true,
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## 04_evidence_state
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "content_sha256": "5c3f3013147f57fab0f24f35bfc8cc5b61d01c55a7e0cdb12b80145ca4aa3bc8",
+  "live_attempts": [
+    {
+      "code": "live_unavailable",
+      "kind": "decompilation",
+      "message": "Ghidra returned snapshot instead of live evidence",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
+}
+```
+
+## 05_decompilation
+
+- State: `missing`
+- Provenance: ``
+
+## 06_abi
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "thiscall",
+  "hidden_receiver": "ECX App::cCellModeStrategy*",
+  "ordinary_stack_arguments": [
+    {
+      "evidence": "captured into ESI by MOV ESI,[ESP+0xc] at 0x00e7d670 while ESP was the entry stack pointer minus 8, and used by IMUL ESI, TEST ESI,ESI, and JGE as a signed 32-bit value",
+      "name": "nWheelDelta",
+      "offset": "ESP+4",
+      "slot": 0,
+      "type": "int32"
+    },
+    {
+      "evidence": "loaded by FLD float ptr [ESP+0x1c] at 0x00e7d67c into the forwarded word at 0x00e7d680",
+      "name": "mouseX",
+      "offset": "ESP+8",
+      "slot": 1,
+      "type": "raw float dword"
+    },
+    {
+      "evidence": "loaded by FLD float ptr [ESP+0xc] at 0x00e7d660 into the forwarded word at 0x00e7d678",
+      "name": "mouseY",
+      "offset": "ESP+0xc",
+      "slot": 2,
+      "type": "raw float dword"
+    },
+    {
+      "evidence": "captured into EBX by MOV EBX,[ESP+0x14] at 0x00e7d66b while ESP was the entry stack pointer minus 4, and tested with TEST BL,0x1 and TEST BL,0x2",
+      "name": "mouseState",
+      "offset": "ESP+0x10",
+      "slot": 3,
+      "type": "uint32",
+      "width_bytes": 4
+    }
+  ],
+  "ret_form": "RET 0x10 on all four return sites",
+  "return_register": "AL, set by MOV AL,0x1 or XOR AL,AL",
+  "stack_cleanup_bytes": 16
+}
+```
+
+## 07_callers_callees
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "FUN_00b1fbf0",
+      "reconstructed": false,
+      "va": "0x00b1fbf0"
+    }
+  ],
+  "callers": [],
+  "edge_rows": [
+    {
+      "callsite": "0x00e7d684",
+      "direction": "out",
+      "other": "0x00697b40",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d68e",
+      "direction": "out",
+      "other": "0x00b1fbf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6bf",
+      "direction": "out",
+      "other": "0x00b1fbf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6d7",
+      "direction": "out",
+      "other": "0x00b721d0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6ab",
+      "direction": "out",
+      "other": "0x00e50f60",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d708",
+      "direction": "out",
+      "other": "0x00e51060",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6f8",
+      "direction": "out",
+      "other": "0x00e7d070",
+      "reference_type": "direct-call"
+    }
+  ],
+  "external_callees": []
+}
+```
+
+## 08_types_fields_globals
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "globals": [],
+  "types": [
+    "DATA",
+    "OpaqueCellModeStrategy",
+    "bool in AL, true on every path except one",
+    "int32",
+    "raw float dword",
+    "uint32"
+  ],
+  "vtables": [
+    "vtable:0x00000014",
+    "vtable:0x01485550",
+    "vtable:0x01485590"
+  ]
+}
+```
+
+## 09_state_event_relationships
+
+- State: `present`
+- Provenance: `knowledgegraph/research/semantic-decomp.json, reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime": {
+    "blocking_reason": null,
+    "gates": [
+      "Observe the concrete vtable call shape, the effective return of 0x00b1fbf0 including any patching, the 0x00b721d0 lookup result, the wheel accumulator at Game input offset 0x44, and the 0x00e7d070 effects in the original Cell mode."
+    ],
+    "validated": 0
+  },
+  "semantic": {}
+}
+```
+
+## 10_dependencies
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "callees": [
+    {
+      "name": "FUN_00b1fbf0",
+      "reconstructed": false,
+      "va": "0x00b1fbf0"
+    }
+  ],
+  "callees_truncated": false,
+  "callers": [],
+  "callers_truncated": false,
+  "data_reference_count": 0,
+  "edges": [
+    {
+      "callsite": "0x00e7d684",
+      "direction": "out",
+      "other": "0x00697b40",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d68e",
+      "direction": "out",
+      "other": "0x00b1fbf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6bf",
+      "direction": "out",
+      "other": "0x00b1fbf0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6d7",
+      "direction": "out",
+      "other": "0x00b721d0",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6ab",
+      "direction": "out",
+      "other": "0x00e50f60",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d708",
+      "direction": "out",
+      "other": "0x00e51060",
+      "reference_type": "direct-call"
+    },
+    {
+      "callsite": "0x00e7d6f8",
+      "direction": "out",
+      "other": "0x00e7d070",
+      "reference_type": "direct-call"
+    }
+  ],
+  "edges_truncated": false,
+  "external_callees": [],
+  "fan_in": 0,
+  "fan_out": 1,
+  "manifest_callees": [],
+  "manifest_callers": [],
+  "nearby_reconstructed": [],
+  "scc": {
+    "id": "scc-0554",
+    "size": 1
+  },
+  "vtable_reference_count": 0
+}
+```
+
+## 11_related_functions
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:DATA,OpaqueCellModeStrategy,int32,raw float dword",
+      "shared_vtable:vtable:0x01485550",
+      "same_calling_convention"
+    ],
+    "package": "PKG-GAME-INPUT-WAVE8",
+    "score": 34,
+    "symbol": "cell_mode_strategy_on_mouse_up_00e5c0f0",
+    "va": "0x00e5c0f0"
+  },
+  {
+    "match_basis": [
+      "same_package",
+      "same_subsystem",
+      "same_class",
+      "shared_types:DATA,OpaqueCellModeStrategy,int32,raw float dword",
+      "shared_vtable:vtable:0x01485550",
+      "same_calling_convention"
+    ],
+    "package": "PKG-GAME-INPUT-WAVE8",
+    "score": 34,
+    "symbol": "cell_mode_strategy_on_mouse_down_00e6c860",
+    "va": "0x00e6c860"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_types:DATA,raw float dword",
+      "shared_vtable:vtable:0x01485550",
+      "same_calling_convention"
+    ],
+    "package": "PKG-GAME-INPUT-WAVE7",
+    "score": 18,
+    "symbol": "cell_mode_strategy_on_mouse_move_00e51010",
+    "va": "0x00e51010"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "shared_types:DATA,int32",
+      "shared_vtable:vtable:0x01485550",
+      "same_calling_convention"
+    ],
+    "package": "PKG-GAME-INPUT-WAVE7",
+    "score": 18,
+    "symbol": "cell_mode_strategy_on_key_down_00e818f0",
+    "va": "0x00e818f0"
+  },
+  {
+    "match_basis": [
+      "same_class",
+      "shared_types:DATA,OpaqueCellModeStrategy",
+      "shared_vtable:vtable:0x01485550"
+    ],
+    "package": "PKG-APP-LIFECYCLE-WAVE8",
+    "score": 15,
+    "symb
+[TRUNCATED]
+```
+
+## 12_existing_reconstruction
+
+- State: `present`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "decomp": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c",
+  "file": "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+  "files": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c",
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp",
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8_model_test.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-wave8/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg-game-input-wave8/00e7d660.json"
+  ]
+}
+```
+
+## 13_semantic_hypotheses
+
+- State: `missing`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## 14_conflicts_questions
+
+- State: `conflicted`
+- Provenance: `reconstruction/knowledge/index.json, knowledgegraph/research/semantic-decomp.json`
+
+```json
+{
+  "conflicts": [
+    {
+      "anchors": [
+        "0x00e5c0f0",
+        "0x00e6c860",
+        "0x00e7d660"
+      ],
+      "conflict_id": "U9",
+      "kind": "conflict_ledger",
+      "rejected": [],
+      "resolution": "The input/UI surface is structurally present, but partition, focus, priority, and consume behavior are not proven.",
+      "resolution_status": "The input/UI surface is structurally present, but partition, focus, priority, and consume behavior are not proven.",
+      "source": "knowledgegraph/research/conflicts/track-c-state-events.json",
+      "subject": null,
+      "unresolved_reason": "Runtime reachability is absent or the required direct body/call path is not recovered."
+    }
+  ],
+  "unresolved_questions": [
+    "Observe the concrete vtable call shape, the effective return of 0x00b1fbf0 including any patching, the 0x00b721d0 lookup result, the wheel accumulator at Game input offset 0x44, and the 0x00e7d070 effects in the original Cell mode.",
+    "concrete runtime receiver identity and vtable dispatch reachability for slot 0x40",
+    "runtime reachability of the zoom and health paths, which is zero under the observed gate body",
+    "the identity of the unnamed strategy slot 0x3c target 0x00e81030 between OnMouseUp and OnMouseWheel",
+    "the semantic meaning of mode value 3 in the 0x00e7d070 call and of the sentinel word at 0x016b3c14",
+    "whether the 0x016b3c14 sentinel can ever differ from the value the caller loads at 0x00e7d6ed, which would decide whether the 0x00e7d070 sub-object lookup path is ever taken",
+    "whether the always-true 0x00b1fb
+[TRUNCATED]
+```
+
+## 15_validation_and_provenance
+
+- State: `present`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': '.spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/integrated/batch-2026-09-25-wave8/handoff.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-game-input-wave8/00e7d660.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'src/reconstruction/pkg_game_input_wave8/game_input_wave8_model_test.cpp', 'source_class': 'committed_artifact'}`
+
+```json
+{
+  "provenance": [
+    {
+      "mode": "derived",
+      "ref": "ephemeral reconstruction_knowledge.build_index",
+      "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "persisted",
+      "ref": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/research/source-reconstruction-manifest.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/integrated/batch-2026-09-25-wave8/handoff.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "reconstruction/metadata/pkg-game-input-wave8/00e7d660.json",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+      "source_class": "committed_artifact"
+    },
+    {
+      "mode": "persisted",
+      "ref": "src/recon
+[TRUNCATED]
+```

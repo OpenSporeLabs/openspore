@@ -1,0 +1,223 @@
+{
+  "schema": "pkg-app-imessage-manager-dtor.function-handoff.v1",
+  "package": "PKG-APP-IMESSAGE-MANAGER-DTOR",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "version": "3.1.0.22",
+  "va": "0x0067dc80",
+  "address": "0x0067dc80",
+  "symbol": "App::IMessageManager::Get",
+  "normalized_symbol": "get_0067dc80",
+  "target_state": "staging candidate; not integrated, runtime validation gated",
+  "phase": "body reconstruction implemented; static validation NOT_AVAILABLE on two evidence-bound checks (see validation)",
+  "captured_on": "2026-09-26",
+  "reconciled_on": "2026-09-29",
+  "reconciliation": {
+    "prior_wave": "the package already carried the body, the ABI record, the callee identifications and the model test; the prior wave's evidence ledger was re-verified against the live bridge rather than re-derived, and it holds.",
+    "defect_found": "the validator could not locate a target source span, so four of the nine checks read NOT_AVAILABLE ('target source span is not deterministically available'). The cause was the entry point's declaration shape: `extern \"C\" __attribute__((naked, thiscall)) void* get_0067dc80(...)` cannot match the validator's return-declaration pattern, and the portable model's name carries no word from the record symbol, so no span bound to the target at all.",
+    "fix": "the naked attribute list now travels in a single macro, PKG_IMSG_NAKED_THISCALL, so the entry point declares as `extern \"C\" void* PKG_IMSG_NAKED_THISCALL get_0067dc80(...)` and binds. No instruction, no constant, no claim changed.",
+    "effect": "coverage ratio 0.444 -> 0.75; CALLS, RETURN SEMANTICS, CONSTANTS, CONTROL FLOW, GLOBALS and VIRTUAL DISPATCH all moved from NOT_AVAILABLE to PASS, ABI from NOT_AVAILABLE to WARN."
+  },
+  "ownership_recheck": {
+    "manifest": false,
+    "integrated_handoffs": false,
+    "staging": true,
+    "src_reconstruction": false
+  },
+  "source_files": [
+    "reconstruction/staging/pkg-app-imessage-manager-dtor/get_0067dc80.hpp",
+    "reconstruction/staging/pkg-app-imessage-manager-dtor/get_0067dc80.cpp",
+    "reconstruction/staging/pkg-app-imessage-manager-dtor/get_0067dc80_model_test.cpp"
+  ],
+  "naming_finding": {
+    "severity": "high",
+    "sdk_symbol": "App::IMessageManager::Get",
+    "claim": "The SDK symbol-table name is NOT supported by the machine code at 0x0067dc80.",
+    "observed_role": "MSVC scalar deleting destructor wrapper: call the complete destructor, release `this` when bit 0 of a callee-cleaned dword flag is set, return `this`.",
+    "consequence": "Ghidra's vftable label PTR_App__IMessageManager__Get_01401798 is derived FROM this mislabel and inherits it; the vftable is real, the name attached to it is not corroborated.",
+    "sdk_symbol_table_query": "ghidra_search_functions name_pattern=IMessageManager returns exactly one hit, this address, so no sibling App::IMessageManager::* symbol exists to cross-check the label."
+  },
+  "implementation": {
+    "declaration": "extern \"C\" void* PKG_IMSG_NAKED_THISCALL get_0067dc80(OpaqueMessageManagerOwner*, std::uint32_t);  // PKG_IMSG_NAKED_THISCALL = __attribute__((naked, thiscall))",
+    "normalized_receiver": "OpaqueMessageManagerOwner* in ECX",
+    "return_type": "void* (dword receiver value) in EAX",
+    "port_boundary": "CompleteDtorPort models 0x0067db10; GlobalFreePort models 0x00f47380",
+    "second_entry_point": "app_imessage_manager_delete_dispatch_0067dc80 -- the same semantics in ordinary C++ (cdecl, caller-cleaned), used by the model test; get_0067dc80 is what carries the RET 0x4",
+    "status": "staging"
+  },
+  "function_extent": {
+    "entry": "0x0067dc80",
+    "body_end_inclusive": "0x0067dc9b",
+    "instruction_count": 11,
+    "ret_sites": 1,
+    "ret_site": "0x0067dc9b",
+    "single_linear_flow": true,
+    "original_bytes": 30
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall, callee stack cleanup",
+    "hidden_receiver": "ECX, dword pointer, callee object",
+    "ordinary_stack_arguments": [
+      {
+        "index": 0,
+        "width_bytes": 4,
+        "role": "deleting-destructor flag",
+        "evidence": "RET 0x4 pops exactly one dword; the same slot is the one tested at 0x0067dc88."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_site": "0x0067dc9b",
+    "callee_saved_registers": ["ESI"],
+    "return_type": "void* -- MOV EAX,ESI at 0x0067dc98 materialises the receiver into the return register",
+    "return_register": "EAX",
+    "termination": "RET 0x4",
+    "note": "The Ghidra decompilation reports \"return in_ECX\" and \"WARNING: Unknown calling convention\". That is a decompiler artifact: the disassembly has an explicit MOV EAX,ESI immediately before POP ESI/RET. The disassembly is authoritative here."
+  },
+  "observed_mechanics": [
+    "PUSH ESI; MOV ESI,ECX at 0x0067dc80-0x0067dc81 spill the receiver into ESI; ECX is left intact so the following call is still thiscall on the same object.",
+    "CALL 0x0067db10 at 0x0067dc83 runs unconditionally, before the flag is even read. It is the complete-object destructor.",
+    "TEST byte [ESP+8],0x1 at 0x0067dc88 reads the flag, not [ESP+4]: the preceding CALL has pushed a return address, so the frame is saved-ESI, return address, flag.",
+    "Only bit 0 of the flag is examined. The remaining 31 bits are ignored by this body.",
+    "When bit 0 is set, PUSH ESI; CALL 0x00f47380; ADD ESP,4 at 0x0067dc8f-0x0067dc95 releases the receiver. The ADD ESP,4 makes 0x00f47380 a __cdecl callee-cleaned by the caller.",
+    "MOV EAX,ESI at 0x0067dc98 runs on both paths, so the receiver is returned whether or not the release happened.",
+    "There is no null check on the receiver in this body; 0x00f47380 is the only null guard, and it guards its argument inside its own body."
+  ],
+  "call_graph": {
+    "direct_callees": [
+      {
+        "address": "0x0067db10",
+        "callsite": "0x0067dc83",
+        "convention": "thiscall, no stack arguments, plain RET",
+        "identified_as": "complete-object destructor of the owning class",
+        "identification_evidence": [
+          "installs an SEH frame with handler 0x0120bf8e via FS:[0x0]",
+          "sets [ESI] = 0x01401798 and [ESI+4] = 0x01401790 (own vptrs)",
+          "guards on the flags at [ESI+0x11] and [ESI+0x10]",
+          "releases the members at [ESI+0x14] and [ESI+0x20] through 0x00f47380 and nulls them",
+          "calls vtable slot +0x8 on the base subobject at [ESI+0x0c]",
+          "finally sets [ESI] = 0x013f3a68 and [ESI+4] = 0x013ef094 (base vptrs)"
+        ],
+        "reverified_2026_09_29": "yes -- ghidra_disassemble_function at 0x0067db10 returned all 48 instructions and every claim above is present in the listing."
+      },
+      {
+        "address": "0x00f47380",
+        "callsite": "0x0067dc90",
+        "convention": "cdecl, one stack argument, no return value, caller cleans with ADD ESP,4",
+        "identified_as": "null-guarded release through a process-global memory manager",
+        "identification_evidence": [
+          "MOV EAX,[ESP+4]; TEST EAX,EAX; JZ -- returns immediately for a null pointer",
+          "MOV ECX,[0x016c8b44] -- loads the manager from the process global 0x016c8b44",
+          "tail-calls 0x009276c0 with the manager in ECX and the pointer on the stack"
+        ],
+        "not_operator_delete": "This is the process memory manager, not the CRT operator delete. The claim 'operator delete' would be an over-claim; the manager global 0x016c8b44 is what the release actually goes through.",
+        "reverified_2026_09_29": "yes -- ghidra_disassemble_function at 0x00f47380 returned exactly the 7 instructions quoted above, ending in a plain RET."
+      }
+    ],
+    "direct_callers": [],
+    "caller_boundary": "No direct code caller was reported. The only reference is the data entry at 0x01401798.",
+    "data_xrefs": [
+      {
+        "from": "0x01401798",
+        "to": "0x0067dc80",
+        "type": "DATA",
+        "note": "slot 0 of the primary vftable; ghidra_read_memory at 0x01401790 length 48 returned the bytes 00 db 67 00 / 00000000 / 80 dc 67 00 / ... so 0x0067db00 sits at 0x01401790 and 0x0067dc80 at 0x01401798.",
+        "reverified_2026_09_29": "yes -- the 48 bytes were re-read from the live program and match."
+      }
+    ]
+  },
+  "vtables": {
+    "primary_vftable": "0x01401798",
+    "slot0": "0x0067dc80",
+    "slot_evidence": "ghidra_read_memory at 0x01401790 length 48 returned 0x0067dc80 at 0x01401798.",
+    "owning_class_vptrs": {
+      "offset_0x00": "0x01401798",
+      "offset_0x04": "0x01401790"
+    },
+    "base_vptrs_after_teardown": {
+      "offset_0x00": "0x013f3a68",
+      "offset_0x04": "0x013ef094"
+    },
+    "slot1": "0x00768530",
+    "slot1_note": "NOT a vector deleting destructor. 0x00768530 is a 5-instruction lock-free increment helper (ADD ECX,8; MOV EAX,1; XADD [ECX],EAX; INC EAX; RET). The scalar/vector deleting-destructor slot pair expected at slots 0 and 1 was NOT observed, so the vftable-slot rationale for calling 0x0067dc80 a deleting destructor rests on the body shape, not on the slot layout. Reported as an open question rather than smoothed over.",
+    "unresolved_neighbours": "Slots 2-9 (0x0067da30, 0x0067daf0, 0x0067d300, 0x0067d310, 0x0067d720, 0x0067d3e0, 0x00dde980, 0x0067d3f0) are not defined as functions in Ghidra, so no interface member names could be recovered from the vftable."
+  },
+  "layout": {
+    "owned_object_offsets_observed_only_through_0x0067db10": {
+      "0x00": "primary vptr (0x01401798 during teardown, 0x013f3a68 after)",
+      "0x04": "secondary vptr (0x01401790 during teardown, 0x013ef094 after)",
+      "0x0c": "base subobject pointer; its vtable slot +0x8 is invoked",
+      "0x10": "flag byte, tested before the 0x0067d720 teardown call",
+      "0x11": "flag byte; when non-zero the whole teardown body runs",
+      "0x14": "member released via 0x008676e0 then 0x00f47380, then nulled",
+      "0x20": "member released via 0x00f47380, then nulled"
+    },
+    "caveat": "These offsets belong to the destructor 0x0067db10, not to 0x0067dc80. They document the object's extent (>= 0x24) so the opaque owner type can be sized honestly. They are NOT a recovered class definition, and this body itself reads no field of the receiver at all."
+  },
+  "globals": [
+    {
+      "address": "0x016c8b44",
+      "role": "process-global memory manager pointer",
+      "referenced_by": "0x00f47380 at 0x00f47388 (MOV ECX,[0x016c8b44]), i.e. on the release path of 0x0067dc80",
+      "meaning": "unknown -- the pointee type was not recovered"
+    }
+  ],
+  "validation": {
+    "build_commands": [
+      "g++ -m32 -O{0,1,2,3,s} -Wall -Wextra -Werror -std=c++17 get_0067dc80.cpp get_0067dc80_model_test.cpp",
+      "clang++ -m32 -O{0,1,2,3,s} -Wall -Wextra -Werror -std=c++17 get_0067dc80.cpp get_0067dc80_model_test.cpp"
+    ],
+    "build_result": "clean, no diagnostics, under both compilers at every optimisation level tried",
+    "syntax_result": "-fsyntax-only with -Wall -Wextra -Wpedantic is clean under clang++; under g++ it emits three -Wattributes notes ('thiscall attribute is used for non-class method') for the thiscall port typedef, the entry-point prototype and the entry-point definition. Those notes are inherent to modelling an MSVC thiscall member function reached through a C linkage, are not in the -Wall -Wextra -Werror set the gate uses, and were not silenced.",
+    "model_test_result": "exit code 0 under both compilers at -O0/-O1/-O2/-O3/-Os",
+    "generated_body_matches_original": true,
+    "generated_body_evidence": "with -fno-pic -no-pie the emitted sequence is 56 / 89 ce / e8 .. / f6 44 24 08 01 / 74 09 / 56 / e8 .. / 83 c4 04 / 89 f0 / 5e / c2 04 00 -- instruction for instruction the original 30 bytes 56 8b f1 e8 88 fe ff ff f6 44 24 08 01 74 09 56 e8 eb 96 8c 00 83 c4 04 8b c6 5e c2 04 00. Two encodings differ for free because both spell the same instruction (the original writes the register moves as 8b f1 / 8b c6, mov r32,r/m32, where the assembler picks 89 ce / 89 f0, mov r/m32,r32) and the two call displacements address the local shims. Under a default position-independent build both compilers prepend a nine-byte __x86.get_pc_thunk.ax PC anchor, which is a toolchain artifact and not part of the reconstruction.",
+    "mutation_checks": "eight mutations were applied one at a time and each made the model test exit non-zero: RET 0x4 -> RET; TEST [ESP+8] -> TEST [ESP+4]; JZ -> JNZ; the release argument changed from the receiver to a register; the mask 1u -> 3u; the release moved before the destructor; the unconditional destructor made conditional; the return value changed from the receiver to a constant.",
+    "openspore_validate": "python3 -m tools.reconstruction_tooling.cli --format json validate 0x0067dc80",
+    "openspore_validate_static_status": "NOT_AVAILABLE (7 of 8 structural checks attempted, 6 PASS, 1 WARN, 1 NOT_AVAILABLE; coverage ratio 0.75)"
+  },
+  "static_validation_blockers": [
+    {
+      "check": "FIELDS/OFFSETS",
+      "status": "NOT_AVAILABLE",
+      "why": "The machine-derived receiver record names no register -- register=null, reason=ecx_read_without_deref, because this 11-instruction body reads ECX and never dereferences it -- so there is no receiver window to ground a declared offset against. The register-agnostic absence arm is excluded in turn: the complete listing DOES address memory, at TEST byte ptr [ESP + 0x8], which is the stack argument slot and not a receiver field. The check therefore has nothing to say in either direction.",
+      "not_a_source_defect": "The only way to move this check off NOT_AVAILABLE from the source side would be to declare a field offset in the span, which would be a claim this body demonstrably does not make. It was deliberately not done."
+    },
+    {
+      "check": "ABI",
+      "status": "WARN",
+      "why": "The derived ABI record abstained: conventions.calling_convention is null, confidence UNKNOWN, abstained_because 'receiver_not_determinable: ecx_read_without_deref'. The persisted record's claim (__thiscall, callee stack cleanup) and the source's declaration agree -- there is no conflict, so this is not a FAIL -- but the derived oracle is not proven, so the check warns. The source cannot raise this to PASS without contradicting the abstention."
+    }
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "condition": "Confirm that a caller of the slot-0 vftable entry passes 1 for the deleting-destructor flag when it owns the storage and 0 when it does not, and confirm the manager at 0x016c8b44 is the process allocator whose release 0x009276c0 performs."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_decompile_function",
+      "ghidra_disassemble_function",
+      "ghidra_read_memory",
+      "ghidra_search_functions"
+    ]
+  },
+  "evidence_refs": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__IMessageManager__Get.c",
+    "ghidra:disassemble:0x0067dc80",
+    "ghidra:read_memory:0x0067dc80",
+    "ghidra:disassemble:0x0067db10",
+    "ghidra:disassemble:0x00f47380",
+    "ghidra:decompile:0x009276c0",
+    "ghidra:read_memory:0x01401790",
+    "ghidra:disassemble:0x00768530",
+    "reconstruction/evidence/0067dc80/evidence.json",
+    "reconstruction/evidence/0067dc80/validation.json",
+    "reconstruction/metadata/pkg-app-imessage-manager-dtor/0067dc80.json"
+  ]
+}

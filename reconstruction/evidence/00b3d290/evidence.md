@@ -2,9 +2,37 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `fc8f4f201205eaf26f028533de7786d5556e3bafb2791baf9a64262e7072155e`
+- Content SHA-256: `a5662fa2b6b17ac1ea7fe18893d0c1ab6e2ee11dcde5114a393c27047c9dbd07`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "cdecl-compatible static accessor; convention is not discriminable and is not asserted",
+  "hidden_receiver": "absent",
+  "hidden_this_register": "ECX is never read; the body contains no register operand other than EAX in the MOV and the implicit ESP in the RET",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": false,
+  "ret_form": "RET",
+  "return_observation": "0x00b3d290: MOV EAX,[0x0167EAD4] is the only write to EAX, so all 32 bits are defined and no truncation or zero-extension occurs.",
+  "return_register": "EAX",
+  "return_semantics": "the raw 32-bit contents of the .bss dword at 0x0167EAD4, verbatim",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "RET at 0x00b3d295"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -34,7 +62,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "edb7a66fb88971b51bc7a5d11988dc9bca42f4908681ba9a43e1583d32524634",
+  "content_sha256": "6f10bc9843f860ef5cc20b9c4860feee10a59ad541148a5aa2a219b77c33269e",
   "conventions": {
     "ambiguities": [],
     "calling_convention": null,
@@ -53,7 +81,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "cdecl-compatible static accessor; convention is not discriminable and is not asserted"
   },
   "dispatch": {
     "call_offsets": [],
@@ -235,9 +263,94 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac5330"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac5430"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac5490"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac6960"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32aa0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32c60"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b32e80"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b33130"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b33350"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b33540"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b5ce70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b8c330"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b9caa0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba1590"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00be7bf0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf5cb0"
+  }
+]
+```
 
 ## contradictions
 
@@ -247,13 +360,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 FUN_00b3d290(void)\n\n{\n  return DAT_0167ead4;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -285,9 +394,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13180,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"cdecl-compatible static accessor; convention is not discriminable and is not asserted\",\n    \"hidden_receiver\": \"absent\",\n    \"hidden_this_register\": \"ECX is never read; the body contains no register operand other than EAX in the MOV and the implicit ESP in the RET\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00b3d290: MOV EAX,[0x0167EAD4] is the only write to EAX, so all 32 bits are defined and no truncation or zero-extension occurs.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the raw 32-bit contents of the .bss dword at 0x0167EAD4, verbatim\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"RET at 0x00b3d295\"\n  },\n  \"analogues\": [],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac5330\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac5430\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac5490\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac6960\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32aa0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32c60\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b32e80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b33130\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b33350\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b33540\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b5ce70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b8c330\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b9caa0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba1590\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00be7bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf5cb0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c1c310\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c41360\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c41f30\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c41ff0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c43e40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ca81d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cacbe0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cad880\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf2520\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf30b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cf3bf0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d1c400\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00db86a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dc7e00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00dce970\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0100a960\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00ac5333\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ac5330\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ac543f\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ac5430\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ac549f\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ac5490\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ac69e5\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ac6960\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b32aac\",\n        \"direction\": \"in\",\n        \"other\": \"0x00b32aa0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00b32ab8\",\n        \"direction\": \"in\",\n       
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -304,38 +420,38 @@
   "body_start": "00b3d290",
   "callees": [],
   "callers": [
-    "FUN_00c43e40",
+    "FUN_00b9caa0",
     "FUN_00ac5490",
-    "FUN_00b5ce70",
-    "FUN_00cad880",
-    "FUN_00b32aa0",
-    "FUN_00cf2520",
-    "FUN_00b33350",
-    "FUN_00bf5cb0",
-    "FUN_00ca81d0",
-    "FUN_00cacbe0",
-    "FUN_00d1c400",
-    "FUN_00b33540",
-    "FUN_0100a960",
-    "FUN_00b32e80",
-    "FUN_00b8c330",
-    "FUN_00db86a0",
-    "FUN_00be7bf0",
     "FUN_00c1c310",
-    "FUN_00cf3bf0",
-    "FUN_00b32c60",
-    "FUN_00dc7e00",
-    "FUN_00c41ff0",
-    "FUN_00c41f30",
-    "FUN_00ac5330",
-    "FUN_00dce970",
     "FUN_00ac5430",
+    "FUN_00ca81d0",
+    "FUN_00d1c400",
+    "FUN_00b32e80",
+    "FUN_00c41ff0",
+    "FUN_00ac5330",
     "FUN_00ac6960",
-    "FUN_00ba1590",
-    "FUN_00cf30b0",
-    "FUN_00b33130",
+    "FUN_00b8c330",
     "FUN_00c41360",
-    "FUN_00b9caa0"
+    "FUN_00dc7e00",
+    "FUN_00cacbe0",
+    "FUN_00b33350",
+    "FUN_00c41f30",
+    "FUN_00dce970",
+    "FUN_00cf3bf0",
+    "FUN_00b33130",
+    "FUN_00b33540",
+    "FUN_00b32c60",
+    "FUN_00cf30b0",
+    "FUN_00db86a0",
+    "FUN_00ba1590",
+    "FUN_00bf5cb0",
+    "FUN_0100a960",
+    "FUN_00b32aa0",
+    "FUN_00cad880",
+    "FUN_00cf2520",
+    "FUN_00b5ce70",
+    "FUN_00c43e40",
+    "FUN_00be7bf0"
   ],
   "classification": "stub",
   "dispatch": null,
@@ -500,9 +616,24 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b06/b3d290_global_slot_accessor.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b06/00b3d290.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -512,9 +643,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime differential test would have to establish (a) that 0x0167EAD4 is non-zero once the owning subsystem is up, and (b) the concrete type of the pointee, which is the withheld claim.",
+    "Because the slot has no static writer, static analysis alone cannot enumerate the set of objects that can land there; a runtime write watchpoint on 0x0167EAD4 is the only way to close this.",
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -524,15 +667,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t"
+]
+```
 
 ## vtables
 

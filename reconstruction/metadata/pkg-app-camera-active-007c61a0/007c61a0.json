@@ -1,0 +1,198 @@
+{
+  "schema": "pkg-camera-active-007c61a0.function-handoff.v1",
+  "package": "PKG-APP-CAMERA-ACTIVE-007C61A0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "version": "3.1.0.22",
+  "va": "0x007c61a0",
+  "address": "0x007c61a0",
+  "symbol": "App::cCameraManager::SetViewer",
+  "normalized_symbol": "camera_manager_set_viewer_007c61a0",
+  "reconstructed_symbol": "set_viewer_007c61a0",
+  "queue_id": "fun:007c61a0:App::cCameraManager::SetViewer",
+  "subsystem": "App",
+  "cluster": "app-lifecycle",
+  "target_state": "staging candidate; naming contradiction recorded, not promoted",
+  "phase": "live Ghidra body reconstruction and focused model verification",
+  "captured_on": "2026-09-26",
+  "intended_paths": {
+    "canonical_reconstruction": [
+      "src/reconstruction/pkg_app_camera_active_007c61a0/camera_active_007c61a0.hpp",
+      "src/reconstruction/pkg_app_camera_active_007c61a0/camera_active_007c61a0.cpp",
+      "src/reconstruction/pkg_app_camera_active_007c61a0/camera_active_007c61a0_model_test.cpp"
+    ],
+    "metadata": "reconstruction/metadata/pkg-app-camera-active-007c61a0/007c61a0.json"
+  },
+  "function_extent": {
+    "ghidra_entry": "0x007c61a0",
+    "ghidra_body_start": "0x007c61a0",
+    "machine_body_end_inclusive": "0x007c61b6",
+    "machine_body_bytes": 23,
+    "instruction_count": 8,
+    "return_sites": [
+      "0x007c61b3: RET",
+      "0x007c61b6: RET"
+    ],
+    "symbol_extent_note": "Linear disassembly of 0x007c6100-0x007c61bf shows 0x007c61b7 onward is INT3 padding, so 0x007c61a0-0x007c61b6 is a complete 23-byte function. The Ghidra decompiler's body is reported as if it had a second parameter (cViewer* pViewer) and an in_ECX alias, but no stack slot is read and the single return path is the RET at 0x007c61b3; the cViewer* parameter is a decompiler artifact, not an observed argument."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_type": "OpaqueCamera*",
+    "ret_form": "RET",
+    "return_type_rationale": "EAX is the sole return register and both paths leave a 32-bit pointer in it: 0x007c61b0 MOV EAX,dword ptr [ECX + EAX*0x4] returns the raw handle read out of the mpCameras element, and 0x007c61b4 XOR EAX,EAX returns the null pointer. The staging type OpaqueCamera* models the SDK's App::ICamera* return of ICameraManager::GetActiveCamera; the imported SDK label SetViewer declares void, which the machine body contradicts. The bare pointer type is what the reconstructed source span declares, so it is stated here as modelled.",
+    "gpr_in": {
+      "EAX": "index, loaded from [ECX+0xa8] then reused as the scale/index",
+      "ECX": "receiver, reloaded with [ECX+0x80] before the indexed load"
+    },
+    "gpr_out": {
+      "EAX": "returned pointer (element payload, or 0 on the negative-index path)"
+    }
+  },
+  "observed_mechanics": [
+    "0x007c61a0 MOV EAX,dword ptr [ECX + 0xa8] - load the 32-bit active index from receiver offset +0xa8 (SDK field mnActiveIndex).",
+    "0x007c61a6 TEST EAX,EAX / 0x007c61a8 JL 0x007c61b4 - the only branch; a signed negative index takes the null-return path.",
+    "0x007c61aa MOV ECX,dword ptr [ECX + 0x80] - load the contiguous element base from receiver offset +0x80 (SDK field mpCameras, the first word of the eastl::vector<ICameraPtr> header, i.e. mFirst).",
+    "0x007c61b0 MOV EAX,dword ptr [ECX + EAX*0x4] - scale-4 indexed load, so the vector element stride is 4 bytes and the loaded dword is the raw payload of one refcounted camera handle.",
+    "0x007c61b4 XOR EAX,EAX / 0x007c61b6 RET - null return for a negative active index.",
+    "No upper-bound compare against [ECX+0x84] (the vector mLast word) exists in this body, unlike the sibling routine at 0x007c61d0; a positive out-of-range active index reads past the element range without a guard.",
+    "No call instruction appears in the body: the routine is pure load, test, branch and indexed load, consistent with the briefing's no_open_internal_callees frontier reason."
+  ],
+  "observed_state_contract": {
+    "receiver_offsets": {
+      "camera_vector_base": "+0x80",
+      "camera_vector_end": "+0x84",
+      "active_index": "+0xa8"
+    },
+    "receiver_offsets_observed_in_this_body": [
+      "+0x80",
+      "+0xa8"
+    ],
+    "read_only": true,
+    "state_mutation": "none",
+    "control_flow": [
+      "if (active_index < 0) return nullptr;",
+      "return element[active_index] from the contiguous base at +0x80;"
+    ]
+  },
+  "vtables": [
+    {
+      "table": "vtable:0x014106a4",
+      "slot_index": 15,
+      "slot_byte_offset": "0x3c",
+      "slot_address": "0x014106e0",
+      "slot_value": "0x007c61a0",
+      "evidence": "ghidra_read_memory 96 bytes at 0x014106a4; little-endian dwords a0617c00 at index 15",
+      "xref": "ghidra_get_xrefs_to 0x007c61a0 -> exactly one DATA reference, from 0x014106e0",
+      "slot_name_mapping_status": "UNRESOLVED - see naming_contradiction"
+    }
+  ],
+  "naming_contradiction": {
+    "kind": "sdk_label_vs_machine_body",
+    "imported_name": "App::cCameraManager::SetViewer",
+    "imported_name_source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c and knowledgegraph/research/types/14-class-families.json families[52].sdk_addresses[20]",
+    "observed_body_semantics": "unsigned/negative-guarded indexed read of mpCameras[mnActiveIndex]",
+    "assessment": "The observed body is a getter, not a setter: it takes no stack argument, writes no receiver field, and returns a pointer. The one unambiguous writer of the SDK's mpViewer field at +0xB0 is the 7-instruction body at 0x007c6100 (MOV EAX,dword ptr [ESP+4]; MOV dword ptr [ECX+0xb0],EAX; RET 4). The prior committed analysis knowledgegraph/research/state-machines/empire-space.json already records the same reading at CONFIRMED level.",
+    "slot_order_evidence": [
+      "The public SDK header Spore ModAPI/Spore/App/cCameraManager.h lists the virtual methods in declaration order, and cCameraManager is the only App::cCameraManager writer of +0xB0 observed at 0x007c6100, which occupies slot 7 of 0x014106a4 while the header's declaration index 5 is SetViewer - an offset of +2.",
+      "Slot 13 (0x007c6110) is the only other body that hashes a caller-supplied key and then dispatches virtually, matching declaration index 11 SetActiveCameraByKey - again +2.",
+      "Slot 18 (0x007c64e0) walks the +0x94 string16 vector with a 0x10-byte stride and then calls slot 0x50 virtually, matching declaration index 16 GetCameraID - again +2.",
+      "Slot 19 (0x007c61c0) is exactly (dword [ECX+0x84] - dword [ECX+0x80]) >> 2, the element count of the +0x80 vector, matching declaration index 17 GetCamerasCount - again +2.",
+      "Slot 20 (0x007c61d0) range-checks its stack argument against dword [ECX+0x84] minus dword [ECX+0x80] before indexing, matching declaration index 18 GetCameraAt - again +2."
+    ],
+    "slot_order_conclusion": "Under a constant vtable_slot = declaration_index + 2 offset, slot 15 resolves to declaration index 13, which is GetActiveCamera. The offset is corroborated by five independent slot bodies but is an inference from the header declaration order, not a symbol recovered from the binary, so the rename is recorded and NOT applied.",
+    "secondary_sdk_address_defects_observed": [
+      "SDK address 0x007c61b0 (declared SetActiveCameraByKey) falls inside this function's 23-byte body; the real keyed lookup is slot 13 at 0x007c6110.",
+      "SDK address 0x007c61f0 (declared GetActiveCameraID) is reported as interior to this function's containing region but is not a Ghidra function entry.",
+      "SDK address 0x007c6240 (declared GetActiveCamera) is interior to the larger body FUN_007c6200, which re-derives the same mpCameras[mnActiveIndex] expression at (*(int *)(param_1 + 0x80) + *(int *)(param_1 + 0xa8) * 4) - an independent witness of the expression recovered here."
+    ]
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra MCP queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "disassembly": {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x007c61a0",
+      "observation": "8 instructions: MOV EAX,[ECX+0xa8]; TEST EAX,EAX; JL 0x007c61b4; MOV ECX,[ECX+0x80]; MOV EAX,[ECX+EAX*4]; RET; XOR EAX,EAX; RET."
+    },
+    "linear_disassembly": {
+      "tool": "ghidra_disassemble_bytes",
+      "range": "0x007c6100-0x007c61bf and 0x007c61b7-0x007c61df",
+      "observation": "Confirms 0x007c6100 is the +0xB0 pointer writer, that 0x007c61c0 is the (mLast-mFirst)>>2 count, that 0x007c61d0 starts a range-checked indexer, and that 0x007c61b7-0x007c61bf is INT3 padding, so the target body is exactly 23 bytes."
+    },
+    "decompile": {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007c61a0",
+      "observation": "Pseudocode collapses to two bare returns; the cCameraManager* / cViewer* signature and in_ECX alias are decompiler artifacts. The pViewer parameter has no observed stack slot."
+    },
+    "memory": {
+      "tool": "ghidra_read_memory",
+      "range": "0x014106a4, 96 bytes",
+      "observation": "24 dwords read; index 15 is 0x007c61a0 and index 7 is 0x007c6100."
+    },
+    "xrefs": {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x007c61a0",
+      "observation": "Exactly one DATA reference from 0x014106e0, confirming vtable-only reachability and no direct callers."
+    },
+    "field_offsets_source": "knowledgegraph/research/types/14-class-families.json families[52].sdk_structure, which records mpCameras at 0x80 (size 20, eastl::vector<eastl::intrusive_ptr<App::ICamera>>), mCameraNames at 0x94, mnActiveIndex at 0xa8, field_AC at 0xac and mpViewer at 0xb0, struct size 0xb4.",
+    "header_source": "Spore ModAPI/Spore/App/cCameraManager.h - public GPL Spore ModAPI SDK header, cited as committed header_evidence at line 34 of the same families[52] record."
+  },
+  "implementation": {
+    "source": "reconstruction/staging/pkg-app-camera-active-007c61a0/camera_active_007c61a0.cpp",
+    "header": "reconstruction/staging/pkg-app-camera-active-007c61a0/camera_active_007c61a0.hpp",
+    "model_test": "reconstruction/staging/pkg-app-camera-active-007c61a0/camera_active_007c61a0_model_test.cpp",
+    "native_ports": "none; the body is pure field access, so no call seams are needed",
+    "validation": {
+      "focused_model_test": "passed (g++ -m32 -std=c++17 -Wall -Wextra, 0 failures across 6 test groups)",
+      "x86_32_syntax": "passed",
+      "format": "matches the existing reconstruction corpus style; the repository ships no .clang-format, so clang-format defaults are not the gate",
+      "json": "passed"
+    },
+    "runtime_gate": "Wine/original camera-manager trace is not available; no runtime promotion is claimed.",
+    "status": "staged",
+    "canonical_path": "not promoted",
+    "canonical_status": "absent"
+  },
+  "integration_status": "staged",
+  "canonical_files": [],
+  "semantic_findings": [
+    "The 23-byte body at 0x007c61a0 reads the signed 32-bit field at +0xa8 and returns the 4-byte element payload from the contiguous base at +0x80 scaled by that field, returning the null pointer for a negative field value.",
+    "The +0x80 base is the first word of a 20-byte eastl vector header whose element stride is 4 bytes, matching SDK field mpCameras : eastl::vector<eastl::intrusive_ptr<App::ICamera>>; the 4-byte stride and the +0x84 / +0x88 words observed in the sibling count and indexer bodies are consistent with mFirst, mLast, mCapacity.",
+    "The routine has exactly one xref, a DATA entry in the 0x014106a4 vtable at index 15, and no direct call sites, so it is a virtual entry point reached only by dispatch.",
+    "The imported SDK name SetViewer does not match the machine body; the actual SetViewer semantics (store a cViewer* into +0xB0) are observed at 0x007c6100."
+  ],
+  "unresolved_questions": [
+    "Is vtable slot 15 of 0x014106a4 definitely ICameraManager::GetActiveCamera? The declaration-order + 2 offset is corroborated by five independent slot bodies but is derived from the public SDK header's declaration order, not from a symbol in the binary, so the rename is not promoted here.",
+    "Why does the committed SDK address table place SetViewer at 0x007c61a0 and SetActiveCameraByKey at 0x007c61b0, both of which disagree with the machine? The defect is recorded, not repaired; repairing it would touch symbols owned by other queue rows.",
+    "The upper byte of the element payload is never inspected, so the recovered expression cannot distinguish a raw App::ICamera* from any other 4-byte handle; the App::ICamera* reading rests on the SDK vector element type.",
+    "No runtime or differential trace confirms the negative-index null return under real mnActiveIndex values, so the guard is machine-verified but not behaviourally validated.",
+    "The two slots preceding HandleMessage in the 0x014106a4 table (0x007c75d0, 0x007c76e0) are unidentified, so the table's inheritance depth and its two leading slots are not explained by this record."
+  ],
+  "evidence_refs": [
+    "ghidra:disassemble_function:0x007c61a0",
+    "ghidra:disassemble_bytes:0x007c6100-0x007c61bf",
+    "ghidra:disassemble_bytes:0x007c61b7-0x007c61df",
+    "ghidra:decompile_function:0x007c61a0",
+    "ghidra:decompile_function:0x007c61c0,0x007c61d0,0x007c64e0,0x007c6700,0x007c6150,0x007c6110",
+    "ghidra:read_memory:0x014106a4+96",
+    "ghidra:get_xrefs_to:0x007c61a0",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c",
+    "knowledgegraph/research/types/14-class-families.json#families[52].sdk_structure",
+    "knowledgegraph/research/types/14-class-families.json#families[52].sdk_addresses",
+    "knowledgegraph/research/state-machines/empire-space.json#callbacks[0].evidence[1]",
+    "knowledgegraph/research/state-machines/empire-space.json#state_machines[1].evidence[0]",
+    "knowledgegraph/research/conflicts/track-c-state-events.json#app_mode_setter_boundary",
+    "knowledgegraph/research/conflicts/track-c-state-events.json#camera_address_conflicts",
+    "SDK:Spore ModAPI/Spore/App/cCameraManager.h",
+    "analogue:0x007c64c0 (pkg-camera-wave7, App::cCameraManager::SetActiveCamera)",
+    "analogue:reconstruction/staging/pkg-camera-wave7/camera_wave7.hpp",
+    "reconstruction/metadata/pkg-app-camera-active-007c61a0/007c61a0.json"
+  ]
+}

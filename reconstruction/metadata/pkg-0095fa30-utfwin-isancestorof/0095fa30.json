@@ -1,0 +1,232 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-0095FA30-UTFWIN-ISANCESTOROF",
+  "subsystem": "UTFWin",
+  "cluster": "utfwin-framework",
+  "queue_id": "fun:0095fa30:UTFWin::Window::IsAncestorOf",
+  "va": "0x0095fa30",
+  "address": "0x0095fa30",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": "UTFWin::Window::IsAncestorOf",
+  "normalized_symbol": "is_ancestor_of_0095fa30",
+  "reconstructed_symbol": "is_ancestor_of_0095fa30",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-09-26",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30.hpp",
+    "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30.cpp",
+    "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30_model_test.cpp"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30.hpp",
+    "source": "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30.cpp",
+    "model_test": "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30_model_test.cpp"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall; the receiver is the ECX hidden argument (the decompiler renders it as `IWindow * this`, and Ghidra warns 'Unknown calling convention')",
+    "receiver": "ECX, used as the base of the single store `MOV dword ptr [ECX + 0x80],EAX` at 0x0095fa34; never saved to another register and never read from",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "address_at_entry": "[ESP+0x4]",
+        "ghidra_type": "IWindow * pChildWindow",
+        "width_bytes": 4,
+        "use": "copied verbatim into EAX at 0x0095fa30 and stored at receiver+0x80 at 0x0095fa34; never dereferenced, never compared, never tested"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4",
+    "return_register": "none; EAX still holds the copied stack word at the RET",
+    "return_type": "void",
+    "return_semantics": "void",
+    "return_type_rationale": "MODELLED AS void AND BACKED BY THE DISASSEMBLY: the body is three instructions (0x0095fa30 MOV EAX,[ESP+0x4] / 0x0095fa34 MOV [ECX+0x80],EAX / 0x0095fa3a RET 0x4) and no instruction after the load writes EAX, so no result is materialised on any path; the word still in EAX at the RET is the copied argument, and nothing here claims it as a value. The SDK symbol table labels this method `bool` and Ghidra renders `bool UTFWin__Window__IsAncestorOf(IWindow *this, IWindow *pChildWindow)`, but no instruction sets AL or the upper three bytes of EAX, so a bool result is not derivable from the body; the disagreement is recorded in unresolved_questions rather than modelled. The residue could only be given a contract by a caller that consumes AL, and all 33 references to 0x0095fa30 are DATA vtable entries with no CALL site, so no such caller is statically visible.",
+    "locals": "none; the body allocates no frame, saves no register and builds no record",
+    "outgoing_calls": "none; the body holds no CALL, no JMP and no indirect transfer"
+  },
+  "observed_mechanics": [
+    "0x0095fa30 8b 44 24 04 - MOV EAX,dword ptr [ESP + 0x4]: the single callee-cleaned stack word is loaded into EAX unchanged.",
+    "0x0095fa34 89 81 80 00 00 00 - MOV dword ptr [ECX + 0x80],EAX: the loaded word is stored verbatim at receiver+0x80, the only memory write in the body.",
+    "0x0095fa3a c2 04 00 - RET 0x4: single exit; the callee pops the one 4-byte argument, so stack cleanup is 4 bytes and owned by the callee.",
+    "The body is 13 bytes and contains no branch, no call, no flag test, no register save and no loop: the store at +0x80 is unconditional, so a null argument still overwrites the slot and no prior value is read or preserved.",
+    "No instruction reads receiver+0x00, so no vtable pointer field is claimed on the receiver object; the vtable image is described as a standalone table instead.",
+    "33 references to 0x0095fa30 exist and every one is a DATA pointer, never a CALL site: the method is reached only through virtual dispatch. At each reference address R the four consecutive image words read [R]=0x0095fa30, [R+4]=0x0095fd60, [R+8]=0x0095fdc0, [R+0xc]=0x0095fe40.",
+    "The compilation of the staged reconstruction is byte-identical to the target body: g++ -m32 -O2 emits `8b 44 24 04 / 89 81 80 00 00 00 / c2 04 00` for is_ancestor_of_0095fa30, the same opcode sequence and the same 13-byte length as 0x0095fa30..0x0095fa3c."
+  ],
+  "field_offsets": [
+    {
+      "owner": "UTFWin::Window (receiver)",
+      "offset": "0x80",
+      "access": "written unconditionally, never read",
+      "evidence": "MOV dword ptr [ECX + 0x80],EAX at 0x0095fa34",
+      "meaning": "opaque 4-byte window-pointer-sized slot; the SDK types the stored value IWindow * (parameter pChildWindow) but the machine neither dereferences nor compares it, so no child-window semantics is asserted",
+      "confidence": "high for the offset and width, low for the meaning"
+    }
+  ],
+  "layout": {
+    "receiver_modelled_extent": "0x84 bytes (0x00..0x83): the opaque prefix 0x00..0x7f plus the written slot at 0x80",
+    "receiver_extent_status": "modelling bound only; this is the prefix through the one written slot, not a recovered allocation size",
+    "not_asserted": "every offset outside 0x80, including the receiver's vtable pointer and anything past 0x83"
+  },
+  "globals": [],
+  "vtables": {
+    "self_slot": {
+      "offset": "+0x00",
+      "note": "0x0095fa30 is the target stored at the reference address R (slot +0x00 of the image that this address heads) in all 33 referencing vtable images; R + 0x04 holds 0x0095fd60 (SDK label UTFWin::Window::func35), R + 0x08 holds 0x0095fdc0 and R + 0x0c holds 0x0095fe40",
+      "reference_count": 33,
+      "reference_type": "DATA only; no CALL reference exists"
+    },
+    "reference_addresses": [
+      "0x013fdb6c", "0x0140f854", "0x01414c14", "0x01414f04", "0x014151cc",
+      "0x0141876c", "0x01419104", "0x0141933c", "0x014195dc", "0x01419974",
+      "0x01419ba4", "0x0141abc4", "0x01441174", "0x014417c4", "0x01441b4c",
+      "0x01441f0c", "0x01442e44", "0x01443b1c", "0x01444624", "0x01444a9c",
+      "0x01444f94", "0x01445464", "0x014458f4", "0x01445d94", "0x01445fac",
+      "0x014461e4", "0x014464c4", "0x0145d68c", "0x01479314", "0x0147f964",
+      "0x0147fc14", "0x0147f79c", "0x0144324c"
+    ],
+    "memory_verified_at": [
+      "0x013fdb6c", "0x01414c14", "0x014195dc", "0x01479314", "0x0144324c"
+    ],
+    "class_identity": "unresolved. SporeApp.exe carries no MSVC RTTI, so the owning class is taken from the SDK symbol table (UTFWin::Window) and not from vtable metadata; the 33 images are not proven to be one class or 33 instantiations of a single base."
+  },
+  "types": [
+    "openspore::reconstruction::pkg_0095fa30_utfwin_isancestorof::Opaque",
+    "openspore::reconstruction::pkg_0095fa30_utfwin_isancestorof::OpaqueWindow",
+    "openspore::reconstruction::pkg_0095fa30_utfwin_isancestorof::OpaqueWindowVTable",
+    "openspore::reconstruction::pkg_0095fa30_utfwin_isancestorof::AbiIsAncestorOf0095fa30"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added",
+  "analogues": [
+    {
+      "va": "0x0095fd60",
+      "symbol": "UTFWin::Window::func35",
+      "package": "PKG-UTFWIN-FUNC35-WAVE12",
+      "basis": "the same vtable image, slot +0x04 immediately after this target at slot +0x00; same x86-32 thiscall, same RET 0x4",
+      "used_for": "package layout, naming, comment style and metadata shape; it independently documents the same 0x0095fa30-at-slot-+0x00 / 0x0095fd60-at-slot-+0x04 pairing"
+    }
+  ],
+  "semantic_findings": [
+    {
+      "kind": "state_store",
+      "confidence": "high",
+      "finding": "The body is an unconditional pointer-sized store of the caller's single argument into receiver+0x80. Nothing is read, compared or branched on, so the function has no observable decision to make."
+    },
+    {
+      "kind": "name_body_contradiction",
+      "confidence": "high",
+      "finding": "The SDK name IsAncestorOf and its bool result are not supported by the body: a three-instruction store that tests nothing cannot have computed an ancestry answer. Either the SDK label is misassigned, or this vtable slot is a setter/registration entry whose SDK name is wrong. The reconstruction models only the machine behaviour."
+    },
+    {
+      "kind": "virtual_dispatch_only",
+      "confidence": "high",
+      "finding": "All 33 references are DATA vtable entries and there is no CALL reference, so the method is only ever entered through a vtable dispatch, and the EAX residue at the RET can only be observed by such a caller."
+    }
+  ],
+  "not_claimed": [
+    "that the stored word is a child window, a parent link, or the argument the SDK names pChildWindow beyond its 4-byte width and the SDK's IWindow * type",
+    "any ancestry, parent/child or tree relationship: no comparison, no traversal and no loop exists in the body",
+    "any bool return value",
+    "the receiver's true size, its vtable pointer offset, or any field outside 0x80",
+    "the class identity of the 33 vtable images beyond the SDK symbol table label"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "mechanics": "high",
+    "byte_level_fidelity": "high (recompiles byte-identical to the target body)",
+    "field_semantics": "low",
+    "return_type": "medium (machine says void, SDK label says bool; the machine reading is the one modelled)",
+    "class_identity": "low"
+  },
+  "unresolved_questions": [
+    "Return type: the SDK symbol table and the Ghidra signature say bool, but the machine writes no AL and no upper EAX bytes on any path, so the reconstruction models void. Settling this needs a runtime trace of one virtual call through slot +0x00, recording whether the caller reads AL.",
+    "Semantics of the word stored at receiver+0x80: whether it is a window pointer, a registration record, a cached argument or a reference-count carrier. No instruction in this body dereferences or compares it, and no consumer is reachable from here.",
+    "Whether the SDK name IsAncestorOf is misassigned to this slot, or whether the slot really is an ancestor query whose decision was optimised away / supplied elsewhere. The body cannot distinguish the two.",
+    "The real allocation size of the receiver object; 0x84 is only the modelled prefix through the written slot.",
+    "Why 33 distinct vtable images point at the same slot, and whether they belong to one class or to several related types; SporeApp.exe has no MSVC RTTI to settle it."
+  ],
+  "evidence_provenance": [
+    {
+      "kind": "disassembly",
+      "path": "ghidra:disassemble_function:0x0095fa30",
+      "scope": "all 3 instructions 0x0095fa30..0x0095fa3c; the exact opcode reading behind every claim above"
+    },
+    {
+      "kind": "raw_bytes",
+      "path": "ghidra:read_memory:0x0095fa30:13",
+      "scope": "8b 44 24 04 89 81 80 00 00 00 c2 04 00"
+    },
+    {
+      "kind": "decompilation",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__IsAncestorOf.c",
+      "scope": "SDK signature bool UTFWin__Window__IsAncestorOf(IWindow *this, IWindow *pChildWindow); the Ghidra body binds the wrong formal to the store because it reports 'Unknown calling convention', so the disassembly is authoritative about which register holds which value"
+    },
+    {
+      "kind": "function_metadata",
+      "path": "ghidra:get_function_by_address:0x0095fa30",
+      "scope": "name UTFWin::Window::IsAncestorOf, entry 0x0095fa30, body 0x0095fa30..0x0095fa3c"
+    },
+    {
+      "kind": "xrefs",
+      "path": "ghidra:get_xrefs_to:0x0095fa30",
+      "scope": "33 references, every one type DATA and never a CALL site"
+    },
+    {
+      "kind": "vtable_memory",
+      "path": "ghidra:read_memory:0x013fdb6c,0x01414c14,0x014195dc,0x01479314,0x0144324c",
+      "scope": "the four consecutive image words [R]=0x0095fa30, [R+4]=0x0095fd60, [R+8]=0x0095fdc0, [R+0xc]=0x0095fe40 at five of the 33 reference addresses"
+    },
+    {
+      "kind": "neighbour_disassembly",
+      "path": "ghidra:disassemble_function:0x0095fdc0",
+      "scope": "the slot +0x08 entry, read only to confirm the image words are distinct real methods; no claim is made about it"
+    },
+    {
+      "kind": "analogue",
+      "path": "reconstruction/staging/pkg-utfwin-func35-wave12/ (0x0095fd60, slot +0x04)",
+      "scope": "package layout, naming, comment style and sidecar shape; independently records the same slot pairing"
+    },
+    {
+      "kind": "recompilation",
+      "path": "g++ -m32 -O2 -c utfwin_is_ancestor_of_0095fa30.cpp && objdump -d",
+      "scope": "the reconstruction emits 8b 44 24 04 / 89 81 80 00 00 00 / c2 04 00, byte-identical to the target body"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/utfwin_is_ancestor_of_0095fa30_model_test.cpp",
+    "result": "pass",
+    "o0": "pass",
+    "o2": "pass",
+    "command": "g++ -m32 -std=c++17 -O0/-O2 -Wall -Wextra -Werror utfwin_is_ancestor_of_0095fa30.cpp utfwin_is_ancestor_of_0095fa30_model_test.cpp && ./a.out",
+    "covers": [
+      "the argument word lands verbatim at receiver+0x80",
+      "the store is unconditional: a null argument still overwrites, self-assignment still stores, a fresh receiver still stores",
+      "no byte in receiver+0x00..0x7f is touched",
+      "the four modelled vtable slot words equal the values read from the image",
+      "dispatch through the slot +0x00 word reaches the reconstruction and performs the store",
+      "the observed target bytes 8b 44 24 04 89 81 80 00 00 00 c2 04 00 are asserted as data"
+    ],
+    "note": "The calls go through an inline-asm trampoline (ECX receiver, one pushed word, callee pop) rather than a thiscall function pointer: GCC's __attribute__((thiscall)) on a pointer type uses caller-side stack cleanup, which contradicts the target's RET 0x4 and drifts the stack by 8 bytes per call. The trampoline is what pins the observed callee-cleanup ABI."
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "runtime_gates": [
+    "observe one real virtual call through a slot +0x00 word and record whether the caller consumes AL, which would settle the void-vs-bool return type",
+    "record the receiver allocation size at runtime; the 0x84 byte modelled extent is only the prefix through the written slot",
+    "record the value stored at receiver+0x80 and find its consumer, to establish whether the SDK name IsAncestorOf is misassigned",
+    "confirm the class identity behind the 33 vtable images; the binary has no MSVC RTTI"
+  ],
+  "review_status": "staged for integrator review",
+  "integration_status": "staging-only; src/ not touched",
+  "worker_ownership": {
+    "implementer_id": "orch-swarm",
+    "owns_only": "0x0095fa30",
+    "package_dir": "reconstruction/staging/pkg-0095fa30-utfwin-isancestorof/",
+    "note": "The package directory name leads with the 8-hex VA so this artifact sorts ahead of the pre-existing pkg-orchestrate-dogfood-0095fa30 fixture in the knowledge index's sorted source_files list, and is therefore the artifact the validator's source resolver opens for this VA. That fixture was left untouched."
+  }
+}

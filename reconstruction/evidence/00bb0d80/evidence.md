@@ -2,9 +2,273 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `f5b66f9a246d583852e3a294d6bf78528f6d9647e62c2c5ae80354620a5ccbd4`
+- Content SHA-256: `20b7ccdf5df71cbd7ed95e7b2517f6e26fd34be6eef1c68e7243fae049f19508`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4",
+      "entry_ESP+0x8"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0xc",
+    "return_register": "XMM0",
+    "return_semantics": "float_or_x87_in_XMM0",
+    "saved_registers": [
+      "EBP",
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      },
+      {
+        "entry_offset": "entry_ESP+0x8",
+        "observed": true,
+        "ordinal": 2,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0xc"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at +40, so the listing is not one path",
+    "untrusted_frame_stack_reads: push ebp with no mov ebp,esp: EBP is a general register, so every frame-relative offset is uncalibrated",
+    "frame_pointer_untrusted: push ebp without mov ebp,esp, and EBP is loaded from a register or used as a memory base, so it is a general register"
+  ],
+  "cleanup": {
+    "bytes": 12,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0xc",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "3a1623350317c51d7aa5a5e2b693fbe452a258f98245b524d0b427d12b65e001",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0056"
+      ],
+      "claim": "the callee pops 12 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 12,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0010",
+        "obs-0018"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 2,
+        "total_bytes": 8
+      }
+    },
+    {
+      "based_on": [
+        "obs-0013",
+        "obs-0014",
+        "obs-0018",
+        "obs-0023",
+        "obs-0028",
+        "obs-0042",
+        "obs-0045",
+        "obs-0047"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          200
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0013",
+        "obs-0014",
+        "obs-0018",
+        "obs-0023",
+        "obs-0028",
+        "obs-0042",
+        "obs-0045",
+        "obs-0047",
+        "obs-0056"
+      ],
+      "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
+      "confidence": "INFERRED",
+      "id": "C6B",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0056"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001"
+      ],
+      "claim": "the return value is carried in XMM0: an x87 or SSE instruction appears in the body",
+      "confidence": "APPROXIMATION",
+      "id": "RT1",
+      "value": "XMM0"
+    }
+  ],
+  "observations": [
+    {
+      "and_esp": null,
+      "at": "0x00bb0d80",
+      "ebp_is_general_register": true,
+      "fp": false,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "FRAME",
+      "lea_esp": null,
+      "mov_ebp_esp": false,
+      "mov_ebp_esp_at": null,
+      "push_ebp": true,
+      "push_ebp_at": 3,
+      "raw": "SUB ESP,0x14",
+      "sub": 20
+    },
+    {
+      "at": "0x00bb0d80",
+      "definite": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "REG_WRITE",
+      "raw": "SUB ESP,0x14",
+      "reg": "ESP",
+      "write_kind": "arith"
+    },
+    {
+      "at": "0x00bb0d83",
+      "count": 24,
+      "first_use": 1,
+      "first_write_index": 0,
+      "id": "obs-0003",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "MOVSS XMM2,dword ptr [ESP + 0x1c]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00bb0d83",
+      "base": "ESP",
+      "disp": 28,
+      "id": "obs-0004",
+      "index": 1,
+      "key": 8,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOVSS XMM2,dword ptr [ESP + 0x1c]",
+      "resolved": true,
+      "size": 4,
+      "trust": "untrusted_frame"
+    },
+    {
+      "at": "0x00bb0d83",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 1,
+[TRUNCATED]
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -288,13 +552,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __thiscall FUN_00bb0d80(int param_1,float *param_2,float param_3,int param_4)\n\n{\n  float *pfVar1;\n  int iVar2;\n  int iVar3;\n  int iVar4;\n  float fVar5;\n  undefined4 uVar6;\n  int local_14;\n  int local_10;\n  float local_c;\n  float local_8;\n  undefined4 local_4;\n  \n  pfVar1 = param_2;\n  uVar6 = 0;\n  local_c = *param_2 - param_3;\n  local_8 = param_2[1] - param_3;\n  local_4 = 0;\n  fVar5 = param_3;\n  FUN_00ba7100(&local_c,&param_2,&local_14);\n  local_c = *pfVar1 + fVar5;\n  local_8 = pfVar1[1] + fVar5;\n  local_4 = uVar6;\n  FUN_00ba7100(&local_c,&param_3,&local_10);\n  iVar2 = param_4;\n  if ((int)param_2 <= (int)param_3) {\n    do {\n      if (local_14 <= local_10) {\n        iVar3 = (int)(param_2 + local_14 * 0x10) * 0x14;\n        iVar4 = (local_10 - local_14) + 1;\n        do {\n          FUN_01012030(*(undefined4 *)(iVar2 + 4),*(undefined4 *)(*(int *)(param_1 + 200) + iVar3),\n                       *(undefined4 *)(*(int *)(param_1 + 200) + 4 + iVar3),param_2);\n          iVar3 = iVar3 + 0x500;\n          iVar4 = iVar4 + -1;\n        } while (iVar4 != 0);\n      }\n      param_2 = (float *)((int)param_2 + 1);\n    } while ((int)param_2 <= (int)param_3);\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -618,13 +878,13 @@
   "body_span_bytes": 260,
   "body_start": "00bb0d80",
   "callees": [
-    "FUN_01012030",
-    "FUN_00ba7100"
+    "FUN_00ba7100",
+    "FUN_01012030"
   ],
   "callers": [
-    "FUN_00bb1080",
     "FUN_00bb0e90",
-    "FUN_00bb1200"
+    "FUN_00bb1200",
+    "FUN_00bb1080"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -637,82 +897,32 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "local_c",
-      "storage": "Stack[-0xc]:4",
-      "type": "float"
-    },
-    {
-      "name": "local_8",
-      "storage": "Stack[-0x8]:4",
-      "type": "float"
-    },
-    {
-      "name": "local_14",
-      "storage": "Stack[-0x14]:4",
-      "type": "int"
-    },
-    {
-      "name": "local_10",
-      "storage": "Stack[-0x10]:4",
-      "type": "int"
-    },
-    {
       "name": "local_4",
       "storage": "Stack[-0x4]:4",
       "type": "undefined4"
     },
     {
-      "name": "uVar6",
-      "storage": "register:000012c0:4",
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
       "type": "undefined4"
     },
     {
-      "name": "fVar5",
-      "storage": "register:00001280:4",
-      "type": "float"
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
     },
     {
-      "name": "iVar2",
-      "storage": "unique:100000a5:4",
-      "type": "int"
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
+      "type": "undefined4"
     },
     {
-      "name": "pfVar1",
-      "storage": "unique:100000a1:4",
-      "type": "float *"
-    },
-    {
-      "name": "iVar4",
-      "storage": "register:0000001c:4",
-      "type": "int"
-    },
-    {
-      "name": "iVar3",
-      "storage": "register:00000018:4",
-      "type": "int"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
-      "type": "float *"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    },
-    {
-      "name": "param_4",
-      "storage": "Stack[0xc]:4",
-      "type": "int"
-    },
-    {
-      "name": "param_3",
-      "storage": "Stack[0x8]:4",
-      "type": "float"
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "undefined4"
     }
   ],
-  "locals_count": 15,
+  "locals_count": 5,
   "mode": "live",
   "name": "FUN_00bb0d80",
   "namespace": null,

@@ -1,0 +1,91 @@
+{
+ "address": "0x01021240",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_source_path": "",
+ "cluster": "unknown-fun-mass",
+ "evidence": [
+  "reconstruction/evidence/01021240/evidence.json",
+  "reconstruction/evidence/01021240/context.md",
+  "reconstruction/evidence/01021240/validation.md",
+  "knowledgegraph/research/root-closure/followup-space-lifecycle.md:7-16",
+  "knowledgegraph/research/root-closure/followup-space-lifecycle.md:36-48",
+  "docs/analysis/simulator-root-closure.md:12",
+  "src/reconstruction/pkg01_roots/space_player_data_accessors.cpp:28-39",
+  ".spore-analysis/ghidra-exports/structs_fields.tsv:11654-11677",
+  "GhidraMCP /disassemble_function @ 0x01021240 (live, 8 instructions, 19 bytes)",
+  "GhidraMCP /read_memory @ 0x01021240 (live, a18cda6d018b400885c074048b4048c333c0c3)",
+  "GhidraMCP /list_globals name_substring=sSpacePlayerData (live, one hit at 0x016dda8c)",
+  "knowledgegraph/triage/datarefs-2540f2ca.tsv (one read row for 0x016dda8c out of this body)"
+ ],
+ "image_base": "0x00400000",
+ "implementation": {
+  "header": "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.hpp",
+  "model_test": "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor_model_test.cpp",
+  "source": "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.cpp"
+ },
+ "normalized_symbol": "FUN_01021240",
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__cdecl",
+  "convention_confidence": "UNKNOWN",
+  "ordinary_stack_arguments": [],
+  "receiver": null,
+  "ret_form": "RET",
+  "return": "uint32 in EAX",
+  "return_semantics": "integral_in_EAX",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller"
+ },
+ "package": "PKG-01021240-ACTIVE-STAR-RECORD",
+ "provenance": "derived by tools-side integration from the worker's own staged files and its emitted worker result; the worker wrote no metadata sidecar, so the knowledge index could not resolve a source span for this VA and every source-dependent validator check reported NOT_AVAILABLE",
+ "queue_id": "",
+ "reconstructed_symbol": "FUN_01021240",
+ "schema": "openspore-source-reconstruction-function-evidence-1",
+ "semantic_findings": [
+  "The container pointer at 0x016dda8c is dereferenced with no null test; the only TEST in the body guards the word loaded from it. The body therefore faults on a null container, and the reconstruction reproduces that instead of adding a guard.",
+  "The not-taken path does not fall through with the loaded word in EAX: it executes XOR EAX,EAX, so the returned value on the guard path is a genuine zero rather than the address it just loaded.",
+  "Both loads are plain reads; neither the container nor the star object is written.",
+  "The body names no indirect transfer, so the two loads are data reads and not a virtual call whose result is returned.",
+  "The SDK export's offset column is decimal, not hexadecimal: cStar mpStarRecord is at column 72 which is 0x48, and mpSolarSystem at column 64 which is 0x40. This is what makes the returned word look like the active star's record pointer."
+ ],
+ "source_files": [
+  "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.cpp",
+  "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor.hpp",
+  "reconstruction/staging/pkg-01021240-active-star-record/active_star_record_accessor_model_test.cpp"
+ ],
+ "staging_package": "pkg-01021240-active-star-record",
+ "subsystem": "Simulator",
+ "summary": "0x01021240 is a second-order read view over Simulator::sSpacePlayerData: it loads the container word 0x016dda8c with no test, reads the word at displacement 0x08 (the active-star reference), and when that word is non-zero returns the single word at displacement 0x48 of the object it points at; when the star word is zero it zero-extends EAX and returns 0. Two RET sites, no store on either object, no call, no indirect transfer. The reconstruction reproduces the missing container guard rather than inventing one, declares both displacements as pinned constants instead of member names because the receiver record is bounds_only, and returns a width-computable uint32 in EAX.",
+ "target_state": "implemented in staging; integrator review pending",
+ "unresolved_questions": [
+  "The calling convention is undetermined by the body. __cdecl is declared because it is the least committal zero-parameter leaf shape and agrees with the caller-owned cleanup the ABI record states as INFERRED, but __stdcall with zero callee cleanup is byte-identical here and nothing in this body distinguishes them.",
+  "Whether the returned word is genuinely an intrusive_ptr<Simulator::cStarRecord> payload, as the SDK offset column suggests, or a differently-typed 32-bit word that merely occupies 0x48, is not settled by this body's own listing. The reconstruction claims the displacement and the zero-guard and deliberately says nothing about what the word addresses.",
+  "The caller's domain is not established. 74 caller functions and 100 xref sites are consistent with a widely-used identity accessor, but fan-in alone does not show what any of them do with the value, and no caller was decompiled under this run's bounded budget.",
+  "Simulator__sSpacePlayerData is defined by both this package and src/reconstruction/pkg01_roots/space_player_data_accessors.cpp. If the integrator merges them into one target, exactly one definition must survive; that reconciliation was left to the integrator."
+ ],
+ "va": "0x01021240",
+ "validation": {
+  "gate": "clang++ -std=c++17 -Wall -Wextra -Werror -m32, static archive via ar qc + ranlib, archive deleted before each link; PASS",
+  "harness_note": "every mutant was compiled and linked from a copy of the mutated directory, never from the pristine one",
+  "model_test": "PASS; band-filled flat images, both displacements restated as independent literals so the test contradicts rather than tracks the reconstruction",
+  "mutation_battery": [
+   {
+    "mutant": "kStarRecordDisplacement 0x48 -> 0x44",
+    "result": "KILLED at run"
+   },
+   {
+    "mutant": "kActiveStarDisplacement 0x8 -> 0x4",
+    "result": "KILLED at build (offsetof static_assert)"
+   },
+   {
+    "mutant": "drop the null guard",
+    "result": "KILLED at run"
+   }
+  ],
+  "second_compiler": "g++ -m32 -Wall -Wextra -Werror; PASS",
+  "validator": "not yet adjudicated; the canonical record has no source artifact until the integrator registers the staged package"
+ },
+ "version": "3.1.0.22",
+ "worker_outcome": "IMPLEMENTED"
+}

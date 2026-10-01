@@ -70,7 +70,10 @@ uint32_t shaderDataSize(uint32_t id) {
 constexpr uint32_t kTextureSetId = 0x20D;
 // One texture-set sampler entry: sampler id + 12 opaque bytes +
 // instance/group key of the referenced texture (4 + 12 + 8 = 24 bytes).
-constexpr size_t kTexEntrySize = 24;
+// [[maybe_unused]]: the format fact is recorded here deliberately and the
+// constant is not yet consumed by a reader, so clang++'s
+// -Wunused-const-variable (part of the -Werror promotion gate) must not fire.
+[[maybe_unused]] constexpr size_t kTexEntrySize = 24;
 
 bool fail(std::string& error, const char* what) {
   error = what;

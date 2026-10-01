@@ -2,9 +2,54 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `ddb4efb71e400287032c52f0711a95de3acce2d04b0fb66732201cce45a0b6f3`
+- Content SHA-256: `c930089bb23ec2b3c144e6fdd418597b186b505a24c31f2fe5b14110aad26468`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__cdecl",
+  "hidden_receiver": "none. This is a factory, not a member function. ECX is a scratch register reused as the receiver of three successive calls.",
+  "hidden_this_register": "ECX is never read on entry. It is loaded at 0x00ba61ce with the allocated block for the constructor, at 0x00ba61e4 with the same block for the setter, and at 0x00ba6204 for the slot +0x00 virtual. No incoming register carries a receiver.",
+  "ordinary_stack_argument_slots": 2,
+  "receiver": false,
+  "ret_form": "RET",
+  "return_register": null,
+  "return_semantics": "No return value. The constructed object is delivered through the second argument, an out-parameter.",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "ESI",
+    "EDI"
+  ],
+  "stack_arguments": [
+    {
+      "index": 0,
+      "offset_at_entry": "[ESP + 0x4]",
+      "read_at": "0x00ba61df MOV EDI,[ESP + 0xC] with ESP = entry-8",
+      "use": "written to the object's +0x08, passed to 0x00B8DA80 which stores it at +0x184, and passed to the slot +0x00 virtual through the pushed register",
+      "width_bytes": 4
+    },
+    {
+      "index": 1,
+      "offset_at_entry": "[ESP + 0x8]",
+      "read_at": "0x00ba61da MOV ESI,[ESP + 0xC] with ESP = entry-4",
+      "use": "the out-pointer. Stored to at 0x00ba61e6 and then RELOADED from at 0x00ba61ed, 0x00ba6204 and 0x00ba620c rather than kept in a register.",
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller",
+  "termination": "single bare RET at 0x00ba6223"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -91,7 +136,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "42fbea97fe8e16426d9bf2855b19961dc8aa63564fb041eb81d79bdf47f94c56",
+  "content_sha256": "7ea40cf413ac40bf7a6e9b2afa193d2b0983e1000b3f4fb3615105523832b746",
   "conventions": {
     "ambiguities": [
       "receiver_undetermined"
@@ -110,7 +155,7 @@
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
     "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted_calling_convention": "__cdecl"
   },
   "dispatch": {
     "call_offsets": [],
@@ -265,7 +310,7 @@
       "first_write_index": 15,
       "id": "obs-0007",
       "index": 14,
-      "kind": "REG_READ",
+      "kind": "REG_R
 [TRUNCATED]
 ```
 
@@ -277,9 +322,44 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba8830"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bae6f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bae9b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb28c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb2a50"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bb4100"
+  }
+]
+```
 
 ## contradictions
 
@@ -289,13 +369,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid FUN_00ba61b0(undefined4 param_1,int *param_2)\n\n{\n  int iVar1;\n  \n  iVar1 = FUN_00f473a0(0x1b0,\"Simulator/cPlanetRecord\",0,0,0,0);\n  if (iVar1 == 0) {\n    iVar1 = 0;\n  }\n  else {\n    iVar1 = FUN_00b8e180();\n  }\n  *param_2 = iVar1;\n  FUN_00b8da80(param_1);\n  iVar1 = *param_2;\n  *(undefined4 *)(iVar1 + 8) = param_1;\n  *(undefined4 *)(iVar1 + 0xc) = 0x5220cb8;\n  *(undefined4 *)(iVar1 + 0x10) = 1;\n  (*(code *)**(undefined4 **)*param_2)();\n  FUN_006ac040(1,*param_2);\n  FUN_006ad010(*param_2);\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -495,9 +571,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 13052,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__cdecl\",\n    \"hidden_receiver\": \"none. This is a factory, not a member function. ECX is a scratch register reused as the receiver of three successive calls.\",\n    \"hidden_this_register\": \"ECX is never read on entry. It is loaded at 0x00ba61ce with the allocated block for the constructor, at 0x00ba61e4 with the same block for the setter, and at 0x00ba6204 for the slot +0x00 virtual. No incoming register carries a receiver.\",\n    \"ordinary_stack_argument_slots\": 2,\n    \"receiver\": false,\n    \"ret_form\": \"RET\",\n    \"return_register\": null,\n    \"return_semantics\": \"No return value. The constructed object is delivered through the second argument, an out-parameter.\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"ESI\",\n      \"EDI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"index\": 0,\n        \"offset_at_entry\": \"[ESP + 0x4]\",\n        \"read_at\": \"0x00ba61df MOV EDI,[ESP + 0xC] with ESP = entry-8\",\n        \"use\": \"written to the object's +0x08, passed to 0x00B8DA80 which stores it at +0x184, and passed to the slot +0x00 virtual through the pushed register\",\n        \"width_bytes\": 4\n      },\n      {\n        \"index\": 1,\n        \"offset_at_entry\": \"[ESP + 0x8]\",\n        \"read_at\": \"0x00ba61da MOV ESI,[ESP + 0xC] with ESP = entry-4\",\n        \"use\": \"the out-pointer. Stored to at 0x00ba61e6 and then RELOADED from at 0x00ba61ed, 0x00ba6204 and 0x00ba620c rather than kept in a register.\",\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller\",\n    \"termination\": \"single bare RET at 0x00ba6223\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_bake_probe_004bf770\",\n      \"va\": \"0x004bf770\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-SIMULATOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"dispatch_key_00628450\",\n      \"va\": \"0x00628450\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IStateManager_Get_0067dce0\",\n      \"va\": \"0x0067dce0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"WAVE6-ENGINE-RUNTIME\",\n      \"score\": 2,\n      \"symbol\": \"app_config_manager_get_0067dcf0\",\n      \"va\": \"0x0067dcf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-06-WAVE6-APP-MANAGERS\",\n      \"score\": 2,\n      \"symbol\": \"App_IPropManager_Get_0067ddf0\",\n      \"va\": \"0x0067ddf0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"FUN_00b3d3a0\",\n      \"va\": \"0x00b3d3a0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"FUN_00b3d400\",\n      \"va\": \"0x00b3d400\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 2,\n      \"symbol\": \"Simulator_cSpaceTrading_Get\",\n      \"va\": \"0x00b3d4d0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba8830\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bae6f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bae9b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb28c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb2a50\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bb4100\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00ba8899\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba8830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba89b9\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba8830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba8a5d\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba8830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba8b0b\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba8830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba8ba7\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba8830\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bae8c3\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bae6f0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00baea55\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bae9b
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -513,19 +596,19 @@
   "body_span_bytes": 116,
   "body_start": "00ba61b0",
   "callees": [
-    "FUN_00f473a0",
-    "FUN_00b8da80",
     "FUN_00b8e180",
     "FUN_006ac040",
-    "FUN_006ad010"
+    "FUN_006ad010",
+    "FUN_00f473a0",
+    "FUN_00b8da80"
   ],
   "callers": [
     "FUN_00bae9b0",
-    "FUN_00bb2a50",
     "FUN_00bb28c0",
-    "FUN_00bb4100",
+    "FUN_00bae6f0",
     "FUN_00ba8830",
-    "FUN_00bae6f0"
+    "FUN_00bb4100",
+    "FUN_00bb2a50"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -536,24 +619,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "param_1",
-      "storage": "Stack[0x4]:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_2",
-      "storage": "Stack[0x8]:4",
-      "type": "int *"
-    },
-    {
-      "name": "iVar1",
-      "storage": "register:00000000:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 3,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00ba61b0",
   "namespace": null,
@@ -664,9 +731,27 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b08/00ba61b0.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -676,9 +761,22 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists. A differential run must confirm the allocation size 0x1B0, the type name and the three header writes in the shipping build.",
+    "The 0x5220CB8 constant can only be attributed by observing what reads +0x0C on a constructed record at runtime.",
+    "The concrete callee behind vtable slot +0x00 can only be fixed by dumping the vtable pointer of a constructed record.",
+    "The crash-on-allocation-failure path can only be confirmed as intentional or as a latent defect by forcing an allocation failure in a controlled run."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -688,15 +786,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

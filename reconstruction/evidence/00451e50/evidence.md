@@ -2,9 +2,48 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `01f834d6cb26e50524623012fe8526b567eda3317cfb89fa51a0b9c3678354ed`
+- Content SHA-256: `7e877ab5c4073431fa21e3ead608d45c836bdd1f72230fba3126598e247e1c5d`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX; spilled to [EBP - 0x8] at 0x00451e56 and reloaded three times",
+  "ordinary_stack_argument_slots": 1,
+  "receiver": true,
+  "ret_form": "RET 0x4",
+  "return_observation": "There is no write to EAX anywhere in the 17 instructions. At 0x004a675b, 0x004a67ba, 0x004a683c, 0x004a684d, 0x004a6893, 0x004a6947, 0x004a69fd, 0x004a6c15, 0x00495d7e, 0x0048d1e0, 0x004ad4cb and 0x004ad53e the next instruction after the CALL either reloads a register or starts a new statement, and in the two loops at 0x004a6728 and 0x004ad50c the loop increment follows immediately.",
+  "return_register": null,
+  "return_semantics": "void; no call site reads EAX or AL after the call",
+  "return_type": "void",
+  "return_width_bytes": 0,
+  "saved_registers": [
+    "EBP"
+  ],
+  "stack_arguments": [
+    {
+      "offset_in_frame": "[EBP + 0x8]",
+      "read_at": "0x00451e77",
+      "role": "the value propagated into the nested object",
+      "signedness": "not narrowed by the body; the value is stored and reloaded as a full dword",
+      "slot": 1,
+      "width_bytes": 4
+    }
+  ],
+  "stack_cleanup_bytes": 4,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x4 (MOV ESP,EBP at 0x00451e7d, POP EBP at 0x00451e7f)"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -70,23 +109,23 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "b48530c4b715445680681bbea049b0c139584d9830b3350b73a8fea75cf6fc6d",
+  "content_sha256": "78549918d1a1b3deb3d2608c096c2467f9a32f9680ee474bd106da35d6b871aa",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
     "candidate_conventions": [
       "__thiscall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -278,7 +317,7 @@
       "index": 4,
       "key": null,
       "kind": "STACK_SLOT_READ",
-      "raw": "MOV EAX,dword ptr [EBP + -0x8]
+      "raw": "MOV EAX,dword ptr [EBP + -0
 [TRUNCATED]
 ```
 
@@ -290,9 +329,39 @@
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0048d010"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004956b0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004a6690"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004ad470"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x004ad4e0"
+  }
+]
+```
 
 ## contradictions
 
@@ -302,13 +371,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nvoid __thiscall FUN_00451e50(int param_1,undefined4 param_2)\n\n{\n  if (*(int *)(param_1 + 0x18c) != 0) {\n    *(undefined4 *)(*(int *)(param_1 + 0x18c) + 0x38) = param_2;\n  }\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -400,9 +465,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 9513,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX; spilled to [EBP - 0x8] at 0x00451e56 and reloaded three times\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"receiver\": true,\n    \"ret_form\": \"RET 0x4\",\n    \"return_observation\": \"There is no write to EAX anywhere in the 17 instructions. At 0x004a675b, 0x004a67ba, 0x004a683c, 0x004a684d, 0x004a6893, 0x004a6947, 0x004a69fd, 0x004a6c15, 0x00495d7e, 0x0048d1e0, 0x004ad4cb and 0x004ad53e the next instruction after the CALL either reloads a register or starts a new statement, and in the two loops at 0x004a6728 and 0x004ad50c the loop increment follows immediately.\",\n    \"return_register\": null,\n    \"return_semantics\": \"void; no call site reads EAX or AL after the call\",\n    \"return_type\": \"void\",\n    \"return_width_bytes\": 0,\n    \"saved_registers\": [\n      \"EBP\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"offset_in_frame\": \"[EBP + 0x8]\",\n        \"read_at\": \"0x00451e77\",\n        \"role\": \"the value propagated into the nested object\",\n        \"signedness\": \"not narrowed by the body; the value is stored and reloaded as a full dword\",\n        \"slot\": 1,\n        \"width_bytes\": 4\n      }\n    ],\n    \"stack_cleanup_bytes\": 4,\n    \"stack_cleanup_owner\": \"callee\",\n    \"termination\": \"RET 0x4 (MOV ESP,EBP at 0x00451e7d, POP EBP at 0x00451e7f)\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-10-EDITOR-DISPATCH\",\n      \"score\": 2,\n      \"symbol\": \"Editors_EditorModel_SetColor_raw_004ae250\",\n      \"va\": \"0x004ae250\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_construct_004b62a0\",\n      \"va\": \"0x004b62a0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0048d010\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004956b0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004a6690\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004ad470\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x004ad4e0\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x0048d1e0\",\n        \"direction\": \"in\",\n        \"other\": \"0x0048d010\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00495d7e\",\n        \"direction\": \"in\",\n        \"other\": \"0x004956b0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a675b\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a67ba\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a683c\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a684d\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a6893\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a6947\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x004a69fd\",\n        \"direction\": \"in\",\n        \"other\": \"0x004a6690\",\n       
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -419,11 +491,11 @@
   "body_start": "00451e50",
   "callees": [],
   "callers": [
-    "FUN_004ad4e0",
-    "FUN_004ad470",
+    "FUN_0048d010",
     "FUN_004a6690",
     "FUN_004956b0",
-    "FUN_0048d010"
+    "FUN_004ad4e0",
+    "FUN_004ad470"
   ],
   "classification": "leaf",
   "dispatch": null,
@@ -436,13 +508,13 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "undefined4"
     },
     {
-      "name": "param_2",
-      "storage": "Stack[0x4]:4",
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
       "type": "undefined4"
     }
   ],
@@ -521,9 +593,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_rigblock_00451e50.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_rigblock_00451e50.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_rigblock_00451e50_model_test.cpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-dispatch-b05/00451e50.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -533,9 +619,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime trace is required to determine the runtime value of receiver->[+0x18C] in each editor mode, the runtime class of the nested object, and the runtime content of the +0x38 dword.",
+    "No original-process trace has been captured for 0x00451e50. Every claim in this record is static.",
+    "The Cell stage has never been entered in any recorded run, so no editor path has a runtime oracle."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -545,15 +643,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "void"
+]
+```
 
 ## vtables
 

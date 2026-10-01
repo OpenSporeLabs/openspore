@@ -1,0 +1,278 @@
+{
+  "schema": "wave16-proplist-write.function-handoff.v1",
+  "package": "PKG-PROLIST-WRITE-WAVE16",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x006a1540",
+  "address": "0x006a1540",
+  "symbol": "App::PropertyList::Write",
+  "normalized_symbol": "write_006a1540",
+  "reconstructed_symbol": "write_006a1540",
+  "entry_symbol": "write_006a1540",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented; machine ABI, call surface, element stride and control flow all read off the 74-instruction listing",
+  "captured_on": "2026-09-26",
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "write_006a1540",
+    "declaration": "extern \"C\" bool __thiscall write_006a1540(OpaquePropertyList *list, OpaqueStream *stream);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX, aliased into ESI at 0x006a1548; one ordinary stack dword at entry_ESP+0x4, read at 0x006a1543 (MOV EBP,dword ptr [ESP + 0x10] after three pushes) into EBP; RET 0x4 at 0x006a15f3 pops it",
+    "return_type": "bool",
+    "source": "reconstruction/staging/pkg-proplist-write-wave16/proplist_write_006a1540.cpp",
+    "header": "reconstruction/staging/pkg-proplist-write-wave16/proplist_write_006a1540.hpp",
+    "model_test": "reconstruction/staging/pkg-proplist-write-wave16/proplist_write_006a1540_model_test.cpp",
+    "compile_gate": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror proplist_write_006a1540_model_test.cpp proplist_write_006a1540.cpp; builds clean and the 8 model tests pass"
+  },
+  "function_extent": {
+    "entry": "0x006a1540",
+    "body_end_inclusive": "0x006a15f3",
+    "body_end_exclusive": "0x006a15f5",
+    "body_span_bytes": 181,
+    "instruction_count": 74,
+    "return_site": "0x006a15f3: RET 0x4",
+    "note": "the live ghidra_get_function_by_address reports body_end 0x006a15f5, i.e. the byte after the RET imm8. The last instruction is the RET 0x4 at 0x006a15f3, five bytes long."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_alias": "ESI (MOV ESI,ECX at 0x006a1548). EBP is NOT a frame pointer: there is no MOV EBP,ESP in the body, and EBP holds the single stack argument instead.",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "read": true,
+        "written": false,
+        "sizes": [4],
+        "read_at": "0x006a1543 MOV EBP,dword ptr [ESP + 0x10] (three pushes precede it, so [ESP+0x10] is entry_ESP+0x4)",
+        "role": "an IStream-shaped sink. The body never dereferences it; it is only ever pushed as the first argument of the three direct calls (0x006a156a, 0x006a15b3, 0x006a15cf)."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics_machine_record": "bool in AL. 0x006a15ef MOV AL,BL writes only the low byte of EAX; the upper three bytes are whatever the last signed division left there, which is why the return type is byte-wide. A `bool` return in AL is the closest C++ spelling.",
+    "ghidra_prototype": "bool App::PropertyList::Write(DirectPropertyList *this, IStream *pOutputStream)",
+    "ghidra_convention_note": "Live decompilation reports an unknown calling convention. __thiscall is derived from the ECX receiver dereference (0x006a154a MOV ECX,dword ptr [ESI + 0x1c]) and from the callee-cleaned RET 0x4 terminator, which excludes cdecl and fastcall. The Ghidra receiver type DirectPropertyList * conflicts with the demangled symbol App::PropertyList::Write and is recorded as an open question.",
+    "tail_call": "absent. The 74-instruction listing contains no JMP or CALL other than the three direct calls, and no register-indirect or memory-indirect transfer.",
+    "spill_slots": "the body reuses its own callee-save spill slots as the outbound argument cells: the count word is stored at entry_ESP-0x4 (the saved-ECX slot, 0x006a156b MOV dword ptr [ESP + 0x1c],EAX) and the entry id word at entry_ESP-0x10 (the saved-ESI slot, 0x006a15b4 MOV dword ptr [ESP + 0x20],EAX). The loop countdown occupies entry_ESP-0x8 (0x006a1597, 0x006a15e5). Only the addresses of the two outbound cells are unobservable; the values read by the callees are reproduced exactly.",
+    "prologue": "PUSH ECX / PUSH EBX / PUSH EBP (0x006a1540..0x006a1542), then PUSH ESI (0x006a1547) and PUSH EDI (0x006a1594, on the loop path only). Epilogue POP EDI (0x006a15ec, loop path only) / POP ESI / POP EBP / POP EBX / POP ECX."
+  },
+  "layout": {
+    "note": "every displacement below is read off the 74-instruction listing. No member is named after an SDK field: the binary carries no MSVC RTTI and no SDK structure for this class is published in this repository.",
+    "receiver_displacement_map": {
+      "0x18": "range begin. Read at 0x006a154d (SUB ECX,[ESI+0x18]), again at 0x006a1577, again at 0x006a15a4 (MOV EDX,[ESI+0x18]) and again at 0x006a15c4 (MOV EAX,[ESI+0x18]). It is re-read on every iteration, never hoisted into a register across the loop.",
+      "0x1c": "range end. Read at 0x006a154a and again at 0x006a1574."
+    },
+    "entry_stride": "0x18 bytes, from 0x006a15e2 ADD EDI,0x18. The signed quotient that bounds the loop uses the same 0x18 divisor, spelled as the standard signed-division-by-24 sequence: MOV EAX,0x2AAAAAAB (0x006a1550) / IMUL ECX (0x006a1555) / SAR EDX,0x2 (0x006a1557) / MOV EAX,EDX (0x006a155c) / SHR EAX,0x1f (0x006a1564) / ADD EAX,EDX (0x006a1568). The same sequence is repeated at 0x006a157c..0x006a158b.",
+    "entry_displacement_map": {
+      "0x00": "a 4-byte word read into the second word-write call: 0x006a15a7 MOV EAX,dword ptr [EDI + EDX*0x1], where EDX holds range begin and EDI the 0x18-strided offset. Its meaning is not established by this body; the test names it word_00.",
+      "0x04": "the address handed to the third call: 0x006a15c4 MOV EAX,[ESI+0x18] / 0x006a15c7 ADD EAX,EDI / 0x006a15cb ADD EAX,0x4 / 0x006a15ce PUSH EAX.",
+      "0x04..0x17": "never touched by this body. Carried as opaque bytes. See unresolved_questions for the App::Property 4-byte-versus-0x14-byte conflict."
+    },
+    "count_computed_twice": "the quotient is evaluated twice, once at 0x006a154a..0x006a156b (the value written to the stream) and once at 0x006a1574..0x006a158b (the loop bound), with the first stream write between them. Nothing in this body can make the two differ -- the intervening call writes to a stream, not to the receiver -- but the machine evaluates it twice and the reconstruction does too.",
+    "globals": "none. The complete 74-instruction listing names no data-segment address, and the briefing's xref export carries no data-reference edge for this target.",
+    "constants": [
+      "0x2aaaaaab (0x006a1550, 0x006a157c) -- signed division by 0x18",
+      "0x18 (0x006a15e2 ADD EDI,0x18) -- element stride",
+      "0x1 (0x006a155e, 0x006a15ac PUSH 0x1) -- element count of the two word writes",
+      "0x0 (0x006a155a, 0x006a15aa, 0x006a15c9 PUSH 0x0) -- the fourth word-write argument and the third property-write argument",
+      "0x0f (0x006a1557, 0x006a1583 SAR EDX,0x2 shift applied after the magic multiply) -- two-bit arithmetic shift",
+      "0x1f (0x006a1564, 0x006a1588 SHR EAX,0x1f) -- sign extraction for the signed quotient",
+      "0x4 (0x006a156b/0x006a15b4/0x006a15e5/0x006a15f3) -- spill-slot displacements, the countdown step, and the callee stack cleanup"
+    ]
+  },
+  "mechanics": {
+    "verdict_register": "BL. 0x006a157a MOV BL,AL captures the count-write verdict, and 0x006a15dc MOV BL,0x1 is the only place it is set back to true. Every failure path lands on 0x006a15e0 XOR BL,BL. The function returns that byte in AL.",
+    "step_1_count": "count = (range_end_01c - range_begin_018) / 0x18, computed with a signed 32-bit byte difference and a signed division. The count is then written as a single 4-byte element: 0x006a155a PUSH 0x0 / 0x006a155e PUSH 0x1 / 0x006a1560 LEA ECX,[ESP + 0x14] / 0x006a1567 PUSH ECX / 0x006a156a PUSH EBP / 0x006a156f CALL 0x0093aa70, i.e. write_words(stream, &count, 1, 0).",
+    "step_2_zero_or_negative": "0x006a1590 TEST EAX,EAX / 0x006a1592 JLE 0x006a15ed -- a SIGNED test, so a zero or negative quotient skips the loop and returns straight to the epilogue without having pushed EDI. An empty list still writes its zero count word and returns that write's verdict.",
+    "step_3_loop": "0x006a1594 PUSH EDI / 0x006a1595 XOR EDI,EDI / 0x006a1597 stores the quotient into a stack countdown / 0x006a159b JMP 0x006a15a0. The loop has TWO induction variables: EDI, a byte offset stepping by 0x18 (0x006a15e2), and the stack countdown (0x006a15e5 SUB dword ptr [ESP + 0x18],0x1, exited by 0x006a15ea JNZ). The countdown, not the offset, decides termination, so a container mutated from inside the loop would not change the iteration count.",
+    "step_4_sticky_failure": "0x006a15a0 TEST BL,BL / 0x006a15a2 JZ 0x006a15e0. The loop does NOT abort on failure: it jumps to the same block the loop tail falls through to, re-zeroes BL and keeps counting down. Once any write has failed, every remaining iteration performs no stream traffic at all -- the next entry's word at +0x00 is not even read. The observable effect is 'stop writing at the first failure, return false', but the iteration count is still consumed.",
+    "step_5_entry_id": "0x006a15a4 MOV EDX,[ESI + 0x18] / 0x006a15a7 MOV EAX,[EDI + EDX] / 0x006a15aa PUSH 0x0 / 0x006a15ac PUSH 0x1 / 0x006a15ae LEA ECX,[ESP + 0x18] / 0x006a15b2 PUSH ECX / 0x006a15b3 PUSH EBP / 0x006a15b4 store EAX / 0x006a15b8 CALL 0x0093aa70 -- write_words(stream, &entry_word_00, 1, 0). 0x006a15c0 TEST AL,AL / 0x006a15c2 JZ 0x006a15e0: a failed id write skips this entry's payload write.",
+    "step_6_entry_payload": "0x006a15c4 MOV EAX,[ESI + 0x18] / 0x006a15c7 ADD EAX,EDI / 0x006a15c9 PUSH 0x0 / 0x006a15cb ADD EAX,0x4 / 0x006a15ce PUSH EAX / 0x006a15cf PUSH EBP / 0x006a15d0 CALL 0x00693390 -- write_property(stream, entry + 0x4, 0). 0x006a15d8 TEST AL,AL / 0x006a15da JZ 0x006a15e0: a failed payload write leaves BL zero, so the rest of the list is skipped.",
+    "wire_order": "count word, then per entry: the 4-byte word at +0x00, then the payload addressed at +0x04. That is a byte-for-byte mirror of App::PropertyList::Read at 0x006a2f60, whose 0x006a3019..0x006a305f loop calls 0x0093a780 on entry+0x00 and 0x00694440 on entry+0x04 with the same 0x18 stride, the same countdown, and the same sticky-failure shape. The write and read helpers 0x0093aa70/0x0093a780 and 0x00693390/0x00694440 are therefore read/write pairs."
+  },
+  "calls": [
+    {
+      "callsite": "0x006a156f",
+      "target": "0x0093aa70",
+      "kind": "direct-call",
+      "stack_words_pushed": [
+        "0x006a155a PUSH 0x0 (fourth argument)",
+        "0x006a155e PUSH 0x1 (third argument, element count)",
+        "0x006a1567 PUSH ECX where ECX = &count_word (second argument)",
+        "0x006a156a PUSH EBP (first argument, the stream)"
+      ],
+      "callee_stack_consumption": "none. Four words are pushed by this body plus one for the return address, and 0x006a158d ADD ESP,0x10 removes exactly the four this body pushed, so the callee pops 0 dwords and ends in a bare RET.",
+      "result": "AL, a one-byte bool, moved into BL at 0x006a157a.",
+      "observed_callee_body": "live decompilation of 0x0093aa70: it treats its first argument as a vtable holder, dispatches through the words at +0x10 and +0x14 of that vtable, and writes through the word at +0x38. When its fourth argument is 1 it copies count*4 bytes in one call; otherwise it byte-swaps each element and writes 4 bytes at a time. Both call sites here pass 0.",
+      "semantics": "a 32-bit-word stream writer. Not named in this package beyond its VA."
+    },
+    {
+      "callsite": "0x006a15b8",
+      "target": "0x0093aa70",
+      "kind": "direct-call",
+      "stack_words_pushed": [
+        "0x006a15aa PUSH 0x0 (fourth argument)",
+        "0x006a15ac PUSH 0x1 (third argument, element count)",
+        "0x006a15b2 PUSH ECX where ECX = &id_word (second argument)",
+        "0x006a15b3 PUSH EBP (first argument, the stream)"
+      ],
+      "callee_stack_consumption": "none. 0x006a15bd ADD ESP,0x10 after a 5-dword push sequence, so the callee pops 0 dwords.",
+      "result": "AL, tested at 0x006a15c0.",
+      "observed_callee_body": "same callee as the first call.",
+      "semantics": "a 32-bit-word stream writer; here the word is the entry's +0x00 field."
+    },
+    {
+      "callsite": "0x006a15d0",
+      "target": "0x00693390",
+      "kind": "direct-call",
+      "stack_words_pushed": [
+        "0x006a15c9 PUSH 0x0 (third argument)",
+        "0x006a15ce PUSH EAX where EAX = range_begin + offset + 0x4 (second argument)",
+        "0x006a15cf PUSH EBP (first argument, the stream)"
+      ],
+      "callee_stack_consumption": "exactly one dword. Three words are pushed by this body plus one for the return address, and 0x006a15d5 ADD ESP,0xc removes exactly three, so the callee pops 4 bytes and ends in RET 0x4.",
+      "result": "AL, tested at 0x006a15d8.",
+      "observed_callee_body": "live decompilation of 0x00693390: it reads a 16-bit word at +0x10 of the object it is handed, a 16-bit type tag at +0x12 of the same object, and four 32-bit words at +0x00, +0x04, +0x08 and +0x0c; it then dispatches on the tag across roughly nineteen cases, and it treats bits 0x30 of the +0x10 word as 'array present' and bit 0x40 as a hard error.",
+      "semantics": "a typed-property stream writer, keyed on the type tag at +0x12. Not named in this package beyond its VA."
+    }
+  ],
+  "direct_transfers": {
+    "calls": [
+      { "callsite": "0x006a156f", "target": "0x0093aa70", "kind": "direct-call" },
+      { "callsite": "0x006a15b8", "target": "0x0093aa70", "kind": "direct-call" },
+      { "callsite": "0x006a15d0", "target": "0x00693390", "kind": "direct-call" }
+    ],
+    "jumps": [],
+    "note": "0x006a159b JMP 0x006a15a0 is the loop preheader and lands inside the body span 0x006a1540..0x006a15f5, so it is intra-procedural control flow, not a tail call, and 0x006a15a0 is not a callee.",
+    "conditional_branches": [
+      { "address": "0x006a1592", "mnemonic": "JLE", "target": "0x006a15ed", "inside_body": true, "role": "signed count <= 0 skips the loop and joins the epilogue without popping EDI" },
+      { "address": "0x006a15a2", "mnemonic": "JZ", "target": "0x006a15e0", "inside_body": true, "role": "sticky failure: skip this iteration's traffic" },
+      { "address": "0x006a15c2", "mnemonic": "JZ", "target": "0x006a15e0", "inside_body": true, "role": "id write failed: skip this entry's payload write" },
+      { "address": "0x006a15da", "mnemonic": "JZ", "target": "0x006a15e0", "inside_body": true, "role": "payload write failed" },
+      { "address": "0x006a15ea", "mnemonic": "JNZ", "target": "0x006a15a0", "inside_body": true, "role": "loop back edge" }
+    ],
+    "indirect_transfers": "none. All three calls are immediate; the body contains no register-indirect or memory-indirect transfer.",
+    "xref_export_agreement": "the briefing's xref export names exactly these three edges (0x006a15d0 -> 0x00693390, 0x006a156f -> 0x0093aa70, 0x006a15b8 -> 0x0093aa70) and nothing else. The listing agrees edge for edge; there is no extra or missing transfer."
+  },
+  "vtables": [
+    {
+      "table": "0x01408820",
+      "association": "the address the triage record associates with this target's class",
+      "word_address": "0x01408860",
+      "word_displacement": "0x40",
+      "word_value": "0x006a1540",
+      "slot_semantics": "not claimed. The binary has no MSVC RTTI and the table carries no symbols.",
+      "neighbours": "0x0140885c holds 0x006a2f60 and 0x01408864 holds 0x006a3030; the 0x00000000 terminator is at 0x0140886c, so the table spans 0x01408820..0x0140886c inclusive. 0x01408850 holds 0x006a2f10, which is the association the PKG-APP-PROLIST-WAVE13 sidecar already recorded as '0x30 bytes into' this same table -- that is what fixes 0x01408820 as the base rather than 0x01408824."
+    }
+  ],
+  "virtual_dispatch": "none from this body. There is no vtable load, no indirect call and no call through a receiver word; all three transfers are immediate. The vtable row above records only that the address 0x006a1540 appears as a word in the table, not that the body dispatches through it.",
+  "return_semantics": {
+    "kind": "bool in AL",
+    "source_return_type": "bool",
+    "basis": "0x006a15ef MOV AL,BL followed by the epilogue. BL is the running verdict: seeded from the count write at 0x006a157a, set to 1 at 0x006a15dc only when both the id write and the payload write of an entry succeed, and cleared at 0x006a15e0 on every failure path. A list whose last entry fails still returns false, and a list with zero or negative entries returns the count write's verdict alone.",
+    "upper_bytes": "only AL is written, so the upper three bytes of EAX are residual. Nothing in the body or its callers' listing observes them.",
+    "ownership": "no reference acquisition, publication or teardown. The receiver is read only, at +0x18 and +0x1c; no word of the receiver is written anywhere in the 74 instructions."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "listing_instruction_count": 74,
+    "live_bridge_calls": [
+      "ghidra_decompile_function 0x006a1540 (SPORE/SporeBin/SporeApp.exe, GhidraMCP headless on 127.0.0.1:8089)",
+      "ghidra_disassemble_function 0x006a1540 -- 74 instructions, 0x006a1540..0x006a15f3",
+      "ghidra_get_function_by_address 0x006a1540 -- name App::PropertyList::Write, body_end 0x006a15f5",
+      "ghidra_decompile_function 0x0093aa70 (callee body, for the fourth-argument and byte-swap semantics)",
+      "ghidra_decompile_function 0x00693390 (callee body, for the +0x10 flag word and the +0x12 type tag)",
+      "ghidra_disassemble_function 0x006a2f60 (the mirror read, for the read/write helper pairing and the shared 0x18 stride)",
+      "ghidra_read_memory 0x01408820 len 16 and 0x0140885c len 32 (vtable words)",
+      "ghidra_search_functions 'PropertyList' (symbol table for the 0x006a14xx-0x006a30xx neighbourhood)"
+    ],
+    "decompilation": "bool App__PropertyList__Write(DirectPropertyList *this,IStream *pOutputStream) { local_4 = (*(int *)(in_ECX + 0x1c) - *(int *)(in_ECX + 0x18)) / 0x18; cVar2 = FUN_0093aa70(this,&local_4,1,0); ... }",
+    "decompilation_caveat": "the decompiler output is evidence, not truth. It names the receiver `in_ECX` and the stack argument `this` (inverted relative to the machine), folds the two induction variables of the loop into one pointer-typed variable, and re-derives the loop bound from the container rather than from the countdown. The reconstruction follows the listing.",
+    "briefing_evidence_gaps": "the briefing carried decompilation: null, disassembly: null, ghidra_function: null, abi: {}, types: [], globals: [], fields_offsets: [], callees: [] and callers: []. Every one of those was filled from the live bridge for this package; the briefing's own xrefs and vtable association were the only machine facts it supplied, and the listing confirmed both."
+  },
+  "analogues": [
+    {
+      "symbol": "app_property_list_write_006a1540",
+      "va": "0x006a1540",
+      "package": "pkg-property-list-wave6",
+      "relationship": "a prior reconstruction of this exact VA, in reconstruction/staging/pkg-property-list-wave6/property_list.cpp, with no metadata sidecar. Its behaviour agrees with this listing (sticky failure, no early loop exit, count-then-id-then-payload order). This package supersedes it for 0x006a1540 and adds what the wave6 version left implicit: the two induction variables, the twice-evaluated quotient, the two inbound spilt argument cells, the signed JLE, the exact callee stack consumption, the vtable slot displacement, and a machine test."
+    },
+    {
+      "symbol": "App::PropertyList::Read",
+      "va": "0x006a2f60",
+      "package": "live bridge only",
+      "relationship": "the mirror image of this body. Same +0x18/+0x1c range words, same 0x2AAAAAAB/>>2 division, same 0x18 stride, same two-induction-variable loop with a sticky BL verdict, and a 0x18-strided loop over 0x0093a780 (entry+0x00) and 0x00694440 (entry+0x04). It is the strongest available corroboration that the wire order encoded here is the real one."
+    },
+    {
+      "symbol": "App::PropertyList::AddPropertiesFrom",
+      "va": "0x006a2f10",
+      "package": "pkg-app-proplist-wave13",
+      "relationship": "same vtable and the same 0x18 element stride; its sidecar fixes 0x01408820 as the vtable base by locating its own body word 0x30 bytes in. It is the source of the layout discipline this package follows: displacements only, no SDK field names."
+    }
+  ],
+  "corrections_to_prior_art": [
+    "PKG-PROPERTY-LIST-WAVE6 models the 0x18 element as { uint32 id; Wave6Property property /* 0x14 bytes inline */ }, and its vtable struct gives slot semantics by name (parent_has_1c, parent_get_alt_20, parent_get_24, parent_get_object_28, clear_48). Read against the vtable words at 0x01408820 those names are off by one slot: +0x1c holds 0x006a2ef0 (App::PropertyList::RemoveProperty), +0x20 holds 0x006a2470 (HasProperty), +0x24 holds 0x006a1de0 (GetPropertyAlt), +0x28 holds 0x006a2530 (GetProperty) and +0x48 holds 0x006a2a80 (Clear). This package claims displacements only and makes no slot-naming claim.",
+    "PKG-PROPERTY-LIST-WAVE6's Write body uses a single loop induction variable and re-derives the bound from the container inside the loop header. The machine does neither: it steps a byte offset by 0x18 and counts down a separate stack word seeded once at 0x006a1597."
+  ],
+  "validation": {
+    "expected": {
+      "ABI": "PASS",
+      "CALLS": "PASS",
+      "GLOBALS": "PASS",
+      "FIELDS/OFFSETS": "PASS",
+      "CONSTANTS": "PASS",
+      "CONTROL FLOW": "PASS",
+      "VIRTUAL DISPATCH": "PASS",
+      "RETURN SEMANTICS": "WARN",
+      "EVIDENCE COVERAGE": "WARN"
+    },
+    "baseline_status": "NOT_AVAILABLE",
+    "note": "`openspore validate` was NOT run, per the worker rules. The expectations above are this worker's own reading of the listing against the required categories, not observed validator output.",
+    "known_blockers": [
+      "RETURN SEMANTICS is expected to WARN. The briefing's ABI block is empty, so there is no machine ABI record to compare against; the source encodes the byte-wide bool the listing shows at 0x006a15ef. This is an abstention on the oracle side, not a positive disagreement.",
+      "EVIDENCE COVERAGE is expected to WARN. The source names no globals and no types beyond the two opaque structs, because the listing touches neither."
+    ]
+  },
+  "provenance": [
+    "GhidraMCP disassemble_function / decompile_function on 0x006a1540 (live, 74 instructions)",
+    "GhidraMCP decompile_function on 0x0093aa70, 0x00693390 and disassemble_function on 0x006a2f60 (callee and mirror bodies)",
+    "GhidraMCP read_memory on 0x01408820 and 0x0140885c (vtable words)",
+    "GhidraMCP search_functions 'PropertyList' (neighbourhood symbol table)",
+    "reconstruction/staging/pkg-property-list-wave6/property_list.{hpp,cpp} (prior reconstruction of this VA)",
+    "reconstruction/staging/pkg-app-proplist-wave13/ (layout discipline and the vtable-base association)",
+    "reconstruction/metadata/pkg-app-proplist-wave13/006a2f10.json (sidecar shape)",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror build of the three staging files; the 8 model tests execute and pass"
+  ],
+  "unresolved_questions": [
+    "The receiver type. The demangled symbol says App::PropertyList::Write, but the live Ghidra signature types the receiver as DirectPropertyList * and the decompiled body names it DirectPropertyList *this, while the same table at 0x01408820 also holds App::PropertyList::Clear (0x006a2a80) and App::PropertyList::GetPropertyIDs-adjacent 0x006a3030. The binary has no MSVC RTTI (0 vtable labels were ever produced headless), so which concrete class owns the slot at 0x01408860+0x40 cannot be settled statically. The model uses the displacement-only name OpaquePropertyList and claims no class identity.",
+    "The 0x01408864 anomaly. The word at 0x01408864, one slot after this target's, holds 0x006a3030 -- which lies inside the body of App::PropertyList::Read (0x006a2f60..0x006a306c) and mid-instruction within CALL 0x0093a780 at 0x006a302e. ghidra_get_function_by_address 0x006a3030 resolves to Read, so no function is defined there. Whether that word is a link-time-folded thunk, a mis-relocated entry, or a table that is not this class's vtable is not established. It does not affect this reconstruction, which claims nothing beyond the single word at 0x01408860.",
+    "The App::Property 4-byte-versus-0x14-byte layout conflict (knowledgegraph/research/conflicts/track-b-vtable-fields.json, TB-FL-006, status preserved_alternatives). This body establishes the element stride as 0x18 and reads the first 4-byte word and the address at +0x04; it never reads further, so it cannot settle whether the payload is a 4-byte inline field or a 0x14-byte inline block. The live decompilation of the callee 0x00693390 is consistent with a 0x14-byte inline block (it reads 32-bit words at +0x00/+0x04/+0x08/+0x0c, a 16-bit word at +0x10 and a 16-bit type tag at +0x12, all inside the 0x14 bytes that follow element+0x04), which matches the wave6 model, but that is a claim about the callee and not about this writer, so the ledger's status is left untouched.",
+    "What the entry word at +0x00 means. It is a 32-bit value written verbatim as one stream word immediately before the payload, so it is very likely a property key or type id, but this body establishes only that it is a 4-byte word at that displacement. No name is claimed.",
+    "Whether the fourth argument of 0x0093aa70 selects byte order. Its live body byte-swaps each element when that argument is not 1 and copies count*4 raw bytes when it is 1, and it also invokes the stream's virtual at +0x10 when the argument is not 1 -- which suggests the argument is an endianness or format selector. Both call sites here pass 0, so this writer always takes the swapping path. The argument's actual meaning is not established.",
+    "Whether the stream's vtable words at +0x10 and +0x14, which 0x0093aa70 invokes with no observed argument, are an endianness setter and a validity check. The decompiler shows no arguments for either, and a non-zero result from +0x14 makes the write fail immediately without touching the sink.",
+    "The extent of the receiver past +0x1c. This body reads only +0x18 and +0x1c, so the model stops at +0x20. The live Ghidra type and the wave6 model both carry a parent word at +0x30 and a mode byte at +0x2c, but neither is read here and neither is claimed.",
+    "Whether the two quotients can ever differ. They are evaluated either side of the first stream write, and nothing in this body mutates the receiver, so on any execution reachable from this body they are equal. Whether a subclass overriding the stream write could mutate the list mid-call is not established.",
+    "No original-process trace exists in this repository, so every claim here is static. A trace would be needed to confirm the wire byte order, the meaning of the count word on the wire, and the identity of the type tag at payload+0x12."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "blocking_reason": "no original-process trace exists in this repository",
+    "conditions": [
+      "The original 0x006a1540 is called with a live App::PropertyList and a writable IStream, and the emitted bytes are captured.",
+      "A trace records the sink bytes for a list with one entry, which would confirm the count-word and id-word byte order that 0x0093aa70's swap path implies but that this package can only infer from the callee's decompilation.",
+      "A trace records whether a write failure mid-list leaves the remaining entries unwritten, confirming the sticky-failure shape at 0x006a15a0.",
+      "A trace identifies the type tag at payload+0x12 and therefore the wire type of each entry."
+    ]
+  }
+}

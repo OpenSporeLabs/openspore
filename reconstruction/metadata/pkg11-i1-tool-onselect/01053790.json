@@ -1,0 +1,304 @@
+{
+  "schema": "pkg11-i1-tool-onselect.function-handoff.v1",
+  "package": "PKG-11-I1-TOOL-ONSELECT",
+  "function_address": "0x01053790",
+  "ghidra_name": "Simulator::cToolStrategy::OnSelect",
+  "normalized_symbol": "pkg11_i1_tool_onselect_01053790",
+  "reconstructed_symbol": "on_select_01053790",
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "queue_id": "fun:01053790:Simulator::cToolStrategy::OnSelect",
+  "implementer_id": "orch-swarm",
+  "source_files": [
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.hpp",
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp",
+    "reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "semantic_classification": "virtual base-subobject vptr stamp with bit-0-guarded pool release",
+  "declaration": "bool __thiscall on_select_01053790(OpaqueBaseSubobject01403934 *strategy, std::uint32_t arg_word);",
+  "body_extent": {
+    "start": "0x01053790",
+    "end": "0x010537ae",
+    "span_bytes": 31,
+    "instruction_count": 11,
+    "block": ".text",
+    "image_base": "0x00400000",
+    "rva": "0x000c53790"
+  },
+  "listing": [
+    {"address": "0x01053790", "instruction": "TEST byte ptr [ESP + 0x4],0x1", "index": 0},
+    {"address": "0x01053795", "instruction": "PUSH ESI", "index": 1},
+    {"address": "0x01053796", "instruction": "MOV ESI,ECX", "index": 2},
+    {"address": "0x01053798", "instruction": "MOV dword ptr [ESI],0x1403934", "index": 3},
+    {"address": "0x0105379e", "instruction": "JZ 0x010537a9", "index": 4},
+    {"address": "0x010537a0", "instruction": "PUSH ESI", "index": 5},
+    {"address": "0x010537a1", "instruction": "CALL 0x00f47380", "index": 6},
+    {"address": "0x010537a6", "instruction": "ADD ESP,0x4", "index": 7},
+    {"address": "0x010537a9", "instruction": "MOV EAX,ESI", "index": 8},
+    {"address": "0x010537ab", "instruction": "POP ESI", "index": 9},
+    {"address": "0x010537ac", "instruction": "RET 0x4", "index": 10}
+  ],
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "slot_width_bytes": 4,
+        "byte_offset_tested": 0,
+        "bit_tested": 0,
+        "observed_encoding": "TEST byte ptr [ESP + 0x4],0x1",
+        "staged_type": "std::uint32_t (untyped argument word)",
+        "observed_use": "Only bit 0 of the low byte is read. It is never read as a dword and never written."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "saved_registers": ["ESI"],
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_value": "The receiver pointer, i.e. the unchanged incoming ECX copied through ESI.",
+    "return_semantics": "EAX receives the receiver verbatim; under the SDK bool prototype this is true for every non-null receiver. The ABI analyzer classified the EAX write as aggregate_unknown and did not observe an explicit zero/nonzero materialization.",
+    "ghidra_cross_validation": "Ghidra reports no calling convention and models two stack parameters (this at Stack[0x4], pTool at Stack[0x8]) with an 'Unknown calling convention' warning. That model is rejected: the ABI observation is __thiscall with the receiver in ECX, which is corroborated by MOV ESI,ECX followed by a write through ESI."
+  },
+  "layout": {
+    "strategy_base_subobject": {
+      "size_bytes": null,
+      "fields": [
+        {"name": "vftable_01403934", "offset": "0x00", "type": "const Vftable01403934 *"}
+      ],
+      "evidence": "MOV ESI,ECX then MOV dword ptr [ESI],0x1403934 is the only write through the receiver and it targets offset 0x00, the vptr slot."
+    },
+    "vftable_01403934": {
+      "block": ".rdata",
+      "address": "0x01403934",
+      "size_bytes": 24,
+      "terminator": "0x00000000 at 0x0140394c",
+      "fields": [
+        {"name": "slot0", "offset": "0x00", "value": "0x01053790", "role": "this target"},
+        {"name": "slot1", "offset": "0x04", "value": "0x011e06d0", "role": "purecall"},
+        {"name": "slot2", "offset": "0x08", "value": "0x011e06d0", "role": "purecall"},
+        {"name": "slot3", "offset": "0x0c", "value": "0x011e06d0", "role": "purecall"},
+        {"name": "slot4", "offset": "0x10", "value": "0x012c6625", "role": "unknown; Ghidra defines no function at this address"},
+        {"name": "slot5", "offset": "0x14", "value": "0x012c6625", "role": "unknown; Ghidra defines no function at this address"}
+      ],
+      "evidence": "ghidra_read_memory at 0x01403934 returns 90370501 d0061e01 d0061e01 d0061e01 25662c01 25662c01 00000000, and 0x011e06d0 is the live symbol 'purecall' (undefined purecall(void)). Bytes at 0x012c6625 are 10 0d 20 57 48 01 f3 0f, which is code, not string data."
+    }
+  },
+  "mechanics": {
+    "guard": [
+      "Instruction 0 tests bit 0 of the single stack argument before ESP is modified, so the tested slot is entry_ESP+0x4 and not a frame temporary.",
+      "JZ at 0x0105379e skips only the release call. The vptr store at 0x01053798 is unconditional and executes on both paths.",
+      "The taken path requires bit 0 to be SET. A four-byte-aligned pointer value has bit 0 clear, so the release call is not reachable from an aligned cSpaceToolData* argument. The staged model therefore tests the raw argument bit and does not model a null check."
+    ],
+    "state_mutation": [
+      "MOV ESI,ECX at 0x01053796 saves the receiver into the callee-saved ESI.",
+      "MOV dword ptr [ESI],0x1403934 at 0x01053798 writes the .rdata address 0x01403934 over the receiver's first word on every path.",
+      "No other receiver field is read or written; the body has no other memory operand."
+    ],
+    "release_path": [
+      "PUSH ESI at 0x010537a0 passes the receiver as the single stack argument to 0x00f47380.",
+      "ADD ESP,0x4 at 0x010537a6 removes that argument, so 0x00f47380 is cdecl with callee-side cleanup by the caller.",
+      "0x00f47380 is a null-tolerant pool release: MOV EAX,[ESP+0x4]; TEST EAX,EAX; JZ end; MOV ECX,[0x016c8b44]; PUSH EAX; CALL 0x009276c0; RET.",
+      "0x009276c0 is __thiscall on the pool object at the global 0x016c8b44. It reads a CRITICAL_SECTION* at pool+0x4e4, takes it, calls 0x00926fd0 on the released block, and releases it.",
+      "0x00926fd0 is a custom pool free: it reads the block header at [block-4] and base at [block-8], masks the size with 0x7ffffff8, threads the block onto the free list at pool+0x3c and pool+0x440, updates counters at pool+0x488/pool+0x48c, and calls VirtualFree(base - size, 0, MEM_RELEASE) for coalesced large blocks.",
+      "0x00f47380 is used the same way as a per-node release in the linked-list teardown at 0x01059010 (Simulator::cGlobalMindEraseToolStrategy::WhileFiring), which corroborates the release interpretation."
+    ],
+    "return_path": [
+      "Both paths converge at 0x010537a9 with MOV EAX,ESI, so EAX is the receiver on every path.",
+      "POP ESI at 0x010537ab restores the saved register; RET 0x4 at 0x010537ac pops the argument word.",
+      "The return value does not depend on the guard, so a taken release path still returns the receiver."
+    ],
+    "control_flow_summary": [
+      "entry -> test bit 0 -> save ESI -> stamp vptr -> (bit0 set: push receiver, call release, pop argument) -> EAX = receiver -> restore ESI -> ret 4",
+      "two basic blocks, one conditional branch, no loops, no indirect branch, no stack frame"
+    ]
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 0,
+      "observation": "The live reference manager reports 0 references to 0x01053790 from any executable block. The function is reachable only through data pointers."
+    },
+    "direct_callees": {
+      "ghidra_count": 1,
+      "entries": [
+        {
+          "address": "0x00f47380",
+          "role": "Null-tolerant pool release, reached only when bit 0 of the argument word is set.",
+          "transitive": ["0x009276c0 (pool critical section + free)", "0x00926fd0 (free list / VirtualFree)"]
+        }
+      ]
+    },
+    "data_references": {
+      "total": 100,
+      "executable_block_references": 0,
+      "vtable_slot_indices_observed": [0, 1, 3, 7, 12, 14, 18, 23, 24],
+      "observation": "0x01053790 is stored in Simulator-family vtable candidates at many different slot indices, so it is a shared inherited virtual rather than one family's fixed slot. docs/analysis/vtables.json lists 63 candidates containing the address and docs/analysis/class-family-map.md records it as the sole named SDK anchor of FAM-SIMULATOR-TOOL at 0x014624d0 and 0x0149b4d8."
+    }
+  },
+  "vftable_consumer_evidence": {
+    "address": "0x01403934",
+    "total_references": 197,
+    "executable_block_references": "41 inspected; every one is an immediate vptr store",
+    "observed_store_offsets": ["[ESI]", "[ESI + 0x4]", "[ESI + 0xc]", "[EDI + 0x18]", "[ESI + 0x10]", "[EBP]", "[EBX + 0x8]", "[ESI + 0x9c]", "[ESI + 0x15bc34]"],
+    "observation": "0x01403934 is written as a vptr at many different subobject offsets across the whole binary (for example MOV dword ptr [ECX],0x1403934 in FUN_00a20780 and MOV dword ptr [ECX],0x1403934 in FUN_00a655e0, plus MOV EAX,0x1403934 at 0x00a68e5e and 0x00a66872). This is the signature of a base-class subobject vftable that a large hierarchy inherits, and it is the only class-level vptr store in this body."
+  },
+  "structure_and_global_evidence": [
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01403934",
+      "observation": "Six code pointers followed by a null terminator: 0x01053790, 0x011e06d0 x3, 0x012c6625 x2, 0x00000000."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x011e06d0",
+      "observation": "The live symbol is 'purecall' (undefined purecall(void)), so slots 1-3 of the stamped vftable are pure-virtual placeholders and the owning class is abstract."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00f47380",
+      "observation": "Null-tolerant wrapper that loads the pool object from the global 0x016c8b44 into ECX and forwards the block pointer to 0x009276c0."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00f47380",
+      "observation": "Seven instructions ending in a bare RET, so the single argument is popped by the caller's ADD ESP,0x4."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x009276c0",
+      "observation": "Reads a critical section at pool+0x4e4, enters it, calls 0x00926fd0, leaves it."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00926fd0",
+      "observation": "Custom pool free with an 8-byte block header, 0x7ffffff8 size masking, free-list threading, and VirtualFree(MEM_RELEASE) on coalesced blocks."
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "observation": "Reference-manager scan: 0 executable-block references to 0x01053790; 0x01403934 referenced 197 times, 41 from executable blocks, all of them MOV ...,0x1403934 vptr stores."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01059010",
+      "observation": "Simulator::cGlobalMindEraseToolStrategy::WhileFiring walks a node list calling 0x009a9600 then 0x00f47380 per node, confirming 0x00f47380 is the family release helper."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01054080",
+      "observation": "Simulator::cGetOutOfUFOToolStrategy::OnSelect(cSpaceToolData*) is a derived OnSelect override with the same hidden-this plus cSpaceToolData* shape, returning bool, which supports the SDK parameter shape for the family while leaving this body's bit-0 guard unexplained."
+    }
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01053790",
+      "observation": "Live span 0x01053790 through 0x010537ae, signature 'bool Simulator::cToolStrategy::OnSelect(cToolStrategy * this, cSpaceToolData * pTool)'."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01053790",
+      "observation": "Eleven instructions matching the staged listing byte for byte, including TEST byte ptr [ESP + 0x4],0x1 first and RET 0x4 last."
+    },
+    {
+      "tool": "reconstruction/evidence/01053790/evidence.md",
+      "observation": "Persisted ABI inference: __thiscall, hidden this in ECX, one observed entry_ESP+0x4 slot, callee-side 4-byte cleanup from 'ret 0x4', ESI saved, return in EAX, and an explicit note that the ECX receiver is dereferenced before any definite write."
+    },
+    {
+      "tool": "openspore orchestrate session-task briefing",
+      "observation": "Bounded 11-instruction disassembly, zero callers, one direct call xref to 0x00f47380 at 0x010537a1, and 12 recorded vtable addresses for the target."
+    },
+    {
+      "tool": "docs/analysis/class-family-map.md",
+      "observation": "FAM-SIMULATOR-TOOL records 0x01053790 as the resolved OnSelect method anchor, SDK bases Object and DefaultRefCounted, an 18-slot SDK contract, and no resolved family-wide constructor or destructor."
+    },
+    {
+      "tool": "docs/analysis/vtables.json",
+      "observation": "63 vtable candidates contain 0x01053790, at slot indices 0, 1, 3, 7, 12, 14, 18, 23 and 24, with 0x014624d0 and 0x0149b4d8 rated HIGH and Simulator-namespaced."
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "guard_is_bit0_not_null",
+      "observation": "The SDK import types the single stack argument as cSpaceToolData*, but the machine encoding tests only bit 0 of its low byte and branches to skip the call when that bit is clear. A four-byte-aligned pointer always has bit 0 clear, so the release call is unreachable from a legitimately aligned pointer.",
+      "resolution": "Staged as a raw argument-word bit test. The null-check reading carried by the Ghidra decompilation ('if (((uint)this & 1) != 0)') is rejected because it also binds the test to the wrong operand: Ghidra placed the receiver on the stack.",
+      "status": "unresolved"
+    },
+    {
+      "id": "identity_of_0x01053790",
+      "observation": "The target has zero executable-block references, is the slot-0 entry of the abstract 6-slot vftable at 0x01403934 (three purecall placeholders), and is inherited at many different slot indices across the Simulator hierarchy, while 0x01403934 itself is stamped as a base-subobject vptr by constructors throughout the binary. That is consistent with a widely inherited base-class virtual and hard to reconcile with a tool-specific cToolStrategy::OnSelect override.",
+      "resolution": "Both readings are preserved. The body is reconstructed mechanically; no owner class is selected.",
+      "status": "unresolved"
+    },
+    {
+      "id": "deleting_destructor_alternative",
+      "observation": "The combination of an unconditional own-vptr stamp, a flags-like bit test on the single callee-popped argument, a call to a pool release with the receiver, and 'return this' is also the shape MSVC emits for a scalar deleting destructor of a class with a custom operator delete.",
+      "resolution": "Not selected. Rejecting it requires either a resolved call site with a known argument meaning or a resolved class owner for 0x01403934; neither is available.",
+      "status": "unresolved"
+    },
+    {
+      "id": "return_semantics",
+      "observation": "EAX receives the receiver pointer, not a materialized 0/1. Under the SDK bool prototype this is true for any non-null receiver, but the ABI analyzer classified the EAX write as aggregate_unknown and no explicit zeroing or comparison exists.",
+      "resolution": "Staged as 'return the receiver', with the bool reading noted as derived from the SDK prototype rather than observed.",
+      "status": "unresolved"
+    }
+  ],
+  "null_and_error_paths": {
+    "observed": [
+      "There is no null check on the receiver; MOV dword ptr [ESI],0x1403934 writes through ECX unconditionally, so a null receiver faults.",
+      "The single argument is read as a single byte at entry_ESP+0x4 and is never dereferenced, so no argument fault path exists.",
+      "The release callee 0x00f47380 is itself null-tolerant, but it is only entered with the receiver, which is already known to be dereferenceable."
+    ],
+    "staging_policy": "The source preserves the absence of a receiver guard and models the bit test literally. The model test asserts that an aligned non-null argument word skips the release, which is the behaviour the listing requires."
+  },
+  "confidence": {
+    "overall": "high for the 11-instruction control flow, stack ABI, vptr store target and value, callee identity and return register; low for the class identity, the argument's source-level type, and the intent of the bit-0 guard",
+    "high": [
+      "__thiscall with the receiver in ECX and one callee-popped 4-byte argument slot",
+      "bit 0 of the low byte of that slot is the branch condition, tested before any ESP change",
+      "unconditional store of 0x01403934 to receiver offset 0x00, before the conditional call",
+      "single direct callee 0x00f47380 invoked with the receiver and cleaned by ADD ESP,0x4",
+      "0x00f47380 is a null-tolerant custom pool release reaching VirtualFree",
+      "EAX returns the receiver on both paths",
+      "no executable-block reference to the target; data-only reachability"
+    ],
+    "medium": [
+      "0x01403934 is the vftable of a widely inherited abstract base class",
+      "the target is a shared inherited virtual rather than a single-family slot",
+      "0x00f47380 is the family-wide release helper for this hierarchy"
+    ],
+    "low": [
+      "the source-level type and name of the argument word",
+      "whether the semantic role is a tool-select handler, a base-class reset, or a deleting destructor",
+      "the meaning of vftable slots 4 and 5 at 0x012c6625"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect_model_test.cpp -o /tmp/opencode/pkg11-i1-tool-onselect-model && /tmp/opencode/pkg11-i1-tool-onselect-model",
+    "model_result": "passed; vftable image slots, bit-0 guard truth table, bit-0-clear skip with vptr restamp, aligned non-null argument word skipping the release, bit-0-set release of the receiver, vptr stamp preceding the release call, and repeated stamping of an already stamped receiver",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.hpp reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect.cpp reconstruction/staging/pkg11-i1-tool-onselect/tool_onselect_model_test.cpp",
+    "format_result": "passed; namespace comments disabled to honor the no-comments constraint",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg11-i1-tool-onselect/01053790.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The single stack argument is typed cSpaceToolData* by the SDK import, but only its bit 0 is tested, so the release branch is unreachable for any 4-byte-aligned pointer. Either the SDK parameter typing at this address is wrong, or the tested word is a flag or a deleting-destructor flags word rather than a pointer.",
+    "No call site is recoverable: the target has zero references from any executable block, so no caller can be shown to pass a known argument and settle the guard's meaning.",
+    "The class that owns the vftable at 0x01403934 is not identified. It is abstract (three purecall slots) and inherited at many subobject offsets program-wide, which does not match a tool-specific strategy class.",
+    "It is not established whether 0x01053790 is a base-class OnSelect, a base-class state-reset virtual, or a scalar deleting destructor. The mechanics are identical in all three readings.",
+    "Vftable slots 4 and 5 both point at 0x012c6625, which Ghidra has not defined as a function; their role is unknown.",
+    "The SDK-documented 18-slot cToolStrategy contract cannot be reconciled with the observed 6-slot vftable at 0x01403934, so slot indices reported by docs/analysis/vtables.json are not treated as authoritative here.",
+    "The EAX return is the receiver pointer rather than an observed 0/1, and the ABI analyzer classified it as aggregate_unknown; the bool reading rests on the SDK prototype alone."
+  ],
+  "blockers": [
+    "No differential runtime corpus is available: the target is reached only through vtable dispatch and no runtime-validated trace exists.",
+    "The conflict ledger entries tool_callback_body_mapping and tool_projectile_event_path both list 0x01053790 as an unresolved anchor and neither is adjudicated.",
+    "cToolStrategy field offsets, the cToolManager registry at +0x38, and the 18-slot contract remain unreconstructed, so the receiver's post-stamp layout is unknown beyond offset 0x00."
+  ]
+}

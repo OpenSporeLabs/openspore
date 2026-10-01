@@ -1,7 +1,7 @@
 # Reconstruction context 0x0103a3c0
 
 - Status: `partial`
-- Content SHA-256: `de7ada888f9a9816d9c4a5bdeb5389a247cc406beda43a5dfaf92804067697e9`
+- Content SHA-256: `f63d858ccc9e2425a1d2dfde0d69719c4f8decb088b98c95ee3f6ef144ff80c1`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "b3c11692863dbf7719518f54b714832ce0aab6b8160deaaa83cf41bd669a4874",
-  "live_attempts": [],
+  "content_sha256": "27723f95cc1995ef6ac88ffe04af1bda12516bb92fe27c37bae209974108509b",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x0103a3c0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,51 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-/* WARNING: Enum "ObjectTYPE": Some values do not have unique names */
-/* WARNING: Enum "Names": Some values do not have unique names */
-
-bool FUN_0103a3c0(undefined4 *param_1)
-
-{
-  int *piVar1;
-  char cVar2;
-  int *piVar3;
-  bool bVar4;
-  int **ppiStack_1c;
-  int *local_10 [4];
-  
-  local_10[0] = (int *)0x0;
-  ppiStack_1c = (int **)0x103a3d0;
-  piVar3 = (int *)FUN_0067de30();
-  piVar1 = local_10[0];
-  if (local_10[0] != (int *)0x0) {
-    local_10[0] = (int *)0x0;
-    ppiStack_1c = (int **)0x103a3e5;
-    (**(code **)(*piVar1 + 4))();
-  }
-  ppiStack_1c = local_10;
-  (**(code **)(*piVar3 + 0x2c))(*param_1);
-  if (ppiStack_1c != (int **)0x0) {
-    cVar2 = (*(code *)(*ppiStack_1c)[7])(0x34f1a4f);
-    if (cVar2 != '\0') {
-      ppiStack_1c = (int **)0x0;
-      App__Property__GetKey((PropertyList *)0x34d97fa,0x34f1a4f,(ResourceKey *)&ppiStack_1c);
-      bVar4 = ppiStack_1c == (int **)0x7ecbe6f5;
-      (**(code **)(iRam034d97fa + 4))();
-      return bVar4;
-    }
-    (**(code **)(iRam034d97fa + 4))();
-  }
-  return false;
-}
-
-
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -195,7 +160,7 @@ bool FUN_0103a3c0(undefined4 *param_1)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -223,11 +188,6 @@ bool FUN_0103a3c0(undefined4 *param_1)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

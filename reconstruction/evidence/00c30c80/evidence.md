@@ -2,9 +2,37 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `c903adb1d67a92a6d09cf09b3791083151d9c09870599f6ea91caaa4c3d81afd`
+- Content SHA-256: `813bf079e8f18cd580794966a7efe4c3ebe86a53d210426b5f6a06ef66713ad8`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "owner of the record id at +0xb0",
+  "hidden_this_register": "ECX, read at 0x00c30c80",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "ret_form": "RET",
+  "return_observation": "0x00c30ca3 XOR EAX,EAX is the only zero return; the other path is 0x00c30c9e JMP 0x00bba500, a tail transfer, so EAX comes straight from that function.",
+  "return_register": "EAX",
+  "return_semantics": "pointer to the resolved record, or 0 when the id is unset or unresolvable; otherwise the tail callee's result",
+  "return_type": "std::uint32_t",
+  "return_width_bytes": 4,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller (nothing is pushed at entry)",
+  "termination": "0x00c30ca5 RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -38,7 +66,7 @@
   },
   "completeness": "PARTIAL",
   "conflicts": [],
-  "content_sha256": "afc35ef12a2fd391af1b67caae027c90163c7c1a2db2e5f211e83855c36b9fd1",
+  "content_sha256": "050cec4c6f09283c2dd2159fc736216da36eaee7509fefb82c109a6d220c705e",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -46,16 +74,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -268,21 +296,111 @@
     "type": null,
     "void_possible": false
   },
-  "schema": "openspore-abi-inference-
+  "schema": "openspore-abi-inferen
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "FUN_00b3d2a0",
+    "reconstructed": true,
+    "va": "0x00b3d2a0"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00aebe90"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ba5bd3"
+  },
+  {
+    "name": "EmpirePoliticalColor_00c32cd0",
+    "reconstructed": true,
+    "va": "0x00c32cd0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c49140"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c49180"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00c737a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00cbc7f0"
+  },
+  {
+    "name": "DiplomacyTransition_00d065a0",
+    "reconstructed": true,
+    "va": "0x00d065a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00e1bbc0"
+  },
+  {
+    "name": "FUN_00e39ab0",
+    "reconstructed": false,
+    "va": "0x00e39ab0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fde3e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00fe0570"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01005d80"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x01016070"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x0102ce30"
+  }
+]
+```
 
 ## contradictions
 
@@ -292,13 +410,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\nundefined4 __fastcall FUN_00c30c80(int param_1)\n\n{\n  int iVar1;\n  undefined4 uVar2;\n  \n  iVar1 = *(int *)(param_1 + 0xb0);\n  if (iVar1 != -1) {\n    FUN_00b3d2a0(iVar1);\n    iVar1 = FUN_00ba6d80(iVar1);\n    if (iVar1 != 0) {\n      uVar2 = FUN_00bba500();\n      return uVar2;\n    }\n  }\n  return 0;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -374,9 +488,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 10402,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"owner of the record id at +0xb0\",\n    \"hidden_this_register\": \"ECX, read at 0x00c30c80\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00c30ca3 XOR EAX,EAX is the only zero return; the other path is 0x00c30c9e JMP 0x00bba500, a tail transfer, so EAX comes straight from that function.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"pointer to the resolved record, or 0 when the id is unset or unresolvable; otherwise the tail callee's result\",\n    \"return_type\": \"std::uint32_t\",\n    \"return_width_bytes\": 4,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller (nothing is pushed at entry)\",\n    \"termination\": \"0x00c30ca5 RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 3,\n      \"symbol\": \"FUN_00b3d2a0\",\n      \"va\": \"0x00b3d2a0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-13-E4-EMPIRE-WAVE3\",\n      \"score\": 3,\n      \"symbol\": \"EmpirePoliticalColor_00c32cd0\",\n      \"va\": \"0x00c32cd0\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-13-SIM-DIPLOMACY-TRANSITIONS\",\n      \"score\": 3,\n      \"symbol\": \"DiplomacyTransition_00d065a0\",\n      \"va\": \"0x00d065a0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"FUN_00b3d2a0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d2a0\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00aebe90\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ba5bd3\"\n      },\n      {\n        \"name\": \"EmpirePoliticalColor_00c32cd0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00c32cd0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c49140\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c49180\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00c737a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00cbc7f0\"\n      },\n      {\n        \"name\": \"DiplomacyTransition_00d065a0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00d065a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00e1bbc0\"\n      },\n      {\n        \"name\": \"FUN_00e39ab0\",\n        \"reconstructed\": false,\n        \"va\": \"0x00e39ab0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fde3e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00fe0570\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01005d80\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x01016070\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x0102ce30\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00aec21b\",\n        \"direction\": \"in\",\n        \"other\": \"0x00aebe90\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00ba5c59\",\n        \"direction\": \"in\",\n        \"other\": \"0x00ba5bd3\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c32f2a\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c32cd0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c4914e\",\n        \"direction\": \"in\",\n        \"other\": \"0x00c49140\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00c4918e\",\n        \"direction\": \"in
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -393,25 +514,25 @@
   "body_start": "00c30c80",
   "callees": [
     "FUN_00ba6d80",
-    "FUN_00b3d2a0",
-    "FUN_00bba500"
+    "FUN_00bba500",
+    "FUN_00b3d2a0"
   ],
   "callers": [
-    "FUN_00e39ab0",
-    "FUN_01016070",
-    "FUN_00d065a0",
-    "FUN_00e1bbc0",
-    "FUN_00fde3e0",
-    "FUN_00cbc7f0",
-    "FUN_00fe0570",
-    "FUN_00aebe90",
-    "FUN_01005d80",
     "FUN_0102ce30",
+    "FUN_01005d80",
+    "FUN_00e1bbc0",
+    "FUN_00ba5bd3",
     "FUN_00c49140",
-    "FUN_00c32cd0",
+    "FUN_00e39ab0",
     "FUN_00c737a0",
+    "FUN_00aebe90",
     "FUN_00c49180",
-    "FUN_00ba5bd3"
+    "FUN_01016070",
+    "FUN_00c32cd0",
+    "FUN_00fde3e0",
+    "FUN_00fe0570",
+    "FUN_00cbc7f0",
+    "FUN_00d065a0"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -422,24 +543,8 @@
   "ghidra_calling_convention_signal": "no_information",
   "ghidra_has_calling_convention": false,
   "image_base": "0x400000",
-  "locals": [
-    {
-      "name": "iVar1",
-      "storage": "register:00000000:4",
-      "type": "int"
-    },
-    {
-      "name": "uVar2",
-      "storage": "register:00000000:4",
-      "type": "undefined4"
-    },
-    {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int"
-    }
-  ],
-  "locals_count": 3,
+  "locals": [],
+  "locals_count": 0,
   "mode": "live",
   "name": "FUN_00c30c80",
   "namespace": null,
@@ -544,9 +649,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b07/00c30c80_resolve_record_by_field.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_opaque_types.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b07/00c30c80.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -556,9 +675,20 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "No original-process trace exists for this address.",
+    "The record type, the handle table and the meaning of the +0xb0 id can only be settled with a runtime trace that shows the resolved record in use."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -568,15 +698,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint32_t"
+]
+```
 
 ## vtables
 

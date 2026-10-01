@@ -1,0 +1,278 @@
+{
+  "schema": "openspore.reconstruction-worker-handoff.v1",
+  "package": "PKG-SWARM-W2-00586700",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x00586700",
+  "address": "0x00586700",
+  "symbol": "re_00586700",
+  "normalized_symbol": "re_00586700",
+  "ghidra_name": "FUN_00586700",
+  "source_files": [
+    "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700.cpp",
+    "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700_types.hpp",
+    "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700_model_test.cpp"
+  ],
+  "target_state": "implemented staging handoff. The complete 89-instruction body was re-derived from the image bytes for this package -- objdump -D -b binary -m i386 -M intel over the 0xf4 bytes at this VA's file offset (0x185b00 = 0x586700 - 0x401000 + 0x400) reproduces the committed Ghidra listing instruction for instruction, at the same addresses and with the same lengths, so nothing here rests on a re-parse. THE COMMITTED RECORD IS NOT TRUNCATED: ghidra_function.body_end 0x005867f3, size_bytes 244, and 0x005867f3 is the C3 itself. All five conditional branch targets (0x0058673b, 0x00586754, 0x005867b8, 0x005867d1, 0x00586782) lie inside the span, so CONTROL FLOW has a grounded PASS. The one thing the briefing flagged as unresolved was resolved from the image rather than from the abstention: the PUSH EBP with no MOV EBP,ESP is not an uncalibrated frame pointer, because 0x00586705 MOV EBP,ECX makes EBP the RECEIVER and the machine's own receiver record independently says the same (register ECX, shape R-ALIAS, offsets 0x4d8/0x4ec/0x508/0x50c). The stack frame resolves to twelve bytes plus four callee-saved registers, with its three slots at entry_ESP-9, entry_ESP-8 and entry_ESP-4, each observed from two different ESP values. Expected static verdicts: ABI PASS, CALLS PASS, CONSTANTS PASS, CONTROL FLOW PASS, FIELDS/OFFSETS PASS on the grounded arm, GLOBALS PASS, VIRTUAL DISPATCH PASS (seven of nine), RETURN SEMANTICS WARN, EVIDENCE COVERAGE WARN. Both WARNs are properties of the evidence pack and neither is fixable from this package; see known_blockers. RUNTIME remains GATED at 0 and nothing was attempted.",
+  "captured_on": "2026-09-28",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700.cpp",
+      "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700_types.hpp",
+      "reconstruction/staging/pkg-swarm-w2-00586700/sw2_00586700_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed and no other package's files were touched"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "re_00586700",
+    "declaration": "extern \"C\" int SW2_00586700_THISCALL re_00586700(void* receiver);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "argument_surface": "receiver in ECX, aliased into EBP by 0x00586705 and never re-read from ECX except when it is handed to 0x005151b0; ZERO stack arguments of its own, which is what the bare RET at 0x005867f3 and the four popped callee-saves jointly fix. The machine ABI record's candidate_conventions are [__thiscall, __fastcall] and __fastcall is excluded by 0x00586705: a fastcall body would read its first argument from EDX and nothing in this listing ever reads [ESP+4] before the frame is built.",
+    "types_declared": [
+      "Word (std::uint32_t) -- the only value width this body moves",
+      "byte_at / word_at / word_block / at / at_const / address_of -- opaque byte-run accessors; NO struct is declared anywhere in this package, because abi_derived.value.receiver.bounds_only is true",
+      "growable_buffer_fill_005151b0 -- extern declaration for 0x005151b0, defined by this package's own model test as an observer",
+      "memcpy_thunk_011e0744 -- extern declaration for 0x011e0744, likewise defined by the model test"
+    ],
+    "no_member_named": "abi_derived.value.receiver.bounds_only is TRUE with confidence SUPPORTED. bounds_only states where the body was SEEN reaching and is not an enumeration of the receiver: it lists four displacements and the body reaches more (0x4f0 among them), because 0x00586760's LEA result is written through a register at 0x00586786 rather than through EBP. So no member identity is claimed anywhere; every access is by displacement and every displacement is a named constexpr carrying the address of the instruction it came from.",
+    "virtual_dispatch_modelled": false
+  },
+  "function_extent": {
+    "entry": "0x00586700",
+    "body_end_inclusive": "0x005867f3",
+    "instruction_count": 89,
+    "return_site": "0x005867f3: RET (bytes C3), preceded by 0x005867f0 ADD ESP,0xc and the four POPs at 0x005867ec..0x005867ef",
+    "span_bytes": 244,
+    "single_reachable_return": true,
+    "listing_reexported": "objdump -D -b binary -m i386 -M intel --adjust-vma=0x00586700 over the 0xf4 bytes at this VA's file offset (0x185b00). Section map read from the PE: .text VA 0x401000 raw pointer 0x400.",
+    "branch_targets_all_inside_span": true,
+    "committed_record_truncation": "none; body_end 0x005867f3 and the last instruction is 0x005867f3"
+  },
+  "observed_mechanics": [
+    "89 instructions, 0x00586700..0x005867f3 inclusive, 244 bytes, one reachable RET",
+    "THE FRAME IS RESOLVED, NOT ABSTAINED ON. 0x00586705 MOV EBP,ECX makes EBP the receiver; 0x00586704 PUSH EBP preserves the caller's EBP and 0x005867ee POP EBP restores it, so the envelope's 'frame_pointer_untrusted' flag is a true observation about the register and a wrong conclusion about the frame. Every [EBP+disp] is a receiver displacement, which is what the machine's own receiver record says (register ECX, shape R-ALIAS).",
+    "SUB ESP,0xc at 0x00586700, then PUSH EBX / EBP / ESI / EDI: entry_ESP-12 for the frame and entry_ESP-28 in steady state. The three frame slots are the value byte at entry_ESP-9, the slot cursor at entry_ESP-8 and the trip counter at entry_ESP-4 -- each observed from two different ESP values, the value byte at 0x00586721 (ESP=entry_ESP-28, [ESP+0x13]) and at 0x0058672f (ESP=entry_ESP-40, [ESP+0x1f]), which is the cross-check that makes the arithmetic certain rather than assumed",
+    "exactly four direct transfers: CALL 0x005151b0 at 0x00586734 and 0x005867b1, CALL 0x011e0744 at 0x00586745 and 0x005867c2. No indirect transfer of any kind, and abi_derived.dispatch records indirect_calls 0, call_offsets [] and vtable_shaped_loads 0",
+    "the same five-instruction operation appears SEVEN times: once on the element at self+0x4d8 (0x00586707..0x0058675e) and six times inside the loop (0x0058678c..0x005867db), advancing an element's current word to start+35 and zeroing 35 bytes at start",
+    "the arm test is 0x0058671c CMP ECX,0x23 / 0x0058671f JNC and 0x00586799 CMP ECX,0x23 / 0x0058679c JNC, on ECX = current minus start computed in 32 bits. JNC is opcode 0x73, so the test is UNSIGNED >= 35. This is the whole branch logic and it is decided by the opcode, not by any word in the listing",
+    "the fast arm computes start+35 (0x0058673b LEA EBX,[EAX + 0x23]), calls the thunk with a count of IDENTICALLY ZERO (0x0058673e MOV EAX,EDI; 0x00586740 SUB EAX,EDI -- and 0x005867bb/0x005867bd inside the loop), then ADDs the wrapping delta start+35-current to the current word (0x0058674a SUB EBX,EDI; 0x0058674f ADD dword ptr [ESI + 0x4],EBX)",
+    "the slow arm passes the SHORTFALL 35-(current-start) (0x00586725 SUB EAX,EDI; 0x00586728 ADD EAX,0x23) as 0x005151b0's second stack word, and writes NOTHING to the current word itself on that path",
+    "0x00586766 zeroes the dword at self+0x4ec once, outside any loop, and 0x00586786 zeroes one dword of a six-dword run at self+0x4f0 per iteration, stepped by 0x005867dd ADD dword ptr [ESP + 0x14],0x4. Neither run is READ by this body on any path",
+    "the walker is EBP, set to self+0x50c by 0x00586774 ADD EBP,0x14 and stepped by 0x005867e2 ADD EBP,0x14; the element's START word is the one dword BELOW it (0x0058678f MOV EAX,[EBP + -0x4]; 0x00586792 LEA EDI,[EBP + -0x4]), which is the receiver record's 0x508 -- the same element seen from two ends",
+    "the loop counter is 0x0058677a MOV dword ptr [ESP + 0x18],0x6, decremented at 0x005867e5 and tested at 0x005867ea JNZ, so the test is AFTER the decrement and the loop is a do/while of exactly six iterations",
+    "both zeroing loops RELOAD the start word every iteration (0x00586754 MOV ECX,[ESI]; 0x005867d1 MOV ECX,[EDI]). No instruction between the reload and the store can change it, so the reload has no effect on the result; the model reproduces it and the test does not assert it",
+    "the sole xref into this VA is a DATA reference from 0x013f5848, and the image there is a 29-word run of code pointers at 0x013f57f8 whose word index 20 (byte offset 0x50) is 0x00586700; the 30th word at 0x013f586c is the ASCII 'Casu', so the run ends. Six other slots of the same run are named independently by this target's analogue record (0x005737d0, 0x00585890, 0x00585d10, 0x00588570, 0x0058ac10, 0x0058b650), which confirms the run is a class dispatch table. NO class is named and no slot is modelled as dispatch",
+    "EAX holds 0x23 at the single reachable return on every one of the seven paths: the last write is 0x005867d7 INC EAX inside the loop whose exit test is 0x005867d8 CMP EAX,0x23, and nothing from 0x005867dd to the RET touches EAX. evidence_returns.classify, run over the complete 89-instruction listing, independently computes WIDTH_4_IN_EAX with one reachable exit at a determinate four-byte width"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_alias": "EBP -- 0x00586705 MOV EBP,ECX, and every one of the six receiver accesses goes through EBP or through a register derived from it (ESI at 0x0058670e, EDI at 0x00586792). This is why the machine-derived receiver record reports register ECX with shape R-ALIAS rather than reading ECX's own operands.",
+    "saved_registers": [
+      "EBP",
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET",
+    "own_stack_arguments": 0,
+    "frame_bytes": 12,
+    "callee_saves_pushed": 4,
+    "envelope_abstention_resolved": "The envelope abstained with three reasons. (1) 'flow_not_modelled: the linear ESP walk ends at +24' -- true and harmless: three of the four pushes are callee-saves outstanding on every path, and the two call arms push three argument words on top of them transiently. (2) and (3) 'untrusted_frame_stack_reads' / 'frame_pointer_untrusted' -- the premises are right and the conclusion is wrong. 0x00586705 MOV EBP,ECX is the instruction that settles it: EBP is the receiver, and PUSH EBP exists to preserve the caller's EBP, which is what a callee-saved register is pushed for. Resolved from the image bytes, not from the abstention.",
+    "conventions_confidence": "INFERRED",
+    "variadic": "UNKNOWN",
+    "sret": {
+      "present": false,
+      "basis": "entry slot 0 is not written through a pointer; the DERIVED absence is weak and is recorded as such"
+    },
+    "tail_call": {
+      "present": false
+    }
+  },
+  "mechanics": {
+    "body_shape": "a reset. The same operation seven times over: advance an element's current word to start+35 and zero the 35 bytes at start. Once on the element at self+0x4d8, then six times on elements walked at a stride of 20 bytes from self+0x50c, with a dword of a six-dword run at self+0x4f0 zeroed per iteration and one dword at self+0x4ec zeroed once before the loop.",
+    "the_operation": {
+      "if_size_at_least_35": "the body moves the current word ITSELF: dest = start+35, a zero-length memcpy(dest, current, 0), and current += (dest - current) in wrapping 32-bit arithmetic",
+      "else": "the body calls 0x005151b0 with (receiver = &start_word, current_address, 35 - (current - start), &zero_byte) and writes NOTHING to the current word; advancing it is the callee's, which its own bytes show at 0x00515291 and 0x005153cc",
+      "both_arms": "then 35 bytes at start are zeroed, one byte at a time, from a start word re-read on every iteration"
+    },
+    "address_words": "the two words of an element hold ADDRESSES, not values: 0x00586756 MOV byte ptr [EAX + ECX * 1],0x0 uses the loaded word as a base with no displacement added, and 0x00586744 PUSH EBX pushes one straight into memcpy's destination slot. One level of indirection each; the model converts at exactly one place (the at() accessor) and the test plants a decoy at the pointee of the pointee.",
+    "callee_005151b0": {
+      "why_it_is_called_a_buffer_helper": "from its own 295 instructions: 0x005151cc/0x005151cf read this+0x08 and this+0x04 as a difference, 0x005151d2 compares argument 2 against it, 0x005151f3/0x005151f6 subtract argument 1 from this+0x04, 0x005151e5/0x005151e8 dereference argument 3 to a byte, 0x00515461 reads this+0x0c as an allocator, and the grow path at 0x005153ec doubles (this+0x04 minus this+0x00) or uses 1, takes the larger of that and size+argument 2, calls 0x0042dee0, copies, and stores the new triple at 0x005155cc/0x005155d7/0x005155e6. So this+0x00/+0x04/+0x08 is a start/current/capacity address triple. What it does INSIDE is not reconstructed here.",
+      "argument_surface": "ECX = &start_word; stack words in push order are (current_address, shortfall, &value_byte)",
+      "cleanup_in_original": "0x005155ed RET 0xc -- callee-owned twelve bytes"
+    },
+    "callee_011e0744": {
+      "convention": "__cdecl, caller-owned: three words pushed at 0x00586742/43/44 and popped by 0x0058674c ADD ESP,0xc",
+      "argument_order": "(destination, source, count), the last push being the first argument",
+      "count_on_both_paths": "identically zero"
+    },
+    "dispatch": {
+      "modelled": false,
+      "reason": "no indirect transfer in the body; the vtable slot is recorded as a fact, not modelled"
+    }
+  },
+  "return_semantics": {
+    "declared": "int",
+    "declared_width_bytes": 4,
+    "machine_record_return_semantics": "integral_in_EAX",
+    "which_option_was_chosen_and_why": "WAVE-1 SECTION 7.1 GIVES TWO HONEST OPTIONS AND THIS PACKAGE TOOK THE FIRST. The canonical ABI record's token is 'integral_in_EAX', a machine-vocabulary phrase, so evidence_returns.decide DEFERS to validate's string-agreement arm and that arm WARNs for every possible C++ declaration -- no spelling can equal the phrase, and no typedef named after the phrase would be anything but a validator hack. Option (b), declaring void, was rejected because it is not true of the bytes: the complete 89-instruction listing writes EAX at a determinate four-byte width before its single reachable return, and evidence_returns.classify computes WIDTH_4_IN_EAX from the listing and the parse record independently of any source. So the declared type is `int`, which is what the bytes produce and what that machine width corroborates.",
+    "value": "0x23 (35) on every one of the seven paths",
+    "value_is_meaningful": false,
+    "value_explanation": "it is the counter of the last zeroing loop. 0x005867d7 INC EAX is the last write to EAX, that loop's exit test 0x005867d8 CMP EAX,0x23 leaves it at 0x23, and nothing from 0x005867dd to the RET touches it. The honest statement of the function's INTENT is void -- it is a reset and produces nothing for its caller -- and the value is returned here because the machine puts it in EAX. The disagreement is recorded here and in unresolved_questions rather than smoothed over.",
+    "ownership": "the body acquires and releases nothing of its own; the only allocations are inside 0x005151b0"
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "runtime_validated_count": 0,
+    "persisted_pack": "reconstruction/evidence/00586700/evidence.json",
+    "pack_schema": "openspore-evidence-pack-1",
+    "listing_complete": true,
+    "listing_instructions": 89,
+    "parse": {
+      "declared_count": 89,
+      "degraded": false,
+      "unparsed": 0,
+      "flow_complete": false,
+      "local_extent": 4,
+      "frame": {
+        "sub": 12,
+        "push_ebp": true,
+        "mov_ebp_esp": false,
+        "ebp_is_general_register": true
+      }
+    },
+    "receiver_record": {
+      "register": "ECX",
+      "shape": "R-ALIAS",
+      "bounds_only": true,
+      "confidence": "SUPPORTED",
+      "offsets": [
+        1240,
+        1260,
+        1288,
+        1292
+      ],
+      "max_offset": 1292,
+      "distinct_offsets": 4,
+      "written_through": 2
+    },
+    "dispatch_record": {
+      "indirect_calls": 0,
+      "call_offsets": [],
+      "vtable_shaped_loads": []
+    },
+    "xref_out": [
+      {
+        "callsite": "0x00586734",
+        "other": "0x005151b0",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x00586745",
+        "other": "0x011e0744",
+        "reference_type": "thunk"
+      },
+      {
+        "callsite": "0x005867b1",
+        "other": "0x005151b0",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x005867c2",
+        "other": "0x011e0744",
+        "reference_type": "thunk"
+      }
+    ],
+    "vtable_run_read_from_the_image": {
+      "address": "0x013f57f8",
+      "word_count": 29,
+      "this_va_word_index": 20,
+      "this_va_byte_offset": 80,
+      "sole_xref_source": "0x013f5848",
+      "first_word_after_the_run": "ASCII 'Casu' at 0x013f586c",
+      "slots_named_independently_by_the_analogue_record": [
+        5715920,
+        5789840,
+        5790992,
+        5801328,
+        5811216,
+        5813840
+      ],
+      "class_named": false
+    },
+    "image_rederivation": {
+      "tool": "objdump -D -b binary -m i386 -M intel --adjust-vma=0x00586700",
+      "file_offset": "0x185b00",
+      "bytes": 244,
+      "section_map_from_pe": {
+        ".text": "VA 0x401000, raw pointer 0x400",
+        ".rdata": "VA 0x13cc000, raw pointer 0xfcb400"
+      },
+      "agrees_with_committed_listing": true
+    }
+  },
+  "provenance": [
+    "reconstruction/evidence/00586700/evidence.json -- categories.abi, categories.abi_derived (receiver.bounds_only, parse, dispatch, return, sret), categories.disassembly, categories.decompilation, categories.ghidra_function",
+    "SPORE/SporeBin/SporeApp.exe -- 244 bytes at file offset 0x185b00, re-disassembled for this package; the PE section table was read to derive the offset rather than assumed",
+    "GhidraMCP /disassemble_function at 0x005151b0 and 0x011e0744 -- read only, to fix the two call boundaries from the callees' own bytes; 295 instructions quoted in the header's note (3)",
+    "GhidraMCP /read_memory at 0x013f57f8, 120 bytes -- the 29-word dispatch run this entry point sits in",
+    "tools/reconstruction_tooling/validate.py and evidence_returns.classify / evidence_fields.decide -- run read-only against this package's own span to establish which verdicts the evidence can and cannot support, per wave-1 section 7. The full orchestrator validation was NOT run: it is the parent's to make",
+    "26 mutation runs against this package's own model test (compare read as signed, > for >=, walker stride 4/5/6, trip count 5/6/7, slot stride 1/2, every receiver offset off by one word, length 34/36, shortfall replaced by the full length, slow arm also bumping the current word, return 0, slot base 0x4e8, fill receiver as the current word / as the receiver, thunk arguments swapped, thunk count 35, value byte hoisted to entry, two-level dereference of the start word, fast arm also calling the fill helper, head zero-fill skipped, walker zero-fill at the wrong word, zero-fill before the arm). 26 of 26 killed by the behavioural cases with verify_constants() neutered",
+    "Repair worker rp19, 2026-09-28: the section 5 gate reproduction (clang++ -Werror, static library, link, run) re-run verbatim; the two -Wunused-const-variable diagnostics that gate raised diagnosed and fixed by USING both constants in a new guard-band case rather than deleting either; a fresh 33-mutant falsification sweep (26 of the implementing worker's set re-run, 7 new out-of-band mutants) with verify_constants() neutered, 33 of 33 killed; the reconstruction .cpp and the header left byte-identical, and the span re-checked for its three hex literals and its zero named struct members. Harness kept outside the package at /tmp/opencode/mutate_00586700.py; it mutates copies in /tmp and writes nothing into reconstruction/."
+  ],
+  "unresolved_questions": [
+    "RETURN SEMANTICS is a WARN by construction and this package does not pretend otherwise. The canonical ABI record's return_semantics is the machine phrase 'integral_in_EAX', so no C++ declaration can agree with it as a string and the dimension WARNs whatever is written. This package took section 7.1's option (a) and declared `int`, which is true of the listing (EAX = 0x23 at the single reachable return) and is the width evidence_returns.classify computes on its own (WIDTH_4_IN_EAX). It did NOT take option (b) and declare void, because the bytes do produce a four-byte value and void would be a claim the machine contradicts. It did NOT invent a typedef named after the phrase, which would be a validator hack. If a reviewer prefers void, the change is one token and the two alternatives are argued above.",
+    "EVIDENCE COVERAGE is a WARN because 10 of the 17 static categories in the pack are available: callees_dependencies, callers_dependencies, contradictions, external_callees, globals, semantic_hypotheses and types all report availability 'unavailable' / evidence_state 'MISSING'. This is a property of the committed evidence pack and is not fixable from a source file. Note that the missing 'types' category is why the FIELDS/OFFSETS arm falls back to the receiver's displacement bounds and why no member could be named even had one been wanted.",
+    "What 0x005151b0 does internally. Its call boundary is reconstructed from the four stack words, the ECX receiver and the callee's own 295 instructions, and the word 'buffer' is licensed by those bytes -- but its grow-and-copy internals, its allocator protocol through 0x0042dee0 and its fill semantics beyond 'advance the current word and zero up to start+35' are NOT reconstructed. This body is not required to depend on any of it, and the model test proves it does not: with a completely passive observer that writes nothing, the reconstruction's observable result is unchanged.",
+    "The identity of the dword at self+0x4ec and of the six dwords at self+0x4f0 + 4k. This body zeroes them (0x00586766 and 0x00586786) and never reads them on any path, so nothing here establishes what they are. Their stride of four and count of six are fixed; their meaning is not.",
+    "Whether the 20-byte walker stride is a 16-byte element plus 4 bytes of padding, a 12-byte start/current/capacity triple plus 8 bytes, or something else. The stride and the two word displacements are fixed by 0x005867e2 and 0x0058678f/0x00586792; the element's size is not. 0x005151b0 reads its receiver's +0x0c (0x00515461), which puts a floor of sixteen bytes under it, and the remaining four are unaccounted for.",
+    "The class this entry point belongs to. The 29-word run at 0x013f57f8 is confirmed to be a class dispatch table by the sole DATA xref and by six of its slots being named independently in this target's analogue record, and this body is its word index 20. No class name, no slot meaning and no member identity is claimed, and none is derivable from this body: it contains no indirect transfer and never reads its receiver's +0x00.",
+    "The object's real size. This body writes no byte above self+0x573 and reads no byte of the receiver outside 0x4d8..0x573. The model test's fixture is 0x600 bytes so that the thunk's source argument, which is whatever the current word holds, can be pointed anywhere without leaving the fixture. 0x574 is a lower bound on the layout, not a claim about it.",
+    "Which side pops the arguments of 0x005151b0. The original is 0x005155ed RET 0xc, callee-owned twelve bytes; the GCC spelling of __thiscall used in this package's header is caller-owned. The model reproduces the RECEIVER REGISTER and the ARGUMENT ORDER and not the cleanup side, because the two cannot both be reproduced through one GCC attribute. The cdecl thunk's balance IS measured (ESP sampled around the call), and the observations' own frame addresses are compared with the caller's. This is stated in the header rather than hidden.",
+    "The reload of the start word in the two zeroing loops (0x00586754 and 0x005867d1) is reproduced in the source but is not independently observable: no instruction between the reload and the store can change that word on either path, so the test asserts the effect and not the reload. Stating it as a note rather than a test is deliberate."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "An original process is driven to a call through word index 20 of the run at 0x013f57f8 with a receiver at least 0x574 bytes long, whose elements at self+0x4d8 and self+0x508+20k hold start/current address triples of the shape 0x005151b0's own bytes describe.",
+      "A trace records, for each of the seven occurrences, which arm was taken. The unsigned compare at 0x0058671f is the only input-dependent decision in the body, and the case that separates it from a signed read -- current BELOW start -- cannot be observed statically at all.",
+      "A trace confirms that 0x005151b0 leaves the current word at start+35 on the slow path, which is the one behaviour of that callee this reconstruction depends on and does not itself perform.",
+      "A trace identifies what the seven 35-byte windows are used for by whatever calls this body, which is the only way to learn whether they are strings, keys, or scratch."
+    ],
+    "note": "no original-process trace exists in this repository; the gate is open, nothing was attempted, and nothing failed"
+  },
+  "validation": {
+    "compile_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. sw2_00586700.cpp sw2_00586700_model_test.cpp -> clean build, no diagnostics, 'all checks passed for VA 0x00586700', exit 0. The header also compiles alone (-c) and as the sole include of an otherwise empty translation unit. THIS IS NOT THE GATE. The promotion gate is clang++ -std=c++17 -Wall -Wextra -Werror -m32, compiled to objects, archived with ar qc + ranlib, linked against a clang++-linked test binary and run; it is reproduced verbatim by repair worker rp19 and now exits 0 (see known_blockers, which records the -Wunused-const-variable defect that g++ could not see). Both compilers are clean, and clang++ is also clean with -Wpedantic added. openspore validate was NOT run: it is the parent's.",
+    "model_test": "18 calls in main (17 behavioural cases plus verify_constants), every direct callee an observer. 1028 checks executed in one run, from 105 check() call sites. Falsification was measured, not asserted, and was re-measured from scratch by repair worker rp19 after the guard-band case was added: 26 mutations of the reconstruction were applied one at a time and compiled against the test with verify_constants() neutered, and 26 of 26 were killed by the behavioural cases. Two of the first drafts of that set were defective and were replaced rather than counted -- one duplicated another mutant, and one rewrote the fast arm's wrapping ADD as a plain store, which is algebraically the same value and is therefore unobservable from outside (the same class as the implementing worker's hoisted-head-value-byte mutant, whose meaningful form -- hoisting the walker's -- is killed by case I3). A further 7 out-of-band mutants were added for the guard bands and 7 of 7 are killed, 4 of them by the new P assertions themselves: P3 catches a store one dword below 0x4ec, a store into the gap between two walker elements, a zero-fill that starts one byte early, and a fast arm that advances the word above the CURRENT one; P4 catches a 36-byte fill at either site; P6 catches a slot cursor that starts one or two dwords on.",
+    "validator_gates_predicted": {
+      "ABI": "PASS -- the span declares thiscall through the SW2_00586700_THISCALL macro and the derived claim is thiscall",
+      "CALLS": "PASS -- the span names exactly 0x005151b0 and 0x011e0744 and both are recorded xref edges",
+      "CONSTANTS": "PASS -- 3 source hex literals (0x4d8, 0x4ec, 0x50c), all present in the fully parsed 89-instruction listing",
+      "CONTROL FLOW": "PASS -- all 5 conditional branch targets lie inside 0x00586700..0x005867f3",
+      "FIELDS/OFFSETS": "PASS on the grounded arm -- 3 declared displacements, all within the receiver bounds, and no member named",
+      "GLOBALS": "PASS -- no data-segment address in the listing and none in the span",
+      "VIRTUAL DISPATCH": "PASS -- 0 indirect sites, dispatch record 0, and the span claims no slot",
+      "RETURN SEMANTICS": "WARN -- see unresolved_questions; a property of the record's machine phrase",
+      "EVIDENCE COVERAGE": "WARN -- 10 of 17 static categories available; a property of the committed pack"
+    },
+    "not_run_by_this_worker": "python3 tools/openspore.py validate -- the parent runs it once this package's files are in place. The repository-wide cmake/ctest build was likewise not touched: a shared build directory with many concurrent workers is not this worker's to write to."
+  },
+  "known_blockers": [
+    "RETURN SEMANTICS (WARN, real, not fixable from this package). The canonical ABI record's return_semantics is the machine phrase 'integral_in_EAX'. evidence_returns.decide defers to validate's string-agreement arm the moment a canonical claim exists, and that arm compares the declared type to the phrase as a string, so no C++ declaration can agree. The `int` here is correct on the listing and is the width the machine's own must-analysis computes, but the dimension cannot be corroborated through that arm. Argued in full under return_semantics and unresolved_questions.",
+    "EVIDENCE COVERAGE (WARN, real, not fixable from this package). 10 of 17 static categories are available; seven report MISSING. No source file can change what the evidence pack collected.",
+    "GLOBALS would have been a WARN had 0x011e0744 fallen on the far side of the validator's hard-coded code/data boundary (CODE_END = 0x01300000). It does not: 0x011e0744 is below it and the thunk lives in .text, so both the listing and the span name no data-segment address and the arm passes. Recorded because the margin is a property of that constant rather than of this reconstruction -- a vtable-head store or any other .rdata operand in this body would have produced the section 7.4 blocker instead, and none of the four transfers is such a store.",
+    "PROMOTION GATE, -Wunused-const-variable (RESOLVED 2026-09-28 by repair worker rp19; this is the blocker that held the package, and it is not fixable by anything in the reconstruction). The gate compiles with clang++ -std=c++17 -Wall -Wextra -Werror -m32, links the package as a static library and runs the model test through CTest; clang++ promotes -Wunused-const-variable to an error inside -Werror and g++ does not, which is why this package shipped past a green g++ build and past the compile_gate recorded below. Two constants in sw2_00586700_model_test.cpp were unused: (1) k_receiver_lo, declared `std::uint8_t* const volatile k_receiver_lo = nullptr` with the comment 'unused sentinel, see below' and no 'below' -- a null sentinel that documented the receiver byte run's LOWER BOUND, the bound the I2 check (the value byte handed to 0x005151b0 is not a receiver address) was already computing inline off g_receiver_base; and (2) kWindowCanary = kWindowStride - kBufBytes, 29, the POISONED GUARD BAND after each 35-byte window. NEITHER WAS DELETED, because neither fact is gone, and the second was not merely unused: the case that swept the band had been left asserting the band only by byte diff, so the band was unguarded in the one respect that matters. The fix is to USE both, in a new guard-band case (P) that is machine-grounded: the body reaches the receiver only through the register 0x00586705 MOV EBP,ECX loads out of ECX and reaches the buffers only through the addresses its words hold, so the receiver run and the backing run are each ONE BOUNDED OBJECT and 'outside its window' is a claim about an address range. k_receiver_lo is now that run's live lower bound -- it is published by run(), and inside_receiver_run() and the pre-existing I2 check are stated against it, so the dead sentinel became the bounds predicate the bounds checks use; g_receiver_base was folded into it rather than left beside it. kWindowCanary is now the width of the band sweep itself, in window_band_intact(), so the constant that says how wide the poisoned band is also says where the sweep stops and the two cannot disagree. The new case asserts, BY VALUE rather than by diff because a diff cannot see a write of the value a byte already held: P1/P3 that all 363 band words of the 384-word receiver run still hold the bulk pattern before and after the body runs (the precondition no other case established, and without which T3's byte diff, D1 and E5 are all vacuous), P2/P4 that all 29 canary bytes of all EIGHT windows survive, P5 that the body's whole reach 0x4d8..0x573 is inside the receiver run the band is stated in, P5b that the band is 363 of 384 words so the sweep cannot be vacuous, and P6 that each element's 35-byte window is inside the backing run. Fixture::offset_is_anchored() is the twenty-one words the body may write (1 + 6 + 2*7) and is deliberately word-exact rather than a range: the fifteen words BETWEEN the walker elements' pairs (0x510..0x51b and so on) hold the bulk pattern, are never written by this body, and are precisely where a store one word too high lands -- a range-shaped set skipped them and a mutant that stored into that gap was caught only by T3, not by the band. NO EXISTING ASSERTION WAS REMOVED, WEAKENED OR REORDERED: I2 is the same range test with the same bound under a name, the per-window canary loop in the A1 case is untouched, and every case T1..N1 still runs. The reconstruction and the header are BYTE-IDENTICAL to what the implementing worker left: the seven times repeated reset is still the unsigned JNC at both sites, the wrapping ADD to start+35 on the fast arm, the delegation to 0x005151b0 with nothing written to the CURRENT word on the slow arm, and the span still names ZERO struct members and still carries exactly three hex literals, {0x4d8, 0x4ec, 0x50c}, the three in the receiver record's bounds. Coverage went UP, not sideways: calls in main 17 -> 18, check() call sites 94 -> 105, checks executed 997 -> 1028, and the falsification measurement was re-run from scratch -- 26 mutations of the reconstruction, one at a time, compiled against the test with verify_constants() neutered, 26 of 26 killed by the behavioural cases, plus 7 new out-of-band (P) mutants of which 7 of 7 are killed and 4 of them by the new P assertions specifically. VERIFIED: the section 5 reproduction (clang++ compile, clang-ar / ar qc + ranlib static library, clang++ link, /tmp/g_test) exits 0; g++ -m32 -std=c++17 -Wall -Wextra -Werror exits 0; the header compiles alone and as the sole include of an empty TU under both compilers, and with -Wpedantic added under clang++."
+  ]
+}

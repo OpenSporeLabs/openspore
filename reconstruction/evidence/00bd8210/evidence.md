@@ -2,9 +2,38 @@
 
 - Evidence state: `LIVE`
 - Live requested: `True`
-- Content SHA-256: `17e1d533b54f56acb4e2e8649ee2692493c81b7421478d0d1d11eb4ae1d90843`
+- Content SHA-256: `c4db125e3afea67a570123d9725d1bf5846db2ef625f82231d50ab34530ac69c`
 
 ## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "__thiscall",
+  "hidden_receiver": "read",
+  "hidden_this_register": "ECX is read at 0x00bd8210 and forwarded unchanged into the slot +0x58 call at 0x00bd821c",
+  "ordinary_stack_argument_slots": 0,
+  "receiver": true,
+  "receiver_register": "ECX",
+  "ret_form": "RET",
+  "return_observation": "0x00b885a9..0x00b8875a computes a value and 0x00b8875a masks it with 0x3ff, so at most ten bits are significant. 0x00bd821f/0x00bd8226 do not touch EAX after the 0x00b88590 call, and 0x00bd822e is a bare RET, so the full EAX is forwarded.",
+  "return_register": "EAX",
+  "return_semantics": "the 10-bit payload that 0x00b88590 returns, forwarded unchanged in EAX",
+  "return_type": "std::uint16_t",
+  "return_width_bytes": 2,
+  "saved_registers": [],
+  "stack_arguments": [],
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "caller for 0x00bd8210 itself; callee for 0x00bd821c and 0x00b88590",
+  "termination": "RET"
+}
+```
+
+## abi_derived
 
 - Availability: `available`
 - Evidence state: `DERIVED`
@@ -38,7 +67,7 @@
   },
   "completeness": "CORE_RESOLVED",
   "conflicts": [],
-  "content_sha256": "d1949883f04d735060d92003a89f41df3c030bc6a7a14303f0ac5d17d9a73be3",
+  "content_sha256": "1827051e0f69776198b42db071d63e806c20c5a994b35883390c69bedbf2d629",
   "conventions": {
     "ambiguities": [],
     "calling_convention": "__thiscall",
@@ -46,16 +75,16 @@
       "__thiscall",
       "__fastcall"
     ],
-    "confidence": "INFERRED",
-    "corroboration": "not_available"
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
   },
   "cross_validation": {
-    "agreement": false,
+    "agreement": true,
     "ghidra": "no_information",
     "ghidra_calling_convention": null,
     "ghidra_parameter_count": 0,
-    "persisted": "no_information",
-    "persisted_calling_convention": null
+    "persisted": "agrees",
+    "persisted_calling_convention": "__thiscall"
   },
   "dispatch": {
     "call_offsets": [],
@@ -271,21 +300,91 @@
       "at": "0x00bd822e",
       "form": "RET",
       "id": "obs-0013",
-      "imm": null
+      "imm": n
 [TRUNCATED]
 ```
 
 ## callees_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "simulator_game_input_manager_get_00b3d350",
+    "reconstructed": true,
+    "va": "0x00b3d350"
+  }
+]
+```
 
 ## callers_dependencies
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf00a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf0110"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf0130"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf5720"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf8440"
+  },
+  {
+    "name": "culture_selection_00bf9820",
+    "reconstructed": true,
+    "va": "0x00bf9820"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bf9e70"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bfa660"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00bfb020"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ca8340"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00d04320"
+  }
+]
+```
 
 ## contradictions
 
@@ -295,13 +394,9 @@
 
 ## decompilation
 
-- Availability: `available`
-- Evidence state: `LIVE`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nvoid __fastcall FUN_00bd8210(int *param_1)\n\n{\n  undefined4 uVar1;\n  undefined1 local_c [12];\n  \n  uVar1 = (**(code **)(*param_1 + 0x58))(local_c);\n  Simulator__cGameInputManager__Get();\n  FUN_00b88590(uVar1);\n  return;\n}\n\n"
-```
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
 
 ## disassembly
 
@@ -373,9 +468,16 @@
 
 ## function_identity
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 12201,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"__thiscall\",\n    \"hidden_receiver\": \"read\",\n    \"hidden_this_register\": \"ECX is read at 0x00bd8210 and forwarded unchanged into the slot +0x58 call at 0x00bd821c\",\n    \"ordinary_stack_argument_slots\": 0,\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET\",\n    \"return_observation\": \"0x00b885a9..0x00b8875a computes a value and 0x00b8875a masks it with 0x3ff, so at most ten bits are significant. 0x00bd821f/0x00bd8226 do not touch EAX after the 0x00b88590 call, and 0x00bd822e is a bare RET, so the full EAX is forwarded.\",\n    \"return_register\": \"EAX\",\n    \"return_semantics\": \"the 10-bit payload that 0x00b88590 returns, forwarded unchanged in EAX\",\n    \"return_type\": \"std::uint16_t\",\n    \"return_width_bytes\": 2,\n    \"saved_registers\": [],\n    \"stack_arguments\": [],\n    \"stack_cleanup_bytes\": 0,\n    \"stack_cleanup_owner\": \"caller for 0x00bd8210 itself; callee for 0x00bd821c and 0x00b88590\",\n    \"termination\": \"RET\"\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-GAME-INPUT-WAVE7\",\n      \"score\": 3,\n      \"symbol\": \"simulator_game_input_manager_get_00b3d350\",\n      \"va\": \"0x00b3d350\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-13-C4-CIV-WAVE3\",\n      \"score\": 3,\n      \"symbol\": \"culture_selection_00bf9820\",\n      \"va\": \"0x00bf9820\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_pair_004279d0\",\n      \"va\": \"0x004279d0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"property_record_assign_scalar_00428060\",\n      \"va\": \"0x00428060\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_paint_commit_0043ac40\",\n      \"va\": \"0x0043ac40\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"model_parts_apply_properties_00447150\",\n      \"va\": \"0x00447150\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-APP-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"pair_vector_insert_004786e0\",\n      \"va\": \"0x004786e0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-SAFE-WAVE11\",\n      \"score\": 2,\n      \"symbol\": \"editor_entry_expand_004ad6f0\",\n      \"va\": \"0x004ad6f0\"\n    }\n  ],\n  \"audit_evidence_boundary\": null,\n  \"audit_findings\": [],\n  \"audit_status\": null,\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": null,\n  \"class_type\": null,\n  \"cluster\": null,\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"simulator_game_input_manager_get_00b3d350\",\n        \"reconstructed\": true,\n        \"va\": \"0x00b3d350\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf00a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf0110\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf0130\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf5720\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf8440\"\n      },\n      {\n        \"name\": \"culture_selection_00bf9820\",\n        \"reconstructed\": true,\n        \"va\": \"0x00bf9820\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bf9e70\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bfa660\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00bfb020\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ca8340\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00d04320\"\n      }\n    ],\n    \"callers_truncated\": false,\n    \"data_reference_count\": 0,\n    \"edges\": [\n      {\n        \"callsite\": \"0x00bf00cb\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf00a0\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bf011c\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf0110\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bf016d\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf0130\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bf0199\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf0130\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bf578b\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf5720\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x00bf85f1\",\n        \"direction\": \"in\",\n        \"other\": \"0x00bf8440\",\n        \"reference_type\": \"direct-call\"\n      },\n      {\n        \"callsite\": \"0x0
+[TRUNCATED]
+```
 
 ## ghidra_function
 
@@ -395,17 +497,17 @@
     "Simulator::cGameInputManager::Get"
   ],
   "callers": [
-    "FUN_00bf00a0",
-    "FUN_00bf0110",
-    "FUN_00bf9e70",
-    "FUN_00ca8340",
-    "FUN_00bfb020",
-    "FUN_00bf0130",
-    "FUN_00bfa660",
-    "FUN_00d04320",
-    "FUN_00bf5720",
     "FUN_00bf8440",
-    "FUN_00bf9820"
+    "FUN_00bfa660",
+    "FUN_00bf0110",
+    "FUN_00ca8340",
+    "FUN_00bf0130",
+    "FUN_00bf9820",
+    "FUN_00d04320",
+    "FUN_00bfb020",
+    "FUN_00bf00a0",
+    "FUN_00bf5720",
+    "FUN_00bf9e70"
   ],
   "classification": "worker",
   "dispatch": null,
@@ -418,22 +520,12 @@
   "image_base": "0x400000",
   "locals": [
     {
-      "name": "param_1",
-      "storage": "register:00000004:4",
-      "type": "int *"
-    },
-    {
-      "name": "uVar1",
-      "storage": "register:00000000:4",
-      "type": "undefined4"
-    },
-    {
       "name": "local_c",
-      "storage": "",
-      "type": "undefined1[12]"
+      "storage": "Stack[-0xc]:1",
+      "type": "undefined"
     }
   ],
-  "locals_count": 3,
+  "locals_count": 1,
   "mode": "live",
   "name": "FUN_00bd8210",
   "namespace": null,
@@ -535,9 +627,23 @@
 
 ## reconstruction
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "files": [
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/bd8210_packed_direction.cpp",
+    "reconstruction/staging/wave13-w1-core-b10/bd8210_packed_direction.hpp"
+  ],
+  "handoffs": [],
+  "metadata": [
+    "reconstruction/metadata/wave13-w1-core-b10/00bd8210.json"
+  ]
+}
+```
 
 ## runtime
 
@@ -547,9 +653,21 @@
 
 ## runtime_metadata
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `PERSISTED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "A runtime check must confirm whether the table at receiver+0x4c is rebuilt (dirty byte +0x78) at the moments 0x00bd8210 runs, since that is the only side effect on the path.",
+    "No original-process trace has been captured for 0x00bd8210, so the claim that equal directions always quantise to equal indices is static-only.",
+    "The 12-byte out buffer written by the slot +0x58 callee must be observed in a live process before its role can be named."
+  ],
+  "validated": 0
+}
+```
 
 ## semantic_hypotheses
 
@@ -559,15 +677,29 @@
 
 ## status
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "unresolved"
+}
+```
 
 ## types
 
-- Availability: `unavailable`
-- Evidence state: `MISSING`
+- Availability: `available`
+- Evidence state: `DERIVED`
 - Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "std::uint16_t"
+]
+```
 
 ## vtables
 

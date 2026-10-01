@@ -1,0 +1,1062 @@
+# Evidence 0x00b225d0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `da6c95466c29c31e472cd94b53abe13ffeae36ec9644cffc2da70fce4a563ba2`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "architecture": "x86-32",
+  "calling_convention": "thiscall",
+  "hidden_receiver": "ECX is OpaqueNounManager*",
+  "ordinary_stack_argument_slots": 1,
+  "ret_form": "RET 4",
+  "return_type": "void",
+  "stack_cleanup_bytes": 4
+}
+```
+
+## abi_derived
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_semantics": "unclassified_in_EAX",
+    "saved_registers": [
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": true,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "termination": "RET 0x4"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at +16, so the listing is not one path",
+    "sret_vs_out_param: entry slot 0 is written through a pointer"
+  ],
+  "cleanup": {
+    "bytes": 4,
+    "confidence": "OBSERVED",
+    "corroboration": "not_available",
+    "evidence": "ret 0x4",
+    "side": "callee"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "c25525fead3c16682500a503fbb27f1d28b963ca59ee3d4327fc055159c947fa",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall"
+    ],
+    "confidence": "SUPPORTED",
+    "corroboration": "persisted_agrees"
+  },
+  "cross_validation": {
+    "agreement": true,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "agrees",
+    "persisted_calling_convention": "thiscall"
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 3,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0027"
+      ],
+      "claim": "the callee pops 4 byte(s) of stack arguments",
+      "confidence": "OBSERVED",
+      "id": "C3",
+      "value": {
+        "bytes": 4,
+        "side": "callee"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0004",
+        "obs-0014",
+        "obs-0018"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0011",
+        "obs-0013"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          132,
+          136
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010",
+        "obs-0011",
+        "obs-0013",
+        "obs-0027"
+      ],
+      "claim": "calling convention is __thiscall: the callee pops the stack arguments, which rules out cdecl and fastcall, and the receiver arrives in ECX",
+      "confidence": "INFERRED",
+      "id": "C6B",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0004"
+      ],
+      "claim": "a hidden struct-return pointer is a hypothesis only: entry slot 0 is written through a pointer",
+      "confidence": "INFERRED",
+      "id": "S1",
+      "value": {
+        "ambiguity": "sret_vs_out_param",
+        "present": null,
+        "slot": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0027"
+      ],
+      "claim": "in MSVC x86 a hidden struct-return pointer is always stack slot 0 while this is in ECX, so the two never contend",
+      "confidence": "APPROXIMATION",
+      "id": "S3",
+      "value": {
+        "ordering": "not_applicable"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0027"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0027"
+      ],
+      "claim": "the last value written to EAX classifies as aggregate_unknown",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "aggregate_unknown"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00b225d0",
+      "count": 4,
+      "first_use": 0,
+      "first_write_index": 8,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "PUSH EBX",
+      "reg": "EBX"
+    },
+    {
+      "at": "0x00b225d1",
+      "count": 10,
+      "first_use": 1,
+      "first_write_index": 2,
+      "id": "obs-0002",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "PUSH ESI",
+      "reg": "ESI"
+    },
+    {
+      "at": "0x00b225d2",
+      "count": 4,
+      "first_use": 2,
+      "first_write_index": null,
+      "id": "obs-0003",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "MOV ESI,dword ptr [ESP + 0xc]",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00b225d2",
+      "base": "ESP",
+      "disp": 12,
+      "id": "obs-0004",
+      "index": 2,
+      "key": 4,
+      "kind": "STACK_SLOT_READ",
+      "raw": "MOV ESI,dword ptr [ESP + 0xc]",
+      "resolved": true,
+      "size": 4
+    },
+    {
+      "at": "0x00b225d2",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 2,
+      "kind": "REG_WRITE",
+      "raw": "MOV ESI,dword ptr [ESP + 0xc]",
+      "reg": "ESI",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00b225da",
+      "definite": true,
+      "id": "obs-0006",
+      "index": 4,
+      "kind": "REG_WRITE",
+      "raw": "MOV EAX,dword ptr [ESI]",
+      "reg": "EAX",
+      "write_kind": "mem_load"
+    },
+    {
+      "at": "0x00b225dc",
+      "count": 6,
+      "first_use": 5,
+      "first_write_i
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": "FUN_00aea5d0",
+    "reconstructed": true,
+    "va": "0x00aea5d0"
+  }
+]
+```
+
+## callers_dependencies
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac79a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac79e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ac7a40"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00acd4a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ace5a0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00acf4c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ad08f0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ad1000"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae0700"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae5f20"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae7100"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00ae73e0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b068c0"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b07980"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b09b00"
+  },
+  {
+    "name": null,
+    "reconstructed": false,
+    "va": "0x00b0c190"
+  }
+]
+```
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: ``
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 47,
+  "instructions": [
+    {
+      "address": "00b225d0",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "00b225d1",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00b225d2",
+      "instruction": "MOV ESI,dword ptr [ESP + 0xc]"
+    },
+    {
+      "address": "00b225d6",
+      "instruction": "MOV byte ptr [ESI + 0x20],0x1"
+    },
+    {
+      "address": "00b225da",
+      "instruction": "MOV EAX,dword ptr [ESI]"
+    },
+    {
+      "address": "00b225dc",
+      "instruction": "MOV EDX,dword ptr [EAX]"
+    },
+    {
+      "address": "00b225de",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "00b225df",
+      "instruction": "MOV EDI,ECX"
+    },
+    {
+      "address": "00b225e1",
+      "instruction": "MOV EBX,ESI"
+    },
+    {
+      "address": "00b225e3",
+      "instruction": "MOV ECX,ESI"
+    },
+    {
+      "address": "00b225e5",
+      "instruction": "MOV dword ptr [ESP + 0x10],EBX"
+    },
+    {
+      "address": "00b225e9",
+      "instruction": "CALL EDX"
+    },
+    {
+      "address": "00b225eb",
+      "instruction": "MOV EAX,dword ptr [EDI + 0x84]"
+    },
+    {
+      "address": "00b225f1",
+      "instruction": "CMP EAX,dword ptr [EDI + 0x88]"
+    },
+    {
+      "address": "00b225f7",
+      "instruction": "LEA ECX,[EDI + 0x80]"
+    },
+    {
+      "address": "00b225fd",
+      "instruction": "JNC 0x00b22615"
+    },
+    {
+      "address": "00b225ff",
+      "instruction": "LEA EDX,[EAX + 0x4]"
+    },
+    {
+      "address": "00b22602",
+      "instruction": "MOV dword ptr [ECX + 0x4],EDX"
+    },
+    {
+      "address": "00b22605",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "00b22607",
+      "instruction": "JZ 0x00b22624"
+    },
+    {
+      "address": "00b22609",
+      "instruction": "MOV dword ptr [EAX],ESI"
+    },
+    {
+      "address": "00b2260b",
+      "instruction": "MOV EAX,dword ptr [ESI]"
+    },
+    {
+      "address": "00b2260d",
+      "instruction": "MOV EDX,dword ptr [EAX]"
+    },
+    {
+      "address": "00b2260f",
+      "instruction": "MOV ECX,ESI"
+    },
+    {
+      "address": "00b22611",
+      "instruction": "CALL EDX"
+    },
+    {
+      "address": "00b22613",
+      "instruction": "JMP 0x00b22624"
+    },
+    {
+      "address": "00b22615",
+      "instruction": "LEA EDX,[ESP + 0x10]"
+    },
+    {
+      "address": "00b22619",
+      "instruction": "PUSH EDX"
+    },
+    {
+      "address": "00b2261a",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00b2261b",
+      "instruction": "CALL 0x00aea5d0"
+    },
+    {
+      "address": "00b22620",
+      "instruction": "MOV EBX,dword ptr [ESP + 0x10]"
+    },
+    {
+      "address": "00b22624",
+      "instruction": "TEST EBX,EBX"
+    },
+    {
+      "address": "00b22626",
+      "instruction": "JZ 0x00b22631"
+    },
+    {
+      "address": "00b22628",
+      "instruction": "MOV EAX,dword ptr [EBX]"
+    },
+    {
+      "address": "00b2262a",
+      "instruction": "MOV EDX,dword ptr [EAX + 0x4]"
+    },
+    {
+      "address": "00b2262d",
+      "instruction": "MOV ECX,EBX"
+    },
+    {
+      "address": "00b2262f",
+      "instruction": "CALL EDX"
+    },
+    {
+      "address": "00b22631",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00b22632",
+      "instruction": "MOV ECX,EDI"
+    },
+    {
+      "address": "00b22634",
+      "instruction": "CALL 0x00b20d30"
+    },
+    {
+      "address": "00b22639",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00b2263a",
+      "instruction": "MOV ECX,EDI"
+    },
+    {
+      "address": "00b2263c",
+      "instruction": "CALL 0x00b201a0"
+    },
+    {
+      "address": "00b22641",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "00b22642",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "00b22643",
+      "instruction": "POP EBX"
+    },
+    {
+      "address": "00b22644",
+      "instruction": "RET 0x4"
+    }
+  ]
+}
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "original_bytes": 17514,
+  "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"calling_convention\": \"thiscall\",\n    \"hidden_receiver\": \"ECX is OpaqueNounManager*\",\n    \"ordinary_stack_argument_slots\": 1,\n    \"ret_form\": \"RET 4\",\n    \"return_type\": \"void\",\n    \"stack_cleanup_bytes\": 4\n  },\n  \"analogues\": [\n    {\n      \"match_basis\": [\n        \"same_package\"\n      ],\n      \"package\": \"PKG-11-H3-HELPER-WAVE2\",\n      \"score\": 8,\n      \"symbol\": \"embedded_object_first_word_init_00743b50\",\n      \"va\": \"0x00743b50\"\n    },\n    {\n      \"match_basis\": [\n        \"same_class\",\n        \"shared_types:OpaqueNounManager\"\n      ],\n      \"package\": \"PKG-13-CREATURE-ACCESSOR\",\n      \"score\": 8,\n      \"symbol\": \"pkg13_creature_accessor_00b1fdb0\",\n      \"va\": \"0x00b1fdb0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_class\",\n        \"shared_types:OpaqueNounManager\"\n      ],\n      \"package\": \"PKG-01-SHARED-STATE-ROOTS\",\n      \"score\": 8,\n      \"symbol\": \"FUN_00b3d300\",\n      \"va\": \"0x00b3d300\"\n    },\n    {\n      \"match_basis\": [\n        \"same_package\"\n      ],\n      \"package\": \"PKG-11-H3-HELPER-WAVE2\",\n      \"score\": 8,\n      \"symbol\": \"strategy_base_constructor_00b5b960\",\n      \"va\": \"0x00b5b960\"\n    },\n    {\n      \"match_basis\": [\n        \"direct_xref_neighbor\"\n      ],\n      \"package\": \"PKG-12-SIM-SPACE\",\n      \"score\": 3,\n      \"symbol\": \"FUN_00aea5d0\",\n      \"va\": \"0x00aea5d0\"\n    },\n    {\n      \"match_basis\": [\n        \"shared_types:OpaqueNounManager\"\n      ],\n      \"package\": \"PKG-13-SIM-CREATURE-TRIBECIV\",\n      \"score\": 3,\n      \"symbol\": \"Simulator_cCreatureGameData_GetEvoPointsToNextBrainLevel\",\n      \"va\": \"0x00d2e380\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 2,\n      \"symbol\": \"EditorCreatureController_SetTargetPosition_0059b0f0\",\n      \"va\": \"0x0059b0f0\"\n    },\n    {\n      \"match_basis\": [\n        \"same_calling_convention\"\n      ],\n      \"package\": \"PKG-EDITOR-RUNTIME-WAVE7\",\n      \"score\": 2,\n      \"symbol\": \"EditorCreatureController_Update_0059b4b0\",\n      \"va\": \"0x0059b4b0\"\n    }\n  ],\n  \"audit_evidence_boundary\": \"Reviewed static mechanics and ABI are canonical; runtime values, ownership, concrete types, and opaque port behavior remain gated.\",\n  \"audit_findings\": [],\n  \"audit_status\": \"clean_after_reviewed_repairs\",\n  \"blocked\": false,\n  \"blockers\": [],\n  \"body_status\": \"integrated\",\n  \"class_type\": \"OpaqueNounManager\",\n  \"cluster\": \"unknown-fun-mass\",\n  \"confidence\": null,\n  \"dependencies\": {\n    \"callees\": [\n      {\n        \"name\": \"FUN_00aea5d0\",\n        \"reconstructed\": true,\n        \"va\": \"0x00aea5d0\"\n      }\n    ],\n    \"callees_truncated\": false,\n    \"callers\": [\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac79a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac79e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ac7a40\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00acd4a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ace5a0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00acf4c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ad08f0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ad1000\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae0700\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae5f20\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae7100\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00ae73e0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b068c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b07980\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b09b00\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b0c190\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b22650\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b227c0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b22930\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b22cc0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b23510\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b23610\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b237d0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b25ee0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b25fe0\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": false,\n        \"va\": \"0x00b26320\"\n      },\n      {\n        \"name\": null,\n        \"reconstructed\": 
+[TRUNCATED]
+```
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00b22646",
+  "body_span_bytes": 119,
+  "body_start": "00b225d0",
+  "callees": [
+    "FUN_00b20d30",
+    "FUN_00aea5d0",
+    "FUN_00b201a0"
+  ],
+  "callers": [
+    "FUN_00f22d50",
+    "FUN_01016540",
+    "FUN_00ffa900",
+    "FUN_00b2a6f0",
+    "FUN_00b2d910",
+    "FUN_00d100b0",
+    "FUN_00c408f0",
+    "FUN_00d15550",
+    "FUN_00b07980",
+    "FUN_00b237d0",
+    "FUN_00ad08f0",
+    "FUN_00bf45f0",
+    "FUN_01001110",
+    "FUN_00c6e710",
+    "FUN_00d87620",
+    "FUN_00ef2b20",
+    "FUN_00f22930",
+    "FUN_00b26320",
+    "FUN_00bec060",
+    "FUN_00bf3c50",
+    "FUN_00b2d0f0",
+    "FUN_00fedca0",
+    "FUN_00bdf9e0",
+    "FUN_00cb5580",
+    "FUN_00be3420",
+    "FUN_00b22650",
+    "FUN_00ae5f20",
+    "FUN_00b2b090",
+    "FUN_00ccd050",
+    "FUN_00be4c00",
+    "FUN_00caa1c0",
+    "FUN_00b99670",
+    "Simulator::cCity::RemoveBuilding",
+    "FUN_00ae0700",
+    "FUN_00c719d0",
+    "FUN_00ad1000",
+    "FUN_00c687e0",
+    "FUN_00be0f20",
+    "FUN_00b25fe0",
+    "FUN_00cfbc10",
+    "FUN_00ac79a0",
+    "FUN_00d15980",
+    "FUN_00bcddc0",
+    "FUN_00b23610",
+    "FUN_00cdcf70",
+    "FUN_00c099e0",
+    "FUN_00b77b60",
+    "FUN_00b23510",
+    "FUN_00c8efc0",
+    "FUN_00dcedb0",
+    "FUN_00c8cb20",
+    "FUN_00b26600",
+    "FUN_00d50a40",
+    "FUN_00b99ed0",
+    "FUN_00f35f70",
+    "FUN_00c24760",
+    "FUN_0102c340",
+    "FUN_00acf4c0",
+    "FUN_00bf7d80",
+    "FUN_00f363c0",
+    "FUN_00cba4e0",
+    "FUN_00b781d0",
+    "FUN_00d7eab0",
+    "FUN_00d0bcf0",
+    "FUN_00ae73e0",
+    "FUN_00f22aa0",
+    "FUN_00be3ad0",
+    "FUN_00c83fd0",
+    "FUN_00acd4a0",
+    "FUN_00f22710",
+    "FUN_00c3ef00",
+    "FUN_00b2f350",
+    "FUN_00c830f0",
+    "FUN_00f039a0",
+    "FUN_00b068c0",
+    "FUN_00c9c1b0",
+    "FUN_00bd61c0",
+    "FUN_00c6c8c0",
+    "FUN_00b2c830",
+    "FUN_00d40930",
+    "FUN_00c68100",
+    "FUN_00b992c0",
+    "FUN_00c95ee0",
+    "FUN_00bbf860",
+    "FUN_00dc6a20",
+    "FUN_00c737a0",
+    "FUN_00b998a0",
+    "FUN_00be33e0",
+    "FUN_00c3a5a0",
+    "FUN_0107c1e0",
+    "FUN_00d0bf80",
+    "FUN_00bc0180",
+    "FUN_00ffa690",
+    "FUN_00c6d7c0",
+    "FUN_00f3fd90",
+    "FUN_00dcc2c0",
+    "FUN_00be5dd0",
+    "FUN_00be2070",
+    "FUN_00d130d0",
+    "FUN_00d178a0",
+    "FUN_00d0e170",
+    "FUN_00bcc230",
+    "FUN_00bdf920",
+    "FUN_00f20d80",
+    "FUN_00d4dae0",
+    "FUN_00b227c0",
+    "FUN_00bce9b0",
+    "FUN_00f248b0",
+    "FUN_00b931c0",
+    "FUN_00d0fcc0",
+    "FUN_01043c60",
+    "FUN_00d1afe0",
+    "FUN_00b09b00",
+    "FUN_00f23be0",
+    "FUN_00b2e830",
+    "FUN_00bce1e0",
+    "FUN_00d164d0",
+    "FUN_00d38150",
+    "FUN_00b22930",
+    "FUN_00f243c0",
+    "FUN_00b22cc0",
+    "FUN_00c90470",
+    "FUN_00f38150",
+    "FUN_00c27be0",
+    "FUN_00b0c190",
+    "FUN_00f3b710",
+    "FUN_00be53b0",
+    "FUN_00d38530",
+    "FUN_00f23000",
+    "FUN_00ac79e0",
+    "FUN_00f195a0",
+    "FUN_00f352e0",
+    "FUN_00d0d570",
+    "FUN_00d51540",
+    "FUN_00ace5a0",
+    "FUN_00f41890",
+    "FUN_01016630",
+    "FUN_00f239f0",
+    "FUN_00b700f0",
+    "FUN_00b2a2a0",
+    "FUN_00c829e0",
+    "FUN_00fec590",
+    "FUN_00dc7540",
+    "FUN_00caa610",
+    "FUN_00c96a80",
+    "FUN_00f1ad00",
+    "FUN_00ac7a40",
+    "FUN_00f3b990",
+    "FUN_00b25ee0",
+    "FUN_00d0b010",
+    "FUN_00ef10c0",
+    "FUN_00ae7100",
+    "FUN_00c733b0",
+    "FUN_00b99530",
+    "FUN_00bfea10",
+    "FUN_00ff5a10",
+    "FUN_00d43e30"
+  ],
+  "classification": "worker",
+  "dispatch": null,
+  "entry_point": "00b225d0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [],
+  "locals_count": 0,
+  "mode": "live",
+  "name": "FUN_00b225d0",
+  "namespace": null,
+  "namespace_source": null,
+  "parameter_count": 0,
+  "parameters": [],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "undefined",
+  "return_type_resolved": false,
+  "rva": "0x7225d0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "undefined FUN_00b225d0(void)",
+  "size_bytes": 119,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x00b225d0",
+  "vtables": {
+    "referenced_by_vtables": [],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 100,
+  "xrefs": [
+    {
+      "from": "00c7388c"
+    },
+    {
+      "from": "00ad10dd"
+    },
+    {
+      "from": "00fec85a"
+    },
+    {
+      "from": "00ac79b2"
+    },
+    {
+      "from": "00acd571"
+    },
+    {
+      "from": "00acd5db"
+    },
+    {
+      "from": "00acd63c"
+    },
+    {
+      "from": "00ace7c8"
+    },
+    {
+      "from": "00b931e5"
+    },
+    {
+      "from": "00b22dc6"
+    },
+    {
+      "from": "00acff8f"
+    },
+    {
+      "from": "00ad0036"
+    },
+    {
+      "from": "00b2351c"
+    },
+    {
+      "from": "00c09b28"
+    },
+    {
+      "from": "00ad0a40"
+    },
+    {
+      "from": "00ae088d"
+    },
+    {
+      "from": "00ae5f51"
+    },
+    {
+      "from": "00be3d9a"
+    },
+    {
+      "from": "00be20cd"
+    },
+    {
+      "from": "00ae7182"
+    },
+    {
+      "from": "00ae7195"
+    },
+    {
+      "from": "00bdfa75"
+    },
+    {
+      "from": "00bdf9b5"
+    },
+    {
+      "from": "00be5e5d"
+    },
+    {
+      "from": "00be54a7"
+    },
+    {
+      "from": "00be33fc"
+    },
+    {
+      "from": "00bf48be"
+    },
+    {
+      "from": "00bf49bd"
+    },
+    {
+      "from": "00caa8e8"
+    },
+    {
+      "from": "00bf3c8e"
+    },
+    {
+      "from": "00c8cc52"
+    },
+    {
+      "from": "00ae7738"
+    },
+    {
+      "from": "00ae77d8"
+    },
+    {
+      "from": "00b069ef"
+    },
+    {
+      "from": "00b09b20"
+    },
+    {
+      "from": "00b0c39e"
+    },
+    {
+      "from": "00b0c3fa"
+    },
+    {
+      "
+[TRUNCATED]
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "file": "src/reconstruction/pkg11_h3_helper_wave2/helper_wave2.cpp",
+  "files": [
+    "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2.cpp",
+    "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2.hpp",
+    "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2_model_test.cpp",
+    "src/reconstruction/pkg11_h3_helper_wave2/helper_wave2.cpp",
+    "src/reconstruction/pkg11_h3_helper_wave2/helper_wave2.hpp",
+    "src/reconstruction/pkg11_h3_helper_wave2/helper_wave2_model_test.cpp"
+  ],
+  "handoffs": [
+    "reconstruction/integrated/batch-2026-09-25-sim-social-world-wave2/handoff.json"
+  ],
+  "metadata": [
+    "reconstruction/metadata/pkg11-h3-helper-wave2/00b225d0.json"
+  ]
+}
+```
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `available`
+- Evidence state: `PERSISTED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "blocking_reason": null,
+  "gates": [
+    "gate-noun-manager-logical-destroy-00b225d0",
+    "runtime validation not run"
+  ],
+  "validated": 0
+}
+```
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+{
+  "runtime_gated": true,
+  "runtime_validated": 0,
+  "status": "reconstructed"
+}
+```
+
+## types
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json`
+
+```json
+[
+  "OpaqueNounManager",
+  "void"
+]
+```
+
+## vtables
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## Conflicts
+
+```json
+[]
+```

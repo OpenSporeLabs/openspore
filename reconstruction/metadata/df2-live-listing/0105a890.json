@@ -1,0 +1,201 @@
+{
+  "schema": "df2-worker-function-reconstruction-1",
+  "package": "PKG-DF2-LIVE-LISTING",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "va": "0x0105a890",
+  "address": "0x0105a890",
+  "symbol": "FUN_0105a890",
+  "normalized_symbol": "Simulator_query_FUN_0105a890",
+  "captured_on": "2026-09-26",
+  "target_state": "candidate reconstruction in staging; listing read live, not from the committed pack",
+  "listing_provenance": {
+    "source": "live GhidraMCP bridge /disassemble_function at 127.0.0.1:8089",
+    "instruction_count": 155,
+    "body_start": "0x0105a890",
+    "body_end_inclusive": "0x0105aa4e",
+    "why_not_the_pack": "reconstruction/evidence/0105a890/evidence.json stores categories.disassembly as {\"truncated\": true, \"preview\": ...} with original_bytes 12377 against the collector's 12000-byte compact() budget, so the pack carries no instructions array. Its preview is a fragment of the body and is deliberately not used as an oracle for any claim here.",
+    "corroboration": "the pack's own machine parse record declares declared_count 155, unparsed 0, degraded false, which is the count the live bridge returned, so the live listing is the whole body and not a slice."
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "Simulator_query_FUN_0105a890",
+    "source": "reconstruction/staging/df2-live-listing/simulator_query_0105a890.cpp",
+    "declaration": "extern \"C\" int __thiscall Simulator_query_FUN_0105a890(void* receiver, void* first_argument, unsigned int second_argument, unsigned int third_argument, unsigned int popped_but_never_read);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "return_type": "int",
+    "argument_surface": "three ordinary stack arguments are read (entry ESP+0x4, +0x8, +0xc) plus the ECX receiver, and a fourth slot at entry ESP+0x10 is popped without ever being read. RET 0x10 pops 16 bytes, so the declared prototype carries the unread fourth slot as a named parameter and marks it unused at the top of the body; without it the declared callee-pop width would be 12 bytes and would contradict the listing.",
+    "reconstruction_style": "opaque receiver forwarded and never dereferenced; the one displacement read (0x124) belongs to the first stack argument, not to the receiver; no struct member and no dispatch table is named; no data-segment address is written as code"
+  },
+  "source_files": [
+    "reconstruction/staging/df2-live-listing/simulator_query_0105a890.cpp"
+  ],
+  "function_extent": {
+    "entry": "0x0105a890",
+    "body_end_inclusive": "0x0105aa4e",
+    "instruction_count": 155,
+    "body_span_bytes": 448,
+    "exit_sites": [
+      "0x0105aa4d: RET 0x10 (the single exit; every path reaches it)"
+    ],
+    "no_tail_calls": "the only JMP with an immediate operand is 0x0105a9ca -> 0x0105a9fb, and both addresses lie inside the body span, so it is intra-procedural control flow and not a transfer to a callee"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "convention_confidence": "INFERRED_FROM_LISTING",
+    "convention_ambiguity": "the machine-derived envelope abstains (ABI_UNKNOWN: flow_not_modelled, untrusted_frame_stack_reads, receiver_not_determinable) and lists __stdcall and __thiscall as candidates. __thiscall is declared here because the body copies ECX into ESI at entry and loads it back into ECX for 0x0105a050, which is the receiver shape; a __stdcall reading with a receiver in ECX cannot be excluded from this body alone.",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver_register": "ECX",
+    "receiver_displacements_observed": [],
+    "receiver_note": "the receiver is forwarded to 0x01021260 and 0x0105a050 and is never dereferenced in this body, which is exactly the machine-derived record's own abstention reason ecx_read_without_deref",
+    "ordinary_stack_argument_slots": ["entry_ESP+0x4", "entry_ESP+0x8", "entry_ESP+0xc"],
+    "ordinary_stack_arguments": 3,
+    "stack_cleanup_bytes": 16,
+    "stack_cleanup_owner": "callee",
+    "ret_form": "RET 0x10",
+    "termination": "RET 0x10",
+    "saved_registers": ["EBP", "EBX", "EDI", "ESI"],
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "return_type": "int",
+    "return_type_basis": "the pack's derived ABI records integral_in_EAX and the live decompilation types the function undefined4. The listing only ever writes AL (MOV AL,0x1 at 0x0105aa47), so the effective machine return is 8 bits wide and the declared int is the width the return claim is made at, not a claim about the upper three bytes.",
+    "ghidra_prototype": "undefined4 FUN_0105a890(int param_1, undefined4 param_2, undefined4 param_3)",
+    "ghidra_convention_note": "the live decompilation reports no receiver and three stack parameters. That is the same frame miscalibration the pack records (push ebp with no mov ebp,esp, so every frame-relative offset is uncalibrated), not an observation about the ABI: 0x0105a895 copies ECX into ESI and 0x0105a8ad loads it back into ECX for 0x0105a050.",
+    "decompiler_output_is_evidence_not_truth": true
+  },
+  "mechanics": {
+    "receiver_use": "copied to ESI at 0x0105a895, forwarded to 0x01021260 at 0x0105a897 and to 0x0105a050 at 0x0105a8af, and never dereferenced",
+    "first_argument_use": "its word at displacement 0x124 is read three times (0x0105a8bc, 0x0105a8d7, 0x0105aa0e); a null value takes an early exit, and a non-null value is the receiver of 0x006e87e0 and 0x00cb5bb0",
+    "forwarding": "the second and third arguments are pushed unchanged as the second and third arguments of 0x0105a050, together with the first argument and an immediate 0",
+    "primary_control_flow": [
+      "0x0105a897: 0x01021260(receiver) runs first, before anything is read",
+      "0x0105a8af: 0x0105a050(receiver, arg1, arg2, arg3, 0) gates everything; a false result returns 1 immediately",
+      "0x0105a8bc: a null word at displacement 0x124 of the first argument returns 1",
+      "0x0105a8ca: a null result from the first 0x006e87e0 query returns 1; the query is then repeated and the result kept as the subject",
+      "0x0105a8eb: the subject's indirect word at displacement 0xc is asked about the key 0xce9f6639; a non-null answer goes to 0x01058680 and ends the dispatch",
+      "0x0105a90d: the same word asked about 0x3ed590d; the answer's word at displacement 0x88 must be 0, 1 or 2, and the call then goes to 0x010534c0 with the answer offset by 0x7c",
+      "0x0105a946: three alternative lookups (0x00ae6760, 0x00b67720, 0x00b67740) each paired with its own handler (0x01053320, 0x01053240, 0x010533d0); the first that produces something ends the dispatch",
+      "0x0105a99a: the last resort builds a three-word local, stores the produced object in its third word (displacement 0x8 of the block), constructs it with 0x00421c80 and 0x0067dcc0, calls the built object's indirect word at displacement 0x14 with the local and the tag immediate, and destroys the local with 0x00421cf0",
+      "0x0105a9cc: if 0x01030e40 produces nothing, 0x00bd8460 is tried and the same block is built with the other tag immediate; if that produces nothing either the block is skipped",
+      "0x0105aa0e: the word at displacement 0x124 of the first argument is released through 0x00cb5bb0",
+      "0x0105aa1d: the boolean carried in BL gates one last notification: 0x00a206f0, an optional indirect word at displacement 0x20 on the result, and 0x00435ed0 with the immediate 0x75c412dd"
+    ],
+    "carried_boolean": "BL is set by exactly one of 0x01058680, 0x010534c0, 0x01053320, 0x01053240 or 0x010533d0, is preserved across the whole dispatch in EBX, and is popped at 0x0105aa1f. It gates the final notification and is never returned.",
+    "indirect_transfers": {
+      "count": 4,
+      "displacements_observed": ["0x14", "0x20", "0xc"],
+      "shape": "each loads a word out of an object and calls through the register it loaded; 0xc is used twice with different key immediates",
+      "note": "the reconstruction spells each site with the displacement the word was read at and names no dispatch table"
+    },
+    "key_immediates": [
+      {"value": "0xce9f6639", "use": "first key passed to the indirect word at displacement 0xc"},
+      {"value": "0x3ed590d", "use": "second key passed to the same word"},
+      {"value": "0xf46092d3", "use": "tag for the block built from 0x01030e40's result"},
+      {"value": "0xf46093da", "use": "tag for the block built from 0x00bd8460's result"},
+      {"value": "0x75c412dd", "use": "first argument of the final 0x00435ed0 call"}
+    ],
+    "kind_words": [0, 1, 2],
+    "kind_word_note": "the only place a small enumeration is compared: the word at displacement 0x88 of the second match must be 0, 1 or 2, and a null value takes the same branch as 0 and 1 (TEST ECX,ECX / JZ, then CMP 1 / JZ, then CMP 2 / JNZ)",
+    "reads_count": 1,
+    "writes_count": 1,
+    "write_detail": "one store into the three-word local at 0x0105a9b5 and 0x0105a9e6, and it is the word at displacement 0x8 of that block, i.e. its third word; the body stores through no pointer it was given and never writes the block's words at displacement 0x0 or 0x4",
+    "fallback": "two-key indirect query, then three alternative lookups in order, then two candidate objects for a constructed local, and finally the release plus an optional notification",
+    "pointee_access": "the three-word local is constructed, written through, and destroyed inside the body; the first argument and the subject are only read",
+    "reference_operations": "0x006e87e0 is queried twice and 0x00cb5bb0 is called once on the same word; whether that pair is an acquire/release pair is not established by this body"
+  },
+  "frame_derivation": {
+    "method": "ESP was walked by hand from the entry through every call, push and pop in the live listing. Entry ESP is E; SUB ESP,0x40 with PUSH EBP and PUSH ESI leaves E-0x48, and the epilogue (POP ESI, POP EBP, ADD ESP,0x40, RET 0x10) only balances from E-0x48, so E-0x48 is the restored frame and any other ESP value on a straight-line run is a caller-popped or callee-popped excursion.",
+    "argument_slots": "the three MOVs at 0x0105a89c, 0x0105a8a0 and 0x0105a8a4 read ESP+0x54, +0x50 and +0x4c at ESP=E-0x48, which are E+0xc, E+0x8 and E+0x4: the third, second and first stack arguments. Nothing reads E+0x10, yet RET 0x10 pops it.",
+    "block_base": "the three-word block is at E-0x10. 0x0105a9ac computes LEA ECX,[ESP+0x14] with ESP=E-0x50, giving E-0x3c, and 0x00421c80 callee-pops its one argument, so the store at 0x0105a9b5 writes E-0x34, which is displacement 0x8 of E-0x3c. Both arms of the block use the same three addresses: 0x0105a9c0 recomputes E-0x3c for the indirect call's second argument, and 0x0105aa04 recomputes E-0x3c for 0x00421cf0 after the indirect callee has popped its three arguments.",
+    "indirect_call_width": "the three pushes at 0x0105a9be, 0x0105a9c4 and 0x0105a9c5 are 12 bytes and there is no ADD ESP after 0x0105aa02, so that indirect callee pops all three; only under that reading does 0x0105aa04 land back on E-0x3c.",
+    "callee_pop_versus_caller_pop": "0x01030e40 is called after PUSH EDI / PUSH ESI and followed by ADD ESP,0x4. Two words are pushed and only one is dropped, so the other belongs to the PUSH EDI / POP EDI register frame at 0x0105aa0d and the callee takes one caller-cleaned argument. The earlier candidate declared it callee-popping, which the ADD ESP,0x4 refutes; it is declared __cdecl here.",
+    "why_this_matters": "these four readings are what fix the local's store offset, the block base handed to two different callees, the argument width of the indirect call, and the calling convention of 0x01030e40. Each was re-derived from the live listing in this pass and each changed the candidate."
+  },
+  "reverification": {
+    "date": "2026-09-26",
+    "action": "second worker session re-read the 155-instruction body from the live bridge and re-derived the frame arithmetic from scratch rather than trusting the first pass",
+    "listing_read": "live GhidraMCP /disassemble_function 0x0105a890, 155 instructions, body 0x0105a890..0x0105aa4d. Not the committed pack, whose disassembly category is a truncated envelope.",
+    "corrections_applied": [
+      "0x01030e40 was declared callee-popping (__stdcall); the ADD ESP,0x4 at 0x0105a9a3 makes it caller-cleaned, so it is now __cdecl and the PUSH EDI / POP EDI pair is documented as the register frame it is.",
+      "the produced object was stored into the block's second word; the store at 0x0105a9b5 writes displacement 0x8 of the block base, so it is the third word, and the block's first two words are no longer claimed to be zeroed by this body.",
+      "the declared prototype carried three stack parameters while the body pops four; a fourth slot, entry ESP+0x10, is now named and marked unused so the declared callee-pop width matches RET 0x10."
+    ],
+    "confirmed_unchanged": [
+      "the whole control-flow shape, the 19 direct callees, the four indirect-transfer displacements (0xc, 0x14, 0x20 and the two 0x7c/0x88 data reads around them), the 0x88 enumeration, the two tag immediates and the constant-1 return all re-derived identically from the live listing",
+      "every hex literal written in the candidate body (12 of them) occurs verbatim in the live listing",
+      "no struct member, no data-segment address and no dispatch-table vocabulary appears anywhere in the candidate"
+    ],
+    "verdict_unchanged": "STATIC is NOT_AVAILABLE and RUNTIME is GATED for this target. CALLS and RETURN SEMANTICS pass; ABI and CONSTANTS warn; the four listing-dependent checks cannot be adjudicated because the committed pack holds no instruction array. Correcting the candidate did not and could not move that verdict."
+  },
+  "return_semantics": {
+    "kind": "constant 1 in AL",
+    "detail": "the single exit writes AL and nothing else, so every path returns 1 and the upper three bytes of EAX are whatever the last callee left",
+    "ownership": "nothing is returned to the caller; the body's whole effect is the side effects listed under mechanics",
+    "lifetime": "the receiver and the first argument are borrowed for the duration of the call; the three-word local is constructed and destroyed inside the body"
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "listing_source": "live GhidraMCP /disassemble_function (155 instructions); NOT the committed pack, whose disassembly category is a truncated envelope",
+    "pack_listing_state": "truncated envelope, 12377 canonical bytes, no instructions array, preview not used",
+    "machine_parse_record": {"declared_count": 155, "unparsed": 0, "degraded": false},
+    "direct_callees": 19,
+    "direct_callers": 0,
+    "external_callees": [],
+    "assembly_sites": [
+      "0105a890: SUB ESP,0x40 / PUSH EBP / PUSH ESI / MOV ESI,ECX",
+      "0105a897: CALL 0x01021260",
+      "0105a89c: MOV EAX,dword ptr [ESP + 0x54] / MOV ECX,dword ptr [ESP + 0x50] / MOV EBP,dword ptr [ESP + 0x4c]",
+      "0105a8af: CALL 0x0105a050 / 0105a8b4: TEST AL,AL / 0105a8b6: JZ 0x0105aa46",
+      "0105a8bc: MOV ECX,dword ptr [EBP + 0x124]",
+      "0105a8ca: CALL 0x006e87e0 / 0105a8e0: CALL 0x006e87e0",
+      "0105a8f0: PUSH 0xce9f6639 / 0105a8f7: CALL EAX",
+      "0105a912: PUSH 0x3ed590d / 0105a919: CALL EAX / 0105a91f: MOV ECX,dword ptr [EAX + 0x88]",
+      "0105a933: ADD EAX,0x7c / 0105a937: CALL 0x010534c0",
+      "0105a947: CALL 0x00ae6760 / 0105a964: CALL 0x00b67720 / 0105a981: CALL 0x00b67740",
+      "0105a99c: CALL 0x01030e40 / 0105a9cd: CALL 0x00bd8460",
+      "0105a9b0: CALL 0x00421c80 / 0105a9b9: CALL 0x0067dcc0 / 0105aa08: CALL 0x00421cf0",
+      "0105a9c5: PUSH 0xf46092d3 / 0105a9f6: PUSH 0xf46093da / 0105a9ca: JMP 0x0105a9fb",
+      "0105aa02: CALL EDX / 0105aa18: CALL 0x00cb5bb0 / 0105aa22: CALL 0x00a206f0",
+      "0105aa39: PUSH 0x75c412dd / 0105aa3e: CALL 0x00435ed0",
+      "0105aa47: MOV AL,0x1 / 0105aa4d: RET 0x10"
+    ],
+    "decompiler": "live /decompile_function, which reports no receiver and mis-symbolises 0x0067dcc0 as App::IAppSystem::Get; used only to corroborate the control-flow shape, never for the parameter list",
+    "image_slot_values": "no data-segment address is read by this body; every immediate it uses is a small key or tag value carried in the instruction stream"
+  },
+  "provenance": [
+    "live GhidraMCP /disassemble_function 0x0105a890 (155 instructions, body 0x0105a890..0x0105aa4e)",
+    "live GhidraMCP /decompile_function 0x0105a890 (corroborating only; receiver lost to frame miscalibration)",
+    "reconstruction/evidence/0105a890/evidence.json (abi envelope with its abstention reasons, machine parse record, xref edges; its disassembly category is a truncated envelope and was not used as a listing)",
+    "reconstruction/knowledge/index.json (xref export projection: 19 distinct direct callees, 0 callers)",
+    "knowledgegraph/triage/queue-f0e310e0-v6.json (target name and cluster)"
+  ],
+  "unresolved_questions": [
+    "The committed pack's disassembly category is a truncated envelope, so every listing-dependent validation check reads NOT_AVAILABLE for this target. The listing used here came from the live bridge; a reader must not mistake it for the pack's own.",
+    "The receiver is forwarded and never dereferenced, so the machine-derived ABI record cannot name a receiver register and this reconstruction cannot say what the receiver is. Whether __stdcall with a register convention is excluded is not settled by this body alone.",
+    "The identity of 0x0105a050, the gate every path runs through, is not established; nothing in this body says what the three forwarded arguments mean.",
+    "What the word at displacement 0x124 of the first argument is, and whether 0x006e87e0 and 0x00cb5bb0 form an acquire/release pair on it, is not established.",
+    "The three keys 0xce9f6639, 0x3ed590d and 0x75c412dd, and the two tags 0xf46092d3 and 0xf46093da, are immediates with no recoverable meaning in this body.",
+    "The enumeration compared against the word at displacement 0x88 accepts 0, 1 and 2 but nothing here says what those three states are.",
+    "Whether the three-word local is a command, an event or a scoped context, and what the word at displacement 0x8 of it means, is not established; only the tag immediates distinguish the two construction paths.",
+    "ECX is not established at the 0x00a206f0 call site, so that callee's receiver is unknown; the reconstruction declares it argumentless and says so."
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The receiver and the first argument are live, with a non-null word at displacement 0x124.",
+      "The original function is entered so that 0x0105a050 returns both true and false, and the constant-1 return is observed on every path.",
+      "Each of the eight dispatch outcomes is observed at least once, including the two tag-distinguished construction paths.",
+      "A runtime trace records whether the acquire/release pair around the word at displacement 0x124 is balanced."
+    ]
+  },
+  "runtime_gates": [
+    "no original-process trace exists in this repository; the static reconstruction of 0x0105a890 is unvalidated at runtime",
+    "the committed evidence pack's disassembly is a truncated envelope, so no listing-dependent check could be adjudicated from committed evidence"
+  ]
+}

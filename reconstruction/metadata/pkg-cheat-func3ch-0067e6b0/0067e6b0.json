@@ -1,0 +1,285 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "pkg-cheat-func3ch-0067e6b0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "image_base": "0x00400000",
+  "va": "0x0067e6b0",
+  "address": "0x0067e6b0",
+  "name": "App::cCheatManager::func3Ch",
+  "normalized_symbol": "func3_ch_0067e6b0",
+  "reconstructed_symbol": "func3_ch_0067e6b0",
+  "subsystem": "App",
+  "cluster": "app-lifecycle",
+  "captured_on": "2026-09-26",
+  "target_state": "implemented staging candidate; integrator review pending",
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "receiver_copy_register": "ESI",
+    "return_type": "pointer to the receiver",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "0x0067e6c8 MOV EAX,ESI puts the receiver in EAX on the single exit path, taken by both the gated and the ungated path. This CONTRADICTS the persisted SDK/Ghidra signature, which declares 'void App::cCheatManager::func3Ch(cCheatManager * this, int param_2)' and prints the decompiler warning 'Unknown calling convention'. The reconstruction follows the listing and returns the receiver. Whether any consumer reads EAX is unproven: the only inbound reference to the function is its vtable slot, and no call site of that slot is known, so 'returns the receiver' is a statement about the machine, not a proven API contract.",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4 at 0x0067e6cb",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "ordinal": 1,
+        "entry_offset": "entry_ESP+0x4",
+        "width_bytes": 4,
+        "observed": true,
+        "read": true,
+        "written": false,
+        "note": "0x0067e6b8 TEST byte ptr [ESP + 0x8],0x1 addresses entry_ESP+0x4 because PUSH ESI at 0x0067e6b0 is the only outstanding frame change and 0x0067e2b0 pushes nothing and ends in a plain RET at 0x0067e301. The test is on the low BYTE, so only bit 0 of the word is given meaning."
+      }
+    ],
+    "saved_registers": [
+      "ESI"
+    ],
+    "stack_frame": "none; no EBP frame is established"
+  },
+
+  "function_extent": {
+    "entry": "0x0067e6b0",
+    "body_end_inclusive": "0x0067e6cc",
+    "ghidra_body_end": "0x0067e6cd",
+    "instruction_count": 11,
+    "size_bytes": 29,
+    "padding": "0x0067e6cd..0x0067e6ce are CC CC; the body therefore ends at 0x0067e6cc and Ghidra's 0x0067e6cd is the start of the padding",
+    "bytes": "568bf1e8f8fbfffff644240801740956e8bb8c8c0083c4048bc65ec20400",
+    "epilogue": "0x0067e6c8..0x0067e6cc"
+  },
+
+  "vtables": [
+    "vtable:0x014018b0"
+  ],
+
+  "vtable_placement": {
+    "containing_vtable": "0x014018b0",
+    "ghidra_symbol": "PTR_FUN_014018b0",
+    "slot_index": 20,
+    "slot_byte_offset": "0x50",
+    "slot_address": "0x01401900",
+    "terminator": "0x01401904 holds 0x00000000, so the table has 21 dword slots (0x00..0x50)",
+    "evidence": "A reference scan of 0x0067e6b0 returns exactly one inbound reference, type DATA, from 0x01401900. 0x01401900 - 0x014018b0 = 0x50 = 20 dword slots. Read back with /read_memory: slot 20 is b0 e6 67 00 and slot 21 is 00 00 00 00.",
+    "vtable_store_site": "0x0067e12b  MOV dword ptr [ESI],0x14018b0, inside FUN_0067e100, the only reference to 0x014018b0 in the program (DATA, source ANALYSIS). FUN_0067e100 takes this in ECX and two stack arguments, calls 0x00924170 with the first, stores the second at [this+0x24] and, if that pointer is non-null, makes a virtual call through its vtable slot 0; it returns through RET 0x8.",
+    "neighbouring_slots_in_same_table": {
+      "15": "0x0067eae0",
+      "16": "0x0067e280",
+      "17": "0x00421e80",
+      "18": "0x0083f5d0",
+      "19": "0x0083c760"
+    },
+    "table_contents_dwords": [
+      "0x00923490",
+      "0x009234a0",
+      "0x0067e690",
+      "0x00923470",
+      "0x0067e190",
+      "0x0067e160",
+      "0x0067eab0",
+      "0x00ff0420",
+      "0x00924010",
+      "0x00ab30c0",
+      "0x00923460",
+      "0x00923780",
+      "0x00fcc210",
+      "0x0069f9b0",
+      "0x0093b6c0",
+      "0x0067eae0",
+      "0x0067e280",
+      "0x00421e80",
+      "0x0083f5d0",
+      "0x0083c760",
+      "0x0067e6b0"
+    ],
+    "note": "The table mixes 0x0067exxx, 0x0092xxxx and three words that are not code addresses (0x00ff0420, 0x00fcc210, 0x00ab30c0). This reconstruction does not claim what those three are, and does not claim a class hierarchy: SporeApp.exe has no MSVC RTTI and the only vtable data evidence is the table image itself."
+  },
+
+  "mechanics": {
+    "kind": "unconditional callee followed by a bit-0 gate on one stack argument",
+    "steps": [
+      "0x0067e6b0 PUSH ESI -- the only callee-save; no EBP frame",
+      "0x0067e6b1 MOV ESI,ECX -- the receiver is copied once and kept in ESI to the exit",
+      "0x0067e6b3 CALL 0x0067e2b0 -- unconditional, receiver in ECX, nothing pushed",
+      "0x0067e6b8 TEST byte ptr [ESP + 0x8],0x1 -- bit 0 of the low byte of entry_ESP+0x4",
+      "0x0067e6bd JZ 0x0067e6c8 -- clear: skip straight to the epilogue",
+      "0x0067e6bf PUSH ESI / 0x0067e6c0 CALL 0x00f47380 / 0x0067e6c5 ADD ESP,0x4 -- cdecl, the argument is the receiver",
+      "0x0067e6c8 MOV EAX,ESI -- receiver into the return register on both paths",
+      "0x0067e6ca POP ESI / 0x0067e6cb RET 0x4"
+    ],
+    "direct_callees": 2,
+    "direct_callers": 0,
+    "indirect_call_sites": 0,
+    "memory_writes": 0,
+    "reads": [
+      "byte [entry_ESP+0x4] once, the low byte of the gate word"
+    ],
+    "receiver_reads": [
+      "none: the body never loads a field of the receiver. It only copies ECX into ESI, passes ESI to the two callees, and returns it."
+    ],
+    "gate_mask": "0x1, on the low byte only",
+    "gate_tested_after_first_call": true,
+    "field_offsets_used_by_this_body": [],
+    "field_offsets_note": "This body uses no receiver displacement at all. The +0x14 word in the header belongs to the CALLEE 0x0067e2b0 and is declared only so the callee's mechanic can be named; the same is true of +0x24 (constructor 0x0067e100) and +0x64 (sibling 0x0067e6f0)."
+  },
+
+  "callees": [
+    {
+      "va": "0x0067e2b0",
+      "reference_type": "direct-call",
+      "callsite": "0x0067e6b3",
+      "calling_convention": "__thiscall",
+      "stack_arguments": 0,
+      "argument": "none; the receiver arrives in ECX",
+      "return": "none defined; the callee ends in a plain RET at 0x0067e301, so the stack is unchanged across the call",
+      "gated": false,
+      "evidence": "24-instruction listing 0x0067e2b0..0x0067e301. It installs an SEH frame (PUSH -0x1 / PUSH 0x1217678 / MOV FS:[0x0],ESP), then 0x0067e2cd MOV ECX,dword ptr [ESI + 0x14]; if that pointer is non-null it loads the object's vtable word (0x0067e2dc MOV EAX,dword ptr [ECX]) and calls vtable slot +0x10 through it (0x0067e2de MOV EDX,dword ptr [EAX + 0x10] / 0x0067e2e1 CALL EDX) with ECX still holding that object; it then calls 0x0083c750 with ECX = the receiver and restores the SEH chain before ADD ESP,0x10 / RET.",
+      "only_inbound_reference": "0x0067e6b3 -- the reference scan reports one reference to 0x0067e2b0, and it is this call site",
+      "semantics": "not reconstructed here. Two facts are load-bearing and are stated as facts: it calls vtable slot +0x10 of the object at receiver+0x14 when that word is non-null, and its tail call target 0x0083c750 stores &PTR_purecall_0141b5ac into the receiver's first word. The second is the shape of an MSVC vptr reset to an abstract base's pure-virtual table, which would make 0x0067e2b0 a destructor-shaped helper, but nothing in the listing names it and this reconstruction does not claim it."
+    },
+    {
+      "va": "0x00f47380",
+      "reference_type": "direct-call",
+      "callsite": "0x0067e6c0",
+      "calling_convention": "__cdecl",
+      "stack_arguments": 1,
+      "argument": "the receiver, pushed at 0x0067e6bf and dropped by the caller at 0x0067e6c5",
+      "return": "none; the callee ends in a plain RET at 0x00f47394",
+      "gated": true,
+      "gate": "reached only when bit 0 of the gate word is set",
+      "evidence": "7-instruction listing 0x00f47380..0x00f47394: MOV EAX,[ESP + 0x4] / TEST EAX,EAX / JZ exit / MOV ECX,dword ptr [0x016c8b44] / PUSH EAX / CALL 0x009276c0 / RET. The single argument is null-checked by the callee itself, so this body's PUSH ESI is not a null check on this side.",
+      "callee_of_callee": {
+        "va": "0x009276c0",
+        "convention": "__thiscall with one callee-cleaned stack argument (RET 0x4)",
+        "shape": "If the payload is null it returns at once. Otherwise it reads the lock word at [ECX+0x4e4]; if that is non-null it calls through the import slot 0x013cc2d8 and increments [lock+0x18]; it then calls 0x00926fd0 with ECX = the owner and the payload as the stack argument; finally, if the lock word is non-null, it decrements [lock+0x18] and calls through the import slot 0x013cc2dc.",
+        "import_names": "not claimed. /get_external_location returns no external location for 0x013cc2d8 or 0x013cc2dc in this program database, so no API name is asserted even though the INC/DEC of [lock+0x18] around the pair has the shape of a recursive lock."
+      }
+    }
+  ],
+
+  "globals": [
+    {
+      "address": "0x016c8b44",
+      "ghidra_symbol": "GeneralAllocator::sInstance",
+      "role": "read once at 0x00f47388 by the branch callee and moved into ECX, where it becomes the 'this' of 0x009276c0; this body neither reads nor writes it",
+      "evidence": "0x00f47388 MOV ECX,dword ptr [0x016c8b44]; the word carries the Ghidra primary symbol GeneralAllocator::sInstance"
+    },
+    {
+      "address": "0x0141b5ac",
+      "ghidra_symbol": "PTR_purecall_0141b5ac",
+      "role": "the value stored into the receiver's first word by 0x0083c750, which 0x0067e2b0 calls at 0x0067e2ed; this body neither reads nor writes it",
+      "evidence": "decompile of 0x0083c750: *param_1 = &PTR_purecall_0141b5ac"
+    },
+    {
+      "address": "0x014018b0",
+      "ghidra_symbol": "PTR_FUN_014018b0",
+      "role": "the vtable this function is an entry of; stored into the receiver by 0x0067e12b",
+      "evidence": "reference scan: one DATA reference from 0x0067e12b, source ANALYSIS"
+    }
+  ],
+
+  "sibling_contrast": {
+    "sibling_vas": [
+      "0x0067e6f0 (App::cCheatManager::func40h)",
+      "0x0067e730 (App::cCheatManager::func44h)"
+    ],
+    "their_vtable": "0x01401b74 (PTR_LAB_01401b74), slots 16 and 17, offsets 0x40 and 0x44",
+    "differences": [
+      "This function has no vtable entry in 0x01401b74; it sits at slot 20 of a different table, 0x014018b0. The two tables are not the same object.",
+      "The siblings walk an observer chain and make one indirect call per node; this body makes no indirect call and touches no chain field.",
+      "The siblings test receiver bytes (+0x64) or hoist their stack argument into EBX; this body copies ECX into ESI and keeps it, and reads its argument word in place after the first call.",
+      "The siblings return void with no defined EAX; this body writes the receiver into EAX."
+    ],
+    "inference": "The three entries share a class, a cluster and a vtable neighbourhood, but the evidence does not make them variants of one traversal. It is not established that 0x014018b0 and 0x01401b74 are two vtables of one class: 0x01401b74 is stored at 0x0067f933 and 0x0067fac4, neither of which is the cCheatManager constructor 0x0067e100."
+  },
+
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "func3_ch_0067e6b0",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall",
+    "return_type": "CheatManager* (the receiver), following 0x0067e6c8 MOV EAX,ESI rather than the SDK void",
+    "argument_surface": "one 4-byte stack argument at entry_ESP+0x4, reclaimed by the callee through RET 0x4",
+    "source": "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0.cpp",
+    "header": "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0.hpp",
+    "model_test": "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0_model_test.cpp",
+    "package_owned_global": "g_cheat_func3ch_ports",
+    "build_check": "g++ -m32 -std=c++17 -Wall -Wextra on the .cpp and the model test: clean, and the test binary exits 0. The -O2 listing of the entry keeps the machine shape: movl %ecx,%ebx, testb $1 on the argument slot, movl %ebx,%eax, ret $4."
+  },
+
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0.cpp",
+      "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0.hpp",
+      "reconstruction/staging/pkg-cheat-func3ch-0067e6b0/cheat_func3ch_0067e6b0_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only; no canonical path is claimed"
+  },
+
+  "evidence": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCheatManager__func3Ch.c",
+    "GhidraMCP /disassemble_function @ 0x0067e6b0 (11 instructions, 0x0067e6b0..0x0067e6cc)",
+    "GhidraMCP /read_memory @ 0x0067e6b0 (29 body bytes, hex 568bf1e8f8fbfffff644240801740956e8bb8c8c0083c4048bc65ec20400, then cc cc)",
+    "GhidraMCP /decompile_function @ 0x0067e6b0",
+    "GhidraMCP /disassemble_function @ 0x0067e2b0 (24 instructions, first callee, SEH frame, +0x14 read, vtable slot +0x10, call to 0x0083c750, plain RET)",
+    "GhidraMCP /decompile_function @ 0x0067e2b0",
+    "GhidraMCP /disassemble_function @ 0x00f47380 (7 instructions, branch callee, reads its argument at [ESP+0x4], loads the global 0x016c8b44 into ECX, plain RET)",
+    "GhidraMCP /disassemble_function @ 0x009276c0 (25 instructions, second hop, lock word at +0x4e4, INC/DEC of [lock+0x18], import slots 0x013cc2d8 and 0x013cc2dc, RET 0x4)",
+    "GhidraMCP /decompile_function @ 0x0083c750 (*param_1 = &PTR_purecall_0141b5ac)",
+    "GhidraMCP reference scan: 0x0067e6b0 has one inbound DATA reference from 0x01401900; 0x0067e2b0 has one inbound reference, from 0x0067e6b3; 0x014018b0 has one inbound reference from 0x0067e12b",
+    "GhidraMCP /read_memory @ 0x014018b0 (22 dwords; slot 20 = 0x0067e6b0 at 0x01401900, slot 21 = null terminator)",
+    "GhidraMCP /get_function_by_address @ 0x0067e12b -> FUN_0067e100, and /disassemble_function @ 0x0067e12b (vptr store, [ESI+0x24] store, RET 0x8)",
+    "GhidraMCP /get_function_by_address @ 0x0067e6b0 (name App::cCheatManager::func3Ch, body_end 0x0067e6cd)",
+    "GhidraMCP /list_class_members @ cCheatManager (five members typed to cCheatManager*: 0x0067e0a0, 0x0067e6b0, 0x0067e6f0, 0x0067e730, 0x00abf790)",
+    "GhidraMCP symbol table: 0x016c8b44 = GeneralAllocator::sInstance, 0x0141b5ac = PTR_purecall_0141b5ac, 0x014018b0 = PTR_FUN_014018b0, 0x01401b74 = PTR_LAB_01401b74",
+    "analogue:0x0067e730 (reconstruction/metadata/dogfood-after-02-0067e730/0067e730.json and reconstruction/staging/dogfood-after-02-0067e730/) -- same class, same callee-free port-table convention, supplies the +0x4c/+0x50/+0x64 receiver tail used for layout continuity",
+    "analogue:0x0067e6f0 (reconstruction/evidence/0067e6f0/evidence.json and reconstruction/staging/pkg-cheat-dispatch-0067e6f0/) -- supplies the +0x64 gate byte and the vtable 0x01401b74 placement of the siblings"
+  ],
+
+  "corroboration": {
+    "decompiler_vs_listing": "disagreement, and the listing wins. The persisted decompilation reads 'TEST ((uint)this & 1)' and gates on `this`, which is impossible: the instruction is F6 44 24 08 01, a byte test of the stack slot at [ESP+0x8], i.e. entry_ESP+0x4, and the gate word is the function's only ordinary argument. The same decompilation also prints `return;` against a declared void signature while the listing writes EAX at 0x0067e6c8. The reconstruction is built from the 11-instruction listing and the raw bytes, and the decompiler caveats are recorded rather than reproduced.",
+    "decompiler_caveats": [
+      "The decompiler prints the gate as a test of `this`; the listing shows the low byte of the first stack argument. This is the single most consequential difference and the reason the briefing's null decompilation was not usable as-is.",
+      "The declared return type is void; the listing writes the receiver into EAX on the only exit path.",
+      "The decompiler's 'WARNING: Unknown calling convention' is consistent with a __thiscall entry that has no resolved prototype: __thiscall with a callee-cleaned stack argument is exactly RET 0x4 with the receiver in ECX."
+    ],
+    "gaps": [
+      "No ABI projection was persisted for this target (briefing evidence.missing_sections lists ABI as absent). The ABI in this sidecar is derived from the listing, and the derivation is spelled out instruction by instruction in observed_original_abi.",
+      "No callers, globals, types, fields or vtable slots were persisted by the orchestrator either; the callee chain, the two globals and the vtable slot were obtained from the live bridge during this session and are cited individually above."
+    ]
+  },
+
+  "unresolved_questions": [
+    "What does the gate word mean beyond bit 0? The listing tests one bit and says nothing about the other 31, and the two callees receive the receiver rather than the word, so the word's producer is the only place its meaning could be read.",
+    "Is 0x0067e2b0 a destructor? It calls vtable slot +0x10 of the object at +0x14 and then writes &PTR_purecall_0141b5ac into the receiver, which is the MSVC vptr-reset shape a base destructor performs, but the listing names nothing and the only inbound reference is this call site.",
+    "What is the object at receiver+0x14, and what does its vtable slot +0x10 do?",
+    "What is 0x00926fd0, the routine 0x009276c0 brackets with the lock at global+0x4e4, and what does it do with the receiver it is handed?",
+    "What are the two import slots 0x013cc2d8 and 0x013cc2dc? The database resolves no external location for either, so no API name is claimed.",
+    "Is the returned EAX consumed by anyone? The only inbound reference to the function is the vtable slot at 0x01401900, and no call site of that slot is known.",
+    "Which class owns vtable 0x014018b0, and is it related to the 0x01401b74 table that holds the sibling entries? The table mixes code and non-code words and SporeApp.exe has no RTTI, so the hierarchy is not established.",
+    "What are the non-code words 0x00ff0420, 0x00fcc210 and 0x00ab30c0 doing in slots 7, 12 and 9 of that table?"
+  ],
+
+  "blockers": [],
+
+  "runtime_gates": [
+    "The function is only reachable through vtable slot 20, so observing it at all requires a live cCheatManager constructed by 0x0067e100 (which stores 0x014018b0) and a caller that dispatches that slot.",
+    "The branch is inert unless the gate word has bit 0 set; a differential run that passes an even word will exercise only the teardown path.",
+    "The teardown path requires receiver+0x14 to be non-null before the indirect call at 0x0067e2e1 can happen at all."
+  ],
+
+  "notes": "Reconstructed from the 11-instruction body plus the listings of its two direct callees and the one callee they reach. The reconstruction is total for this body: every instruction, displacement, branch, register and return of 0x0067e6b0..0x0067e6cc is accounted for, and nothing is asserted beyond it. The body is unusually clean for this class -- it loads no receiver field at all, so the header's receiver layout exists only to name what the callees read, and each such field is commented with the listing line that fixes it. Both callees are routed through a port table so the model test can substitute stubs; the VA is kept in the port field names and no pointer value is invented. Where the machine and the persisted SDK signature disagree (the return type, and the decompiler's misattributed gate) the machine is followed and the disagreement is recorded in corroboration."
+}

@@ -1,7 +1,7 @@
 # Reconstruction context 0x00580cb0
 
 - Status: `partial`
-- Content SHA-256: `73d8e3424b2507e02559755ccf1cbb7f1fceedfbdc896bbbe1b0fe653a27d788`
+- Content SHA-256: `34559b11e08150294c5801ad99591dbdad468c7d0be583daccd8df9908162314`
 
 ## 01_assignment
 
@@ -54,10 +54,18 @@
 
 ```json
 {
-  "content_sha256": "ba6c968b5a0c380ddb6d5a93eed23c3aefc26988f84e731936b302ab10ad00a4",
-  "live_attempts": [],
-  "live_requested": false,
-  "overall": "PERSISTED"
+  "content_sha256": "9100b51750e334d3d546eee5e841fb77ff418148bb7d001b67efaa2ba32c7451",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00580cb0 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
+  "live_requested": true,
+  "overall": "LIVE"
 }
 ```
 
@@ -186,7 +194,7 @@
 ```json
 {
   "globals": [
-    "global:NOT_AVAILABLE"
+    "global:WARN"
   ],
   "types": [
     "OpaqueWord"
@@ -312,77 +320,79 @@
 [
   {
     "match_basis": [
-      "shared_types:OpaqueWord",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005f9230",
-    "va": "0x005f9230"
+    "package": "pkg-swarm-w2-00586700",
+    "score": 12,
+    "symbol": "re_00586700",
+    "va": "0x00586700"
   },
   {
     "match_basis": [
-      "shared_types:OpaqueWord",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005f9310",
-    "va": "0x005f9310"
+    "package": "pkg-swarm-w1-005b2490",
+    "score": 12,
+    "symbol": "re_005b2490",
+    "va": "0x005b2490"
   },
   {
     "match_basis": [
-      "shared_types:OpaqueWord",
+      "same_subsystem",
+      "shared_vtable:vtable:0x013f57f8",
       "same_calling_convention"
     ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005fa8d0",
-    "va": "0x005fa8d0"
+    "package": "pkg-swarm-w1-005ba0d0",
+    "score": 12,
+    "symbol": "re_005ba0d0",
+    "va": "0x005ba0d0"
   },
   {
     "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-APP-SERVICES-SAFE-WAVE11",
-    "score": 5,
-    "symbol": "service_005fc330",
-    "va": "0x005fc330"
-  },
-  {
-    "match_basis": [
-      "shared_types:OpaqueWord",
-      "same_calling_convention"
-    ],
-    "package": "PKG-12-SIM-SPACE",
-    "score": 5,
-    "symbol": "FUN_00aeb160",
-    "va": "0x00aeb160"
-  },
-  {
-    "match_basis": [
+      "same_subsystem",
       "shared_vtable:vtable:0x013f57f8"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_005737d0",
-    "va": "0x005737d0"
+    "package": "pkg-editor-child-007f30d0",
+    "score": 10,
+    "symbol": "FUN_007f30d0",
+    "va": "0x007f30d0"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem",
+      "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
-    "score": 4,
-    "symbol": "editor_input_00585890",
-    "va": "0x00585890"
+    "package": "pkg-vft-preinc-0051e340",
+    "score": 8,
+    "symbol": "vft_preinc_0051e340",
+    "va": "0x0051e340"
   },
   {
     "match_basis": [
-      "shared_vtable:vtable:0x013f57f8"
+      "same_subsystem",
+      "same_calling_convention"
     ],
-    "package": "PKG-EDITOR-INPUT-WAVE6",
+    "package": "subobject-forward-0051e380",
+    "score": 8,
+    "symbol": "subobject_forward_0051e380",
+    "va": "0x0051e380"
+  },
+  {
+    "match_basis": [
+      "same_subsystem",
+      "same_calling_convention"
+    ],
+    "package": "pkg-swarm-w1-00a85070",
+    "score": 8,
+    "symbol": "re_00a85070",
+    "va": "0x00a85070"
+  },
+  {
+    "match_basis"
 [TRUNCATED]
 ```
 
@@ -424,16 +434,17 @@
   "unresolved_questions": [
     "Is the element width of the three path buffers really 16 bits? The two formats are written with the count 0x100 and the buffers are measured exactly 0x200 apart, so each holds at most 0x100 elements of some width. Sixteen-bit units agree with the UTF-16 literals and with 0x00580c10's own 0x100, but this body does not prove the width independently.",
     "No original-process invocation was captured, so no live handle, no live path buffer contents and no live return value was observed. Every statement in this record is a static reading of the 3.1.0.22 image.",
+    "SETTLED in this attempt, removed from the open list: the frame reconciles exactly. See frame_geometry.unreconciled and frame_geometry.reconciliation. No runtime trace was needed; the prologue's two pushes had been left uncounted against the epilogue's two pops.",
     "The body is reached only through the table entry at 0x013f57f8 + 0x54, so its callers are indirect and cannot be enumerated from the binary. Whether it runs in a given play session, and with what receiver, is a runtime question.",
-    "The frame-size reconciliation. 0x011e0700's nineteen instructions leave the stack pointer 0x1024 below entry, while the epilogue releases two pops plus 0x1024, four bytes more. The alternative reading balances the epilogue but shifts every local address by four and pushes the sink past the top of the block. The local geometry is self-consistent only under the adopted reading, so the byte accounting stays open and the model asserts only the return form. A runtime trace of the original would decide it.",
-    "The narrow string \"Casual\" sits at 0x013f586c, immediately after the table's twenty-eight pointer slots. Is it a string constant the linker happened to place there, or is one of the slots a pointer that this analysis has misr
+    "The narrow string \"Casual\" sits at 0x013f586c, immediately after the table's twenty-eight pointer slots. Is it a string constant the linker happened to place there, or is one of the slots a pointer that this analysis has misread? The four bytes at +0x74 are 43 61 73 75, which is \"Casu\" and not a plausible address, so the first reading is better supported, but the placement is unexplained.",
+    "The null-handle path cannot be exercised without a filesystem that r
 [TRUNCATED]
 ```
 
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/metadata/pkg-dogfood-00580cb0-a1/00580cb0.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/.clang-format', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1.hpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_boundary_test.sh', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_model_test.cpp', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/ownership.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/metadata/pkg-dogfood-00580cb0-a1/00580cb0.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/.clang-format', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1.hpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_boundary_test.sh', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_model_test.cpp', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'reconstruction/staging/pkg-dogfood-00580cb0-a1/ownership.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -442,6 +453,21 @@
       "mode": "derived",
       "ref": "ephemeral reconstruction_knowledge.build_index",
       "source_class": "generated_index"
+    },
+    {
+      "mode": "derived",
+      "ref": "tools/reconstruction_tooling/abi_infer.py",
+      "source_class": "derived"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP /disassemble_function",
+      "source_class": "ghidra"
+    },
+    {
+      "mode": "live",
+      "ref": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+      "source_class": "ghidra"
     },
     {
       "mode": "persisted",
@@ -475,17 +501,6 @@
     },
     {
       "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_boundary_test.sh",
-      "source_class": "committed_artifact"
-    },
-    {
-      "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-dogfood-00580cb0-a1/dogfood_00580cb0_a1_model_test.cpp",
-      "source_class": "committed_artifact"
-    },
-    {
-      "mode": "persisted",
-      "ref": "reconstruction/staging/pkg-dogfood-00580cb0-a1/ownership.json",
-
+      "ref": "reconstruct
 [TRUNCATED]
 ```

@@ -1,7 +1,7 @@
 # Reconstruction context 0x00c14f70
 
 - Status: `partial`
-- Content SHA-256: `e8740b3a5bf4d86b19a785c9fb3c48faf1569165905d3d3ced144fac21e82ef8`
+- Content SHA-256: `27307f7b6119fb50b91df40e024d64f0cec60631622de2ae43497377f1d339df`
 
 ## 01_assignment
 
@@ -54,8 +54,16 @@
 
 ```json
 {
-  "content_sha256": "fad81d16ac43af69341c5328cae9ae8159af3358ec43c573a755a142801c3030",
-  "live_attempts": [],
+  "content_sha256": "869f9a4ec78dec640768a73f07feb126be4f46cf857d622f113833ed2fb87259",
+  "live_attempts": [
+    {
+      "code": "ghidra_rest_error",
+      "kind": "decompilation",
+      "message": "decompile 0x00c14f70 failed: Decompilation did not complete. Reason: ",
+      "mode": "LIVE",
+      "status": "unavailable"
+    }
+  ],
   "live_requested": true,
   "overall": "LIVE"
 }
@@ -63,67 +71,8 @@
 
 ## 05_decompilation
 
-- State: `present`
-- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
-
-```json
-
-int * __thiscall FUN_00c14f70(int param_1,int *param_2,undefined4 param_3)
-
-{
-  int iVar1;
-  int *piVar2;
-  char cVar3;
-  int *piVar4;
-  int iVar5;
-  undefined4 *puVar6;
-  undefined4 uVar7;
-  undefined4 *puVar8;
-  ushort uStack_44;
-  short sStack_42;
-  undefined4 uStack_40;
-  undefined4 uStack_3c;
-  undefined4 uStack_38;
-  undefined4 auStack_30 [9];
-  int *piStack_c;
-  int *piStack_8;
-  undefined4 uStack_4;
-  
-  iVar1 = (int)param_2;
-  if (param_2 != (int *)0xffffffff) {
-    param_2 = (int *)0x0;
-    piVar4 = (int *)FUN_0067ddd0();
-    piVar2 = param_2;
-    if (param_2 != (int *)0x0) {
-      param_2 = (int *)0x0;
-      (**(code **)(*piVar2 + 4))();
-    }
-    cVar3 = (**(code **)(*piVar4 + 0x2c))(param_3,0,&param_2);
-    if (cVar3 != '\0') {
-      if ((*(int *)(param_1 + 0xb54) != 0) && (iVar5 = FUN_00a02bd0(), iVar5 == 0)) {
-        FUN_00434040();
-        puVar6 = (undefined4 *)(**(code **)(*(int *)(param_1 + 0xc0) + 0x2c))();
-        uStack_40 = *puVar6;
-        uStack_3c = puVar6[1];
-        uStack_38 = puVar6[2];
-        uStack_44 = uStack_44 | 4;
-        sStack_42 = sStack_42 + 1;
-        uVar7 = (**(code **)(*(int *)(param_1 + 0xc0) + 0x30))();
-        QuaternionToMatrix(&stack0xffffff98,uVar7);
-        puVar6 = (undefined4 *)&stack0xffffff98;
-        puVar8 = auStack_30;
-        for (iVar5 = 9; iVar5 != 0; iVar5 = iVar5 + -1) {
-          *puVar8 = *puVar6;
-          puVar6 = puVar6 + 1;
-          puVar8 = puVar8 + 1;
-        }
-        uStack_44 = uStack_44 | 2;
-        sStack_42 = sStack_42 + 1;
-        (**(code **)(*piStack_8 + 0x18))(&uStack_44);
-      }
-      (**
-[TRUNCATED]
-```
+- State: `missing`
+- Provenance: ``
 
 ## 06_abi
 
@@ -132,7 +81,7 @@ int * __thiscall FUN_00c14f70(int param_1,int *param_2,undefined4 param_3)
 
 ```json
 {
-  "original_bytes": 23982,
+  "original_bytes": 23774,
   "preview": "{\n  \"abi\": {\n    \"architecture\": \"x86-32\",\n    \"hidden_this\": true,\n    \"hidden_this_register\": \"ECX\",\n    \"ordinary_stack_argument_slots\": [\n      \"entry_ESP+0x4\",\n      \"entry_ESP+0x8\",\n      \"entry_ESP+0x40\"\n    ],\n    \"ordinary_stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x8\",\n        \"observed\": true,\n        \"ordinal\": 2,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      },\n      {\n        \"entry_offset\": \"entry_ESP+0x40\",\n        \"observed\": true,\n        \"ordinal\": 16,\n        \"read\": false,\n        \"size_inferred\": false,\n        \"sizes\": [\n          4\n        ],\n        \"written\": false\n      }\n    ],\n    \"receiver\": true,\n    \"receiver_register\": \"ECX\",\n    \"ret_form\": \"RET 0xc\",\n    \"return_register\": \"ST0\",\n    \"return_semantics\": \"float_or_x87_in_ST0\",\n    \"saved_registers\": [\n      \"EBP\",\n      \"EBX\",\n      \"EDI\",\n      \"ESI\"\n    ],\n    \"stack_arguments\": [\n      {\n        \"entry_offset\": \"entry_ESP+0x4\",\n        \"observed\": true,\n        \"ordinal\": 1,\n        \"read\": false,\n        \"size_inferred\": true,\n        \"sizes\": [\n
 [TRUNCATED]
 ```
@@ -211,7 +160,7 @@ int * __thiscall FUN_00c14f70(int param_1,int *param_2,undefined4 param_3)
 ## 15_validation_and_provenance
 
 - State: `present`
-- Provenance: `{'ref': 'GhidraMCP /disassemble_function', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'ephemeral reconstruction_knowledge.build_index', 'mode': 'derived', 'source_class': 'generated_index'}, {'ref': 'tools/reconstruction_tooling/abi_infer.py', 'mode': 'derived', 'source_class': 'derived'}, {'ref': 'GhidraMCP /disassemble_function', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /decompile_function @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'mode': 'live', 'source_class': 'ghidra'}, {'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}, {'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'mode': 'persisted', 'source_class': 'committed_artifact'}`
+- Provenance: `{'mode': 'derived', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'derived'}, {'mode': 'derived', 'ref': 'ephemeral reconstruction_knowledge.build_index', 'source_class': 'generated_index'}, {'mode': 'derived', 'ref': 'tools/reconstruction_tooling/abi_infer.py', 'source_class': 'derived'}, {'mode': 'live', 'ref': 'GhidraMCP /disassemble_function', 'source_class': 'ghidra'}, {'mode': 'live', 'ref': 'GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089', 'source_class': 'ghidra'}, {'mode': 'persisted', 'ref': 'knowledgegraph/research/source-reconstruction-manifest.json', 'source_class': 'committed_artifact'}, {'mode': 'persisted', 'ref': 'knowledgegraph/triage/queue-f0e310e0-v6.json', 'source_class': 'committed_artifact'}`
 
 ```json
 {
@@ -239,11 +188,6 @@ int * __thiscall FUN_00c14f70(int param_1,int *param_2,undefined4 param_3)
     {
       "mode": "live",
       "ref": "GhidraMCP /disassemble_function",
-      "source_class": "ghidra"
-    },
-    {
-      "mode": "live",
-      "ref": "GhidraMCP REST /decompile_function @ http://127.0.0.1:8089",
       "source_class": "ghidra"
     },
     {

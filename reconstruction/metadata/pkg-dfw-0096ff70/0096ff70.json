@@ -1,0 +1,308 @@
+{
+ "schema": "openspore.reconstruction-worker-handoff.v1",
+ "package": "PKG-DFW-0096FF70",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "version": "3.1.0.22",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "va": "0x0096ff70",
+ "address": "0x0096ff70",
+ "symbol": "dfw_func88h_0096ff70",
+ "normalized_symbol": "dfw_func88h_0096ff70",
+ "ghidra_name": "UTFWin::GlideEffect::func88h",
+ "target_state": "implemented staging handoff. Seven of the eight structural checks PASS and ABI is an honest WARN, for the same reason it is a WARN for the earlier candidate on this VA: the machine-derived ABI record abstains (verdict ABI_UNKNOWN, conventions.confidence UNKNOWN) because the only exit in the body is a tail jump, so no calling convention is proven by the target's own bytes. RUNTIME stays GATED at 0 observations. The two instruction immediates, the single transfer and its target, the absence of any memory operand, branch or flag test, and the stack effect were re-derived read-only from the live bridge during this session rather than copied from the committed pack; nothing here is a runtime claim.",
+ "captured_on": "2026-09-26",
+ "intended_paths": {
+  "staging_reconstruction": [
+   "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70.cpp",
+   "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70_types.hpp",
+   "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70_model_test.cpp"
+  ],
+  "canonical_reconstruction": [],
+  "status": "staging-only handoff; no canonical path is claimed and src/ promotion is integrator-owned"
+ },
+ "implementation": {
+  "status": "implemented in staging",
+  "symbol": "dfw_func88h_0096ff70",
+  "declaration": "extern \"C\" void __thiscall dfw_func88h_0096ff70(ThunkReceiver *self, Word deleting_flag);",
+  "linkage": "C language linkage",
+  "calling_convention": "__thiscall",
+  "argument_surface": "a hidden receiver in ECX and exactly one ordinary stack word. The thunk itself reads no stack slot and pushes nothing; the word it was handed is forwarded to the tail target untouched, and the tail target pops it with the RET 0x4 at 0x00970006.",
+  "return_type": "void",
+  "source": "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70.cpp",
+  "header": "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70_types.hpp",
+  "model_test": "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70_model_test.cpp",
+  "receiver_model": "two distinct incomplete types, ThunkReceiver (what the thunk is handed) and TailTargetObject (what the tail target operates on, 0x0C below it). No class, base, member, field or slot is named, and the relationship is modelled as pointer arithmetic so that no layout claim rides along with it. The machine-derived receiver record for this target names no register and no displacement, and the body performs no memory access at all.",
+  "dispatch_model": "none: the body has no indirect transfer, so no slot, index or dispatch table is declared anywhere in the model. The one reference to this address in the image is a DATA pointer at 0x0144258c inside a pointer run, and that run is recorded in the header as a comment only.",
+  "dependency_note": "the tail target 0x0096ffd0 is a different reconstruction target (extent 0x0096ffd0..0x00970008, 15 instructions). This package declares its observed contract and models none of its body; the model test supplies an observer for it.",
+  "compile_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. dfw_0096ff70.cpp dfw_0096ff70_model_test.cpp -o /tmp/opencode/dogfood/dfw_0096ff70 -> clean, no warnings; the binary exits 0"
+ },
+ "function_extent": {
+  "entry": "0x0096ff70",
+  "body_end_inclusive": "0x0096ff77",
+  "instruction_count": 2,
+  "body_span_bytes": 8,
+  "bytes": "83 E9 0C E9 58 00 00 00",
+  "int3_padding_end": "0x0096ff7f",
+  "single_linear_flow": true,
+  "return_sites": [
+   "0x0096ff73: JMP 0x0096ffd0 (tail transfer; this body contains no RET of its own)"
+  ]
+ },
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "thiscall adjustor thunk with one forwarded stack word",
+  "return_type": "void",
+  "return_type_rationale": "The persisted ABI record and the SDK method both type this body void, and the two instructions in the frame never write EAX. The tail target does materialise its receiver in EAX (MOV EAX,ESI at 0x00970003) before RET 0x4, but the transfer out of 0x0096ff70 is a tail jump, so that word belongs to the callee's frame and this frame has no return value of its own to propagate. The model discards the callee's word explicitly rather than letting it fall out of the call, so the decision is visible in the source instead of inferred from it.",
+  "hidden_receiver": "ECX GlideEffectBiStateSubobject* (a pointer 0x0C bytes ABOVE the object the tail target operates on)",
+  "receiver_adjustment": {
+   "instruction": "0x0096ff70: SUB ECX,0x0C",
+   "immediate": "0x0c",
+   "direction": "subtract",
+   "meaning": "the address the tail target operates on is 0x0C below the address this thunk was handed. Nothing beyond that arithmetic is claimed: the record does not say what lives at any displacement of either object."
+  },
+  "ordinary_stack_arguments": [
+   {
+    "position": 1,
+    "entry_offset": "ESP+0x08 (as observed inside the tail target 0x0096FFD0)",
+    "name": "deleting_flag",
+    "type": "uint32",
+    "usage": "only bit 0 is read, by TEST byte [ESP+0x8],0x1 at 0x0096fff3"
+   }
+  ],
+  "stack_cleanup_bytes": 4,
+  "ret_form": "RET 0x4 at 0x00970006, inside the tail target; the thunk itself has no RET",
+  "flags_written": ["SF", "ZF", "AF", "PF", "CF (by the SUB at 0x0096ff70; the JMP consults none of them)"],
+  "registers_written": ["ECX"],
+  "stack_reads_by_thunk": [],
+  "memory_operands_in_body": [],
+  "ghidra_signature_discrepancy": "The live Ghidra signature is void UTFWin::GlideEffect::func88h(GlideEffect*, int, int, int), i.e. three int stack words copied from the SDK method header, and the decompilation carries the banner 'WARNING: Unknown calling convention'. The machine forwards exactly one stack word and exactly 4 bytes are removed. The model declares the one word the machine shows and says in the sidecar and in the header why the extra two are not modelled."
+ },
+ "mechanics": {
+  "body_shape": "two instructions, straight-line: arithmetic on the hidden receiver, then an unconditional jump out of the body. No load, no store, no push, no pop, no call, no flag test, no branch.",
+  "listing": [
+   "0096ff70: SUB ECX,0x0C",
+   "0096ff73: JMP 0x0096FFD0"
+  ],
+  "receiver_displacement": "none. The body contains no memory operand at all, so there is no displacement to ground and none is claimed. The machine-derived receiver record agrees: receiver.present false, register null, distinct_offsets 0, bounds_only true, with the stated basis 'ECX is never read in any form' -- literally true of these two instructions.",
+  "base_adjustment": "-0x0C on the receiver pointer, from SUB ECX,0x0C. The model writes it as `reinterpret_cast<unsigned char *>(self) - kReceiverAdjustmentBytes` with kReceiverAdjustmentBytes = 0x0c, and the header ties the two transcribed immediates to each other with a static assertion (0x0096ff78 + 0x58 == 0x0096ffd0) so that a package which changed one and not the other would fail to build.",
+  "null_behavior": "not applicable and not claimed: no value of the receiver is read, so no receiver value selects a path.",
+  "non_null_behavior": "not applicable for the same reason.",
+  "direct_call_1": {
+   "target": "0x0096ffd0",
+   "ghidra_name": "FUN_0096ffd0",
+   "at": "0x0096ff73",
+   "kind": "JMP (a tail transfer, not a CALL): no return address is pushed and this body has no terminator of its own",
+   "arguments": "the adjusted receiver in the register the jump leaves it in, and the one ordinary stack word, forwarded untouched",
+   "cleanup": "none in this body. The single RET 0x4 that ends this frame's lifetime is at 0x00970006, inside the tail target, and it is the tail target that pops the forwarded word.",
+   "callee_record": "not reconstructed here and not claimed. Its own live listing (15 instructions, body 0x0096ffd0..0x00970008) was re-read during this session: PUSH ESI / MOV ESI,ECX / MOV [ESI],0x14425d8 / MOV [ESI+0x4],0x14425c0 / MOV [ESI+0xc],0x1442584 / MOV [ESI+0x60],0x13eb938 / CALL 0x00980420 / TEST byte [ESP+0x8],0x1 / JZ 0x00970003 / PUSH ESI / CALL 0x00951330 / ADD ESP,0x4 / MOV EAX,ESI / POP ESI / RET 0x4. The model test uses that listing only for the two facts the boundary needs -- the word is read at [ESP+0x8] and popped by RET 0x4, and the object is returned in EAX -- and the model test's observer reproduces the MOV EAX,ESI shape."
+  },
+  "return_semantics_machine": "EAX at the terminal RET 0x4 is the tail target's own word (MOV EAX,ESI at 0x00970003). This frame never writes EAX, and the persisted record types the body void, so the model returns nothing and states in the source that the callee's word is discarded rather than propagated.",
+  "globals": "none: the complete two-instruction listing names no data-segment address, and the model names none. The one DATA reference to this address in the image (0x0144258c) is not a global this body touches; it is the pointer run the address is stored in, and it is recorded in the header as a comment.",
+  "control_flow": "no conditional branch and no jump inside the body span; the single JMP leaves the body. The machine listing is straight-line, and the model declares no branch keyword either."
+ },
+ "return_semantics": {
+  "kind": "none: the body is void and never writes EAX",
+  "value": "nothing is returned by this frame. The word the tail target leaves in EAX belongs to the callee's frame, because the transfer is a tail jump.",
+  "ownership": "The body acquires and releases nothing. It rewrites a pointer and forwards it, and the only stack effect is the removal of the one word the caller pushed.",
+  "lifetime": "Nothing here extends a lifetime. The receiver the body is handed is the caller's to have owned, and the pointer it produces is consumed inside the tail target; whether that object is being destroyed, and by which of the deleting destructors, is not established by this body and is not claimed."
+ },
+ "evidence": {
+  "classification": "static_only",
+  "runtime_validated": false,
+  "persisted_pack": "reconstruction/evidence/0096ff70/evidence.json",
+  "pack_content_sha256": "386427f9e14ede00dab0e7a63559460cfc1650558c7eb8c9ce5b66d95581040f",
+  "assembly": [
+   "0096ff70: SUB ECX,0x0C",
+   "0096ff73: JMP 0x0096FFD0",
+   "0096ff78..0096ff7f: CC CC ... (INT3 alignment padding, not part of the body)"
+  ],
+  "live_reverification": {
+   "note": "Every machine fact above was re-derived read-only from the live bridge during this session, not copied from the committed pack. No Ghidra mutation and no save was performed.",
+   "tools": [
+    "GET /disassemble_function?address=0x0096ff70",
+    "GET /disassemble_function?address=0x0096ffd0",
+    "GET /read_memory?address=0x0096ff70&length=24",
+    "GET /read_memory?address=0x01442584&length=20",
+    "GET /get_xrefs_to?address=0x0096ff70"
+   ],
+   "results": {
+    "own_body": "2 instructions: SUB ECX,0xc ; JMP 0x0096ffd0",
+    "bytes_at_entry": "83e90ce958000000 followed by eight 0xcc bytes of padding",
+    "jump_arithmetic": "0x0096ff73 + 5 (instruction length) = 0x0096ff78; 0x0096ff78 + 0x58 = 0x0096ffd0, which confirms the rel32 the model asserts",
+    "tail_target": "15 instructions, body 0x0096ffd0..0x00970008, ending MOV EAX,ESI / POP ESI / RET 0x4, with TEST byte ptr [ESP + 0x8],0x1 at 0x0096fff3",
+    "sibling_thunk": "0x0096ff80 is 83 e9 04 / e9 48 00 00 00 -- SUB ECX,0x4 then a jump to 0x0096ffd0 -- and is the reason the 0x0C immediate is asserted rather than assumed",
+    "pointer_run": "0x01442584 reads 0x00e246c0, 0x00805630, 0x0096ff70, 0x0096ff90, 0x0096ff50, so this address sits at +0x08 of that run",
+    "xrefs_to": "exactly one, from 0x0144258c, type DATA -- consistent with the +0x08 slot and with there being no code caller"
+   }
+  },
+  "decompiler": "void UTFWin__GlideEffect__func88h(GlideEffect *this,int param_2,int param_3,int param_4) { FUN_0096ffd0(); return; } -- with the banner 'WARNING: Unknown calling convention'. Read as evidence and not as truth: it names four parameters the machine does not have, and it renders a tail jump as an ordinary call.",
+  "direct_callees": [
+   "0x0096ffd0 FUN_0096ffd0 (reached by JMP, not CALL)"
+  ],
+  "indirect_transfers": [],
+  "direct_callers": [],
+  "caller_note": "No code caller exists. The single reference is the DATA pointer at 0x0144258c, +0x08 of the pointer run based at 0x01442584. Ghidra's vtable detection never ran on this program (0 vtable labels), so the run is a run, not a proven vftable, and the model names no class, interface or slot for it.",
+  "xref_export_edges": [
+   {
+    "callsite": "0x0096ff73",
+    "direction": "out",
+    "other": "0x0096ffd0",
+    "reference_type": "direct-call"
+   }
+  ],
+  "machine_abi_record": "derivation openspore-abi-inference-1, verdict ABI_UNKNOWN, abstained_because 'no_terminal_ret: the only exit observed is a tail jump', conventions.calling_convention null with candidates [__cdecl, __stdcall, __thiscall, __fastcall] and confidence UNKNOWN, parse.declared_count 2 unparsed 0 degraded false, dispatch.indirect_calls 0, receiver.present false register null distinct_offsets 0 bounds_only true written_through 0, tail_call.present true form jmp target 0x0096ffd0 after_frame_setup false, return.confidence UNKNOWN register null",
+  "vtable_associations_not_used_as_evidence": [
+   "vtable:0x01442584"
+  ],
+  "vtable_note": "This is a classifier association carried on the record, not a vtable reference by this body: dependencies.vtable_reference_count is 0 and the body contains no transfer through any pointer. It is recorded for the integrator and deliberately not used to name a class, a table or a slot. dependencies.vtable_reference_count = 0 while the record still lists one vtable is a known over-report in the projection, and the validator withdrew record['vtables'] as an oracle for exactly that reason."
+ },
+ "provenance": [
+  "reconstruction/evidence/0096ff70/evidence.json (disassembly, abi, abi_derived, decompilation, ghidra_function, function_identity, types, vtables)",
+  "reconstruction/evidence/0096ff70/context.json (worker briefing, 06_abi and 14_conflicts_questions)",
+  "reconstruction/evidence/0096ff70/validation.md (the committed verdict for the earlier candidate on this VA, used only as a cross-check of which checks can be adjudicated at all)",
+  "GhidraMCP REST /disassemble_function @ 0x0096ff70 and @ 0x0096ffd0 (live, read-only)",
+  "GhidraMCP REST /read_memory @ 0x0096ff70 and @ 0x01442584 (live, read-only)",
+  "GhidraMCP REST /get_xrefs_to @ 0x0096ff70 (live, read-only)",
+  "tools/reconstruction_tooling/validate.py (the eight structural checks; see validation.expected and validation.observed_here)"
+ ],
+ "unresolved_questions": [
+  "The calling convention is an inference, not a record. The machine-derived ABI record abstains outright (verdict ABI_UNKNOWN, confidence UNKNOWN) because the body has no terminal RET, and the live decompilation carries 'WARNING: Unknown calling convention'. thiscall is the best-supported reading -- the tail target's own RET 0x4 pops the one forwarded word, and the receiver travels in ECX -- and it is what the model declares, but nothing in the target's own two instructions proves it. This is the sole reason the ABI check is a WARN rather than a PASS, and no source change can move it.",
+  "Is the receiver a UTFWin::GlideEffect IBiStateEffect subobject, or the same-offset subobject of a sibling effect class? The SDK places IBiStateEffect at +0x0c and the adjustment is 0x0C, but the byte-for-byte identical shape at 0x0097e550 (UTFWin::InflateEffect::func88h) and the -0x04 shape at 0x0096ff80 make the two-instruction form non-distinguishing, and the static image does not settle it. The model therefore names no class at all.",
+  "Which vftable, if any, places 0x0096ff70 in a destructor slot? Ghidra's vtable detection never ran on this program, so the only evidence is a DATA pointer at +0x08 of a run based at 0x01442584 whose length exceeds any single vftable, while the SDK's func88h naming convention implies offset 0x88 (whose slot in that run holds 0x00951220, UTFWin::GetAllocator). The destructor reading stays a hypothesis and is not used.",
+  "Why does the SDK declare three int parameters when the machine forwards one stack word? The extra words may be unused register-class artefacts of the SDK method-header generator. The model declares the one word the machine shows.",
+  "Who calls this, and with what deleting flag? There is no code caller; the only reference is the DATA pointer at 0x0144258c. Nothing in the static image establishes the values the word takes in real use.",
+  "Is the -0x0C receiver the subobject the vptr was reached through, or an unrelated pointer the caller happened to hold? Deciding it needs a runtime trace of the value in ECX at 0x0096ff70, which this repository has never run."
+ ],
+ "runtime_gate": {
+  "status": "required",
+  "runtime_validation": 0,
+  "conditions": [
+   "The original process is driven to a point where the pointer run at 0x01442584 is dispatched through, so the value in ECX at 0x0096ff70 is observed.",
+   "The pointer in ECX is compared with the address the tail target receives (0x0096ff70 + 4 in the transfer), settling whether the -0x0C adjustment lands where the subobject reading says it does.",
+   "The stack word at ESP+0x08 is captured on entry and its low bit compared with the JZ decision at 0x0096fff8, which is the only place the machine consults it.",
+   "The word left in EAX at the RET 0x4 is recorded and compared against the reconstructed void signature."
+  ]
+ },
+ "validation": {
+  "command": "python3 -B -c \"import sys; sys.path.insert(0,'tools'); from reconstruction_tooling import validate as V; V.validate(va='0x0096ff70', write=False)\"",
+  "command_note": "That command judges whichever file the index record's source.files resolves to first. `reconstruction/knowledge/index.json` is not this package's to write, and `build_index` merges the sidecars of every package that claims the VA, taking the alphabetically first staging path -- so until the projection is rebuilt with reconstruction/metadata/pkg-dfw-0096ff70/0096ff70.json present, the command above still judges the earlier pkg-utfwin-glideeffect-func88h candidate. The numbers below were obtained by running this module's own check logic in-process with the record's source.files pointed at this package, writing nothing (write=False).",
+  "compile_gate": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -I. dfw_0096ff70.cpp dfw_0096ff70_model_test.cpp -o /tmp/opencode/dogfood/dfw_0096ff70 -> clean, zero warnings; binary exits 0 with 'all checks passed'",
+  "expected": {
+   "ABI": "WARN",
+   "CALLS": "PASS",
+   "GLOBALS": "PASS",
+   "FIELDS/OFFSETS": "PASS",
+   "CONSTANTS": "PASS",
+   "CONTROL FLOW": "PASS",
+   "VIRTUAL DISPATCH": "PASS",
+   "RETURN SEMANTICS": "PASS",
+   "EVIDENCE COVERAGE": "WARN"
+  },
+  "expected_reasons": {
+   "ABI": "WARN, and not fixable from this package. The check reaches its confidence arm because the machine-derived record carries conventions.confidence UNKNOWN: the derivation abstained (verdict ABI_UNKNOWN, abstained_because 'no_terminal_ret: the only exit observed is a tail jump'), so the oracle is not proven. The two arms above it cannot be reached either: there is no unresolved ABI conflict (both conflicts lists are empty), and the source convention does not contradict a claimed one -- the persisted record's 'thiscall adjustor thunk with one forwarded stack word' resolves to thiscall and the source declares thiscall, so the FAIL arm for a contradiction does not fire. Declaring no convention at all would make this worse, not better: the last arm is also a WARN.",
+   "CALLS": "PASS. The xref export's single out-edge (0x0096ff73 -> 0x0096ffd0, direct-call) and the complete two-instruction listing's single direct transfer name the same set, and the source span names exactly that one target and no other, through the address-suffixed callee symbol dfw_tail_deleting_0096ffd0. Note that the validator reads JMP as a transfer as well as CALL, which is what lets a tail-call body pass this check at all.",
+   "GLOBALS": "PASS by evidenced absence. The complete listing names no data-segment address and the source span names none either. There is no second machine side to corroborate against (data_reference_count is 0 and the export carries no data-reference edge type), and for an absence none is needed.",
+   "FIELDS/OFFSETS": "PASS on the receiver-agnostic absence arm. The machine-derived receiver record names no register, so nothing is claimed about the receiver in either direction; separately the listing was consumed in full by the machine parse (2 of 2, unparsed 0) and contains no memory operand through any register, which is the evidence that the body performs no field access, and the source span declares no field offset either. The model deliberately keeps the -0x0C adjustment out of the function's own text (it is a named constant, and the header's static assertion ties it to the jump displacement), so no displacement is declared that would have to be grounded.",
+   "CONSTANTS": "PASS. The source span states no hexadecimal literal, so there is none the fully parsed listing could lack (2 of 2 instructions, 0 unparsed). This was a design constraint, not luck: the span text carries no 0x token at all. Writing the adjustment inline as 0x0c would also have passed, but only because the listing spells it 0xc and the check compares token strings -- 0x0c and 0xc are different tokens, so the literal spelling the listing uses is the one that would have been required.",
+   "CONTROL FLOW": "PASS. The complete listing has no conditional branch, which is itself the evidence that the body is straight-line. The source span declares no branch keyword either; keyword shape is not part of this verdict either way.",
+   "VIRTUAL DISPATCH": "PASS. No indirect transfer through a register or a memory operand in the body, and the machine dispatch record agrees at 0. The source span declares no slot boundary -- it names no identifier containing vtable, load_slot, object_slot, shell_slot or slot[ -- so there is no slot claim to refute.",
+   "RETURN SEMANTICS": "PASS, partial coverage. The bounded ABI record's return_type is void and the reconstructed declaration is void, so they agree. The check is satisfied on the type name alone: it does not and cannot see the separate question of what the tail target leaves in EAX.",
+   "EVIDENCE COVERAGE": "WARN, a measurement rather than a verdict, and it cannot be moved from here. 11 of 17 static evidence categories are available for this target; the pack reports unavailable/MISSING for callees_dependencies, callers_dependencies, contradictions, external_callees, globals, semantic_hypotheses and (excluded from the static denominator) runtime. The validator derives this check purely from the pack's categories[*].availability, so no source file, sidecar field or metadata edit can change it."
+  },
+  "observed_here": {
+   "captured_on": "2026-09-26",
+   "method": "the repository's own validate.validate(root, va, write=False) with validate._index monkey-patched so the record's source.files resolve to reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70.cpp. Nothing was written: write=False, and the pack and the briefing were read from disk.",
+   "source_judged": "reconstruction/staging/pkg-dfw-0096ff70/dfw_0096ff70.cpp",
+   "static": "WARN",
+   "runtime": "GATED",
+   "runtime_validated": 0,
+   "coverage": "0.875 (7 PASS, 1 WARN of 8 structural checks; 0 NOT_AVAILABLE)",
+   "checks": {
+    "ABI": "WARN",
+    "CALLS": "PASS",
+    "GLOBALS": "PASS",
+    "FIELDS/OFFSETS": "PASS",
+    "CONSTANTS": "PASS",
+    "CONTROL FLOW": "PASS",
+    "VIRTUAL DISPATCH": "PASS",
+    "RETURN SEMANTICS": "PASS",
+    "EVIDENCE COVERAGE": "WARN"
+   },
+   "note": "The observed statuses match expected_reasons above check for check. The static aggregate is WARN because the ladder requires all eight structural checks to PASS and ABI is an honest WARN, so this package does not reach static=PASS and cannot, for a reason that lives in the evidence rather than in the source."
+  },
+  "known_blockers": [
+   "ABI (WARN, real and not fixable from this package): the machine-derived ABI record abstains from naming any calling convention for this target because the only exit in the body is a tail jump, so the convention the model declares is corroborated by the tail target's listing and not by this body's own bytes. No source shape can turn that into a PASS.",
+   "EVIDENCE COVERAGE (WARN, a measurement, not fixable): 11 of 17 static evidence categories are available for this target, derived purely from the pack's categories[*].availability."
+  ],
+  "mutation_checks": {
+   "note": "Each mutation was applied to a copy of this package under /tmp and rebuilt with the same command; the unmodified package passes with exit 0. The three required mutations are M1, M2 and M3; the rest were run because they are the mutations most likely to be made by mistake on a body this small.",
+   "results": [
+    {
+     "id": "M1",
+     "mutation": "receiver adjustment 0x0C changed to 4 (the immediate the sibling thunk at 0x0096ff80 uses)",
+     "result": "test exit 1",
+     "caught_by": "4 checks, including 'the tail target's receiver is the thunk's receiver minus 0x0C' at three receiver addresses and 'the receiver's contents do not change the adjustment'"
+    },
+    {
+     "id": "M2",
+     "mutation": "the unadjusted receiver forwarded to the tail target instead of the -0x0C one",
+     "result": "test exit 1",
+     "caught_by": "the same 4 checks"
+    },
+    {
+     "id": "M3",
+     "mutation": "a constant word forwarded instead of the stack word the thunk was handed",
+     "result": "test exit 1",
+     "caught_by": "6 checks, including 'the tail target receives the word the thunk was handed, unchanged' for all six values in the table"
+    },
+    {
+     "id": "M4",
+     "mutation": "the tail target's own flag test (TEST byte [ESP+0x8],0x1 at 0x0096fff3) hoisted into this frame, skipping the transfer when bit 0 is clear",
+     "result": "test exit 1",
+     "caught_by": "the receiver-reduction, the once-per-value and the forwarded-word checks, for every value in the table"
+    },
+    {
+     "id": "M5",
+     "mutation": "the jump target constant changed from 0x0096FFD0 to 0x0096FF90",
+     "result": "build refused (static_assert in the header)",
+     "caught_by": "the header's static assertion that 0x0096ff78 + rel32 == the jump target: 0x0096ff78 + 0x58 is 0x0096ffd0, and changing the target alone breaks the arithmetic that relates the two transcribed immediates. A mutation of the constant *and* its rel32 together would build, and is then caught at run time by the immediates check."
+    },
+    {
+     "id": "M6",
+     "mutation": "a store into the receiver, which no instruction in the body performs",
+     "result": "test exit 1",
+     "caught_by": "'no byte of the receiver is written by this frame', on both values of the forwarded word"
+    },
+    {
+     "id": "M7",
+     "mutation": "returning the tail target's word instead of void",
+     "result": "build refused",
+     "caught_by": "the model test's own static assertion on the reconstructed signature (and, independently, the compiler's conflicting-declaration error against the header)"
+    },
+    {
+     "id": "M8",
+     "mutation": "the transfer performed twice",
+     "result": "test exit 1",
+     "caught_by": "'the body produces exactly one observable event' and the once-per-value checks"
+    }
+   ],
+   "limits": [
+    "A branch invented in this frame whose two arms are indistinguishable is not caught, because no behavioural test can distinguish it: the mutation `if (flag & 1) call(); else call();` still passes. Only a branch that changes an observable (M4) is caught. This is a property of behavioural testing, not a gap in the assertions, and it is stated rather than papered over.",
+    "A store that wrote back the value it had just read would leave the receiver's bytes identical and would pass the memcmp. Nothing in the two instructions can produce one, and the check does not claim to exclude it; every store that changes a byte is excluded (M6).",
+    "A read of the receiver that changed no byte would not be observed either. The listing contains no memory operand, so no reconstruction that follows it reads anything; a hypothetical one that did would be unobservable through this interface.",
+    "The stack-neutrality check writes its call site out in inline assembly, so it verifies the callee-cleaned stack effect and not the compiler's choice of argument passing. It cannot distinguish a thiscall from a stdcall -- the two agree on x86-32 -- and it is not available on a compiler without GNU-style inline asm, where it reports that it could not be measured instead of passing quietly."
+   ]
+  },
+  "portability_notes": [
+   "Built and run clean with g++ 16.2.1 and clang++ 22.1.8 at -O0, -O1, -O2, -O3, -Os and -Og, with and without -DNDEBUG, and with -fPIC, -no-pie and -static. The generated body was inspected at -O2: it emits `sub $0xc,%ecx` and ends in `ret $0x4`, which is the machine's SUB ECX,0x0C and the frame's RET 0x4.",
+   "clang++ -m32 -O2 -fno-pic links a PIE with a DT_TEXTREL text relocation and then crashes on the first PLT call into libc. A three-line program with no code from this package reproduces the same linker warnings under the same flags, and the same program passes with -no-pie, so this is a toolchain/linker interaction with that flag combination and not a defect in this package. Every default configuration passes."
+  ]
+ },
+ "tooling_observations": [
+  "A metadata sidecar's `observed_mechanics` list is never projected into the index record: tools/reconstruction_knowledge.py reads that field only from the manifest's function records (line 951), and extract_metadata collects just unresolved_questions, blockers, runtime_gates, source_files, source_provenance and evidence from a sidecar. The CONSTANTS check falls back to that transcript only when no listing exists (tools/reconstruction_tooling/validate.py, CONSTANTS arm), so a worker's transcript can never reach it through a sidecar.",
+  "The ABI check's 'the derived ABI record abstained (ABI_UNKNOWN)' arm is unreachable for any current pack. It reads the verdict from the envelope returned by _abi_category, which inspects categories['abi'] only; the derived record -- and its verdict: ABI_UNKNOWN -- lives in categories['abi_derived']. Every pack that keeps the two apart therefore falls through to the confidence arm. For this target the observable effect is the wording of the WARN ('derived calling-convention confidence is UNKNOWN' rather than 'the derived ABI record abstained'), not the status, so nothing is mis-graded; it is reported because the arm looks like it should be reachable and is not.",
+  "Index collision to know about before integrating: extract_metadata merges every sidecar that claims a VA, and validate._source takes the first existing candidate in that merged, sorted list. reconstruction/staging/pkg-dfw-0096ff70 sorts before reconstruction/staging/pkg-utfwin-glideeffect-func88h, so once this sidecar is present the judged source for 0x0096ff70 becomes this package's .cpp. That is the intent, and it is also a side effect on another package's package, so the integrator should know it happens."
+ ],
+ "integration_status": "staged",
+ "canonical_files": []
+}

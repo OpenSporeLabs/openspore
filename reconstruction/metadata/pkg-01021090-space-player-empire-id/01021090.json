@@ -1,0 +1,243 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "package": "PKG-01021090-SPACE-PLAYER-EMPIRE-ID",
+  "subsystem": "Simulator",
+  "cluster": "space-player-data-accessors",
+  "queue_id": "",
+  "va": "0x01021090",
+  "address": "0x01021090",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "sdk_symbol": "Simulator::sSpacePlayerData (the global this entry reads); no SDK symbol names the function itself",
+  "normalized_symbol": "space_player_empire_id_01021090",
+  "reconstructed_symbol": "space_player_empire_id_01021090",
+  "target_state": "implemented in staging; integrator review pending",
+  "captured_on": "2026-10-01",
+  "canonical_source_path": "",
+  "source_files": [
+    "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090.hpp",
+    "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090.cpp",
+    "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090_model_test.cpp",
+    "reconstruction/staging/pkg-01021090-space-player-empire-id/mutation_test.sh"
+  ],
+  "implementation": {
+    "header": "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090.hpp",
+    "source": "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090.cpp",
+    "model_test": "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090_model_test.cpp",
+    "mutation_harness": "reconstruction/staging/pkg-01021090-space-player-empire-id/mutation_test.sh"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "UNKNOWN, and unknowable from this body. The derived ABI record abstains (`verdict: ABI_UNKNOWN`, `abstained_because: no_discriminator: no stack-argument read and no positive receiver evidence`, `conventions.calling_convention: null`, `confidence: UNKNOWN`). With zero stack-argument slots and no receiver, this body is byte-identical under __cdecl, __stdcall, __thiscall and __fastcall (`inferences.C10`). The reconstruction declares a zero-parameter function, which is what the machine fixes, and asserts no convention beyond that.",
+    "receiver": "none. The receiver record reads present=false, register=null, offsets=[], written_through=0, and inference R2 records that ECX is never read in any form.",
+    "ordinary_stack_argument_slots": 0,
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "ret_form": "RET (0x01021098, byte 0xc3, no imm16)",
+    "return_register": "EAX",
+    "return_type": "32-bit unsigned scalar",
+    "return_semantics": "the 32-bit word STORED at [Simulator::sSpacePlayerData + 0x18], copied bit for bit into EAX. The second load is the last write to EAX before the RET, so the returned word is what EAX carries.",
+    "return_type_rationale": "MODELLED AS AN UNSIGNED SCALAR, AGAINST THE DERIVED RECORD'S `pointer_like` CLASS. The record classifies the EAX value `register_class: pointer_like` on one heuristic - the last value written to EAX - with `confidence: INFERRED` and `corroboration: not_available`, and that heuristic cannot distinguish a loaded word from a computed address. Two committed sources say this word is an ID and not a pointer: the SDK export types offset 24 of `/Spore/Simulator/SpacePlayerData` as `mPlayerEmpireID uint32_t`, and the SpacePlayerData follow-up records 0x01021d40 initialising +0x18 to -1 at allocation and 0x01022460 resetting +0x18 to -1 at field teardown, with +0x1c separately typed as the intrusive_ptr<cEmpire>. A 32-bit identity word with a -1 sentinel is the ID; the disagreement is recorded here rather than the heuristic adopted.",
+    "locals": "none; the body allocates no frame, saves no register, pushes nothing and builds no record",
+    "outgoing_calls": "none; the body holds no CALL, no JMP and no indirect transfer, and the machine dispatch record agrees at indirect_calls=0"
+  },
+  "observed_mechanics": [
+    "0x01021090 a1 8c da 6d 01 - MOV EAX,dword ptr [0x016dda8c]: opcode 0xa1 is the five-byte moffs32 accumulator load; the immediate is the little-endian spelling of the absolute address 0x016dda8c, which the SDK export places at Simulator::sSpacePlayerData (spore_sdk.xml:51791).",
+    "0x01021095 8b 40 18 - MOV EAX,dword ptr [EAX + 0x18]: opcode 0x8b is MOV r32,r/m32 and NOT 0x8d (LEA), so this is a LOAD of a stored word; ModRM 0x40 is mod=01 (disp8), reg=000 (EAX), rm=000 (EAX), so the base is the pointer just loaded and the displacement is the single byte 0x18.",
+    "0x01021098 c3 - RET: single exit, no immediate, so the callee pops nothing and stack cleanup is 0 bytes owned by the caller.",
+    "The body is nine bytes, 0x01021090..0x01021098, and the raw bytes read live from the program database are a1 8c da 6d 01 8b 40 18 c3. The body_span_bytes field of the live ghidra_function record agrees at 9 and body_end at 01021098.",
+    "Exactly two memory reads and ZERO stores. No store instruction appears anywhere in the nine bytes, so neither the global word nor the field nor any neighbouring word is modified.",
+    "No compare, no conditional branch, no arithmetic, no flag test and no loop: the read is unconditional and the published value crosses untransformed. A published zero comes back as a published zero, and a published 0xffffffff comes back as 0xffffffff.",
+    "THERE IS NO NULL GUARD. Both loads are unconditional, so a published global of 0 is dereferenced at +0x18 rather than turned into a sentinel or a null return. This is a real distinction inside this family rather than a stylistic assumption: the sibling read view at 0x01021260 in the promoted pkg01_roots package tests its global and returns nullptr for a null publish, and this entry does not. The model test measures the difference with a forked child that must die on SIGSEGV.",
+    "The global is re-read on every entry: nothing is cached in EAX across calls, so republishing the global is observed immediately. No test distinguishes a latched pointer from a re-read one by fixture value alone; the claim rests on the first instruction being unconditional.",
+    "Only EAX is written and only EAX is read; no other register is touched, so the entry has no hidden dependency on caller state.",
+    "The complete three-instruction listing contains no conditional branch, which is itself the evidence that the body is straight-line, and the machine parse consumed it in full: declared_count 3, degraded false, unparsed 0, esp_unresolved false, flow_complete true.",
+    "COMPILED-BODY CROSS-CHECK, derived: compiled with clang++ -m32 -O2 -fno-pic -fno-pie, this reconstruction emits the opcode sequence a1 / 8b 40 18 / c3 - instruction for instruction the body read at 0x01021090. The moffs32 immediate reads 00000000 in the object file because the relocation supplies the global's address at link time, so only the opcode and ModRM shape are comparable; mutation_test.sh asserts exactly that and nothing more."
+  ],
+  "field_offsets": {
+    "note": "The displacement is OBSERVED in the listing. The identity of the word at that displacement is SDK EXPORT PROVENANCE plus committed lifecycle cross-check, not something these nine bytes state; the two are kept apart below and in the header.",
+    "global_relative": [
+      {
+        "offset": "0x18",
+        "width_bytes": 4,
+        "access": "read",
+        "name": "mPlayerEmpireID",
+        "identity": "SUPPORTED by committed sources, NOT by this body. The SDK export types offset 24 of /Spore/Simulator/SpacePlayerData as uint32_t (structs_fields.tsv:11689); the SpacePlayerData follow-up records +0x18 initialised to -1 by 0x01021d40 and reset to -1 by 0x01022460 (followup-space-lifecycle.md:9-16, :58). The name is the SDK's, not a recovery.",
+        "confidence": "SUPPORTED",
+        "listing_evidence": "0x01021095 is `8b 40 18`; ModRM 0x40 selects a disp8 from EAX and the displacement byte is 0x18",
+        "modelling_use": "the fixture is sized to 0x1c so the word at +0x18 is addressable; that extent is a MODELLING BOUND, not a recovered object size. The committed export makes the object 0x34 bytes, which this package deliberately does not claim."
+      }
+    ],
+    "not_named": "Every word before +0x18 is opaque padding in this fixture and no layout is asserted for it, even though the SDK export names +0x04 mpActivePlanet, +0x08 mpActiveStar, +0x0c mpTribeCivRelationships, +0x10 mCurrentContext and +0x14 mfRotationRateFactor. Those names are recorded as cross-package context and are NOT imported into this model, because this entry never reaches them."
+  },
+  "globals": [
+    {
+      "address": "0x016dda8c",
+      "name": "Simulator::sSpacePlayerData",
+      "type": "SpacePlayerData* (SDK IMPORTED)",
+      "access": "read",
+      "identity": "SUPPORTED. The SDK export places Simulator::sSpacePlayerData at this address with SOURCE_TYPE=IMPORTED (spore_sdk.xml:51791), and the decompilation names it directly: `*(undefined4 *)(Simulator__sSpacePlayerData + 0x18)`.",
+      "confidence": "SUPPORTED",
+      "sidecar_row": "knowledgegraph/triage/datarefs-2540f2ca.tsv:96999 - caller_va 01021090, target_va 016dda8c, access_mode read, segment .data -wr, callsite_va 01021090",
+      "modelling_use": "declared in this package as `g_016dda8c`, the repository's g_<va8> convention, so a validator can match the name against the listing and the sidecar"
+    }
+  ],
+  "globals_note": "Exactly one global, read once per entry, and the committed data-reference sidecar records that single address out of this body with access mode `read`. A `read`-only classification is the sidecar's own RefType and is consistent with the zero stores in the listing; the two agree and neither is used to override the other. No other data address appears in the nine bytes.",
+  "vtables": [],
+  "vtables_note": "None. The complete listing names no indirect transfer and the dispatch record counts indirect_calls=0, so the entry is neither a dispatcher nor a dispatch target through any table in this body. The sidecar records no data reference out of 0x01021090 other than the single global read, which is a recorded absence and not a proof that no table anywhere points here.",
+  "types": [
+    {
+      "name": "SpacePlayerDataEmpireIdFixture",
+      "kind": "opaque fixture",
+      "size": "0x1c",
+      "note": "opaque bytes through +0x17 and one 32-bit word at +0x18. Sized to the single reached displacement plus its four bytes; the class of the pointee is NOT asserted, because there is no MSVC RTTI in this binary and no instruction in this body names a type."
+    }
+  ],
+  "type_scope": "The reconstructed symbol takes no argument and returns a 32-bit unsigned scalar. That the word behaves like an identity value rather than an address is SUPPORTED (a -1 no-empire sentinel at both allocation and teardown, with the intrusive_ptr<cEmpire> separately at +0x1c). Which empire, and what an empire ID numerically is, is UNKNOWN and is not claimed. No type for the pointee is claimed.",
+  "analogues": [
+    {
+      "va": "0x01021080",
+      "symbol": "FUN_01021080",
+      "relation": "the sibling SpaceContext read view over the same global at +0x10, already promoted in src/reconstruction/pkg01_roots. Same two-load shape over Simulator::sSpacePlayerData, different displacement. It too has no null guard, which is why this package's no-guard claim is a family property rather than an oddity."
+    },
+    {
+      "va": "0x01021260",
+      "symbol": "FUN_01021260",
+      "relation": "the sibling active-planet read view over +0x04, already promoted. This one DOES null-guard its global and returns nullptr; the contrast is what makes 0x01021090's lack of a guard a measured distinction."
+    },
+    {
+      "va": "0x01021d40",
+      "symbol": "FUN_01021d40",
+      "relation": "the allocator/publisher: allocates the 0x34-byte object, publishes it to 0x016dda8c, and initialises +0x18 to -1. The write side of the field this entry reads."
+    },
+    {
+      "va": "0x01022460",
+      "symbol": "FUN_01022460",
+      "relation": "field teardown: releases the owned fields and resets +0x18 to -1. The other write side of the same field."
+    },
+    {
+      "va": "0x010219b0",
+      "symbol": "FUN_010219b0",
+      "relation": "active planet/star replacement at +0x04/+0x08. Touches the same object, different fields; cited as object identity context only."
+    }
+  ],
+  "semantic_findings": [
+    "The entry is a two-load read view over a global pointer: it reads Simulator::sSpacePlayerData, then reads one 32-bit word at displacement +0x18, and returns it.",
+    "It is PURE with respect to memory: zero stores, so it modifies neither the global nor the field nor any neighbour.",
+    "It is UNCONDITIONAL: no compare, no branch, no arithmetic, so no value is defaulted, masked, clamped or transformed. A published value crosses bit for bit.",
+    "It has NO NULL GUARD, and the model test measures that by requiring a forked child publishing a null global to die on SIGSEGV. Any model that returns a sentinel for a null global is refuted by that group.",
+    "The value at +0x18 is a 32-bit IDENTITY word with a -1 no-empire sentinel, supported by the SDK export's `mPlayerEmpireID uint32_t` and independently by the lifecycle record that both the allocator and the teardown write -1 to exactly this offset while the intrusive_ptr<cEmpire> sits separately at +0x1c.",
+    "The derived ABI record's `pointer_like` classification of the EAX value is a heuristic on the last write to EAX and is contradicted by that ID evidence; the disagreement is recorded and the model follows the ID reading.",
+    "100 direct callsites are recorded in the live ghidra_function xref list. Fan-in is not used as evidence for the field's meaning, and no caller was decompiled to support any claim in this package."
+  ],
+  "not_claimed": [
+    "Any calling convention. The body is byte-identical under all four; the record abstains and this package asserts no convention beyond a zero-parameter signature.",
+    "Any class or type for the object the global points at. No MSVC RTTI exists in this binary and no instruction here names a type; the fixture is opaque.",
+    "The layout of any word before +0x18, and the object's real size. 0x1c is a modelling bound through the one word this body reads; the committed export's 0x34 is not claimed here.",
+    "Nullability of the global in practice, thread-safety, and ownership. The entry has no room for a reference operation and performs none. That the entry FAULTS on a null publish is established; whether any of the ~100 recorded call sites can reach that state is not.",
+    "Whether the ID is an index, a handle or a database key. The -1 sentinel says 'no empire'; nothing here says more.",
+    "Any writer of +0x18 beyond the two committed lifecycle routines cited, and any immutability claim. Absence of a direct writer outside those two is not an immutability claim.",
+    "That this entry is or is not reachable through a vtable beyond the recorded single data reference in the pinned sidecar.",
+    "Any runtime, Wine, trace, differential or OBSERVED-BEHAVIOUR claim. No runtime evidence exists for this VA."
+  ],
+  "confidence": "high for the mechanism (three instructions, two reads, one displacement, zero stores, no branch, bare RET), SUPPORTED but not OBSERVED for the field identity (SDK export plus committed lifecycle, neither of which is this body), none for the calling convention",
+  "unresolved_questions": [
+    "Which calling convention did the original source declare? The body cannot distinguish __cdecl, __stdcall, __thiscall and __fastcall, and the ABI record abstains. A zero-parameter declaration is used because it is what the machine fixes.",
+    "What class is the object at 0x016dda8c? There is no MSVC RTTI in this binary, no instruction in this body names a type, and the pointee is reached only through this one offset from here.",
+    "What is the numeric domain of the empire ID - a dense index, a handle, a database key? The -1 sentinel at both allocation and teardown says only 'no empire'.",
+    "Who else writes +0x18? The committed lifecycle records 0x01021d40 writing -1 at allocation and 0x01022460 resetting to -1 at teardown, but nothing here enumerates every writer in the binary, and no setter-shaped entry is claimed to exist.",
+    "Can any recorded call site reach this entry with a null global? The entry faults in that state by construction; whether it is reachable in practice is unestablished, and it is the one fact that would make this accessor unsafe to call early in startup.",
+    "Do the ~100 recorded callers use the returned value as an ID (compare against -1, index a table) or as an address? Not sampled here: the ID reading rests on the export and the lifecycle, not on caller behaviour."
+  ],
+  "evidence_provenance": [
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP /disassemble_function @ 0x01021090 (3 instructions, complete) and /read_memory @ 0x01021090 len 9 (a1 8c da 6d 01 8b 40 18 c3)"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /decompile_function @ 0x01021090: `undefined4 FUN_01021090(void) { return *(undefined4 *)(Simulator__sSpacePlayerData + 0x18); }`"
+    },
+    {
+      "mode": "live",
+      "source_class": "ghidra",
+      "ref": "GhidraMCP REST /get_function_by_address @ 0x01021098: body_start 01021090, body_end 01021098, body_span_bytes 9, parameter_count 0, callees [], xref_count 100"
+    },
+    {
+      "mode": "derived",
+      "source_class": "evidence_pack",
+      "ref": "reconstruction/evidence/01021090/evidence.json categories: disassembly (OBSERVED, complete), decompilation (LIVE), ghidra_function (LIVE), abi / abi_derived (verdict ABI_UNKNOWN), callers_dependencies"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/triage/datarefs-2540f2ca.tsv:96999 - one row, caller 01021090 -> target 016dda8c, access_mode read, segment .data -wr"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": "knowledgegraph/research/root-closure/followup-space-lifecycle.md:9-16 and :58 - 0x01021d40 allocates and publishes at 0x016dda8c and initialises +0x18 to -1; 0x01022460 resets +0x18 to -1; +0x1c is mpPlayerEmpire"
+    },
+    {
+      "mode": "persisted",
+      "source_class": "committed_artifact",
+      "ref": ".spore-analysis/ghidra-exports/spore_sdk.xml:51791 (Simulator::sSpacePlayerData at 0x016dda8c, IMPORTED) and structs_fields.tsv:11689 (/Spore/Simulator/SpacePlayerData mPlayerEmpireID uint32_t at offset 24, width 4)"
+    },
+    {
+      "mode": "derived",
+      "source_class": "compiled_body_cross_check",
+      "ref": "clang++ -m32 -O2 -fno-pic -fno-pie over this package's .cpp, then objdump -d -M intel: the emitted opcodes are a1 / 8b 40 18 / c3, matching the body at 0x01021090 instruction for instruction"
+    }
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-01021090-space-player-empire-id/space_player_empire_id_01021090_model_test.cpp",
+    "groups": 7,
+    "assertion_style": "count every failure and report each with its hypothesis; exit 1 if any check failed",
+    "coverage": [
+      "the encoding is the observed nine bytes, restated independently of the header's own table so neither copy can drift unnoticed: opcode 0xa1 with the little-endian moffs32 immediate, 0x8b (not 0x8d) with ModRM 0x40, the disp8 equal to the displacement constant, a bare 0xc3 (not 0xc2/0xca), and no Jcc, CALL or JMP opcode byte anywhere in the nine",
+      "the return is the word STORED at +0x18, verbatim, over a sweep of 0x0badf00d, 0, 1, 0xffffffff, 0x7fffffff, 0x80000000, 0x12345678 and 0xdeadbeef; and it is not the published pointer, not the address of the word, not the displacement",
+      "the operand is a BYTE displacement and not an element count: decoys are planted at +0x14, +0x1c, +0x00 and at byte 0x60 (0x18 * 4), and none of them is ever returned",
+      "the body READS: the whole modelled object is byte-identical either side of the call, on two successive calls with different published values, so a write-back or partial-store model is refuted",
+      "THERE IS NO NULL GUARD, MEASURED: a forked child publishes a null global and calls the entry; the test requires the child to be killed by SIGSEGV, and requires that it did NOT exit cleanly. A guarded model survives and is refuted. This is the group a prose-only test could not have written",
+      "the global is re-read on every entry: two fixtures are published in turn and both are observed, so nothing is latched across calls",
+      "the ABI is measured, not asserted: ESP is sampled immediately before the CALL and immediately after the return through a caller-owned buffer, at two independent call sites; the delta must be zero (the callee pops nothing) and the returned word is read out of EAX by the asm block itself rather than trusted from the C++ return type",
+      "the model test itself is hardened against the two measurement traps it hit while being written: the samples go through a CALLER-ALLOCATED buffer (with -fomit-frame-pointer a block that lowers ESP stores into locals 0x100 bytes below where the C++ believes they are, and the deep samples came back as zeros), and the asm block uses exactly one register operand with literal offsets (four memory operands plus a register operand made GCC at -O0 report 'impossible constraints or there are not enough registers')"
+    ],
+    "build_matrix": "g++ and clang++, -m32 -std=c++17 -Wall -Wextra, at -O0, -O1, -O2 and -O3: 8 of 8 configurations pass with zero warnings and exit 0",
+    "mutation_tests": [
+      {"id": "M1", "perturbation": "read the neighbouring word at +0x14", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M2", "perturbation": "read the displacement as an element count (x4, landing at byte 0x60)", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M3", "perturbation": "substitute a constant for the published word", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M4", "perturbation": "return the published POINTER instead of the word (the LEA-shaped wrong answer)", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M5", "perturbation": "mask the loaded word to 16 bits", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M6", "perturbation": "write the word back through the object before returning it", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "M7", "perturbation": "add the null guard the machine does not have, returning 0xffffffff", "expected": "test FAILS", "observed": "refuted (exit 1); the forked child printed the sentinel it invented, which is what makes the missing guard visible rather than silent"},
+      {"id": "M8", "perturbation": "return the displacement itself", "expected": "test FAILS", "observed": "refuted (exit 1)"},
+      {"id": "H1", "perturbation": "encoding disp8 byte 0x18 -> 0x14", "expected": "FAILS", "observed": "refuted: static_assert fires at compile time"},
+      {"id": "H2", "perturbation": "encoding opcode 0x8b -> 0x8d (LEA)", "expected": "FAILS", "observed": "refuted: static_assert fires at compile time"},
+      {"id": "H3", "perturbation": "encoding tail 0xc3 -> 0xc2 (RET imm16)", "expected": "FAILS", "observed": "refuted: static_assert fires at compile time"},
+      {"id": "H4", "perturbation": "kPlayerEmpireIdDisplacement restated as 0x14", "expected": "FAILS", "observed": "refuted: static_assert ties the constant to offsetof() of the fixture member"},
+      {"id": "H5", "perturbation": "kGlobalAddress restated as 0x016dda90", "expected": "FAILS", "observed": "refuted: static_assert pins the SDK-imported global address, and a second assert pins its little-endian spelling"},
+      {"id": "H6", "perturbation": "declared word narrowed to 16 bits", "expected": "FAILS", "observed": "refuted: the width static_assert fires at compile time"},
+      {"id": "H7", "perturbation": "declared word widened to 64 bits", "expected": "FAILS", "observed": "refuted: the width static_assert fires at compile time (and the object-extent assert would too)"}
+    ],
+    "mutation_summary": "8 of 8 source-level mutations and 7 of 7 header-level mutations are refuted; 6 of the 15 are caught at compile time by the package's own static_asserts and the mechanism is named in the harness output so the two kinds are not conflated. The unmutated reconstruction passes on g++ and clang++ at -O0 through -O3 with exit 0 and no warnings.",
+    "mutation_method": "Each mutation is one surgical single-token edit applied to a SELF-CONTAINED COPY of the package under /tmp/opencode (impl .cpp + .hpp + model test), built with clang++ -m32 -std=c++17 -O2 and run. The archive is deleted and recreated with `ar rc` before every link (`ar qc` appends, and a stale object would silently win the link). The harness compiles the MUTANT'S OWN copy of the test, because `#include \"x.hpp\"` resolves relative to the including file first - copying only the header would keep the original and the mutation would appear to pass while nothing had changed. The harness additionally cross-checks the compiled opcode shape (a1 / 8b 40 18 / c3) against the body read at 0x01021090. A mutant counts as refuted only when the rebuilt test exits nonzero or cannot compile; exit 0 from a mutant is reported as a hole in the test and fails the harness.",
+    "encoding_cross_check": "clang++ -m32 -O2 -fno-pic -fno-pie, objdump -d -M intel: a1 / 8b 40 18 / c3. The moffs32 immediate reads 00000000 in the object file because the relocation supplies the global's address at link time, so only the opcode and ModRM shape are comparable and the harness claims nothing more."
+  },
+  "runtime_validation": "none",
+  "runtime_validation_status": "not-run",
+  "runtime_gates": [],
+  "review_status": "pending",
+  "integration_status": "staging only; not promoted, not committed",
+  "worker_ownership": {
+    "implementer_id": "w15/0x01021090",
+    "staging_dir": "reconstruction/staging/pkg-01021090-space-player-empire-id",
+    "note": "This worker claims only 0x01021090. The Space lifecycle entries it cites as read-only context (0x01021080, 0x01021260, 0x01021d40, 0x01022460, 0x010219b0) and the ~100 recorded callers are references only. No other worker's staging package or metadata record is touched; 0x01021240 belongs to another worker and was not read or modified.",
+    "symbol_namespace_note": "This package declares the global as `g_016dda8c`, not as `Simulator__sSpacePlayerData`. The promoted src/reconstruction/pkg01_roots already DEFINES `Simulator__sSpacePlayerData`; using that name here would produce two definitions of one symbol when both packages are linked. The rename is deliberate and is recorded so an integrator does not 'fix' it back."
+  }
+}
