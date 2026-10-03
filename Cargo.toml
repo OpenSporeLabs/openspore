@@ -1,0 +1,60 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/spore-core",
+    "crates/spore-dbpf",
+    "crates/spore-rw4",
+    "crates/spore-gmdl",
+    "crates/spore-texture",
+    "crates/spore-assets",
+    "crates/spore-engine",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/openspore/OpenSpore"
+description = "Clean-room, cross-platform reimplementation of Spore in Rust + Bevy."
+
+[workspace.dependencies]
+spore-core = { path = "crates/spore-core", version = "0.1.0" }
+spore-dbpf = { path = "crates/spore-dbpf", version = "0.1.0" }
+spore-rw4 = { path = "crates/spore-rw4", version = "0.1.0" }
+spore-gmdl = { path = "crates/spore-gmdl", version = "0.1.0" }
+spore-texture = { path = "crates/spore-texture", version = "0.1.0" }
+spore-assets = { path = "crates/spore-assets", version = "0.1.0" }
+
+# Bevy: no default features. The set below is the smallest one that gives a
+# native window, a wgpu renderer, PBR materials and PNG image loading.
+# Anything not listed here is deliberately NOT pulled in (audio, gamepad,
+# networking, gizmos, ui, ...) so the engine builds on machines without ALSA
+# or udev and so the dependency graph stays auditable.
+bevy = { version = "0.19", default-features = false, features = [
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_log",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_winit",
+    "png",
+    "tonemapping_luts",
+    "wayland",
+    "x11",
+    # Bevy 0.19 requires an explicit zstd backend. `zstd_rust` is the pure-Rust
+    # one: no C toolchain, no system libzstd, and therefore the reason this
+    # build does not need `zstd_c`.
+    "zstd_rust",
+] }
+
+# Dependencies shared by more than one crate.
+thiserror = "2"
+
+
+[profile.dev]
+# Asset decoding is not the bottleneck; keep dev builds linkable on modest RAM.
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
