@@ -84,7 +84,22 @@ type IndexRecord struct {
 	Runtime *struct {
 		BlockingReason json.RawMessage `json:"blocking_reason"`
 		Validated      *int            `json:"validated"`
+		// Gates are the artifact's own sentences describing what the original
+		// process must show. They are read ONLY by the blocker census
+		// (census.go); the passport does not project them, because doing so would
+		// change the snapshot's bytes.
+		Gates []string `json:"gates"`
 	} `json:"runtime"`
+	// Ownership is read ONLY by the blocker census, for the same reason.
+	Ownership *struct {
+		Claimability string `json:"claimability"`
+		QueueState   string `json:"queue_state"`
+	} `json:"ownership"`
+	// Blockers is index.json's free-text blocker prose, lifted verbatim from
+	// reconstruction/metadata/<pkg>/<va8>.json. Prose, not codes: the census
+	// carries it as prose and never reduces it to a vocabulary this repository
+	// does not have. Census only.
+	Blockers            []string `json:"blockers"`
 	UnresolvedQuestions []string `json:"unresolved_questions"`
 }
 

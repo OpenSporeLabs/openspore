@@ -283,37 +283,113 @@ duplicate normalized-name groups across 190 rows. So:
 
 ---
 
-## Attaching your own observations: the overlay
+## Attaching your own observations: the runtime overlay
 
 Runtime observations belong to **you**, not to OpenSpore. Do not write them into
-the snapshot. Keep a separate overlay keyed by `binary_sha256 + canonical VA`:
+the snapshot. Keep a **separate overlay** keyed by
+`binary_sha256 + canonical VA`, and join the two as a view.
+
+`spore-semantic runtime` now implements and validates that overlay, so you do not
+have to invent a format. The full schema, the exact list of refusals and the
+tri-state rules are in
+[`semantic-exchange.md`](semantic-exchange.md#63-runtime-overlays-the-consumer-side-made-explicit).
+This section is the short version.
+
+### The four rules
+
+1. **Runtime stays external.** An overlay is a separate file. `spore-semantic
+   runtime` reads it; nothing writes a runtime fact into the snapshot, an
+   evidence pack, the knowledge index, a validation report or a promotion
+   marker. There is no `runtime merge` command, precisely so no combined artifact
+   can be mistaken for one source of truth.
+2. **The join key is `binary_sha256 + canonical VA`.** Every overlay must carry
+   the binary SHA-256 (mandatory) and its image base. A mismatching binary is
+   refused, and so is a matching binary at a different image base (exit 9),
+   because every address in the file would then mean something else.
+3. **Different provenance.** Static facts carry the snapshot's vocabulary
+   (`generated_index`, `committed_artifact`, `ghidra`, `derived`). Runtime facts
+   carry exactly one source class, `"runtime"`, naming the producer and a portable
+   artifact identifier. A runtime artifact that claimed `source_class: "ghidra"`
+   would be refused.
+4. **A runtime observation never upgrades a static verdict.** Every joined output
+   carries `"verdict_unchanged"`. `runtime frontier` is a prioritisation report:
+   `runtime_evidence_relevant` means the overlay holds observations in categories
+   this build maps to a recorded blocker, **not** that the blocker is settled.
+
+### Do you need an OpenSpore checkout? No.
+
+```sh
+# Overlay only. Every static-derived field comes back null, not zero.
+spore-semantic runtime stats   --overlay ./runtime-overlay-v1.jsonl --json
+spore-semantic runtime lookup  0x00925050 --overlay ./runtime-overlay-v1.jsonl --json
+```
+
+### You may already have the data
+
+A `spore-recomp` startup-recovery report carries binary identity, the entry VA,
+final EIP and CPU state, call edges (callsite, target, count, first sequence,
+min/max depth), events (class, caller function, callsite, target, return address,
+depth, detail), and IAT cell checks (slot, loaded value, module, symbol, bound).
+Convert one without changing the producer:
+
+```sh
+spore-semantic runtime import-recomp \
+  --report ../spore-recomp/work/reports/startup-recovery14.json \
+  --out ./runtime-overlay-v1.jsonl
+```
+
+The adapter is one-way and read-only, and it leaves `canonical_va` null on every
+entry: identity is OpenSpore's to decide.
+
+### Unknown runtime addresses are the point
+
+`0x00925050` is real: `spore-recomp` reached it through a vtable indirect call
+during execution, and OpenSpore cannot place it — it lies between two function
+bodies. A joined lookup preserves that:
 
 ```json
 {
-  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
-  "entries": {
-    "0x00925050": {
-      "reached": true,
-      "entry_count": 412,
-      "first_reached_from": "0x00924f80",
-      "runtime_callers": ["0x00924f80"],
-      "runtime_targets": ["0x00e5c780"]
-    }
-  }
+  "requested_va": "0x00925050",
+  "identity": {
+    "canonical_va": null,
+    "canonicalization": "non_function_entity",
+    "static_status": "static_non_function_entity"
+  },
+  "static": null,
+  "runtime": { "reached": "true", "entry_count": 1, "runtime_callers": [ ... ] }
 }
 ```
 
-Joining is then two dict lookups:
+`runtime discovered, static identity not established`. No passport is
+manufactured, padding is never mapped to a function, and nothing is inserted into
+the static function universe.
+
+### Producing one yourself
+
+Join by requested VA. Note the three states that are *not* interchangeable:
 
 ```python
-p = passports.get(va)
-obs = overlay["entries"].get(f"0x{va:08x}") if overlay["binary_sha256"] == meta["binary"]["sha256"] else None
+p   = passports.get(va)                     # static, or None
+obs = overlay_by_va.get(f"0x{va:08x}")     # runtime, or None
+# obs["reached"] == "null"   -> the producer did not observe this address
+# obs["reached"] == "false"  -> observed, and not entered
+# obs is None                 -> this address was not observed at all
 ```
 
-This is what lets a later `spore-recomp` phase record `reached`, `entry_count`,
-`first_reached_from`, `runtime_callers` and `runtime_targets` without touching
-OpenSpore's authoritative export. Nothing in `spore-semantic` reads or writes
-your overlay.
+Record the overlay's `content_sha256` and `producer.artifact` alongside your own
+build metadata. That pair identifies both the exact OpenSpore analysis state and
+the exact producer run a joined answer came from.
+
+### Pinning
+
+```sh
+spore-semantic runtime validate --overlay ./runtime-overlay-v1.jsonl
+OPENSPORE_REQUIRE_SHA=<my sha256> spore-semantic runtime validate --overlay ./runtime-overlay-v1.jsonl
+spore-semantic runtime validate --overlay ./runtime-overlay-v1.jsonl --require-image-base 0x00400000
+```
+
+`validate` re-checks the header's own tallies against the record bodies, so a
+hand-edited header is caught even when the content digest still matches.
 
 ---
 
@@ -348,5 +424,13 @@ that id and nothing else; a different id exits 6, and a record carrying fields
 this build does not know also exits 6 rather than being silently half-read.
 That is deliberate: a consumer must not read a future schema as if it were
 today's.
+
+A runtime overlay declares `schema: "spore-semantic-runtime-overlay-1"` and is
+held to the same rule. Its observation vocabulary is closed at nine kinds
+(`entry`, `call`, `indirect_call`, `return`, `import`, `exception`, `memory`,
+`register`, `stack`) and its canonicalization vocabulary at four. An unknown kind
+is refused rather than carried, because a producer that has started emitting a
+kind this build does not know is a producer whose *meaning* may have moved, and a
+half-read observation is worse than a rejected file.
 
 When you pin a snapshot, pin it **with** its schema id and content digest.

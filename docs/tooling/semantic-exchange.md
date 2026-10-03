@@ -312,6 +312,7 @@ bare digits as decimal instead would answer a different question silently
 | 6 | unsupported schema version |
 | 7 | source/snapshot unavailable (universe missing, no snapshot file) |
 | 8 | ambiguous symbol (multiple canonical functions share a name) |
+| 9 | image base mismatch (`runtime` overlay declares a different image base) |
 
 `lookup` never prints an empty object. A miss prints an explicit error naming
 the requested VA, the image base and the searched identity.
@@ -347,27 +348,240 @@ inside any known function body in binary 25d42a7a5c4d438f (image base
 exit=2
 ```
 
-### 6.3 Consumer-side overlays
+### 6.3 Runtime overlays: the consumer side, made explicit
 
-Runtime observations belong to the consumer, not to OpenSpore. A consumer may
-maintain its own overlay keyed by `binary_sha256 + canonical_va`:
+Runtime observations belong to **you**, not to OpenSpore. What follows is the
+contract OpenSpore now validates, so that a producer can emit the overlay
+directly instead of every consumer inventing one.
 
-```json
-{
-  "binary_sha256": "25d4…",
-  "entries": {
-    "0x00925050": {
-      "reached": true,
-      "entry_count": 412,
-      "first_reached_from": "0x00924f80",
-      "runtime_callers": ["0x00924f80"],
-      "runtime_targets": ["0x00e5c780"]
-    }
-  }
-}
+```
+knowledge/semantic/function-passport-v1.jsonl   -- OpenSpore's static truth
+runtime-overlay-v1.jsonl                        -- YOUR runtime truth
+                    ↘                          ↙
+             spore-semantic runtime lookup      -- a VIEW over both
 ```
 
-Nothing in `spore-semantic` writes or reads that file. It is the consumer's.
+The two files stay separate on disk. There is deliberately **no** `runtime
+merge` command: a command named "merge" invites a caller to produce a combined
+artifact and then trust it as one source of truth. The join is a view, so no
+combined artifact can be mistaken for either.
+
+#### Schema: `spore-semantic-runtime-overlay-1`
+
+JSON Lines, deliberately the same shape as the static snapshot. Line 1 is the
+metadata record; lines 2..N are entry records sorted **strictly ascending** by
+`requested_va`. `content_sha256` covers the entry lines only. No timestamp, no
+PID, no absolute path, no host name.
+
+**metadata (line 1)**
+
+| Field | Meaning |
+|---|---|
+| `record` | `"metadata"` |
+| `schema` | `"spore-semantic-runtime-overlay-1"` |
+| `binary.binary_sha256` | **required.** The join key. 64 lowercase hex. |
+| `binary.image_base` | **required.** e.g. `"0x00400000"` |
+| `binary.architecture` / `program` / `version` | verbatim from the producer |
+| `producer.project` | **required.** e.g. `"spore-recomp"` |
+| `producer.name` / `version` | the producing program and its version |
+| `producer.artifact` | **required.** A *portable* identifier (`work/reports/startup-recovery14.json`), never an absolute path |
+| `producer.source_schema` | the producer's own report schema, if it has one |
+| `counts` | the producer's tallies, cross-checked against the body on load |
+| `content_sha256` | SHA-256 over the entry lines; verified when present |
+
+**entry (lines 2..N)**
+
+| Field | Meaning |
+|---|---|
+| `requested_va` | **required**, canonical `"0x%08x"`. Reproduced verbatim, never rewritten. |
+| `canonical_va` | the producer's canonicalization, or `null`. A **claim**, not the join decision. |
+| `canonicalization` | `function_entry`, `containing_function_entry`, `non_function_entity`, `not_stated` |
+| `canonical_offset` | non-null only for `containing_function_entry` |
+| `reached` | tri-state `"true"` / `"false"` / `"null"` |
+| `entry_count` | `*int`. `null` = not counted, `0` = observed zero times. |
+| `first_reached_from`, `max_call_depth` | optional |
+| `runtime_callers[]` | `{caller_function_va, callsite_va, count, min_depth, max_depth}` — sorted, de-duplicated |
+| `runtime_targets[]` | `{target_va, indirect, unresolved, classification}` — sorted by `target_va` |
+| `runtime_imports[]` | `{module, symbol, slot_va, loaded_value, bound, reached_count}` — sorted by `(module, symbol, slot_va)` |
+| `observations[]` | typed facts, never a free-form blob — sorted by `(sequence, kind, callsite, target, eip, canonical json)` |
+| `provenance[]` | **required, non-empty.** `{source_class:"runtime", producer, artifact}` |
+
+**observation kinds** (closed vocabulary, nine):
+
+| kind | required fields | may also carry |
+|---|---|---|
+| `entry` | `eip` | `sequence`, `call_depth`, `detail` |
+| `call` | `callsite_va`, `target_va` | `sequence`, `call_depth`, `count`, `caller_function_va` |
+| `indirect_call` | `callsite_va`, `target_va` | `indirect` (tri-state), `sequence`, `call_depth`, `detail` |
+| `return` | `return_address` | `return_register`, `sequence`, `call_depth` |
+| `import` | `module`, `symbol` | `slot_va`, `address` |
+| `exception` | `eip`, `exception_class` | `call_depth`, `detail` |
+| `memory` | `address`, `access` (`read`/`write`) | `width_bytes`, `value` |
+| `register` | `register`, `register_value` | `detail` |
+| `stack` | `entry_esp`, `return_esp`, `stack_delta_bytes` | `call_depth` |
+
+The loader enforces **both** halves of that table: a kind must carry its required
+fields, and it must *not* carry another kind's fields. Without the second half an
+observation could claim `kind: "import"` while carrying only a register value,
+and a consumer scanning for imports would find it.
+
+#### What the loader refuses
+
+`spore-semantic runtime validate` (exit 5 unless noted) rejects: a wrong
+`schema` id (exit 6), an unknown JSON field (exit 6), an unknown observation kind
+or canonicalization (exit 5), a `binary_sha256` that is absent, non-hex or
+different from the one required (exit 4), an `image_base` that differs (exit 9),
+a missing `producer.project`/`name`, an absolute path in `provenance.artifact`, a
+non-canonical VA spelling (only lowercase `0x%08x` is accepted, so `"925050"`
+and `"0x00925050"` cannot become two entries for one address), records not
+strictly ascending or a repeated `requested_va`, a negative `entry_count`,
+`count`, `call_depth`, `min_depth`, `max_depth` or `reached_count`, a
+non-positive `width_bytes`, `min_depth > max_depth`, `reached: "false"` together
+with `entry_count > 0`, `indirect: "true"` together with `unresolved: "false"`,
+a `canonical_va` without one of the two canonicalizing rules, an
+`canonical_offset` outside `containing_function_entry`, a byte-identical
+duplicate observation, two JSON values on one line, a truncated line, a
+`content_sha256` mismatch, and a header whose `counts` disagree with its body.
+
+#### Tri-state, not boolean
+
+`reached: "null"` means **the producer did not observe or state it**. That is not
+the same as `reached: "false"`, which means the producer watched and saw no
+entry. Collapsing the two turns "we did not look" into "we looked and found
+nothing", which is how a runtime observation becomes a fabricated negative. The
+same rule applies to `entry_count: null` (not counted) versus `0` (observed
+zero), and to a `[]` list (the category was observed and is empty) versus an
+absent entry.
+
+#### Commands
+
+```sh
+spore-semantic runtime validate        [--overlay PATH] [--json]
+spore-semantic runtime lookup   <VA>    [--overlay PATH] [--snapshot PATH] [--json]
+spore-semantic runtime frontier         [--overlay PATH] [--census PATH]
+                                       [--snapshot PATH] [--va VA]... [--json]
+spore-semantic runtime stats            [--overlay PATH] [--snapshot PATH] [--json]
+spore-semantic runtime import-recomp --report PATH [--out PATH] [--artifact ID]
+spore-semantic runtime census           [--root DIR] [--out PATH] [--json]
+```
+
+The **snapshot is optional everywhere**. With an overlay and no OpenSpore
+checkout, `validate`, `lookup`, `frontier` and `stats` all work; every
+static-derived field is then `null` rather than `0`.
+
+`runtime lookup` shows the two halves separately and reports identity from both
+sides without preferring either: OpenSpore's canonical-identity rule is
+authority, the producer's `canonical_va` is a claim, and a disagreement between
+them is reported as a disagreement. Every joined output carries
+`"verdict_unchanged": "no static verdict was modified by this lookup"`.
+
+#### Runtime-only addresses are first-class
+
+An address the producer reached and OpenSpore cannot place is representable, and
+it is the most valuable thing an overlay can contain:
+
+```
+requested_va = 0x00925050
+canonical_va = null
+static_status = static_non_function_entity
+reached       = "true"
+```
+
+`0x00925050` is the live case: it lies between `FUN_00925000` (ending
+`0x0092504a`) and `FUN_009250c0`, so the conservative canonical-identity rule
+resolves it to nothing, and `spore-recomp` reached it through a real vtable
+indirect call. The bridge preserves the discrepancy — it does **not** map
+padding to a function, does **not** manufacture a passport, and does **not**
+insert the address into the static function universe.
+
+#### `runtime frontier`: which blockers now have runtime evidence
+
+`runtime frontier` intersects a static blocker list with runtime observations and
+answers, per target: the static blockers (with the artifact that stated each),
+whether the overlay holds observations in categories this build maps to that
+blocker, whether the function is already reconstructed, whether a new static task
+is justified, and why.
+
+`resolution_class` is a closed vocabulary and is a **prioritisation** answer,
+never a verdict change:
+
+| class | meaning |
+|---|---|
+| `runtime_evidence_relevant` | the overlay holds observations in categories mapped to a recorded blocker — the state worth a focused investigation |
+| `reached_without_relevant_observation` | reached, but nothing relevant was recorded; the missing evidence is not what this producer run collected |
+| `not_reached` | the overlay carries no entry for this VA. **Not** the same as observed-and-not-reached. |
+| `runtime_only_address` | the producer reached an address OpenSpore cannot place — a **static identity** task, not a blocker resolution |
+| `already_reconstructed` | a promotion record exists; runtime evidence does not reopen it |
+| `no_static_blocker` | nothing recorded for this VA to bear on |
+
+The blocker list itself comes from artifacts OpenSpore already wrote: a
+validation dimension whose status is not `PASS`, an abstaining derived ABI record,
+an open runtime gate, and — when a census is supplied — the knowledge index's own
+`blockers` prose and `unresolved_questions`, reproduced verbatim. The mapping from
+a dimension to the observation categories that could bear on it is a declared,
+closed table in the consumer (`blockerRelevance`), and a dimension absent from it
+yields **no** relevance rather than a default.
+
+#### `runtime census`: the static blocker projection
+
+The static Passport deliberately does not carry `index.json`'s `blockers` prose or
+`unresolved_questions`: projecting them would change the snapshot's
+`content_sha256`, which consumers pin. So the census is a separate OpenSpore-side
+sidecar (`openspore-runtime-blocker-census-1`):
+
+```sh
+spore-semantic runtime census --root . --out knowledge/semantic/blocker-census-v1.json
+```
+
+It projects `reconstruction/knowledge/index.json` plus the **promotion markers**,
+because the index lags promotion by design and the marker is the authoritative,
+self-maintaining record. It derives no eligibility, no scoring and no blocker
+codes: `tools/reconstruction_tooling/frontier.py` owns eligibility, and
+duplicating it in a second language would create a second answer to "which targets
+are eligible". Counts are computed over the full projection *before* any filter,
+so they stay checkable against the repository's own statements (89 markers, 92
+promoted VAs, 618 index records, 427 runtime-gated).
+
+#### `runtime import-recomp`: consuming a real producer report today
+
+A spore-recomp startup-recovery report already carries everything the overlay
+needs, so an adapter ships with the tool:
+
+```sh
+spore-semantic runtime import-recomp   --report ../spore-recomp/work/reports/startup-recovery14.json   --out runtime-overlay-v1.jsonl
+```
+
+The adapter is one-way and read-only. It never asks `spore-recomp` to change, never
+writes into that repository, and introduces no OpenSpore dependency on the
+`spore-recomp` side. Every fact is a projection with the producer's own vocabulary
+preserved (its event classes, its import spellings, its final register dump), and
+the adapter derives exactly one thing: the set of addresses the report mentions.
+It leaves `canonical_va` **null on every entry**, because identity is OpenSpore's
+to decide and an adapter that answered it would be creating a second identity
+scheme.
+
+Three things it deliberately does not do:
+
+- it does not set `reached` from a call-edge callsite. Control certainly passed
+  through that address, but "entered as a function" is a stronger claim, so the
+  flag stays `null` and `entry_count` speaks;
+- it emits **no** `stack_delta_bytes`. The producer's register map is a single CPU
+  sample at its stop point, and a delta derived from one sample would read as
+  "the callee restored the stack", which nothing observed;
+- it records an IAT cell check as an import observation that says what the cell
+  *holds*. `reached_count` stays `null`, because the report does not establish
+  that the import was ever called.
+
+The three notes are emitted with every conversion so a reviewer reads them with
+the numbers.
+
+### 6.4 Determinism
+
+Two conversions of one report, two overlay writes from one set of entries, two
+joined lookups of one snapshot, and two census projections of one checkout are all
+byte-identical. There is no clock, no PID, no absolute path, no map
+serialisation, and the entry list is sorted in both the writer and the loader, so
+input order cannot leak into the output.
 
 ---
 
@@ -381,10 +595,14 @@ tools/spore-semantic/
   internal/snapshot/             deterministic write, load, schema validation
   internal/index/                in-memory VA + symbol index, interior resolution
   internal/cli/                  commands, output formatting, exit codes
+  internal/runtime/              runtime overlay schema, fail-closed loader,
+                                 spore-recomp adapter, the join, frontier, stats
 ```
 
 No network access. No Python at runtime. No Ghidra at runtime. Standard library
-only — `go.mod` has no `require` block.
+only — `go.mod` has no `require` block. The same holds for the `runtime`
+namespace: an overlay is consumed without an OpenSpore checkout, and the
+dependency never runs in the other direction.
 
 ### 7.1 Build and install
 
@@ -415,5 +633,32 @@ measurement asked for it.
 | interior VA | `0x00e3a400` | → `0x00e3a270`, offset 400, matching the index's own recorded correction |
 | padding VA | `0x00925050` | unknown function, exit 2 — it lies between two bodies |
 | refuted identity | `0x008414c0` | SDK `ArgScript::FormatParser::ParseFloat` superseded, reason kept as an object |
+
+### 7.3 Verified behaviour of the runtime namespace
+
+Measured against the real checkout and the real `spore-recomp`
+`startup-recovery14.json` / `startup-recovery12.json` reports.
+
+| case | result |
+|---|---|
+| `runtime import-recomp` on `startup-recovery14.json` | 281 addresses, 8 imports, 1 unresolved target, 2 reached; validates clean |
+| two conversions of one report | byte-identical |
+| `runtime validate` on the converted overlay | OK, `content_sha256` verified over 281 entry lines |
+| `runtime census --root .` | 618 index records, 89 promotion markers, 92 promoted VAs, 427 runtime-gated — each matching the repository's own statement |
+| `runtime lookup 0x00925050` on `startup-recovery12.json` | `canonical_va: null`, `static_status: static_non_function_entity`, `reached: "true"`, caller `0x00925b00@0x00925b33`, exit 0 |
+| `runtime stats` | 281 addresses; 154 with a passport, 127 runtime-only (87 of them inside the image), 0 promoted |
+| `runtime frontier` over the 10 remaining ceilings | every ceiling carries its adjudicated blockers and census prose; none classified closed |
+| static artifacts after a full runtime workflow | `function-passport-v1.jsonl`, `index.json` and `xrefs-2540f2ca.tsv` all byte-for-byte unchanged |
+| new build vs. `HEAD` build, same export | byte-identical, so the runtime namespace is provably neutral on the static exporter |
+
+Note on the committed snapshot: `knowledge/semantic/function-passport-v1.jsonl`
+was last exported at 17:41 and is **stale** with respect to the current checkout
+— `reconstruction/knowledge/index.json` and
+`reconstruction/evidence/00c71e30/evidence.json` have moved since, shifting four
+coverage counters (`with_globals` 119→120, `with_semantics` 536→538,
+`with_types` 529→531, `explicitly_unavailable` 401364→401359). That is a
+pre-existing condition, not a consequence of the runtime work; the runtime
+namespace never rewrites the snapshot, and the `spore-semantic runtime`
+commands work against the stale one as-is. Re-export when convenient.
 
 Two exports from the same checkout state are byte-for-byte identical.

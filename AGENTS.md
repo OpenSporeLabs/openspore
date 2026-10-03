@@ -112,13 +112,94 @@ driven by a fully AI pipeline. **Never** commit proprietary EA code or assets.
   `start <= a < start + size`), so padding resolves to nothing. Do not invent a
   second mapping algorithm.
 - Consumers keep their own overlay keyed by `binary_sha256 + canonical_va` for
-  runtime observations. Nothing in `spore-semantic` reads or writes it, and
-  OpenSpore source is never imported as production code.
+  runtime observations; OpenSpore source is never imported as production code.
+  `spore-semantic runtime` now reads such an overlay (§"Runtime evidence bridge"
+  below), but it never WRITES into one and never writes a runtime fact back into
+  a static artifact.
 - Installed at `~/.local/bin/spore-semantic` (on PATH). Rebuild with
   `cd tools/spore-semantic && CGO_ENABLED=0 go build -trimpath -ldflags '-s -w' -o ~/.local/bin/spore-semantic ./cmd/spore-semantic`
   — `-trimpath`/`-ldflags` are cosmetic and do not change the exported bytes.
 - Verify with `cd tools/spore-semantic && gofmt -l . && go vet ./... && go test ./...`.
   Docs: `docs/tooling/semantic-exchange.md`, `docs/tooling/semantic-exchange-consumer.md`.
+
+## Runtime evidence bridge: `spore-semantic runtime`
+- `../spore-recomp` executes the binary independently and emits runtime
+  observations. It is an **optional external artifact consumer**, not a
+  dependency: it needs no OpenSpore checkout, no Python and no Ghidra, and the
+  reverse dependency does not exist either. `spore-recomp` may stop emitting
+  reports and nothing here breaks.
+- Schema `spore-semantic-runtime-overlay-1` (`internal/runtime/schema.go`), JSON
+  Lines mirroring the static snapshot: metadata on line 1, entry lines after,
+  `content_sha256` over the entry lines only. 13 entry fields, 9 closed
+  observation kinds. Docs: `docs/tooling/semantic-exchange.md` section 6.3.
+- Commands: `runtime validate | lookup | frontier | stats | import-recomp |
+  census`. **There is deliberately no `runtime merge`**: a command named "merge"
+  invites a caller to produce a combined artifact and trust it as one source of
+  truth. The join is a VIEW over two files that stay separate on disk.
+- **Static and runtime facts have different provenance vocabularies.** The
+  snapshot has `generated_index | committed_artifact | ghidra | derived`; an
+  overlay may claim exactly one source class, `runtime`. A runtime artifact
+  claiming `ghidra` provenance is REFUSED — that would be a static artifact
+  wearing a runtime file's schema.
+- **A runtime observation never upgrades a static verdict.** Every joined output
+  carries `verdict_unchanged`. `runtime frontier`'s `runtime_evidence_relevant`
+  means "the overlay holds observations in categories mapped to a recorded
+  blocker", not "the blocker is settled". The dimension→observation-category
+  table (`blockerRelevance`) is CLOSED, and an unlisted dimension yields NO
+  relevance rather than a default — `ABI_RECORD` is deliberately unmapped.
+- **A runtime-only address is first-class data, not a defect to repair.**
+  `0x00925050` was reached by a real vtable indirect call in spore-recomp and
+  OpenSpore cannot place it (it lies between `FUN_00925000`, ending `0x0092504a`,
+  and `FUN_009250c0`). The bridge reports `canonical_va: null`,
+  `static_status: static_non_function_entity`, `reached: "true"` and does NOT
+  manufacture a passport, map padding to a function, or insert it into the
+  function universe. That discrepancy is the deliverable.
+- **Missing runtime data is NOT `observed: false`.** `reached: "null"` = the
+  producer did not watch; `"false"` = watched and saw no entry; a missing entry =
+  not observed at all. `entry_count: null` (not counted) is NOT `0` (observed
+  zero). Collapsing these is how a runtime observation becomes a fabricated
+  negative.
+- **The adapter derives exactly one thing.** `runtime import-recomp` projects a
+  spore-recomp report's address set and copies the producer's own vocabulary
+  (event classes, import spellings, register dump). It leaves `canonical_va`
+  **null on every entry** — identity is OpenSpore's to decide. It sets `reached`
+  only where the report establishes it (a call-edge callsite was certainly passed
+  through, which is not the same as entered); it emits **no**
+  `stack_delta_bytes`, because the producer's register map is one CPU sample and
+  a delta from one sample would read as "the callee restored the stack"; and an
+  IAT cell check records what the cell *holds* with `reached_count: null`, because
+  the report does not establish that the import was called.
+- **The census exists because the Passport deliberately omits prose.**
+  `index.json`'s `blockers` and `unresolved_questions` are the sentences that
+  describe the remaining ceilings, and projecting them into the Passport would
+  change the snapshot's `content_sha256`, which consumers pin. So
+  `runtime census` writes a separate sidecar
+  (`openspore-runtime-blocker-census-1`) and reads promotion from the **marker
+  files**, per the marker-over-manifest trap above. Counts are computed over the
+  FULL projection before any filter — computing them after the filter is a bug
+  that reported 90 promoted VAs where the repository states 92.
+- **Do not re-derive the frontier in a second language.**
+  `tools/reconstruction_tooling/frontier.py` owns eligibility and scoring. The
+  census and `runtime frontier` have no opinion about either. `--va` CHOOSES the
+  targets and the census only ENRICHES them; letting `--census` contribute its
+  whole 543-row set alongside ten named addresses buried the ten.
+- Verified numbers on the current checkout (2026-10-01): `runtime census` gives
+  618 index records, 89 markers, **92 promoted VAs**, 427 runtime-gated — each
+  matching the repository's own statement, which is how the census is checked.
+  `import-recomp` on `startup-recovery14.json` gives 281 addresses, 127
+  runtime-only (87 inside the image), 0 promoted. The runtime namespace changes
+  no static bytes: the new build and a `git archive HEAD` build produce
+  byte-identical exports.
+- **Traps.** (1) A call edge is a transfer FROM the callsite TO the target, so
+  the target goes in the CALLER's `runtime_targets` and the callsite in the
+  TARGET's `runtime_callers`; getting it backwards makes every address appear to
+  call itself. (2) `Summarize`/`ComputeStats` merge every entry reachable from
+  one VA, so counts must be deduplicated by RESOLVED canonical VA or a promoted
+  function observed at both its entry and an interior address is counted twice.
+  (3) An unknown JSON field is `ErrSchema` (exit 6), not corruption (exit 5) —
+  wrap it separately or the exit code collapses. (4) Only lowercase `0x%08x` is
+  accepted as a canonical VA, prefix case included; `"925050"` and
+  `"0X00925050"` are refused so one address cannot become two entries.
 
 ## Build / test (once `src/` exists`)
 - CMake + Clang/GCC. `mkdir -p build && cd build && cmake .. && make -j`.

@@ -1,8 +1,13 @@
 // Package cli implements the spore-semantic command surface.
 //
-// Five commands, no orchestration: export, lookup, lookup-symbol, explain,
+// Six static commands, no orchestration: export, lookup, lookup-symbol, explain,
 // stats, validate. Every failure is explicit and carries a stable exit code;
 // nothing silently returns an empty object.
+//
+// The `runtime` namespace is the consumer side: it reads an EXTERNAL runtime
+// overlay produced by a sibling project and joins it with the static snapshot
+// without ever writing to it. It is read-only in the strict sense that no code
+// path leads from a runtime observation to a static artifact.
 package cli
 
 import (
@@ -79,6 +84,8 @@ func Run(args []string, env Env) int {
 		return runStats(args[1:], env)
 	case "validate":
 		return runValidate(args[1:], env)
+	case "runtime":
+		return runRuntime(args[1:], env)
 	case "help", "-h", "--help":
 		usage(env.Stdout)
 		return ExitOK
@@ -103,6 +110,7 @@ usage:
   spore-semantic explain       <VA>      [--snapshot PATH]
   spore-semantic stats                   [--snapshot PATH] [--json]
   spore-semantic validate                [--snapshot PATH] [--json]
+  spore-semantic runtime <subcommand>     see "spore-semantic runtime help"
   spore-semantic version
 
 Identity is binary_sha256 + canonical VA. A VA spelling is always "0x%08x".
@@ -110,12 +118,19 @@ Input accepts 0x-prefixed, bare, upper or lower case HEX, explicit decimal
 ("dec:" or "0d"), and the explicit "rva:" form, which is the only spelling that
 is offset by the image base -- so an RVA is never confused with a VA.
 
-Set OPENSPORE_REQUIRE_SHA to refuse any snapshot whose binary_sha256 differs,
-and OPENSPORE_ROOT to point at the checkout without passing --root.
+Set OPENSPORE_REQUIRE_SHA to refuse any snapshot OR runtime overlay whose
+binary_sha256 differs, and OPENSPORE_ROOT to point at the checkout without
+passing --root.
 
-Exit codes: 0 ok, 1 usage, 2 unknown function, 3 unknown symbol,
-4 binary mismatch, 5 corrupted snapshot, 6 unsupported schema,
-7 source or snapshot unavailable, 8 ambiguous symbol.
+Runtime observations are EXTERNAL and stay external. "spore-semantic runtime"
+reads an overlay keyed by binary_sha256 + canonical VA and joins it with the
+snapshot as a view; it never writes a runtime fact into a static artifact, and
+no runtime observation upgrades a static verdict.
+
+Exit codes: 0 ok, 1 usage, 2 unknown function or address, 3 unknown symbol,
+4 binary mismatch, 5 corrupted snapshot or overlay, 6 unsupported schema,
+7 source, snapshot or overlay unavailable, 8 ambiguous symbol,
+9 image base mismatch.
 `)
 }
 
