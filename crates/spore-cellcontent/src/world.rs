@@ -34,7 +34,7 @@
 //! Each advect entry names a flow-field resource. The C++ reference spells its
 //! type `0x04805684`; that id is not one of the twelve cell-content records, so
 //! this crate can never resolve it and says so with
-//! [`CellReferenceError::OutsideFamily`] rather than reporting a missing record.
+//! `OutsideFamily` rather than reporting a missing record.
 //! The id itself is [`crate::claims::ADVERT_FLOW_FIELD_TYPE`], graded `INFERRED`
 //! because only the C++ reference states it and no oracle resolves the field.
 

@@ -217,7 +217,7 @@ pub enum CellReferenceError {
     /// The caller asked about a reference that the record does not emit at
     /// `(field, index, instance)`.
     ///
-    /// This is the guard that makes [`CellContentRecord::references`] the single
+    /// This is the guard that makes `references` the single
     /// authority: a hand-built [`CellReference`](crate::reference::CellReference)
     /// that the record does not actually produce is refused rather than resolved.
     #[error(

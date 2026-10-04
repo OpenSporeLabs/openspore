@@ -74,6 +74,7 @@ asset layer is testable with no window and no GPU.
 |---|---|
 | [`docs/RUST-ENGINE.md`](docs/RUST-ENGINE.md) | developer guide to the Rust workspace: crate graph, build/test/lint, running the slice, `osptool`, the Bevy feature set and why, the two gotchas, the honest limits |
 | [`docs/MIGRATION.md`](docs/MIGRATION.md) | how every existing subsystem is classified — KEEP / PORT / REIMPLEMENT / RESEARCH-ONLY / OBSOLETE — what "PORT" meant in practice, and **what the Rust workspace deliberately does not do yet** |
+| [`docs/SEMANTIC-BRIDGE.md`](docs/SEMANTIC-BRIDGE.md) | what the read-only semantic exchange actually contains, measured |
 | [`docs/STATE.md`](docs/STATE.md) | state of the C++/Python research corpus: objectives, validated capabilities, known limitations |
 | [`AGENTS.md`](AGENTS.md) | rules and durable context for any agent working in this repo, including the hard legal rules and the traps that cost real debugging time |
 

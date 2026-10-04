@@ -2,7 +2,7 @@
 //!
 //! # Why the cursor cannot panic
 //!
-//! Every read goes through [`Reader::take`], which uses slice indexing rather
+//! Every read goes through the private `take`, which uses slice indexing rather
 //! than arithmetic offsets. A read past the end yields `0` and does not advance,
 //! exactly like the C++ reference's `Reader` (which latches `ok() == false`).
 //! Neither form panics, and neither form silently wraps: `checked_add` on the

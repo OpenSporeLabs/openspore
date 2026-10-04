@@ -45,6 +45,8 @@ crates/spore-texture     raster envelope, DXT5
 crates/spore-assets      package priority, identity resolution, manifest
 crates/spore-material    material + texture binding resolution
 crates/spore-differential  Rust parsers vs the Python oracles, over real data
+crates/spore-cellcontent    the 12 Cell Stage gameplay record layouts
+crates/spore-semantic-bridge  read-only consumer of the spore-semantic passport
 crates/spore-engine      the Bevy runtime
 crates/spore-tools       `osptool`, the inspection CLI
 ```

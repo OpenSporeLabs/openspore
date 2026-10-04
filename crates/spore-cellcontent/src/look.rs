@@ -25,7 +25,7 @@
 //! every `u32`: the Python form additionally exempts 0, 18..22 — but none of
 //! those exceeds 60, so the exemption never fires. Both reduce to "the only
 //! offenders are 61..=0xFFFFFFFE". This crate uses the Python form because it
-//! states the permitted values; see [`CellLookAlgorithm::is_action_plausible`].
+//! states the permitted values; see `is_action_plausible`.
 
 use crate::error::CellContentError;
 use crate::reader::{check_span, Reader, SpanRule};

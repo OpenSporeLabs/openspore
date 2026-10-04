@@ -30,18 +30,18 @@
 //!
 //! | record | type id | extent |
 //! |---|---|---|
-//! | [`globals`](globals) | `0x2A3CE5B7` | **fixed** 276 B, 69 fields |
+//! | [`globals`] | `0x2A3CE5B7` | **fixed** 276 B, 69 fields |
 //! | [`effectMap`](maps) | `0x433FB70C` | 8 B header + n × 28 |
 //! | [`backgroundMap`](maps) | `0x612B3191` | 8 B header + n × 16 |
-//! | [`structure`](structure) | `0x4B9EF6DC` | 28 B header + n × 40 |
-//! | [`world`](world) | `0x9B8E862F` | 16 B header + nPop × 12 + nAdv × 24 |
+//! | [`structure`] | `0x4B9EF6DC` | 28 B header + n × 40 |
+//! | [`world`] | `0x9B8E862F` | 16 B header + nPop × 12 + nAdv × 24 |
 //! | [`randomCreature`](spawn) | `0xF9C3D770` | 8 B header + n × 28 |
 //! | [`powers`](spawn) | `0x754BE343` | **fixed** 8 B |
 //! | [`look_table`](look) | `0x8C042499` | 8 B header + n × 8 |
 //! | [`look_algorithm`](look) | `0xDBA35AE2` | 8 B header + n × 20 |
 //! | [`lootTable`](loot) | `0xD92AF091` | 36 B header (3 pad bytes) + n × 28 |
-//! | [`populate`](populate) | `0xDA141C1B` | 16 B header + n × 76 |
-//! | [`cell`](cell) | `0xDFAD9F51` | **fixed** 796 B, `cAIData` at 224/404/584 |
+//! | [`populate`] | `0xDA141C1B` | 16 B header + n × 76 |
+//! | [`cell`] | `0xDFAD9F51` | **fixed** 796 B, `cAIData` at 224/404/584 |
 //!
 //! The `globals` extent is the 276-byte revision. See "Two findings" below.
 //!
