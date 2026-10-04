@@ -17,7 +17,7 @@ use spore_core::ResourceKey;
 /// * `stored_size` is what the bytes on disk occupy, **after** the row's top
 ///   size bit has been masked off. The DBPF row stores
 ///   `stored_size | 0x8000_0000`; bit 31 is a flag the format reserves, not a
-///   gigabyte of payload. [`SIZE_MASK`] is applied during parsing, so a
+///   gigabyte of payload. the `0x7FFF_FFFF` size mask is applied during parsing, so a
 ///   caller never sees the flag.
 /// * `memory_size` is the decompressed byte count. It is what the payload's
 ///   length must equal after [`crate::extract_record`], for both the stored

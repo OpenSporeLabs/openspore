@@ -282,7 +282,7 @@ fn classify_decode_status(type_id: u32) -> DecodeStatus {
 /// Every `gmdl` record in the installed content package is QFS-compressed, so
 /// probing the *stored* bytes reads compression tokens and finds nothing. This
 /// function must be handed the record **after**
-/// [`spore_dbpf::extract_record`](spore_dbpf::extract_record). The reference
+/// [`spore_dbpf::extract_record`]. The reference
 /// tool `tools/spore/manifest/manifest.py` makes exactly that mistake, which is
 /// why it reports `walk-fail` for all 4209 gmdl records in `Spore_Content`.
 ///

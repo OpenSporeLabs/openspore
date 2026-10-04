@@ -14,7 +14,7 @@
 //! asset-pipeline change did what it meant to.
 //!
 //! Here it is structural rather than hopeful: rows live in a `BTreeMap` keyed by
-//! [`ResourceKey`], whose ordering is already strict lexicographic on
+//! [`spore_core::ResourceKey`], whose ordering is already strict lexicographic on
 //! `(type, group, instance)`; JSON keys are an insertion-ordered `Vec`; and
 //! nothing in the output depends on a hash map's iteration order, the clock, the
 //! environment or the filesystem's readdir order. The test suite asserts
@@ -79,7 +79,7 @@ pub const STATS_TOP_N: usize = 20;
 
 /// `manifest`: build, then optionally emit JSON Lines, a JSON array, and stats.
 ///
-/// The "wrote <file>" confirmation goes to **stderr**, so stdout carries nothing
+/// The "wrote &lt;file&gt;" confirmation goes to **stderr**, so stdout carries nothing
 /// but the requested document and `manifest ... --json > out.json` is a valid
 /// pipeline whether or not `--out` was also given.
 pub fn run(

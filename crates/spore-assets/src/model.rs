@@ -4,9 +4,11 @@
 //!
 //! * **GMDL** (`0x00E6BCE5`) -- Spore's own geometry container. Fully decoded.
 //! * **RW4** (`0x2F4E681B`) -- a RenderWare 4 container. Only its *section
-//!   directory* is understood; no section payload is decoded. A record named
-//!   `png` is an RW4 blob, **not** raw PNG, so this is also the path a future
-//!   PNG decoder has to sit behind.
+//!   directory* is understood; no section payload is decoded.
+//!
+//! Note what is **not** on either path: `png` (`0x2F7D0004`) is a *different*
+//! type id and is **raw PNG** -- measured 10 487 of 10 487 across the installed
+//! packages. It is not an RW4 container, and nothing here decodes it.
 //!
 //! An RW4 record is accepted here but produces **no** meshes. That is stated in
 //! [`LoadedModel::meshes`] being empty rather than hidden behind a pretend

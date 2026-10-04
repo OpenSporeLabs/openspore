@@ -20,11 +20,13 @@
 //! # Which ids get a decoder here
 //!
 //! Strictly by id: [`spore_gmdl::GMDL_TYPE`], [`spore_rw4::RW4_TYPE`] and
-//! [`spore_texture::RASTER_TYPE`]. In particular a `png`/`jpeg`/`plt`-named
-//! record is *not* sent to the raster decoder — see the note on
-//! `png`/`jpeg` in [`crate::commands::verify`] — because a record named `png` in
-//! this corpus is an RW4-shaped container, and feeding it to the DXT5 codec
-//! would return a confident wrong answer instead of an honest refusal.
+//! [`spore_texture::RASTER_TYPE`].
+//!
+//! In particular a `png`-typed record (`0x2F7D0004`) is **not** sent to the
+//! raster decoder, and not because it is an RW4 container -- an earlier
+//! revision of this file claimed that, wrongly. `png` is raw PNG (10 487 of
+//! 10 487 measured), which the DXT5 codec would misread as a confident wrong
+//! answer; `plt` has no decoder at all. Both are refused by name.
 
 use std::io::Write;
 

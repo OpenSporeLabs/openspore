@@ -1,7 +1,7 @@
 //! `osptool`: a thin shim so every piece of the tool's logic stays in the
 //! library, where it can be tested without a subprocess.
 //!
-//! The exit code is the library's decision. `main_with` maps a [`ToolError`] onto
+//! The exit code is the library's decision. `main_with` maps a `ToolError` onto
 //! the process exit code documented in [`spore_tools::usage`]; this file adds
 //! nothing but the standard streams.
 

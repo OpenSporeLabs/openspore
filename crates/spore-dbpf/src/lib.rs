@@ -57,7 +57,7 @@
 //! [`INDEX_FLAG_SHARED_INSTANCE`].
 //!
 //! **The QFS decompressed size is big-endian.** It is the only big-endian field
-//! in the format. See [`qfs`].
+//! in the format. See [`decompress`].
 //!
 //! # Divergences from the C++ reference
 //!

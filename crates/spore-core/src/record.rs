@@ -169,7 +169,8 @@ pub const TYPE_NAMES: &[(u32, &str)] = &[
 ///
 /// Group ids are structured. `0x4061_62xx` is a Cell-stage group, `0x4062_62xx`
 /// a Creature group, and so on: the byte at `>> 8` is the stage and the byte at
-/// `>> 16` is the category (see [`spore_core::ResourceKey::stage_byte`]).
+/// `>> 16` is the category (`ResourceKey::stage_byte` and
+/// `ResourceKey::category_byte`).
 pub const GROUP_NAMES: &[(u32, &str)] = &[
     (0x02A8_CB47, "Physics"),
     (0x02AE_0C7E, "GameTuning"),

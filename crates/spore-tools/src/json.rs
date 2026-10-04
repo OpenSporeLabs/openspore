@@ -13,7 +13,7 @@
 //! [`Json::Obj`] is a `Vec` of pairs, not a map. Key order is therefore whatever
 //! the code inserted, which is what "fixed key order" in the tool's contract
 //! means: two runs produce byte-identical output because nothing iterates a hash
-//! map. [`Json::to_string`] is a pure function of the value, with no whitespace
+//! map. `to_string` is a pure function of the value, with no whitespace
 //! and no locale- or platform-dependent formatting.
 
 use std::fmt;
@@ -216,7 +216,7 @@ pub fn hex_id(value: u32) -> Json {
     Json::Str(format!("0x{value:08x}"))
 }
 
-/// A strict reader for what [`Json::to_string`] writes.
+/// A strict reader for what `to_string` writes.
 ///
 /// A writer with no reader is a writer nobody can check. This parser is
 /// deliberately minimal — it accepts exactly what the writer emits and rejects

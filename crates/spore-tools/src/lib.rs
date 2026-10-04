@@ -867,7 +867,7 @@ impl std::error::Error for ToolError {}
 /// Both sinks are parameters so a test can drive a command with in-memory
 /// buffers. `err` is also what `verify` writes progress to, and it is the sink
 /// that decides whether progress is shown at all — see
-/// [`commands::verify::progress_is_terminal`].
+/// `progress_is_terminal`.
 pub fn run<I, S>(args: I, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), ToolError>
 where
     I: IntoIterator<Item = S>,

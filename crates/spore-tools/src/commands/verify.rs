@@ -84,27 +84,34 @@ pub enum RecordClass {
 ///
 /// * `gmsh` (`0x01C135DA`) is **not** a gmdl. It is a RenderWare mesh section,
 ///   and `spore-gmdl`'s walk would either refuse it or misread it.
-/// * `png` (`0x2F7D0004`) and `jpeg` (`0x2F7D0002`) are **not** rasters. Both are
-///   RW4-shaped containers in this corpus, so handing them to the DXT5 codec
-///   would return a plausible wrong answer; `spore-assets`' manifest calls them
-///   decodable because *its* classification is a type-level one, which is a
-///   different claim from this per-record one.
+/// * `png` (`0x2F7D0004`) and `jpeg` (`0x2F7D0002`) are **not** rasters. They are
+///   raw PNG and raw JPEG -- measured 10 487 of 10 487 carrying the PNG magic
+///   across the installed packages -- so handing them to the DXT5 codec would
+///   return a plausible wrong answer. (An earlier revision of this file claimed
+///   they were RW4 containers; that was inherited from a summary line and is
+///   wrong. `png` and `rw4` differ by one bit in the type id and are unrelated.)
 /// * `plt` (`0x011989B7`) is a palette. Nothing in the workspace decodes it.
 ///
-/// # One place this disagrees with `spore-assets`' manifest, on purpose
+/// # This now agrees with `spore-assets`' manifest, with no carve-outs
 ///
-/// `rw4` (`0x2F4E681B`) is classified **`Undecoded`** by
-/// [`spore_assets::ManifestBuilder`] — its `DECODABLE` list does not contain the
-/// id — while `spore_rw4` decodes the section directory and
-/// `spore_assets::ModelStore::load` accepts the type. So the manifest labels
-/// every RW4 record `undecoded` even though this workspace reads it. The Python
-/// oracle `tools/spore/manifest/manifest.py` agrees with the Rust manifest, which
-/// means both inherited the omission from the same C++-era list rather than either
-/// getting it wrong independently.
+/// Every named type classifies identically in both views. `spore-assets`'s
+/// `DecodeStatus::Ok` means exactly "a per-record decoder exists in this
+/// workspace", and its list is `{gmdl, raster, rw4}`.
 ///
-/// That is a stale **type-level** label, and this command is a per-record one, so
-/// it decodes RW4 and says so. `tests/type_classes.rs` pins both directions of the
-/// divergence rather than letting the two views drift apart unnoticed.
+/// # The bug this command found, and why it is worth a paragraph
+///
+/// `rw4` (`0x2F4E681B`) used to be classified `Undecoded` by
+/// [`spore_assets::ManifestBuilder`], whose decoder list omitted the id — while
+/// `spore_rw4` decoded the section directory and `ModelStore::load` accepted
+/// the type. The manifest therefore labelled all 1131 real RW4 records
+/// `undecoded`. `tools/spore/manifest/manifest.py` agreed with it, so both had
+/// inherited the omission from the same C++-era list.
+///
+/// The root cause was the manifest's `Ok` meaning "a decoder *family* exists"
+/// rather than "a decoder exists". A looser classification is not a useful
+/// summary; it is a second source of truth, and it drifts. `Ok` now means
+/// exactly "a per-record decoder exists", and `tests/type_classes.rs` asserts
+/// the disagreement set between this command and the manifest is **empty**.
 pub fn classify(type_id: u32) -> RecordClass {
     match type_id {
         spore_gmdl::GMDL_TYPE => RecordClass::Gmdl,

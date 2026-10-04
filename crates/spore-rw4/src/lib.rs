@@ -16,13 +16,25 @@
 //! has no opinion about what a payload means, and inventing one in the walker
 //! is how a directory starts lying.
 //!
-//! # Why a `png`-named record lands here
+//! # What this crate is NOT on the path to
 //!
-//! In Spore, records named `png` are **RW4 containers, not raw PNG** (verified
-//! 60/60 on sampled records). So this crate is directly on the path to
-//! PNG/JPEG decode: the section directory tells you which record holds the
-//! raster and where its bytes start. Getting that directory right is the
-//! prerequisite; the codec is the next crate.
+//! An earlier revision of this doc claimed "records named `png` are RW4
+//! containers, not raw PNG". **That was wrong, and it was inherited from a
+//! summary line rather than measured.** `png` is `0x2F7D0004`; this crate's
+//! type id is `0x2F4E681B`. They differ by one bit and are unrelated:
+//!
+//! * `0x2F4E681B` (`rw4`): 1 131 records in `Spore_Content`, every one
+//!   carrying `RW4w32`. Confirms `docs/CELLSTAGE-RECON.md` §2 and
+//!   `docs/MATERIALS-DESIGN.md` §2, which said exactly this.
+//! * `0x2F7D0004` (`png`): 1 642 records, 10 487 of 10 487 across the installed
+//!   packages, all beginning `89 50 4E 47 0D 0A 1A 0A` and stored uncompressed.
+//!   These are **raw PNG** and need a PNG decoder, which this workspace does not
+//!   have. Bevy's `png` *feature* decodes images in asset files; it has nothing
+//!   to do with a Spore `png` *record*.
+//!
+//! So RW4 is not a waypoint to PNG decode. It is its own container, holding
+//! model, raster and animation sections, and its section directory is the part
+//! worth getting right because the payloads are not decoded yet.
 //!
 //! # Layout (little-endian throughout)
 //!

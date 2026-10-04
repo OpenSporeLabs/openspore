@@ -24,7 +24,7 @@
 //! reported through the render loop, and the most valuable test in the project
 //! -- "does a real Spore record decode?" -- would need a GPU.
 //!
-//! So [`run`] decodes first, *outside* Bevy, and only then assembles an app. A
+//! So `run_scene` decodes first, *outside* Bevy, and only then assembles an app. A
 //! consequence worth stating: `--info` never constructs a window at all, which
 //! is what makes it usable as a CI gate.
 //!
@@ -78,7 +78,7 @@ pub fn main() -> std::process::ExitCode {
 
 /// The result of decoding a request, before any rendering is involved.
 ///
-/// Separating this from [`StageOutcome`] is what lets a test assert the whole
+/// Separating this from `StageOutcome` is what lets a test assert the whole
 /// asset path without a window, and what lets `--info` skip rendering entirely.
 #[derive(Debug)]
 pub enum PrepareOutcome {
