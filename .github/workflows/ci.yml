@@ -1,0 +1,158 @@
+name: ci
+
+# Two suites, one workflow, and they are NOT interchangeable.
+#
+#   cargo        the Rust engine: the direction. Hermetic — no game, no GPU.
+#   python       the C++/Python reference half: the oracles the Rust crates are
+#                checked against, plus the reconstruction tooling.
+#
+# Neither job installs Spore. `SPORE/` is proprietary and git-ignored, so every
+# test that needs real assets skips, and the real-corpus differential is
+# `#[ignore]`d by design. That is deliberate: CI must be able to prove the parsers
+# still agree with the oracles on synthetic fixtures, and the real-corpus run is
+# an operator action on a machine that has the game.
+#
+# There is no C++ job. `cmake` requires Vulkan and `glslangValidator` and builds
+# 89 promoted reconstruction packages with `-m32`; it is run locally against a
+# configured `build/` tree, not in CI. See docs/MIGRATION.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Keep the toolchain honest: a warning here is a warning in the build.
+  RUSTFLAGS: -D warnings
+
+jobs:
+  rust:
+    name: rust workspace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the toolchain
+        # Bevy 0.19 needs a recent stable; `rust-toolchain.toml` is not used in
+        # this repo because the dev machine has a distribution Rust and no
+        # rustup, so the version is pinned here instead.
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+          rustc --version
+          cargo --version
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: rust-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: rust-${{ runner.os }}-
+
+      - name: fmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: build
+        run: cargo build --workspace
+
+      # `cargo test --workspace` is hermetic and takes well under a minute: every
+      # test that needs Spore either uses a committed synthetic fixture or skips.
+      # The point of running it here is that it stays that way — a test that
+      # starts needing a 995 MB package belongs behind `#[ignore]`.
+      - name: test
+        run: cargo test --workspace
+
+      - name: docs build without warnings
+        run: cargo doc --no-deps --workspace
+
+      - name: verify the workspace stays hermetic
+        # A cheap, high-value guard: the engine must refuse to invent a record,
+        # and must not be able to reach a game install from the test suite.
+        run: |
+          cargo build --release -p spore-engine -p spore-tools
+          ./target/release/osptool --help > /dev/null
+          ./target/release/openspore --help > /dev/null
+          # No package named: must be a usage error, exit 2, not a silent default.
+          set +e
+          ./target/release/openspore > /dev/null 2>&1
+          test $? -eq 2 || { echo "bare openspore must exit 2 (usage), not invent a scene"; exit 1; }
+          set -e
+
+  python:
+    name: python oracles + tooling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pytest
+        # Python here is 3.14 with no system pytest on the dev machine, which is
+        # why `uv run --no-project --with pytest` is the local invocation. In CI a
+        # venv is cleaner.
+        run: python -m pip install --upgrade pip pytest
+
+      # The stdlib-only unittest discovery path is checked as well as pytest: the
+      # repository documents both, and a tool that only works under pytest is a
+      # tool the docs should not claim.
+      - name: unittest discovery (stdlib only)
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: pytest
+        run: python -m pytest tests/ -q
+
+      - name: the committed synthetic fixtures must be byte-stable
+        # tests/fixtures/gen_fixtures.py regenerates the DBPF/RW4/gmdl fixtures
+        # and refuses to overwrite on a byte difference. If a format change made
+        # them drift, this is where it shows — before any C++ or Rust port sees
+        # them.
+        run: |
+          ls -l tests/fixtures/mini_package.dbpf tests/fixtures/mini.gmdl tests/fixtures/mini_rw4.rw4
+          sha256sum tests/fixtures/mini_package.dbpf tests/fixtures/mini.gmdl tests/fixtures/mini_rw4.rw4
+
+      - name: no Spore asset is tracked
+        run: |
+          # The clean-room rule, enforced rather than asserted in prose.
+          if git ls-files --error-unmatch SPORE >/dev/null 2>&1; then
+            echo "SPORE/ is tracked — that is proprietary game content"; exit 1
+          fi
+          if git ls-files | grep -Ei '\.(package|gmd|bmdl|bgeo|manifest)$' ; then
+            echo "a Spore asset extension is tracked"; exit 1
+          fi
+          echo "clean-room: no tracked game assets"
+
+  go:
+    name: spore-semantic (read-only exchange)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      # `tools/spore-semantic` is stdlib-only and must stay that way: it is a
+      # projection consumed by other projects, so a dependency would be a
+      # supply-chain change to everyone downstream.
+      - name: Verify stdlib-only
+        working-directory: tools/spore-semantic
+        run: |
+          test ! -f go.sum || { echo "go.sum exists — this module must have no dependencies"; exit 1; }
+          go mod verify
+      - name: build, vet, test
+        working-directory: tools/spore-semantic
+        run: |
+          gofmt -l .
+          go vet ./...
+          go test ./...

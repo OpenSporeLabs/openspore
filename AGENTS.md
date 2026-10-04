@@ -3,13 +3,125 @@
 Rules and durable context for any agent (opencode) working in this repo.
 
 ## What this is
-Clean-room, from-scratch C++ (C++17) reimplementation of *Spore* + expansions,
-driven by a fully AI pipeline. **Never** commit proprietary EA code or assets.
+
+A clean-room reimplementation of *Spore*, driven by a fully AI pipeline, in
+**two coexisting halves**:
+
+| Half | What it is | Status |
+|---|---|---|
+| `crates/` (Cargo workspace) | **Rust + Bevy engine.** The direction. Renders real Spore assets. | active, see below |
+| `src/`, `tools/`, `knowledge*/`, `reconstruction/`, `docs/analysis/` | C++17/CMake prototype + Python oracles + the reverse-engineering corpus | still builds, still the reference |
+
+Neither half replaces the other's knowledge. The C++ tree is the **differential
+reference** and the Python tools under `tools/spore/` are the **independent
+oracles** the Rust parsers are checked against — `docs/MIGRATION.md` classifies
+every subsystem as KEEP / PORT / REIMPLEMENT / RESEARCH-ONLY / OBSOLETE.
+**Do not delete the C++ tree to "finish" the migration**; it is load-bearing.
+
+Start here: `README.md`, then `docs/RUST-ENGINE.md` (how the Rust workspace
+works) and `docs/MIGRATION.md` (what became what).
 
 ## Hard rules (legal / ethics)
 - No *Spore* assets, decompiled EA source, models, textures, sounds, scripts.
 - Reimplement by analysis only (clean room). No DRM circumvention (use GOG).
 - No trade secrets / leaked code. `SPORE/` is git-ignored — keep it that way.
+- **OpenSpore must not depend on `spore-recomp`.** Consume semantic facts
+  through the documented boundary (`tools/spore-semantic`,
+  `knowledge/semantic/`), never its implementation. See
+  "Read-only exchange" below — those rules are normative and still apply to
+  any Rust code that touches the exchange.
+- No *Spore* asset byte may be **committed**, in any form, including as a
+  test fixture. Rust tests use synthetic fixtures or skip when `SPORE/` is
+  absent. `/target/` is git-ignored; `SPORE/` and `*.package` must stay so.
+
+## The Rust workspace
+
+```
+crates/spore-core        resource identity, record ids, evidence vocabulary
+crates/spore-dbpf        DBPF v3 index, QFS/RefPack
+crates/spore-rw4         RW4 container section directory
+crates/spore-gmdl        gmdl decode, mesh extraction, bounds
+crates/spore-texture     raster envelope, DXT5
+crates/spore-assets      package priority, identity resolution, manifest
+crates/spore-material    material + texture binding resolution
+crates/spore-differential  Rust parsers vs the Python oracles, over real data
+crates/spore-engine      the Bevy runtime
+crates/spore-tools       `osptool`, the inspection CLI
+```
+
+**The load-bearing invariant: everything above `loader` is renderer-agnostic
+and Bevy-free.** `spore-core` … `spore-material` and `spore-differential` must
+never gain a `bevy` dependency, and `spore-assets` must never touch a GPU. That
+is what makes the asset layer testable with no window and no game install, and
+it is why `--info` decodes a real record in ~140 ms. Keep it.
+
+### Build / test (Rust)
+
+```bash
+cargo build --workspace
+cargo test  --workspace                       # hermetic: no game, no GPU
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --all --check
+```
+
+Run the vertical slice (real asset, real window):
+
+```bash
+cargo run -p spore-engine -- --preset documented-asset \
+    --package SPORE/Data/Spore_Content.package            # opens a window
+cargo run -p spore-engine -- … --info                     # headless, exits
+cargo run -p spore-tools  -- manifest SPORE/Data/Spore_Content.package --stats
+```
+
+Real-corpus differential (needs `SPORE/`, slow, `#[ignore]`d by default):
+```bash
+cargo test -p spore-differential --release -- --ignored --nocapture
+```
+
+### Rust traps (each one cost real debugging time)
+
+- **`u32::from_str` rejects a `0x` prefix** while every other tool in this repo
+  accepts one. Use `spore_core::parse_id`. Do not write another hex parser; the
+  class of bug has already appeared twice.
+- **`DefaultPlugins` builds a winit `EventLoop`, which panics off the main
+  thread.** "The app assembles" is therefore NOT a headless-testable claim.
+  The honest headless test is that *decoding* is Bevy-free. Use
+  `MinimalPlugins` for anything headless.
+- **`Commands::spawn` is deferred.** A `Query` in the same system that spawns an
+  entity sees nothing. Camera framing runs in `PostStartup`, not `Startup`; this
+  exact mistake looked like a framing bug.
+- **One owner per entity kind.** `ScenePlugin` owns the world, `SporeAssetPlugin`
+  owns the content. When both spawned a camera, Bevy warned "Camera order
+  ambiguities" and the symptom was wrong framing — a duplicate spawn wearing a
+  framing bug's clothes.
+- **Bevy 0.19 renames**: `StandardMaterial::roughness` → `perceptual_roughness`;
+  `DirectionalLight::shadows_enabled` → `shadow_maps_enabled`; `App::exit()` →
+  an `AppExit` message; `WindowResolution::new` takes `u32`. The `zstd` feature
+  needs an explicit backend — this workspace uses `zstd_rust` to avoid a C
+  toolchain dependency.
+- **wgpu has no triangle-fan topology.** GMDL `primType` 6 does, so a fan is
+  expanded to a triangle list in `convert::to_buffers`, not at the call site.
+- **`#![forbid(unsafe_code)]`** in every crate except `spore-assets`, which is
+  `#![deny(unsafe_code)]` with exactly one documented `#[allow]` (memmap2 has
+  no safe constructor). Do not add a second.
+- **GMDL `refCount` is BIG-ENDIAN.** Every other word is little-endian. A
+  little-endian read gives `N * 0x01000000` and walks off the end of the record.
+
+### Evidence discipline (unchanged by the migration, now enforced in code)
+
+- `spore_core::EvidenceLevel` is the canonical 7-rung scale. Attach a grade to
+  every non-obvious claim; `Fact::unavailable` records a non-finding.
+- **Unavailable is never a zero, an empty collection, or `false`.** Collapsing
+  them turns "we did not look" into "we looked and found nothing".
+- Each format crate has a `claims` module listing what it does *not* know
+  (gmdl UBYTE4 normals: INFERRED; raster envelope fields 0x10/0x18/0x1c: UNKNOWN;
+  material-id meaning: no registry; sampler roles: undecoded). Extend it when
+  you learn something; do not delete a claim because it is inconvenient.
+- **The corpus outranks the port.** When a new Rust file and an existing
+  research document disagree, run a byte count over the real data — and until
+  that count exists, the port is presumed wrong. This already happened once:
+  three new doc comments claimed `png` records were RW4 containers, while
+  `docs/CELLSTAGE-RECON.md` and `docs/MATERIALS-DESIGN.md` were right.
 
 ## Knowledge-graph architecture (do NOT reinvent)
 - **Analysis graph** = **Ghidra** (via `ghidra` MCP). Source of truth for
@@ -260,7 +372,9 @@ driven by a fully AI pipeline. **Never** commit proprietary EA code or assets.
   failure is ENVIRONMENTAL and provably passes under system Python. Report it as
   ENVIRONMENTAL, never as PASS. `test_stale_metadata_safety` and the two
   concurrency-isolation tests fail on this machine regardless of the change under
-  test. Baseline is **1841 passed** (was 1771, then 1833), not the headline count.
+  test. Baseline is **1842 passed** (was 1771, then 1833, then 1841), not the
+  headline count. Two failures are documented as pre-existing rather than
+  regressions; verify before believing that list still holds.
 
 ## Genuine ceilings: do not "solve" these by inference
 `0x0068f9b0` is CLOSED (promoted). The rest are machine properties, not defects:
@@ -278,4 +392,26 @@ driven by a fully AI pipeline. **Never** commit proprietary EA code or assets.
 - `0x00fa5040`'s `LEA ESP,[ESP]` receiver/ESP heuristic stays rejected.
 
 ## Current status
-See `docs/STATE.md` for Phase 0 completion and the next step (Phase 1).
+- **Engine**: the vertical slice works end to end — `cargo run -p spore-engine
+  -- --preset documented-asset --package SPORE/Data/Spore_Content.package`
+  decodes a real Spore record and renders it through Bevy/wgpu/Vulkan. See
+  `docs/RUST-ENGINE.md` for the crate graph, the commands and the gotchas.
+- **C++/research corpus**: see `docs/STATE.md` for the reconstruction phases,
+  `docs/MIGRATION.md` for what became what, and `docs/replacement-status.json`
+  for per-subsystem status.
+
+## Cross-cutting rules for the two halves
+
+- **The same record must never have two different answers.** When a C++ file,
+  a Python oracle and a Rust crate all claim to decode something, the tie-breaker
+  is a byte count over the real data, and `crates/spore-differential` exists to
+  run exactly that comparison on demand.
+- **Do not relax a decoder to make a test pass.** The C++ and Python references
+  both refuse gmdl versions other than 8, refuse undocumented shader-data ids,
+  and refuse the `0x15xx` luminance raster family. Those refusals are the
+  specification; the Rust ports preserve them, and their test counts are higher
+  for it.
+- A type-level classification that is looser than the loader is a second source
+  of truth waiting to drift. `DecodeStatus::Ok` means exactly "a per-record
+  decoder exists in this workspace", and a test asserts the manifest and the
+  loader never disagree about that.
