@@ -69,8 +69,9 @@ pub use claims::{all_claims, claim, vertex_normal_encoding_level, GmdlClaim};
 pub use error::GmdlError;
 pub use mesh::{compute_mesh_bounds, mesh_from_gmdl, Mesh, Topology};
 pub use parse::{
-    parse, GmdlIndexBuffer, GmdlMeshRef, GmdlModel, GmdlTextureRef, GmdlVertexBuffer,
-    GmdlVertexElement, TrailerStage, TrailerWalk,
+    parse, parse_recovering, GmdlIndexBuffer, GmdlMeshRef, GmdlModel, GmdlTextureRef,
+    GmdlVertexBuffer, GmdlVertexElement, PartialGmdl, StopReason, TrailerStage, TrailerWalk,
+    WalkStage,
 };
 pub use tables::{
     shader_data_size, vertex_stride, DeclType, DeclUsage, ShaderDataSize, PRIM_TRIANGLE_LIST,

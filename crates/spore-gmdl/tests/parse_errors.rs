@@ -858,3 +858,122 @@ fn an_odd_payload_length_is_handled_without_indexing() {
         other => panic!("{other:?}"),
     }
 }
+
+/// The recovering entry point, and the boundary it draws.
+///
+/// The real corpus contains gmdl records naming shader-data id `0x218`, whose
+/// size is unknown: 619 of them in `Spore_Content`, including every record of
+/// the creature-model group `0x40627100`. `parse` refuses them, which is right
+/// for verification. `parse_recovering` keeps the geometry, which is what a
+/// renderer needs. Neither may become the other.
+mod recovering {
+    use spore_gmdl::{parse, parse_recovering, GmdlError, WalkStage};
+
+    /// A minimal valid v8 record whose material info names one shader-data id.
+    ///
+    /// Zero meshes, so the mesh table contributes nothing. `read_mesh_table`
+    /// refuses a mesh whose buffer indices are out of range, and a record with
+    /// no buffers at all is the smallest way to exercise the material-info walk
+    /// without also building a vertex buffer -- which is not what these tests
+    /// are about.
+    fn record_with_shader_id(id: u32) -> Vec<u8> {
+        let payload = spore_gmdl::shader_data_size(id).unwrap_or(0) as usize;
+        let mut b = Vec::new();
+        b.extend_from_slice(&spore_gmdl::SUPPORTED_VERSION.to_le_bytes()); // version
+        b.extend_from_slice(&0u32.to_be_bytes()); // refCount = 0, BIG-ENDIAN
+        b.extend_from_slice(&0u32.to_le_bytes()); // meshCount = 0
+        b.extend_from_slice(&[0u8; 28]); // bounds min/max + radius
+        b.extend_from_slice(&0u32.to_le_bytes()); // 0 index buffers
+        b.extend_from_slice(&0u32.to_le_bytes()); // 0 vertex descriptors
+        b.extend_from_slice(&0u32.to_le_bytes()); // 0 vertex buffers
+        b.extend_from_slice(&0u32.to_le_bytes()); // the observed zero word
+        b.extend_from_slice(&1u32.to_le_bytes()); // 1 material info
+        b.extend_from_slice(&1u32.to_le_bytes()); // 1 entry
+        b.extend_from_slice(&id.to_le_bytes()); // the shader-data id
+        b.resize(b.len() + payload, 0u8); // its payload, when the size is known
+        b.extend_from_slice(&0u32.to_le_bytes()); // 0 bone ranges
+        b.extend_from_slice(&[0u8; 12]); // unknownKey
+        b
+    }
+
+    #[test]
+    fn a_known_shader_id_still_closes_and_reports_complete() {
+        let bytes = record_with_shader_id(0x210); // 20 bytes, in the skip table
+        let recovered = parse_recovering(&bytes).expect("geometry is valid");
+        assert!(
+            recovered.is_complete(),
+            "a documented id must not stop the walk: {:?}",
+            recovered.stop
+        );
+        // And the strict path agrees, because nothing was truncated.
+        assert!(parse(&bytes).is_ok());
+    }
+
+    #[test]
+    fn an_undocumented_shader_id_stops_the_walk_and_says_where() {
+        let bytes = record_with_shader_id(0x218);
+        let recovered = parse_recovering(&bytes).expect("geometry is valid");
+        let stop = recovered
+            .stop
+            .as_ref()
+            .expect("the walk must record a stop");
+        assert_eq!(stop.stage, WalkStage::MaterialInfo);
+        assert!(
+            matches!(
+                stop.error,
+                GmdlError::UndocumentedShaderDataId { id: 0x218 }
+            ),
+            "the typed error must survive verbatim, got {:?}",
+            stop.error
+        );
+        assert!(!recovered.is_complete());
+        assert!(recovered.geometry_complete());
+    }
+
+    #[test]
+    fn the_strict_path_is_not_weakened_by_the_recovering_one() {
+        // This is the whole point of having two entry points. If `parse` ever
+        // starts accepting an unmeasured id, verification stops meaning
+        // anything: the differential harness compares two complete decodes and
+        // would silently compare two partial ones.
+        let bytes = record_with_shader_id(0x218);
+        assert!(
+            parse(&bytes).is_err(),
+            "the strict parse must still refuse 0x218"
+        );
+        assert!(
+            parse_recovering(&bytes).is_ok(),
+            "the recovering parse must keep the geometry"
+        );
+    }
+
+    #[test]
+    fn a_geometry_failure_is_still_an_error_not_a_partial() {
+        // Truncating inside the mesh table leaves no geometry, so a
+        // `PartialGmdl` would be a lie. This must be `Err`, not `Ok` with an
+        // empty mesh.
+        let bytes = record_with_shader_id(0x218);
+        for length in 0..40usize {
+            let truncated = &bytes[..length.min(bytes.len())];
+            if parse_recovering(truncated).is_ok() {
+                // Allowed only if the truncation landed after the mesh table,
+                // which at 40 bytes it has not: version(4)+refs(4)+mesh(4)
+                // +bounds(28) + 3 counts(12) = 52 bytes minimum.
+                panic!("truncation to {length} bytes must not yield a PartialGmdl");
+            }
+        }
+    }
+
+    #[test]
+    fn an_empty_record_is_refused_rather_than_reported_as_complete() {
+        assert!(matches!(parse_recovering(&[]), Err(GmdlError::EmptyInput)));
+    }
+
+    #[test]
+    fn the_stop_stage_names_are_stable() {
+        // They appear in the engine's report line, so they are output.
+        assert_eq!(WalkStage::Geometry.as_str(), "geometry");
+        assert_eq!(WalkStage::MaterialInfo.as_str(), "material-info");
+        assert_eq!(WalkStage::Trailer.as_str(), "trailer");
+    }
+}

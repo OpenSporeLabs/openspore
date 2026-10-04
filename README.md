@@ -26,6 +26,11 @@ second one landed.
 A real Spore asset, decoded and on screen, with nothing faked in between:
 
 ```bash
+# a real Spore CREATURE — 2 meshes, 47 016 triangles
+cargo run -q -p spore-engine -- --preset creature \
+    --package SPORE/Data/Spore_Content.package
+
+# the smallest geometry-bearing model, 20 triangles, 0.14 s
 cargo run -q -p spore-engine -- --preset documented-asset \
     --package SPORE/Data/Spore_Content.package
 ```
@@ -34,11 +39,20 @@ Add `--info` and it decodes, prints one machine-readable line and exits **withou
 opening a window** — which is what makes it usable as a CI gate:
 
 ```
-OPENSPORE-STAGED v1 key=0x00e6bce5:0x40637e03:0x067a07f0 package=Spore_Content format=gmdl meshes=1 triangles=20 bounds_min=-2.070057,0.139144,0.081329 bounds_max=-0.371524,2.164293,5.326164 normals=derived
+OPENSPORE-STAGED v1 key=0x00e6bce5:0x40627100:0x067c79d2 package=Spore_Content format=gmdl meshes=2 triangles=47016 bounds_min=-0.776000,-0.772762,-0.010258 bounds_max=0.776000,0.441339,2.098687 normals=derived textures=0/0 decode=material-info: gmdl: undocumented shader-data id 0x218 in material info
 ```
 
-794 stored bytes → QFS → 1 156 bytes → one gmdl record, version 8, 32 vertices,
-20 triangles, from `SPORE/Data/Spore_Content.package`.
+989 948 stored bytes → QFS → 1 351 408 bytes → one gmdl record, version 8,
+47 016 triangles, from `SPORE/Data/Spore_Content.package`.
+
+That `decode=` field is not a failure to read it. Those records name a
+shader-data id (`0x218`) whose byte size is unknown, so the walk stops at the
+material-info table — which sits *after* the mesh table, so the geometry above is
+complete and validated. `spore-gmdl` has two entry points with different
+contracts for exactly this reason: `parse` refuses (used by verification) and
+`parse_recovering` keeps the geometry (used by the renderer). See
+[`docs/RUST-ENGINE.md` §3b](docs/RUST-ENGINE.md) for why `0x218`'s size could not
+be derived and was left unmeasured instead of guessed.
 
 ### What works today
 

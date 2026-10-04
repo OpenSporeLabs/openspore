@@ -16,7 +16,7 @@
 //! has not, and the difference stays visible.
 
 use spore_core::ResourceKey;
-use spore_gmdl::{GmdlModel, Mesh};
+use spore_gmdl::{GmdlModel, Mesh, StopReason};
 use spore_rw4::Rw4;
 
 use crate::error::AssetError;
@@ -57,6 +57,10 @@ pub struct LoadedModel {
     /// The container it decoded as.
     pub format: ModelFormat,
     /// The decoded GMDL, when `format` is [`ModelFormat::Gmdl`].
+    ///
+    /// Produced by [`spore_gmdl::parse_recovering`], so it may be
+    /// geometry-complete while its material-info tail is not decoded. Read
+    /// [`LoadedModel::stopped_at`] before treating it as complete.
     pub gmdl: Option<GmdlModel>,
     /// The decoded RW4 section directory, when `format` is [`ModelFormat::Rw4`].
     pub rw4: Option<Rw4>,
@@ -65,7 +69,31 @@ pub struct LoadedModel {
     /// Texture identities the material info referenced, in encounter order.
     ///
     /// These are *references the record makes*, not textures that were loaded.
+    /// Empty when the walk stopped before reaching the material-info table --
+    /// a non-finding, not "the model has no textures".
     pub texture_refs: Vec<ResourceKey>,
+    /// Where the decode stopped, when it did not reach the record end.
+    ///
+    /// `None` is the strong claim: the walk closed exactly on the record end.
+    pub stopped_at: Option<StopReason>,
+}
+
+impl LoadedModel {
+    /// Whether the record decoded completely.
+    pub const fn is_complete(&self) -> bool {
+        self.stopped_at.is_none()
+    }
+
+    /// A one-line description of where the decode stopped, for a report.
+    pub fn stop_text(&self) -> Option<String> {
+        self.stopped_at.as_ref().map(|stop| {
+            format!(
+                "{stage}: {error}",
+                stage = stop.stage.as_str(),
+                error = stop.error
+            )
+        })
+    }
 }
 
 /// Loads models out of a [`ContentStore`].
@@ -94,8 +122,18 @@ impl<'a> ModelStore<'a> {
 
         match key.type_id {
             spore_gmdl::GMDL_TYPE => {
-                let gmdl = spore_gmdl::parse(&bytes)
+                // The RECOVERING parse, not the strict one. A real corpus holds
+                // 619 gmdl records naming a shader-data id with no known size --
+                // 0x218 -- including every record of the creature-model group
+                // 0x40627100. Those records carry complete, validated geometry
+                // *behind* the mesh table, so refusing them discards something
+                // known in exchange for something unknown. `stopped_at` records
+                // what was not decoded; `osptool describe` and the differential
+                // harness still use the strict parse, so verification is
+                // unaffected.
+                let recovered = spore_gmdl::parse_recovering(&bytes)
                     .map_err(|source| AssetError::Gmdl { key: *key, source })?;
+                let (gmdl, stopped_at) = (recovered.model, recovered.stop);
                 let mut meshes = Vec::with_capacity(gmdl.mesh_count as usize);
                 for index in 0..gmdl.mesh_count {
                     let mesh = spore_gmdl::mesh_from_gmdl(&gmdl, index)
@@ -127,6 +165,7 @@ impl<'a> ModelStore<'a> {
                     rw4: None,
                     meshes,
                     texture_refs,
+                    stopped_at,
                 })
             }
             spore_rw4::RW4_TYPE => {
@@ -141,6 +180,7 @@ impl<'a> ModelStore<'a> {
                     // Section payloads are not decoded yet. Empty is the truth.
                     meshes: Vec::new(),
                     texture_refs: Vec::new(),
+                    stopped_at: None,
                 })
             }
             other => Err(AssetError::UnsupportedModelType {

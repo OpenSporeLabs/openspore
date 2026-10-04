@@ -359,6 +359,83 @@ always the input length.
 
 ---
 
+## 3b. A real creature, and the honest reason its tail is missing
+
+```
+$ openspore --preset creature --package SPORE/Data/Spore_Content.package --info
+OPENSPORE-STAGED v1 key=0x00e6bce5:0x40627100:0x067c79d2 package=Spore_Content
+  format=gmdl meshes=2 triangles=47016
+  bounds_min=-0.776000,-0.772762,-0.010258 bounds_max=0.776000,0.441339,2.098687
+  normals=derived textures=0/0
+  decode=material-info: gmdl: undocumented shader-data id 0x218 in material info
+```
+
+47 016 triangles, rendered. Two things about that line are worth reading.
+
+**Where creature models actually live.** Group `0x40627100`, which
+`tools/spore/types/groupnames.json` calls `CreatureModelsHQ`. Group
+`0x40626200` (`CreatureModels`) holds **no gmdl records at all** -- it carries
+`pollen_metadata`, `bem`, `png`, `summary` and `prop`. So a creature model has to
+be looked for in the HQ group, which is not obvious from the names and cost a
+search to establish. Measured: 97 gmdl records in `0x40627100`.
+
+**Why `decode=` is not `complete`.** Those records name shader-data id `0x218`,
+whose byte size is not in the table, so the material-info walk cannot continue
+past it. `spore_gmdl` therefore has **two** entry points with deliberately
+different contracts:
+
+| function | contract | used by |
+|---|---|---|
+| `parse` | the whole record or an error. No partial model. | `osptool describe`, `spore-differential` |
+| `parse_recovering` | geometry-complete-or-error, plus a typed `StopReason` | the renderer |
+
+The geometry is *behind* the mesh table, so a record that stops at the
+material-info table has already-validated index buffers, vertex descriptors,
+vertex buffers, the mesh table and the per-mesh material ids. `parse_recovering`
+never invents a size, a count or a value -- it stops and reports where. A test
+pins that `parse` still refuses `0x218`, because if it ever accepted it the
+differential harness would be comparing two partial decodes and calling it a
+match.
+
+**Deriving `0x218`'s size was attempted and failed**, and that is recorded too:
+sweeping candidate sizes 0..2048 against all 97 creature records, requiring the
+bone-range/anim-data trailer to close *exactly* on the record end, produced
+**zero** candidates. The creature trailer is a different shape from the framing
+the C++ reference documents, which it already noted for the cell-stage models.
+So `0x218` stays unmeasured rather than guessed.
+
+## 3c. Texture groups, and what `png` records actually are
+
+Measured over a 60-record sample of `Spore_Content` gmdl records, 209 texture-set
+references:
+
+| referenced group | refs | types present in that group |
+|---|---|---|
+| `0x40642900/01/02` | 34 each | `raster` **only** |
+| `0x40632900/01/02` | 22 each | `raster` **only** |
+| `0x40652900/01/02` | 8 each | `raster` **only** |
+| `0x40662900/01` | 6 each | `raster` **only** |
+| `0x40612900/01` | 1 each | `raster` **only** |
+
+Three consequences:
+
+1. **`--assumed-texture-type` defaulting to `raster` is empirically right.** Every
+   one of the 209 sampled references points at a group that contains *only*
+   `raster` records. The reference still carries no type word, so the assumption
+   stays an assumption -- but it is now an assumption measured over a sample
+   rather than a guess, and `spore-material` grades it `INFERRED`.
+2. **The texture-group layout is regular**: `0x40 6X 29 0Y`, where `X` is the
+   stage category (`1` cell, `2` creature, `3` building, `4` vehicle, `5` ufo,
+   `6` flora, `b` palette) and `0Y` is one of three slots per model. Three
+   textures per model, which matches the three texture-set entries the
+   documented asset references.
+3. **`png` records are NOT textures.** They live in the *model* groups --
+   `0x40616200`, `0x40626200`, `0x40636200`, `0x40646200`, `0x40656200`,
+   `0x40666200` -- one preview image alongside each model's geometry, traits and
+   summary. There is **zero** overlap with any referenced texture group. So a PNG
+   decoder is a Sporepedia/editor-preview feature, not a blocker for creature
+   rendering, and it should not be built before something that is.
+
 ## 4a. Package priority is a product decision, and it is load-bearing
 
 `ContentStore` resolves **first match wins** in the order packages were

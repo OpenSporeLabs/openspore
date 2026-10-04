@@ -140,6 +140,11 @@ impl StagedContent {
 
     /// The one-line, versioned report the tooling and CI parse.
     ///
+    /// The trailing `decode=` field is the important one: a model whose tail
+    /// stopped at the material-info table has COMPLETE geometry, and this
+    /// report says so rather than letting a consumer infer completeness from
+    /// the presence of a mesh.
+    ///
     /// Fixed field set and fixed order, because the point of a machine-readable
     /// line is that a consumer can rely on it -- the same discipline as the
     /// repository's existing `CELLSTAGE-MANIFEST v1`.
@@ -167,6 +172,12 @@ impl StagedContent {
             hi[2],
             self.textures.resolved(),
             self.textures.results.len(),
+        ) + &format!(
+            " decode={decode}",
+            decode = self
+                .model
+                .stop_text()
+                .unwrap_or_else(|| "complete".to_owned())
         )
     }
 }
@@ -461,6 +472,7 @@ mod tests {
                 rw4: None,
                 meshes,
                 texture_refs: Vec::new(),
+                stopped_at: None,
             }),
             scale: 1.0,
             packages: vec!["mini".into()],

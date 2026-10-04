@@ -492,6 +492,7 @@ mod texture_path_tests {
             rw4: None,
             meshes: Vec::new(),
             texture_refs: Vec::new(),
+            stopped_at: None,
         }
     }
 

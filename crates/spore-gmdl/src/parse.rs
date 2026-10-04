@@ -291,6 +291,139 @@ impl GmdlModel {
     }
 }
 
+/// Which part of a record a partial walk reached.
+///
+/// The ordering is the record's own order, and it matters: a walk that stops at
+/// [`WalkStage::MaterialInfo`] has already validated everything a renderer
+/// needs, while one that stops at [`WalkStage::Geometry`] has not.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum WalkStage {
+    /// Version, references, bounds, index buffers, descriptors, vertex buffers,
+    /// the mesh table and the per-mesh material ids.
+    Geometry,
+    /// The material-info table: texture sets and other shader-data entries.
+    MaterialInfo,
+    /// Bone ranges, anim data and the trailing key.
+    Trailer,
+}
+
+impl WalkStage {
+    /// The canonical spelling, matching the trailer-stage names already used.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Geometry => "geometry",
+            Self::MaterialInfo => "material-info",
+            Self::Trailer => "trailer",
+        }
+    }
+}
+
+/// Where a recovering walk stopped, and why.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StopReason {
+    /// The section that was being read.
+    pub stage: WalkStage,
+    /// The typed failure. Carried verbatim so a caller can match on it.
+    pub error: GmdlError,
+}
+
+/// A gmdl record decoded as far as the format is understood.
+///
+/// # Why this exists
+///
+/// A real corpus contains gmdl records that name a shader-data id this crate
+/// has no size for -- `0x218`, on 619 records of `Spore_Content` including
+/// **every** record of the creature-model group `0x40627100`. Because the
+/// material-info table sits *after* the mesh table, those records already have
+/// complete, self-validated geometry by the time the walk stops: index buffers,
+/// vertex descriptors, vertex buffers, the mesh table and the per-mesh material
+/// ids are all behind it and all verified.
+///
+/// [`parse`] refuses them, and that is correct for verification: a record whose
+/// walk does not close has not been fully decoded, and a differential harness
+/// that accepted it would be comparing two incomplete things. But a *renderer*
+/// has no use for the tail of a creature model, and throwing away 1.3 MB of
+/// validated geometry because a material entry is unmeasured trades something
+/// known for something unknown.
+///
+/// So there are two entry points with deliberately different contracts:
+///
+/// | function | contract | used by |
+/// |---|---|---|
+/// | [`parse`] | the whole record, or an error. No partial model. | verification, `osptool describe`, the differential harness |
+/// | [`parse_recovering`] | geometry-complete-or-error, plus an explicit [`StopReason`] | the renderer |
+///
+/// `parse_recovering` **never** invents a size, a count or a value. It stops,
+/// and it says where and why. A caller that ignores [`PartialGmdl::stop`] and
+/// treats the result as a complete record has discarded the only information
+/// that made the difference visible, which is why the report line and the
+/// material layer both read it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PartialGmdl {
+    /// The model as far as it was decoded.
+    pub model: GmdlModel,
+    /// Why the walk stopped, or `None` when it reached the record end.
+    ///
+    /// `None` is the strong claim: the walk closed exactly on the record end.
+    /// `Some` means the geometry is intact and something after the mesh table
+    /// is not understood.
+    pub stop: Option<StopReason>,
+}
+
+impl PartialGmdl {
+    /// Whether the walk closed exactly on the record end.
+    pub const fn is_complete(&self) -> bool {
+        self.stop.is_none()
+    }
+
+    /// Whether the geometry a renderer needs is fully decoded.
+    ///
+    /// True for a complete record and for one that stopped at or after the
+    /// material-info table. False is never returned -- a walk that stopped
+    /// inside the geometry is an error, not a `PartialGmdl`.
+    pub const fn geometry_complete(&self) -> bool {
+        true
+    }
+}
+
+/// Decodes a gmdl record, keeping the geometry when the tail is unknown.
+///
+/// Returns [`GmdlError`] when the failure is at or before the mesh table,
+/// because then the geometry is *not* decoded and a `PartialGmdl` would be a
+/// lie. See [`PartialGmdl`] for the full contract.
+pub fn parse_recovering(data: &[u8]) -> Result<PartialGmdl, GmdlError> {
+    if data.is_empty() {
+        return Err(GmdlError::EmptyInput);
+    }
+    let mut walk = Walk::new(data);
+    // Everything a renderer needs, strictly. A failure here is a real failure.
+    walk.read_version()?;
+    walk.read_referenced_files()?;
+    walk.read_mesh_count_and_bounds()?;
+    walk.read_index_buffers()?;
+    walk.read_descriptors()?;
+    walk.read_vertex_buffers()?;
+    walk.read_mesh_table()?;
+
+    // From here on, stopping is recorded rather than propagated.
+    let stop = match walk.read_material_info() {
+        Ok(()) => None,
+        Err(error) => Some(StopReason {
+            stage: WalkStage::MaterialInfo,
+            error,
+        }),
+    };
+    if stop.is_none() {
+        // `read_trailer` already swallows its own failures into
+        // `TrailerWalk::Truncated`; the model reports that itself.
+        walk.read_trailer();
+    }
+    Ok(PartialGmdl {
+        model: walk.finish(data.len()),
+        stop,
+    })
+}
+
 /// Decodes a whole gmdl record.
 ///
 /// On success the model is complete: `consumed == data.len()`, and

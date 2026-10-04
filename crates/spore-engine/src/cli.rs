@@ -111,8 +111,26 @@ pub enum RecordOrigin {
 /// the smallest record that still yields geometry; see `docs/ASSET-PATH.md`.
 pub const PRESET_DOCUMENTED_ASSET: (u32, u32, u32) = (0x00E6_BCE5, 0x4063_7E03, 0x067A_07F0);
 
+/// The largest creature model in the base content package: 2 meshes, 47 016
+/// triangles, 1 351 408 bytes decompressed.
+///
+/// Group `0x40627100` is `CreatureModelsHQ` in
+/// `tools/spore/types/groupnames.json`. Note that `CreatureModels`
+/// (`0x40626200`) holds **no** gmdl records at all -- it carries traits,
+/// summaries, `prop` and `png` previews -- so a creature model has to be
+/// looked for in the HQ group. Measured, not assumed.
+///
+/// This record's material-info tail names shader-data id `0x218`, whose size is
+/// unknown, so it decodes COMPLETELY through the mesh table and stops there.
+/// Its geometry is fully validated; the report line says `decode=material-info`.
+/// It is the milestone asset: the first real creature on screen.
+pub const PRESET_CREATURE: (u32, u32, u32) = (0x00E6_BCE5, 0x4062_7100, 0x067C_79D2);
+
 /// The named presets this build knows.
-pub const PRESETS: &[(&str, (u32, u32, u32))] = &[("documented-asset", PRESET_DOCUMENTED_ASSET)];
+pub const PRESETS: &[(&str, (u32, u32, u32))] = &[
+    ("documented-asset", PRESET_DOCUMENTED_ASSET),
+    ("creature", PRESET_CREATURE),
+];
 
 /// Why a command line was rejected.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -380,6 +398,25 @@ mod tests {
         assert_eq!(req.record_origin, RecordOrigin::Explicit);
         assert!(req.packages.is_empty());
         assert_eq!(req.scale, 1.0);
+    }
+
+    #[test]
+    fn the_creature_preset_is_distinct_from_the_documented_asset() {
+        let LaunchRequest::Scene(creature) = parse(["--preset", "creature"]).unwrap() else {
+            panic!("expected a scene request");
+        };
+        assert_eq!(
+            creature.record,
+            ResourceKey::new(0x00E6_BCE5, 0x4062_7100, 0x067C_79D2)
+        );
+        assert_ne!(
+            creature.record,
+            ResourceKey::new(
+                PRESET_DOCUMENTED_ASSET.0,
+                PRESET_DOCUMENTED_ASSET.1,
+                PRESET_DOCUMENTED_ASSET.2
+            )
+        );
     }
 
     #[test]
