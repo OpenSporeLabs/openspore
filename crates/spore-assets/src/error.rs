@@ -8,6 +8,42 @@
 
 use spore_core::ResourceKey;
 
+/// The near-miss suffix appended to an [`AssetError::NotFound`] message.
+///
+/// A candidate list that lives only in a struct field is invisible to anyone
+/// reading a log line, so it has to reach the message. The "nothing to suggest"
+/// case is worded differently on purpose: a bare sentence with no suffix reads
+/// like an absence of evidence, when it is actually an absence of *suggestions*
+/// to give.
+fn candidate_hint(candidates: &[ResourceKey]) -> String {
+    if candidates.is_empty() {
+        return "; no record of that type was found either, so there is nothing to suggest"
+            .to_owned();
+    }
+    // Spell out at most this many, so one log line stays readable.
+    const SHOWN: usize = 8;
+    let total = candidates.len();
+    let noun = if total == 1 { "y" } else { "ies" };
+    let list: Vec<String> = candidates
+        .iter()
+        .take(SHOWN)
+        .map(ToString::to_string)
+        .collect();
+    if total <= SHOWN {
+        format!(
+            "; {total} nearby identit{noun} of that type: {}",
+            list.join(", ")
+        )
+    } else {
+        // The count is the TRUE total, not the number printed. Saying "8 nearby"
+        // when 50 exist understates the evidence and reads as if 8 were all of it.
+        format!(
+            "; {total} nearby identit{noun} of that type, first {SHOWN}: {}",
+            list.join(", ")
+        )
+    }
+}
+
 /// Everything that can go wrong between "open a package" and "here is a mesh".
 ///
 /// `PartialEq` is implemented deliberately: an asset pipeline's errors are
@@ -40,8 +76,10 @@ pub enum AssetError {
     ///
     /// `candidates` is populated by the store with the closest identities it
     /// did find, because "not found" without a hint is the least useful error
-    /// in an asset system.
-    #[error("no record `{key}` in any of the {} loaded package(s)", .searched)]
+    /// in an asset system -- and because it must appear in the *message*: a
+    /// candidate list that exists only in a struct field is invisible to anyone
+    /// reading a log line.
+    #[error("no record `{key}` in any of the {searched} loaded package(s){}", candidate_hint(.candidates))]
     NotFound {
         /// The identity that was requested.
         key: ResourceKey,
@@ -222,5 +260,71 @@ impl PartialEq for AssetError {
             ) => ai == bi && ac == bc,
             _ => false,
         }
+    }
+}
+
+#[cfg(test)]
+mod message_tests {
+    use super::*;
+
+    #[test]
+    fn a_not_found_message_carries_its_candidates() {
+        // A candidate list that lives only in a struct field is invisible to
+        // anyone reading a log line, which is where an asset failure is actually
+        // diagnosed.
+        let error = AssetError::NotFound {
+            key: ResourceKey::new(1, 2, 3),
+            searched: 2,
+            candidates: vec![ResourceKey::new(9, 8, 7)],
+        };
+        let message = error.to_string();
+        assert!(
+            message.contains("0x00000001:0x00000002:0x00000003"),
+            "{message}"
+        );
+        assert!(
+            message.contains("0x00000009:0x00000008:0x00000007"),
+            "{message}"
+        );
+        assert!(message.contains("2 loaded package"), "{message}");
+    }
+
+    #[test]
+    fn a_not_found_with_no_candidates_says_so_rather_than_going_quiet() {
+        // An empty suffix would read like "we found nothing at all", which is a
+        // different claim from "we have nothing to suggest".
+        let error = AssetError::NotFound {
+            key: ResourceKey::new(1, 2, 3),
+            searched: 1,
+            candidates: Vec::new(),
+        };
+        let message = error.to_string();
+        assert!(message.contains("nothing to suggest"), "{message}");
+        assert!(!message.contains("nearby"), "{message}");
+    }
+
+    #[test]
+    fn a_single_candidate_is_not_pluralised() {
+        let one = candidate_hint(&[ResourceKey::new(1, 1, 1)]);
+        assert!(one.contains("1 nearby identity of that type"), "{one}");
+        let two = candidate_hint(&[ResourceKey::new(1, 1, 1), ResourceKey::new(2, 2, 2)]);
+        assert!(two.contains("2 nearby identities of that type"), "{two}");
+    }
+
+    #[test]
+    fn the_candidate_list_is_capped_so_a_log_line_stays_readable() {
+        let many: Vec<ResourceKey> = (0..50).map(|i| ResourceKey::new(i, i, i)).collect();
+        let hint = candidate_hint(&many);
+        assert!(
+            hint.contains("50 nearby identities of that type, first 8"),
+            "the count must be the true total: {hint}"
+        );
+        // Only eight identities are spelled out, and each is spelled as
+        // `T:G:I`, so the message carries exactly 8 * 3 `0x` prefixes.
+        assert_eq!(hint.matches("0x").count(), 24, "{hint}");
+        assert!(
+            !hint.contains("0x00000032"),
+            "the 50th identity must be summarised, not listed: {hint}"
+        );
     }
 }

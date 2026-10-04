@@ -27,14 +27,31 @@ pub mod type_id {
     pub const PROP: u32 = 0x00B1_B104;
     /// Game model (`gmdl`). Spore's primary geometry container.
     pub const GMDL: u32 = 0x00E6_BCE5;
-    /// RenderWare 4 container. Also the container used by the `png`/`plt`
-    /// records — a `png`-named record is an RW4 blob, **not** raw PNG.
+    /// RenderWare 4 container. Begins `89 52 57 34 77 33 32 00` (`RW4w32\0`).
+    ///
+    /// Measured over the installed packages: all 1131 `0x2F4E681B` records in
+    /// `Spore_Content` carry the RW4 magic. **This is a different type id from
+    /// [`PNG`]** — see that constant's note, which corrects a claim this crate
+    /// used to make.
     pub const RW4: u32 = 0x2F4E_681B;
     /// Raster (texture) record: a 32-byte envelope followed by DXT5 layers.
     pub const RASTER: u32 = 0x2F4E_681C;
+    /// Raw PNG. `png` in `typenames.json`.
+    ///
+    /// **This is raw PNG, not an RW4 container.** Measured: all 1642
+    /// `0x2F7D0004` records in `Spore_Content` begin `89 50 4E 47 0D 0A 1A 0A`
+    /// and are stored uncompressed (`csize == msize`); likewise 8360 in
+    /// `Spore_Graphics`, 461 in `PatchData`, 24 in `Spore_Pack_03` — 10 487 of
+    /// 10 487, with zero RW4 magics. An earlier revision of this file claimed
+    /// the opposite by conflating `png` with [`RW4`]; the two ids are adjacent
+    /// and mean different things.
+    pub const PNG: u32 = 0x2F7D_0004;
+    /// Raw JPEG. `jpeg` in `typenames.json`, distinct from [`PNG`] for the same
+    /// reason.
+    pub const JPEG: u32 = 0x2F7D_0002;
     /// Palette record.
     pub const PLT: u32 = 0x0119_89B7;
-    /// World-object model-placement record.
+    /// World-object model-placement records.
     pub const WORLD_OBJECT: u32 = 0x0F43_029A;
 
     /// Cell-stage globals resource (`cCellGlobalsResource`).
@@ -319,5 +336,56 @@ mod tests {
             RecordType::new(type_id::RW4).name(),
             RecordType::new(type_id::RASTER).name()
         );
+    }
+}
+
+#[cfg(test)]
+mod container_tests {
+    use super::*;
+
+    /// The claim that `png`-typed records are RW4 containers was wrong, and it
+    /// was load-bearing: it would have sent every texture lookup down the RW4
+    /// walker. This test exists so the correction cannot be silently reverted by
+    /// someone who "remembers" the old story.
+    #[test]
+    fn png_and_rw4_are_distinct_type_ids_with_distinct_payloads() {
+        assert_ne!(type_id::PNG, type_id::RW4);
+        assert_ne!(type_id::JPEG, type_id::RW4);
+        // Adjacent id families: 0x2F4E681B (rw4) and 0x2F4E681C (raster) are
+        // neighbours -- 0x1B vs 0x1C, differing in the low three bits -- and
+        // 0x2F7D0002/4 (jpeg/png) sit in a different cluster entirely. The old
+        // wrong claim came from that adjacency, so it is pinned here.
+        assert_eq!(type_id::RW4, 0x2F4E_681B);
+        assert_eq!(type_id::RASTER, 0x2F4E_681C);
+        assert_eq!(type_id::RW4 ^ type_id::RASTER, 0x07);
+        // And the png/jpeg cluster is nowhere near the RW/raster cluster.
+        // Written as a runtime comparison so the assertion is about the values
+        // rather than something the compiler can fold away.
+        let png_high = type_id::PNG >> 16;
+        let rw_high = type_id::RW4 >> 16;
+        assert!(
+            png_high != rw_high,
+            "png 0x{:08x} and rw4 0x{:08x} must not share a high half",
+            type_id::PNG,
+            type_id::RW4
+        );
+    }
+
+    #[test]
+    fn every_named_constant_agrees_with_the_canonical_name_table() {
+        for (id, expected) in [
+            (type_id::PNG, "png"),
+            (type_id::JPEG, "jpeg"),
+            (type_id::RW4, "rw4"),
+            (type_id::RASTER, "raster"),
+            (type_id::GMDL, "gmdl"),
+            (type_id::PROP, "prop"),
+        ] {
+            assert_eq!(
+                RecordType::new(id).name(),
+                Some(expected),
+                "0x{id:08x} should be named {expected}"
+            );
+        }
     }
 }
