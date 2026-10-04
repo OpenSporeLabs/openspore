@@ -359,6 +359,51 @@ always the input length.
 
 ---
 
+## 4a. Package priority is a product decision, and it is load-bearing
+
+`ContentStore` resolves **first match wins** in the order packages were
+pushed. Nothing sorts them, nothing deduplicates, nothing guesses. The order
+you pass is the order that is honoured, which is what makes it auditable.
+
+For most records the choice does not matter. For at least one it is decisive.
+The Cell Stage globals record `0x2A3CE5B7:0:0xA426730B` exists in **one stock
+install with two byte-distinct revisions**:
+
+| package | length |
+|---|---|
+| `Spore/Data/Spore_Game.package` | **264 bytes** |
+| `Spore/Data/PatchData.package` | **276 bytes** |
+| `SPORE/DataEP1/Spore_EP1_Data.package` | **276 bytes** |
+
+A word-level alignment shows the 264 is not a truncation and not a shift: the
+276-byte revision is the same record with exactly **three fields absent** --
+`gameMode` @0, `startingCellKey` @56, `controlMethod` @212 -- and all 63 other
+words are byte-identical. `cCellGlobalsResource` grew by three fields after the
+base game, and the three it gained are all mode/cell/control selectors.
+
+So loading base content *before* a patch resolves this record to the 264-byte
+copy and the decoder returns a typed `ExtentMismatch`. **That refusal is
+correct** -- padding to 276 would fabricate three fields -- and the fix is the
+package order:
+
+```rust
+let mut store = ContentStore::new();
+store.push(Package::open("Spore_Game",      "SPORE/Data/Spore_Game.package")?);
+store.push(Package::open("Spore_Content",  "SPORE/Data/Spore_Content.package")?);
+// Patches go in FRONT: they override.
+store.push_front(Package::open("PatchData", "SPORE/Data/PatchData.package")?);
+store.push_front(Package::open("EP1_Data",  "SPORE/DataEP1/Spore_EP1_Data.package")?);
+```
+
+`spore-assets` does not encode this policy because it is a *product* decision,
+not a format fact -- but `spore-cellcontent`'s real-corpus test applies it
+explicitly rather than by accident, and its
+`the_globals_record_has_two_revisions_in_one_install` test proves the
+three-word splice reproduces the 264 exactly.
+
+An `ExtentMismatch` on a fixed-extent record is therefore worth reading as
+"wrong package priority" before it is read as "corrupt record".
+
 ## 5. The Bevy feature set, and why each feature is there
 
 From the root `Cargo.toml`:
