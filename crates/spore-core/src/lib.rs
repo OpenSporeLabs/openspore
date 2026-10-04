@@ -35,5 +35,5 @@ pub mod record;
 pub use evidence::{
     EvidenceLevel, EvidenceState, Fact, FactState, Provenance, ProvenanceMode, SourceClass,
 };
-pub use key::{ResourceKey, WILDCARD};
+pub use key::{parse_id, ResourceKey, WILDCARD};
 pub use record::{fourcc, RecordType};

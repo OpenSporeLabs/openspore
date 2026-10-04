@@ -209,6 +209,40 @@ Verified: `--bogus` → 2; `--package /nope.package --info` → 3.
 
 ---
 
+## 3a. Textures on the vertical slice
+
+`--texture` resolves the model's texture references through `spore-material`
+and applies the **first that decodes** as the diffuse colour:
+
+```
+$ openspore --preset documented-asset --package SPORE/Data/Spore_Content.package \
+      --texture --info
+OPENSPORE-STAGED v1 key=0x00e6bce5:0x40637e03:0x067a07f0 package=Spore_Content \
+  format=gmdl meshes=1 triangles=20 ... normals=derived textures=2/3
+```
+
+Two of three resolve; the third is refused **by name** for carrying fourcc
+`0x15` -- the luminance family `spore-texture` declines. That refusal is the
+correct outcome, and it is reported rather than worked around.
+
+Which reference is *diffuse* is **not known**: the 16 header bytes of a
+texture-set entry are undecoded, which is why `spore-material` exposes
+`SamplerRole::Unresolved` as its single variant. Applying the first resolved
+reference is a stated visual choice, not a claim about the record.
+
+Expect the model to render **near-black** with `--texture`. That is faithful,
+not a bug: `docs/BOUNDARIES.md` records the same record (`0x40662900`) as "a
+near-black alpha mask", and the DXT5 codec's colour handling is deliberately
+non-standard (see `spore_texture::claims::dxt5_spec_deviations`).
+
+The assumed record type is a visible flag rather than a constant, because a
+gmdl texture-set entry stores `{instance, group}` with **no type word** and a
+wrong assumption yields a confidently wrong texture instead of an error:
+
+```
+--assumed-texture-type 0x2f4e681c   (default)
+```
+
 ## 4. `osptool`
 
 ```bash

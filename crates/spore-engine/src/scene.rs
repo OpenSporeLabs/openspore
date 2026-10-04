@@ -4,6 +4,7 @@
 //! the "can it read a Spore record" question have separate answers. Swapping the
 //! contents of the world must not require touching the camera.
 
+use bevy::app::Plugin;
 use bevy::pbr::StandardMaterial;
 use bevy::prelude::*;
 
@@ -27,7 +28,41 @@ pub struct MainCamera;
 #[derive(Debug, Clone, Copy, Component, Default)]
 pub struct OnStage;
 
+/// Everything that is *not* Spore content: the world the content sits in.
+///
+/// # Why this is a plugin and not a function
+///
+/// The world and the content change for different reasons and at different
+/// times. The camera, the lights and the ground are OpenSpore's own choices and
+/// change when the renderer changes; the content changes when a different
+/// package is loaded. Splitting them means a content change cannot accidentally
+/// move the camera, and a renderer change cannot accidentally respawn the
+/// content -- and each can be tested with the other absent.
+///
+/// It is deliberately the *smallest* plugin that is still a real boundary. There
+/// is one world; there is no scene graph, no scene file and no level format yet,
+/// because none of those have a proven need. `src/apps/scene.json` in the C++
+/// tree is the closest prior art and it stays there until a Rust equivalent is
+/// actually load-bearing.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ScenePlugin;
+
+impl Plugin for ScenePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_world);
+    }
+}
+
 /// Spawns the camera, the key light, the ground and the backdrop.
+fn spawn_world(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    spawn_stage(&mut commands, &mut meshes, &mut materials);
+}
+
+/// The world spawn itself, callable directly for tests and for the placeholder.
 pub fn spawn_stage(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,

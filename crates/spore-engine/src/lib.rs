@@ -48,6 +48,10 @@ pub mod cli;
 pub mod convert;
 pub mod loader;
 pub mod scene;
+pub mod texture;
+
+pub use loader::SporeAssetPlugin;
+pub use scene::ScenePlugin;
 
 use bevy::pbr::StandardMaterial;
 use bevy::prelude::*;
@@ -90,15 +94,55 @@ pub enum PrepareOutcome {
 
 /// Decodes a scene request without touching Bevy, the GPU or the filesystem
 /// beyond the packages named.
+///
+/// Textures are resolved here too, for the same reason the model is: the store
+/// is a live view over memory-mapped packages, and resolving inside a spawn
+/// system would either have to keep the mapping alive longer than the app or
+/// re-enter it per spawn. Resolving up front also means `--info` reports texture
+/// resolution, so the headless path and the visible path cannot disagree.
 pub fn prepare(scene: &SceneRequest) -> PrepareOutcome {
     let store = match loader::open_packages(&scene.packages) {
         Ok(store) => store,
         Err(error) => return PrepareOutcome::Failed(error.to_string()),
     };
-    match ModelStore::new(&store).load(&scene.record) {
-        Ok(model) => PrepareOutcome::Ready(Box::new(StagedContent::new(model, scene.scale))),
-        Err(error) => PrepareOutcome::Failed(loader::describe(&error)),
+    let model = match ModelStore::new(&store).load(&scene.record) {
+        Ok(model) => model,
+        Err(error) => return PrepareOutcome::Failed(loader::describe(&error)),
+    };
+
+    let package_names = store
+        .package_names()
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    let mut content = StagedContent::new(model, scene.scale).with_packages(package_names);
+
+    if scene.textured {
+        // The texture reference carries no type word, so the type is ASSUMED
+        // here, in the open, and `spore-material` grades the assumption
+        // INFERRED rather than VERIFIED. `assumed_texture_type` is the single
+        // place that assumption lives.
+        let results = match content.model.gmdl.as_ref() {
+            Some(model) => {
+                spore_material::resolve_model_textures(&store, model, scene.assumed_texture_type)
+            }
+            None => {
+                warn!(
+                    "{} carries no gmdl, so it has no texture references to resolve",
+                    content.model.key
+                );
+                Vec::new()
+            }
+        };
+        let resolved = results.iter().filter(|r| r.is_ok()).count();
+        info!("textures: {resolved} of {} resolved", results.len());
+        for failure in results.iter().filter_map(|r| r.as_ref().err()) {
+            warn!("texture reference refused: {failure}");
+        }
+        content = content.with_textures(results);
     }
+
+    PrepareOutcome::Ready(Box::new(content))
 }
 
 /// Prints the one-line machine-readable report the tooling and CI parse.
@@ -156,12 +200,12 @@ fn run_scene(scene: SceneRequest) -> std::process::ExitCode {
 /// Assembles the placeholder app.
 pub fn build_placeholder_app(window: WindowOptions) -> App {
     let mut app = base_app(window);
+    app.add_plugins(ScenePlugin);
     app.add_systems(
         Startup,
         |mut commands: Commands,
          mut meshes: ResMut<Assets<Mesh>>,
          mut materials: ResMut<Assets<StandardMaterial>>| {
-            scene::spawn_stage(&mut commands, &mut meshes, &mut materials);
             scene::spawn_placeholder(&mut commands, &mut meshes, &mut materials);
         },
     );
@@ -174,17 +218,10 @@ pub fn build_scene_app(window: WindowOptions, content: StagedContent) -> App {
     let bounds = content.bounds();
     let mut app = base_app(window);
     app.insert_resource(content);
-    app.add_systems(
-        Startup,
-        |mut commands: Commands,
-         content: Res<StagedContent>,
-         mut meshes: ResMut<Assets<Mesh>>,
-         mut materials: ResMut<Assets<StandardMaterial>>| {
-            let outcome =
-                loader::stage_decoded(&content, &mut commands, &mut meshes, &mut materials);
-            info!("{outcome:?}");
-        },
-    );
+    // Two plugins, two responsibilities: the world is OpenSpore's, the content
+    // is Spore's. Keeping them apart means loading different content cannot move
+    // the camera, and changing the renderer cannot respawn the content.
+    app.add_plugins((ScenePlugin, SporeAssetPlugin));
     // The camera is framed in `PostStartup`, not `Startup`, and the reason is
     // worth recording: `Commands::spawn` is *deferred*, so a `Query` in the same
     // system that spawns the camera sees zero cameras. Doing both in one system
@@ -254,6 +291,8 @@ mod tests {
             scale: 1.0,
             window: WindowOptions::default(),
             info_only: true,
+            textured: false,
+            assumed_texture_type: spore_core::record::type_id::RASTER,
         }
     }
 
@@ -324,5 +363,141 @@ mod tests {
     #[test]
     fn an_empty_store_resolves_nothing() {
         assert!(empty_store().is_empty());
+    }
+}
+
+#[cfg(test)]
+mod texture_path_tests {
+    use super::*;
+    use cli::{RecordOrigin, WindowOptions};
+    use spore_assets::{ContentStore, LoadedModel, ModelFormat};
+    use spore_core::ResourceKey;
+
+    fn scene(textured: bool) -> SceneRequest {
+        SceneRequest {
+            packages: Vec::new(),
+            record: ResourceKey::new(0x00E6_BCE5, 0x4063_7E03, 0x067A_07F0),
+            record_origin: RecordOrigin::Preset("documented-asset"),
+            scale: 1.0,
+            window: WindowOptions::default(),
+            info_only: true,
+            textured,
+            assumed_texture_type: spore_core::record::type_id::RASTER,
+        }
+    }
+
+    #[test]
+    fn textures_are_only_resolved_when_asked_for() {
+        // Both paths must succeed on a request with no packages: neither the
+        // model nor the texture resolution can turn a missing install into a
+        // different error, because both are downstream of opening the package.
+        for textured in [false, true] {
+            let outcome = prepare(&scene(textured));
+            assert!(
+                matches!(outcome, PrepareOutcome::Failed(_)),
+                "textured={textured}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_report_line_states_texture_resolution_even_with_none_requested() {
+        // `0/0` and `not requested` must be distinguishable. Printing nothing
+        // about textures would make "we did not look" read as "there were none".
+        let content = StagedContent::new(dummy_model(), 1.0);
+        let line = content.report_line();
+        assert!(line.contains("textures=0/0"), "{line}");
+        assert!(
+            !content.textures.requested,
+            "the default must not claim to have looked"
+        );
+    }
+
+    #[test]
+    fn the_report_line_counts_resolved_and_attempted_separately() {
+        let content = StagedContent::new(dummy_model(), 1.0).with_textures(Vec::new());
+        let line = content.report_line();
+        assert!(line.contains("textures=0/0"), "{line}");
+        assert!(
+            content.textures.requested,
+            "asking with no references still means we looked"
+        );
+    }
+
+    #[test]
+    fn the_assumed_texture_type_defaults_to_raster_and_is_visible() {
+        let request = scene(true);
+        assert_eq!(
+            request.assumed_texture_type,
+            spore_core::record::type_id::RASTER
+        );
+        // And it is overridable, because a gmdl texture-set entry has no type
+        // word and a wrong assumption yields a confidently wrong texture.
+        let overridden = cli::parse([
+            "--record",
+            "1:2:3",
+            "--texture",
+            "--assumed-texture-type",
+            "0x2F4E681B",
+        ])
+        .unwrap();
+        let LaunchRequest::Scene(request) = overridden else {
+            panic!("expected a scene request")
+        };
+        assert_eq!(request.assumed_texture_type, 0x2F4E_681B);
+        assert!(request.textured);
+    }
+
+    #[test]
+    fn a_bad_assumed_texture_type_is_refused_rather_than_defaulted() {
+        assert!(matches!(
+            cli::parse(["--record", "1:2:3", "--assumed-texture-type", "nope"]).unwrap_err(),
+            cli::CliError::BadValue { flag, .. } if flag == "--assumed-texture-type"
+        ));
+    }
+
+    #[test]
+    fn textures_are_off_unless_requested() {
+        let LaunchRequest::Scene(off) = cli::parse(["--record", "1:2:3"]).unwrap() else {
+            panic!()
+        };
+        assert!(
+            !off.textured,
+            "resolving textures costs a decode per reference; it must be opt-in"
+        );
+        let LaunchRequest::Scene(on) = cli::parse(["--record", "1:2:3", "--texture"]).unwrap()
+        else {
+            panic!()
+        };
+        assert!(on.textured);
+    }
+
+    #[test]
+    fn usage_documents_the_texture_flags() {
+        let text = cli::usage();
+        assert!(text.contains("--texture"), "{text}");
+        assert!(text.contains("--assumed-texture-type"), "{text}");
+        assert!(
+            text.contains("no type word"),
+            "the assumption must be explained, not just offered: {text}"
+        );
+    }
+
+    fn dummy_model() -> LoadedModel {
+        LoadedModel {
+            key: ResourceKey::new(0x00E6_BCE5, 1, 2),
+            package_name: "mini".into(),
+            format: ModelFormat::Gmdl,
+            gmdl: None,
+            rw4: None,
+            meshes: Vec::new(),
+            texture_refs: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn an_empty_store_is_still_empty_after_a_failed_prepare() {
+        assert!(empty_store().is_empty());
+        let _: &ContentStore = &empty_store();
     }
 }

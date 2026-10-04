@@ -81,6 +81,16 @@ pub struct SceneRequest {
     pub window: WindowOptions,
     /// Print what was loaded and exit without opening a window.
     pub info_only: bool,
+    /// Resolve the model's texture references and apply the first that decodes.
+    pub textured: bool,
+    /// The record type assumed for a texture reference.
+    ///
+    /// A gmdl texture-set entry stores `{instance, group}` with **no type
+    /// word**, so the type has to come from somewhere. It is a visible,
+    /// overridable parameter rather than a constant buried in the resolver,
+    /// because a wrong assumption produces a confidently wrong texture instead
+    /// of an error.
+    pub assumed_texture_type: u32,
 }
 
 /// How the record identity was chosen.
@@ -180,6 +190,11 @@ pub fn usage() -> String {
          \x20   --height <PX>        Window height (default 720)\n\
          \x20   --title <TEXT>       Window title\n\
          \x20   --info               Load, report, and exit without a window\n\
+         \x20   --texture            Resolve the model's texture references and apply\n\
+         \x20                       the first that decodes as the diffuse colour\n\
+         \x20   --assumed-texture-type <ID>\n\
+         \x20                       The record type assumed for a texture reference,\n\
+         \x20                       which carries no type word (default 0x2f4e681c)\n\
          \x20   --placeholder        Show the built-in mesh with no game data at all\n\
          \x20   -h, --help           Print this text\n\
          \n\
@@ -206,6 +221,8 @@ fn parse_vec(args: &[String]) -> Result<LaunchRequest, CliError> {
     let mut window = WindowOptions::default();
     let mut info_only = false;
     let mut placeholder = false;
+    let mut textured = false;
+    let mut assumed_texture_type = spore_core::record::type_id::RASTER;
 
     let mut index = 0usize;
     while index < args.len() {
@@ -280,6 +297,18 @@ fn parse_vec(args: &[String]) -> Result<LaunchRequest, CliError> {
                 window.title = value_for("--title")?;
             }
             "--info" => info_only = true,
+            "--texture" => textured = true,
+            "--assumed-texture-type" => {
+                let raw = value_for("--assumed-texture-type")?;
+                // `spore_core::parse_id`, not `u32::from_str`: the latter rejects
+                // a `0x` prefix, and every other tool here accepts one.
+                assumed_texture_type =
+                    spore_core::parse_id(&raw).map_err(|_| CliError::BadValue {
+                        flag: "--assumed-texture-type".into(),
+                        value: raw,
+                        expected: "a type id, decimal or 0x-prefixed hex",
+                    })?;
+            }
             other => return Err(CliError::UnknownFlag(other.to_owned())),
         }
         index += 1;
@@ -297,6 +326,8 @@ fn parse_vec(args: &[String]) -> Result<LaunchRequest, CliError> {
                 scale,
                 window,
                 info_only,
+                textured,
+                assumed_texture_type,
             }))
         }
         // Packages with no record is the ambiguous case: the caller named

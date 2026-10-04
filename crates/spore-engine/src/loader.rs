@@ -17,6 +17,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use bevy::app::Plugin;
 use bevy::pbr::StandardMaterial;
 use bevy::prelude::*;
 
@@ -26,12 +27,49 @@ use spore_core::ResourceKey;
 use crate::convert::{self, NormalMode};
 use crate::scene::{self, OnStage};
 
+/// Decoded content for one record: geometry, and optionally its textures.
+///
+/// Not `Clone`: `spore_material::MaterialError` wraps `spore_assets::AssetError`,
+/// which wraps `std::io::Error` and therefore cannot be cloned. Sharing the
+/// decoded content is done with an [`Arc`] on [`StagedContent`] instead.
+///
+/// # Textures are resolved here, not at spawn time
+///
+/// `spore-material` needs a [`ContentStore`], which is a live resource over
+/// memory-mapped packages. If textures were resolved inside a spawn system the
+/// mapping would have to outlive the app or be re-entered per spawn. Resolving
+/// up front -- in [`crate::prepare`], before Bevy exists -- keeps the store a
+/// plain local and makes `--info` report texture resolution too, so the headless
+/// path and the visible path cannot disagree about what loaded.
+#[derive(Debug, Default)]
+pub struct DecodedTextures {
+    /// One entry per texture the model referenced, in encounter order.
+    pub results: Vec<Result<spore_material::ResolvedTexture, spore_material::MaterialError>>,
+    /// Whether texture resolution was requested at all.
+    pub requested: bool,
+}
+
+impl DecodedTextures {
+    /// How many references resolved.
+    pub fn resolved(&self) -> usize {
+        self.results.iter().filter(|r| r.is_ok()).count()
+    }
+
+    /// How many were refused, with the reasons.
+    pub fn failures(&self) -> Vec<&spore_material::MaterialError> {
+        self.results
+            .iter()
+            .filter_map(|r| r.as_ref().err())
+            .collect()
+    }
+}
+
 /// A decoded model, ready to be turned into entities.
 ///
 /// Holds the model behind an [`Arc`] so inserting it as a Bevy resource is a
 /// pointer copy rather than a deep clone of every vertex buffer, and so
 /// [`crate::build_scene_app`] can take it by value without duplicating it.
-#[derive(Debug, Clone, Resource)]
+#[derive(Debug, Resource)]
 pub struct StagedContent {
     /// What was decoded.
     pub model: Arc<LoadedModel>,
@@ -39,21 +77,36 @@ pub struct StagedContent {
     pub scale: f32,
     /// Which packages were searched, in resolution order.
     pub packages: Vec<String>,
+    /// Textures, when they were requested.
+    pub textures: DecodedTextures,
 }
 
 impl StagedContent {
-    /// Wraps a decoded model.
+    /// Wraps a decoded model, with no textures.
     pub fn new(model: LoadedModel, scale: f32) -> Self {
         Self {
             model: Arc::new(model),
             scale,
             packages: Vec::new(),
+            textures: DecodedTextures::default(),
         }
     }
 
     /// Which packages were searched, in resolution order.
     pub fn with_packages(mut self, packages: Vec<String>) -> Self {
         self.packages = packages;
+        self
+    }
+
+    /// Attaches resolved textures, in the order the model referenced them.
+    pub fn with_textures(
+        mut self,
+        results: Vec<Result<spore_material::ResolvedTexture, spore_material::MaterialError>>,
+    ) -> Self {
+        self.textures = DecodedTextures {
+            results,
+            requested: true,
+        };
         self
     }
 
@@ -90,11 +143,17 @@ impl StagedContent {
     /// Fixed field set and fixed order, because the point of a machine-readable
     /// line is that a consumer can rely on it -- the same discipline as the
     /// repository's existing `CELLSTAGE-MANIFEST v1`.
+    ///
+    /// The `normals=` field is stated rather than implied, because this engine
+    /// *derives* normals from the triangles instead of decoding the record's
+    /// `UBYTE4` bytes (see `spore_gmdl::claims::vertex_normal_encoding`). A
+    /// reader must not have to know that to know which shading it is looking at.
     pub fn report_line(&self) -> String {
         let (lo, hi) = self.bounds().unwrap_or(([0.0; 3], [0.0; 3]));
         format!(
             "OPENSPORE-STAGED v1 key={} package={} format={} meshes={} triangles={} \
-             bounds_min={:.6},{:.6},{:.6} bounds_max={:.6},{:.6},{:.6} normals=derived",
+             bounds_min={:.6},{:.6},{:.6} bounds_max={:.6},{:.6},{:.6} normals=derived \
+             textures={}/{}",
             self.model.key,
             self.model.package_name,
             self.model.format.as_str(),
@@ -106,6 +165,8 @@ impl StagedContent {
             hi[0],
             hi[1],
             hi[2],
+            self.textures.resolved(),
+            self.textures.results.len(),
         )
     }
 }
@@ -164,8 +225,17 @@ pub fn stage_decoded(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
+    images: &mut Assets<Image>,
 ) -> StageOutcome {
-    scene::spawn_stage(commands, meshes, materials);
+    // NOTE: the world is spawned by `ScenePlugin`, NOT here. When this call
+    // remained alongside the plugin, every run produced two cameras and two
+    // lights -- the model rendered from whichever camera Bevy picked, the
+    // framing query found "multiple entities", and the result looked like a
+    // camera-framing bug rather than a duplicate spawn. Bevy's own
+    // "Camera order ambiguities detected" warning is what caught it.
+    //
+    // `ScenePlugin` owns the world; `SporeAssetPlugin` owns the content. One
+    // owner each, so neither can double up.
 
     if content.model.meshes.is_empty() {
         let reason = format!(
@@ -183,11 +253,42 @@ pub fn stage_decoded(
     let bounds = content.bounds().unwrap_or(([0.0; 3], [0.0; 3]));
     let floor_offset = -bounds.0[1];
 
+    // One texture is applied when one resolved. Which of a model's texture
+    // references is the *diffuse* one is NOT known -- the 16 header bytes of a
+    // texture-set entry are undecoded, and `spore-material` therefore exposes
+    // `SamplerRole::Unresolved` as its only variant. Picking the first resolved
+    // reference and saying so is a *stated visual choice*, not a claim about the
+    // record; the alternative, refusing to texture anything, would leave the
+    // material path untested against real data.
+    let first_texture: Option<Handle<Image>> = content
+        .textures
+        .results
+        .iter()
+        .find_map(|r| r.as_ref().ok())
+        .map(|t| {
+            info!(
+                "applying texture {} ({}x{}, {} mip(s), {} layer(s)) as the diffuse colour",
+                t.key, t.image.width, t.image.height, t.mip_count, t.layer_count
+            );
+            crate::texture::to_bevy_image(t, images)
+        });
+    if content.textures.requested && first_texture.is_none() {
+        warn!(
+            "textures were requested but {} reference(s) all failed; the model will use the flat tint",
+            content.textures.results.len()
+        );
+    }
+
     for (index, mesh) in content.model.meshes.iter().enumerate() {
         let buffers = convert::to_buffers(mesh);
         let bevy_mesh = convert::to_bevy_mesh(&buffers, NormalMode::Computed);
         let material = materials.add(StandardMaterial {
-            base_color: scene::ASSET_TINT,
+            base_color: if first_texture.is_some() {
+                Color::WHITE
+            } else {
+                scene::ASSET_TINT
+            },
+            base_color_texture: first_texture.clone(),
             perceptual_roughness: 0.55,
             metallic: 0.05,
             // Spore geometry carries its own winding convention, which has not
@@ -216,6 +317,47 @@ pub fn stage_decoded(
         triangles: content.triangles(),
         bounds,
     }
+}
+
+/// Spawns entities for [`StagedContent`] during `Startup`.
+///
+/// The plugin is the boundary between "a record has been decoded" and "there is
+/// something on screen". It is one system over one resource, which is the
+/// smallest thing that is still a real seam: a second content source (a
+/// procedural creature, a mod-provided asset, a test fixture) becomes a second
+/// implementation of "produce `StagedContent`", with no change here.
+///
+/// The resource must be inserted before the app is built, which
+/// [`crate::build_scene_app`] does. That ordering is deliberate: the decode
+/// happens outside Bevy so a failure is reportable without a window.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SporeAssetPlugin;
+
+impl Plugin for SporeAssetPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_staged_content);
+    }
+}
+
+fn spawn_staged_content(
+    mut commands: Commands,
+    content: Res<StagedContent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    // NOTE: there is deliberately NO camera query here. `Commands::spawn` is
+    // deferred, so a `Query` in the same system that spawns the camera sees zero
+    // cameras -- which would silently leave the camera at its default position.
+    // The framing runs in `PostStartup` instead; see `crate::build_scene_app`.
+    let outcome = stage_decoded(
+        &content,
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut images,
+    );
+    info!("{outcome:?}");
 }
 
 /// Turns a loader failure into something a person can act on.
@@ -322,6 +464,7 @@ mod tests {
             }),
             scale: 1.0,
             packages: vec!["mini".into()],
+            textures: DecodedTextures::default(),
         }
     }
 

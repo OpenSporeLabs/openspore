@@ -100,23 +100,38 @@ impl ResourceKey {
     }
 }
 
-fn parse_component(text: &str) -> Result<u32, ParseKeyError> {
+/// Parses one id component: `0x`-prefixed hexadecimal or plain decimal.
+///
+/// # Why this exists rather than `u32::from_str`
+///
+/// `str::parse::<u32>` accepts `_` digit separators but **rejects** a `0x`
+/// prefix, while every other tool in this repository -- the Python resolvers
+/// via `int(s, 0)`, the C++ streams via their own hex paths, and a human
+/// typing `--type 0x2f4e681b` -- accepts one. That asymmetry is a trap: the same
+/// address spelled two ways either means two things or, worse, one of them
+/// fails. Peeling the prefix off by hand keeps one spelling per value.
+///
+/// It is public because the CLI needs exactly this, and a second private copy in
+/// the argument parser is how the trap comes back.
+pub fn parse_id(text: &str) -> Result<u32, ParseKeyError> {
     let text = text.trim();
     if text.is_empty() {
         return Err(ParseKeyError::Component);
     }
-    // `str::parse::<u32>` accepts `_` separators but **rejects** a `0x` prefix,
-    // so hex has to be peeled off by hand. The Python resolvers use `int(s, 0)`,
-    // which accepts `0x`; accepting it here too keeps one address spelling from
-    // meaning two things across the two implementations.
     let (digits, radix) = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
         Some(rest) => (rest, 16),
         None => (text, 10),
     };
+    // Reject `0x` with no digits and `0xg`, which `from_str_radix` would also
+    // reject but with an error that does not say which component was wrong.
     if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_hexdigit()) {
         return Err(ParseKeyError::Component);
     }
     u32::from_str_radix(digits, radix).map_err(|_| ParseKeyError::Component)
+}
+
+fn parse_component(text: &str) -> Result<u32, ParseKeyError> {
+    parse_id(text)
 }
 
 impl Ord for ResourceKey {
@@ -229,6 +244,28 @@ mod tests {
                 ResourceKey::new(1, 9, 9),
                 ResourceKey::new(2, 0, 0),
             ]
+        );
+    }
+
+    #[test]
+    fn parse_id_accepts_both_spellings_and_rejects_junk() {
+        assert_eq!(parse_id("0x2F4E681B"), Ok(0x2F4E_681B));
+        assert_eq!(parse_id("0X2f4e681b"), Ok(0x2F4E_681B));
+        assert_eq!(parse_id("793667611"), Ok(0x2F4E_681B));
+        assert_eq!(parse_id("  42  "), Ok(42));
+        // The cases `u32::from_str` would either reject or accept inconsistently.
+        assert_eq!(parse_id("0x"), Err(ParseKeyError::Component));
+        assert_eq!(parse_id("0xg"), Err(ParseKeyError::Component));
+        assert_eq!(parse_id(""), Err(ParseKeyError::Component));
+        assert_eq!(
+            parse_id("1_000"),
+            Err(ParseKeyError::Component),
+            "no separators: one spelling per value"
+        );
+        assert_eq!(
+            parse_id("4294967296"),
+            Err(ParseKeyError::Component),
+            "must not silently wrap"
         );
     }
 
